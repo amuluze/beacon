@@ -34,29 +34,27 @@
 
 **容器状态监控**
 
-![image-20240317141005150](https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171426847.png)
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171426847.png" alt="image-20240317141005150" style="zoom:67%;" />
 
 **容器日志查看**
 
-![image-20240317141050281](https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171444166.png)
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171444166.png" alt="image-20240317141050281" style="zoom:67%;" />
 
 **主机状态监控**
 
-![image-20240317141142487](https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171445450.png)
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171445450.png" alt="image-20240317141142487" style="zoom:67%;" />
 
 ## 请作者喝杯咖啡
 
 非常感谢大家使用 Amprobe, 目前该项目由个人用业余时间在维护，如果本项目有帮助到你的话，可以考虑请作者喝杯咖啡~
 
-![阿慕](https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171446310.jpg)
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171446310.jpg" alt="阿慕" style="zoom:50%;" />
 
 ## 其他
 
 作者阿慕，作为一名 35 岁的临“退”程序员，目前正在尝试去探索一条能够延长职业生涯的可行方案，欢迎添加作者微信或关注作者公众号进行交流呀！
 
-![阿慕赞赏码微信](https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171449114.jpg)
-
-![扫码_搜索联合传播样式-白色版](https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171450306.png)
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171449114.jpg" alt="阿慕赞赏码微信" style="zoom: 25%;" /> <img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171450306.png" alt="扫码_搜索联合传播样式-白色版" style="zoom: 25%;" />
 
 开源不易，最后别忘了给本项目点个 **Star** ~
 
