@@ -1,6 +1,7 @@
 <template>
     <div class="am-navbar-container">
         <div class="am-navbar-container__logo">
+            <img src="@/assets/amprobe.png" alt="" />
             <span class="am-logo__text">Amprobe</span>
         </div>
         <div class="am-navbar-container__tab">
@@ -47,6 +48,11 @@ const handleSelect = (key: string) => {
         display: flex;
         align-items: center;
         justify-content: center;
+        img {
+            height: 48px;
+            width: 48px;
+            margin-right: 6px;
+        }
     }
 
     @include e(tab) {
