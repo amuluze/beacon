@@ -54,7 +54,7 @@
 
 作者阿慕，作为一名 35 岁的临“退”程序员，目前正在尝试去探索一条能够延长职业生涯的可行方案，欢迎添加作者微信或关注作者公众号进行交流呀！
 
-<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171449114.jpg" alt="阿慕赞赏码微信" style="zoom: 25%;" /> <img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171450306.png" alt="扫码_搜索联合传播样式-白色版" style="zoom: 25%;" />
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171449114.jpg" alt="阿慕微信" style="zoom: 25%;" /> <img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171450306.png" alt="公众号" style="zoom: 25%;" />
 
 开源不易，最后别忘了给本项目点个 **Star** ~
 
