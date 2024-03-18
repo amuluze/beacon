@@ -321,7 +321,7 @@ watch(
     .el-row {
         margin-bottom: 4px;
         .el-col {
-            height: 400px;
+            height: 350px;
             .el-card {
                 height: 100%;
                 width: 100%;
