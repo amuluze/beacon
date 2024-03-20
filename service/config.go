@@ -5,10 +5,6 @@
 package service
 
 import (
-	"fmt"
-	
-	"github.com/amuluze/amprobe/pkg/logger"
-	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 )
 
@@ -25,48 +21,16 @@ type Config struct {
 // NewConfig Load config file (toml/json/yaml)
 func NewConfig(configFile string) (*Config, error) {
 	config := &Config{}
-	
+
 	viper.SetConfigFile(configFile)
-	
+
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, err
 	}
 	if err := viper.Unmarshal(config); err != nil {
 		return nil, err
 	}
-	
-	switch config.Logger.Level {
-	case "debug":
-		logger.SetDebugLevel()
-	case "info":
-		logger.SetInfoLevel()
-	case "warn":
-		logger.SetWarnLevel()
-	case "error":
-		logger.SetErrorLevel()
-	default:
-		logger.Info("use default logger level")
-	}
-	
-	viper.WatchConfig()
-	viper.OnConfigChange(func(in fsnotify.Event) {
-		fmt.Println("Config file changed:", in.Name)
-		if err := viper.Unmarshal(config); err != nil {
-			fmt.Printf("unmarshal config error when change, %v", err)
-		}
-		switch config.Logger.Level {
-		case "debug":
-			logger.SetDebugLevel()
-		case "info":
-			logger.SetInfoLevel()
-		case "warn":
-			logger.SetWarnLevel()
-		case "error":
-			logger.SetErrorLevel()
-		default:
-			logger.Info("use default logger level")
-		}
-	})
+
 	return config, nil
 }
 

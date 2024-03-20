@@ -5,6 +5,7 @@
 package service
 
 import (
+	"github.com/amuluze/amutool/logger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/wire"
 )
@@ -15,14 +16,16 @@ type Injector struct {
 	App    *fiber.App
 	Router *Router
 	Config *Config
+	Logger *logger.Logger
 	Task   *TimedTask
 }
 
-func NewInjector(app *fiber.App, router *Router, config *Config, task *TimedTask) (*Injector, error) {
+func NewInjector(app *fiber.App, router *Router, config *Config, task *TimedTask, logx *logger.Logger) (*Injector, error) {
 	return &Injector{
 		App:    app,
 		Router: router,
 		Config: config,
 		Task:   task,
+		Logger: logx,
 	}, nil
 }

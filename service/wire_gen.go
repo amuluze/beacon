@@ -43,7 +43,8 @@ func BuildInjector(configFile string) (*Injector, func(), error) {
 	}
 	app := NewFiberApp(config, router)
 	timedTask := NewTimedTask(config, db)
-	injector, err := NewInjector(app, router, config, timedTask)
+	logger := NewLogger(config)
+	injector, err := NewInjector(app, router, config, timedTask, logger)
 	if err != nil {
 		return nil, nil, err
 	}

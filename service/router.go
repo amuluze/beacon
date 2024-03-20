@@ -6,7 +6,7 @@ package service
 
 import (
 	"fmt"
-	"github.com/amuluze/amprobe/pkg/logger"
+
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 
@@ -45,7 +45,6 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 		gIndex := v1.Group("index")
 		{
 			gIndex.Get("/index", func(c *fiber.Ctx) error {
-				logger.Info("i am here")
 				fmt.Println("i am here")
 				return c.SendString("hello world")
 			})

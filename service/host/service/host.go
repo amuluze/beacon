@@ -7,7 +7,6 @@ package service
 import (
 	"context"
 
-	"github.com/amuluze/amprobe/pkg/logger"
 	"github.com/amuluze/amprobe/service/host/repository"
 	"github.com/amuluze/amprobe/service/schema"
 	"github.com/google/wire"
@@ -62,7 +61,6 @@ func (h HostService) CPUUsage(ctx context.Context, args schema.CPUUsageArgs) (sc
 			Value:     item.CPUPercent,
 		})
 	}
-	logger.Infof("usage list: %v", len(list))
 	return schema.CPUUsageReply{Data: list}, nil
 }
 

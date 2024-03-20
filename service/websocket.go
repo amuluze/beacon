@@ -7,10 +7,10 @@ package service
 import (
 	"bufio"
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/amuluze/amprobe/pkg/docker"
-	"github.com/amuluze/amprobe/pkg/logger"
 	"github.com/docker/docker/api/types/container"
 	"github.com/gofiber/contrib/websocket"
 )
@@ -33,24 +33,21 @@ func (l *LoggerHandler) Handler(c *websocket.Conn) {
 	defer cancel()
 	reader, err := l.manager.ContainerLogs(ctx, containerId, container.LogsOptions{ShowStdout: true, ShowStderr: true, Follow: true, Timestamps: false})
 	if err != nil {
-		logger.Errorf("error getting container logs err: %v", err)
 		return
 	}
 	scanner := bufio.NewScanner(reader)
 	for {
 		mt, msg, err := c.ReadMessage()
 		if err != nil {
-			logger.Errorf("read message err: %v:", err)
+			slog.Error("read websocket message error", "err", err)
 			_ = c.WriteMessage(mt, []byte("bad message"))
 			break
 		}
-		logger.Infof("receive message from client: %s", msg)
+		slog.Info("receive websocket message", "msg", string(msg))
 		for scanner.Scan() {
-			logger.Infof("scanner text: %v", scanner.Text())
 			// scanner.Bytes() 前有 8 个字节的 the HEADER part,需要忽略掉
 			// https://medium.com/@dhanushgopinath/reading-docker-container-logs-with-golang-docker-engine-api-702233fac044
 			if err = c.WriteMessage(mt, scanner.Bytes()[8:]); err != nil {
-				logger.Errorf("write logs err: %v", err)
 				continue
 			}
 		}

@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"github.com/amuluze/amprobe/pkg/database"
 	"github.com/amuluze/amprobe/pkg/docker"
-	"github.com/amuluze/amprobe/pkg/logger"
 	"github.com/amuluze/amprobe/pkg/psutil"
 	"github.com/amuluze/amprobe/pkg/ticker"
 	"github.com/amuluze/amprobe/service/model"
+	"log/slog"
 	"time"
 )
 
@@ -53,6 +53,9 @@ func NewTimedTask(conf *Config, db *database.DB) *TimedTask {
 
 func (a *TimedTask) Execute() {
 	timestamp := time.Now()
+	slog.Debug("TimedTask execute debug")
+	slog.Info("TimedTask execute info")
+	slog.Error("TimedTask execute error")
 	// 处理数组指标
 	go a.host(timestamp)
 	go a.cpu(timestamp)
@@ -127,7 +130,6 @@ func (a *TimedTask) disk(timestamp time.Time) {
 
 func (a *TimedTask) network(timestamp time.Time) {
 	netMap, _ := psutil.GetNetworkIO(a.ethernet)
-	logger.Infof(">>>>>>%#v, %#v", netMap, a.ethernet)
 	time.Sleep(1 * time.Second)
 	netMapAfterSecond, _ := psutil.GetNetworkIO(a.ethernet)
 	for eth, info := range netMap {

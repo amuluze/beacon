@@ -7,7 +7,6 @@ package repository
 import (
 	"context"
 	"github.com/amuluze/amprobe/pkg/database"
-	"github.com/amuluze/amprobe/pkg/logger"
 	"github.com/amuluze/amprobe/pkg/psutil"
 	"github.com/amuluze/amprobe/service/model"
 	"github.com/amuluze/amprobe/service/schema"
@@ -47,7 +46,6 @@ func (h HostRepo) SystemUptime(ctx context.Context) (string, error) {
 func (h HostRepo) CPUInfo(ctx context.Context) (model.CPU, error) {
 	var cpuInfo model.CPU
 	if err := h.DB.Order("timestamp desc").Take(&cpuInfo).Error; err != nil {
-		logger.Error("failed to get cpu info")
 		return cpuInfo, err
 	}
 	return cpuInfo, nil
@@ -55,9 +53,7 @@ func (h HostRepo) CPUInfo(ctx context.Context) (model.CPU, error) {
 
 func (h HostRepo) CPUUsage(ctx context.Context, args schema.CPUUsageArgs) ([]model.CPU, error) {
 	var cpuInfos []model.CPU
-	logger.Infof("get cpu usage from %d to %d", args.StartTime, args.EndTime)
 	if err := h.DB.Model(&model.CPU{}).Where("timestamp > ? and timestamp < ?", time.Unix(args.StartTime, 0), time.Unix(args.EndTime, 0)).Order("timestamp asc").Find(&cpuInfos).Error; err != nil {
-		logger.Errorf("failed to get cpu info, err: %v", err)
 		return cpuInfos, err
 	}
 	return cpuInfos, nil

@@ -7,7 +7,6 @@ package api
 import (
 	"github.com/amuluze/amprobe/pkg/errors"
 	"github.com/amuluze/amprobe/pkg/fiberx"
-	"github.com/amuluze/amprobe/pkg/logger"
 	"github.com/amuluze/amprobe/pkg/validatex"
 	"github.com/amuluze/amprobe/service/host/service"
 	"github.com/amuluze/amprobe/service/schema"
@@ -46,7 +45,6 @@ func (a *HostAPI) CPUUsage(ctx *fiber.Ctx) error {
 	if err := fiberx.ParseQuery(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.ErrBadParameter)
 	}
-	logger.Infof("args: %#v", args)
 	if err := validatex.ValidateStruct(args); err != nil {
 		return fiberx.Failure(ctx, errors.ErrBadParameter)
 	}

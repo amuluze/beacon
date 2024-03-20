@@ -38,8 +38,8 @@ User = ""
 # 密码
 Password = ""
 # 数据库
-DBName = "/app/probe"
-# DBName = "/Users/amu/Desktop/probe"
+#DBName = "/app/probe"
+ DBName = "/Users/amu/Desktop/probe"
 # SSL模式
 SSLMode = ""
 
@@ -53,4 +53,4 @@ Names = ["eth0", "en0"]
 Interval = 15  # 单位 s
 
 [Logger]
-Level = "info"
+Level = "debug"

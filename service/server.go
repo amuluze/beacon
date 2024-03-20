@@ -7,12 +7,13 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/amuluze/amprobe/pkg/logger"
-	"github.com/gofiber/fiber/v2"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type options struct {
@@ -30,24 +31,19 @@ func SetConfigFile(s string) Option {
 func InitHttpServer(ctx context.Context, config *Config, app *fiber.App) func() {
 	appConfig := config.Fiber
 	addr := fmt.Sprintf("%s:%d", appConfig.Host, appConfig.Port)
-	
+
 	go func() {
-		logger.Infof("Http Server is running on :%s", addr)
 		err := app.Listen(addr)
 		if err != nil {
-			logger.Errorf("Http Server exit")
 			panic(err)
 		}
-		logger.Infof("Http Server exit success.")
 	}()
-	
+
 	return func() {
 		_, cancel := context.WithTimeout(ctx, time.Second*time.Duration(appConfig.ShutdownTimeout))
 		defer cancel()
 		if err := app.Shutdown(); err != nil {
-			logger.Errorf(err.Error())
 		}
-		logger.Info("http service shutdown success.")
 	}
 }
 
@@ -58,14 +54,16 @@ func Init(ctx context.Context, opts ...Option) (func(), error) {
 	}
 	injector, cleanFunc, err := BuildInjector(o.ConfigFile)
 	if err != nil {
+		slog.Error("build injector failed", "err", err)
 		return nil, err
 	}
-	logger.Infof("config: %#v\n", injector.Config)
+
+	slog.SetDefault(injector.Logger.Logger)
 	httpServerCleanFunc := InitHttpServer(ctx, injector.Config, injector.App)
-	
+
 	timedTask := injector.Task
 	go timedTask.Run()
-	
+
 	return func() {
 		timedTask.Stop()
 		httpServerCleanFunc()
@@ -94,7 +92,7 @@ EXIT:
 			break EXIT
 		}
 	}
-	
+
 	cleanFunc()
 	time.Sleep(time.Second)
 	os.Exit(state)

@@ -13,6 +13,7 @@ import (
 func BuildInjector(configFile string) (*Injector, func(), error) {
 	wire.Build(
 		NewConfig,
+		NewLogger,
 		NewDB,
 		container.Set,
 		host.Set,

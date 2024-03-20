@@ -5,10 +5,11 @@
 package fiberx
 
 import (
-	"github.com/amuluze/amprobe/pkg/errors"
-	"github.com/amuluze/amprobe/pkg/logger"
-	"github.com/gofiber/fiber/v2"
+	"fmt"
 	"net/http"
+
+	"github.com/amuluze/amprobe/pkg/errors"
+	"github.com/gofiber/fiber/v2"
 )
 
 // Success response.status = 200
@@ -41,12 +42,12 @@ func Failure(c *fiber.Ctx, err error) error {
 		// 正常来说api层返回给接口层的错误信息不用打印，在这里会进行统一打印，400-500之间会打印warn 日志
 		// 500 会打印error 日志
 		if status := res.Status; status >= 400 && status < 500 {
-			logger.Errorf("4xx")
+			fmt.Println("4xx")
 		} else if status >= 500 {
-			logger.Errorf("5xx")
+			fmt.Println("5xx")
 		}
 	}
-	logger.Infof("data: %v", res)
+
 	return ReturnJson(c, res.Status, &FailedResponse{Err: res.Message, Msg: res.Err.Error()})
 }
 
