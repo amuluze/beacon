@@ -5,14 +5,21 @@
 package model
 
 import (
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Host struct {
 	gorm.Model
-	Timestamp time.Time
-	Uptime    string
+	Timestamp       time.Time
+	Uptime          string
+	Hostname        string
+	Os              string
+	Platform        string
+	PlatformVersion string
+	KernelVersion   string
+	KernelArch      string
 }
 
 func (d *Host) TableName() string {

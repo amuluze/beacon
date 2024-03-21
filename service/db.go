@@ -5,10 +5,10 @@
 package service
 
 import (
-	"github.com/amuluze/amprobe/pkg/database"
-	"github.com/amuluze/amprobe/service/model"
-	"strconv"
 	"strings"
+
+	"github.com/amuluze/amprobe/service/model"
+	"github.com/amuluze/amutool/database"
 )
 
 func NewDB(config *Config, models *model.Models) (*database.DB, error) {
@@ -17,19 +17,18 @@ func NewDB(config *Config, models *model.Models) (*database.DB, error) {
 	}
 	gormConfig := config.Gorm
 	dbConfig := config.DB
-	db, err := database.NewDB(&database.Config{
-		Debug:        gormConfig.Debug,
-		Type:         gormConfig.DBType,
-		Host:         dbConfig.Host,
-		Port:         strconv.Itoa(dbConfig.Port),
-		UserName:     dbConfig.User,
-		Password:     dbConfig.Password,
-		Name:         dbConfig.DBName,
-		TablePrefix:  gormConfig.TablePrefix,
-		MaxIdleConns: gormConfig.MaxIdleConns,
-		MaxLifetime:  gormConfig.MaxLifetime,
-		MaxOpenConns: gormConfig.MaxOpenConns,
-	})
+	db, err := database.NewDB(
+		database.WithDebug(gormConfig.Debug),
+		database.WithType(gormConfig.DBType),
+		database.WithHost(dbConfig.Host),
+		database.WithPort(dbConfig.Port),
+		database.WithUsername(dbConfig.User),
+		database.WithPassword(dbConfig.Password),
+		database.WithDBName(dbConfig.DBName),
+		database.WithMaxLifetime(gormConfig.MaxLifetime),
+		database.WithMaxOpenConns(gormConfig.MaxOpenConns),
+		database.WithMaxIdleConns(gormConfig.MaxIdleConns),
+	)
 	if err != nil {
 		return nil, err
 	}

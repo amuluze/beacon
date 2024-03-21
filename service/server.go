@@ -31,7 +31,7 @@ func SetConfigFile(s string) Option {
 func InitHttpServer(ctx context.Context, config *Config, app *fiber.App) func() {
 	appConfig := config.Fiber
 	addr := fmt.Sprintf("%s:%d", appConfig.Host, appConfig.Port)
-
+	slog.Info("start http server", "addr", addr)
 	go func() {
 		err := app.Listen(addr)
 		if err != nil {
@@ -43,6 +43,7 @@ func InitHttpServer(ctx context.Context, config *Config, app *fiber.App) func() 
 		_, cancel := context.WithTimeout(ctx, time.Second*time.Duration(appConfig.ShutdownTimeout))
 		defer cancel()
 		if err := app.Shutdown(); err != nil {
+			slog.Warn("app shut down error", "err", err)
 		}
 	}
 }

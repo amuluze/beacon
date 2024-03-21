@@ -14,7 +14,12 @@ import (
 )
 
 func NewLogger(config *Config) *logger.Logger {
-	logx := logger.NewLogger(logger.LevelInfo)
+	logx := logger.NewJsonFileLogger(
+		logger.SetLogFile(config.Logger.File),
+		logger.SetLogLevel(config.Logger.Level),
+		logger.SetLogFileRotationTime(config.Logger.RotationTime),
+		logger.SetLogFileMaxAge(config.Logger.MaxAge),
+	)
 
 	switch config.Logger.Level {
 	case "debug":

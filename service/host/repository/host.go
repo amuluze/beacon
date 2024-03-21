@@ -6,12 +6,13 @@ package repository
 
 import (
 	"context"
-	"github.com/amuluze/amprobe/pkg/database"
+	"time"
+
 	"github.com/amuluze/amprobe/pkg/psutil"
 	"github.com/amuluze/amprobe/service/model"
 	"github.com/amuluze/amprobe/service/schema"
+	"github.com/amuluze/amutool/database"
 	"github.com/google/wire"
-	"time"
 )
 
 var HostRepoSet = wire.NewSet(NewHostRepo, wire.Bind(new(IHostRepo), new(*HostRepo)))

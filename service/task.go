@@ -5,14 +5,16 @@
 package service
 
 import (
+	"context"
 	"fmt"
-	"github.com/amuluze/amprobe/pkg/database"
-	"github.com/amuluze/amprobe/pkg/docker"
-	"github.com/amuluze/amprobe/pkg/psutil"
-	"github.com/amuluze/amprobe/pkg/ticker"
-	"github.com/amuluze/amprobe/service/model"
 	"log/slog"
 	"time"
+
+	"github.com/amuluze/amprobe/pkg/psutil"
+	"github.com/amuluze/amprobe/service/model"
+	"github.com/amuluze/amutool/database"
+	"github.com/amuluze/amutool/docker"
+	"github.com/amuluze/amutool/timex"
 )
 
 type TimedTask struct {
@@ -20,13 +22,13 @@ type TimedTask struct {
 	manager  *docker.Manager
 	devices  map[string]struct{}
 	ethernet map[string]struct{}
-	ticker   ticker.Ticker
+	ticker   timex.Ticker
 	stopCh   chan struct{}
 }
 
 func NewTimedTask(conf *Config, db *database.DB) *TimedTask {
 	interval := conf.Task.Interval
-	tk := ticker.NewTicker(time.Duration(interval) * time.Second)
+	tk := timex.NewTicker(time.Duration(interval) * time.Second)
 	manager, err := docker.NewManager()
 	if err != nil {
 		return nil
@@ -41,6 +43,7 @@ func NewTimedTask(conf *Config, db *database.DB) *TimedTask {
 	for _, d := range conf.Ethernet.Names {
 		eth[d] = struct{}{}
 	}
+
 	return &TimedTask{
 		devices:  dev,
 		ethernet: eth,
@@ -53,9 +56,6 @@ func NewTimedTask(conf *Config, db *database.DB) *TimedTask {
 
 func (a *TimedTask) Execute() {
 	timestamp := time.Now()
-	slog.Debug("TimedTask execute debug")
-	slog.Info("TimedTask execute info")
-	slog.Error("TimedTask execute error")
 	// 处理数组指标
 	go a.host(timestamp)
 	go a.cpu(timestamp)
@@ -84,10 +84,16 @@ func (a *TimedTask) Stop() {
 }
 
 func (a *TimedTask) host(timestamp time.Time) {
-	uptime, _ := psutil.GetSystemUpTime()
+	info, _ := psutil.GetSystemInfo()
 	a.db.Model(&model.Host{}).Create(&model.Host{
-		Timestamp: timestamp,
-		Uptime:    uptime,
+		Timestamp:       timestamp,
+		Uptime:          info.Uptime,
+		Hostname:        info.Hostname,
+		Os:              info.Os,
+		Platform:        info.Platform,
+		PlatformVersion: info.PlatformVersion,
+		KernelVersion:   info.KernelVersion,
+		KernelArch:      info.KernelArch,
 	})
 }
 
@@ -145,28 +151,49 @@ func (a *TimedTask) network(timestamp time.Time) {
 	}
 }
 
-func (a *TimedTask) docker(timestamp time.Time) {
-	infos, err := a.manager.GetContainerInfos()
+func (a *TimedTask) container(timestamp time.Time) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	cs, err := a.manager.ListContainer(ctx)
 	if err != nil {
+		slog.Error("failed to list containers", "error", err)
 		return
 	}
-	var dockers []model.Container
-	for _, info := range infos {
+	var containers []model.Container
+	for _, info := range cs {
 		var d model.Container
 		d.Timestamp = timestamp
 		d.ContainerID = info.ID
 		d.Name = info.Name
 		d.State = info.State
 		d.Image = info.Image
-		d.IP = info.IP
 		d.Uptime = info.Uptime
-		d.CPUPercent = info.CPUPercent
-		d.MemPercent = info.MemPercent
-		d.MemUsage = info.MemUsage
-		d.MemLimit = info.MemLimit
-		dockers = append(dockers, d)
+		d.IP = info.IP
+
+		cpuPercent, err := a.manager.GetContainerCPU(ctx, info.ID)
+		if err != nil {
+			slog.Error("failed to get container cpu", "error", err)
+		}
+		d.CPUPercent = cpuPercent
+
+		memPercent, used, limit, err := a.manager.GetContainerMem(ctx, info.ID)
+		if err != nil {
+			slog.Error("failed to get container mem", "error", err)
+		}
+		d.MemPercent = memPercent
+
+		d.MemUsage = used
+		d.MemLimit = limit
+		containers = append(containers, d)
 	}
-	a.db.Model(&model.Container{}).Create(&dockers)
+	a.db.Model(&model.Container{}).Create(&containers)
+}
+
+func (a *TimedTask) docker(timestamp time.Time) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
 }
 
 func (a *TimedTask) clearOldRecord() {

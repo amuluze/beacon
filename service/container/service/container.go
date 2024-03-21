@@ -6,11 +6,12 @@ package service
 
 import (
 	"context"
-	"github.com/amuluze/amprobe/pkg/errors"
+	"time"
+
 	"github.com/amuluze/amprobe/service/container/repository"
 	"github.com/amuluze/amprobe/service/schema"
+	"github.com/amuluze/amutool/errors"
 	"github.com/google/wire"
-	"time"
 )
 
 var ContainerServiceSet = wire.NewSet(NewContainerService, wire.Bind(new(IContainerService), new(*ContainerService)))
@@ -30,7 +31,7 @@ func NewContainerService(containerRepo repository.IContainerRepo) *ContainerServ
 func (a *ContainerService) ContainerList(ctx context.Context) (*schema.ContainerQueryRely, error) {
 	mContainers, err := a.ContainerRepo.ContainerList(ctx)
 	if err != nil {
-		return nil, errors.New400Errors(err.Error())
+		return nil, errors.New400Error(err.Error())
 	}
 	var list []schema.Container
 	var ts time.Time

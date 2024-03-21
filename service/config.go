@@ -56,7 +56,7 @@ type Gorm struct {
 
 type DB struct {
 	Host     string
-	Port     int
+	Port     string
 	User     string
 	Password string
 	DBName   string
@@ -76,5 +76,8 @@ type Ethernet struct {
 }
 
 type Logger struct {
-	Level string
+	File         string
+	Level        string
+	RotationTime int
+	MaxAge       int
 }

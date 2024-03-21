@@ -5,8 +5,9 @@
 package model
 
 import (
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Containers []Container
@@ -33,5 +34,25 @@ func (d *Container) TableName() string {
 func (d *Container) AfterCreate(tx *gorm.DB) error {
 	// 数据清理
 	tx.Unscoped().Where("timestamp < ?", time.Now().Add(-time.Minute*5)).Delete(&Container{})
+	return nil
+}
+
+type Docker struct {
+	Timestamp     time.Time
+	DockerVersion string
+	APIVersion    string
+	MinAPIVersion string
+	GitCommit     string
+	GoVersion     string
+	Os            string
+	Arch          string
+}
+
+func (d *Docker) TableName() string {
+	return "s_docker"
+}
+
+func (d *Docker) AfterCreate(tx *gorm.DB) error {
+	tx.Unscoped().Where("timestamp < ?", time.Now().Add(-time.Minute*5)).Delete(&Docker{})
 	return nil
 }

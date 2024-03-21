@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/amuluze/amprobe/pkg/errors"
+	"github.com/amuluze/amutool/errors"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -24,9 +24,9 @@ type FailedResponse struct {
 
 // Failure response.status = 400
 func Failure(c *fiber.Ctx, err error) error {
-	var res *errors.Errors
+	var res *errors.Error
 	if err != nil {
-		if e, ok := err.(*errors.Errors); ok {
+		if e, ok := err.(*errors.Error); ok {
 			res = e
 		} else {
 			res = errors.UnWrapError(errors.ErrInternalServer)
@@ -35,7 +35,7 @@ func Failure(c *fiber.Ctx, err error) error {
 		res = errors.UnWrapError(errors.ErrInternalServer)
 	}
 
-	if err := res.Err; err != nil {
+	if err := res.ERR; err != nil {
 		if res.Message == "" {
 			res.Message = err.Error()
 		}
@@ -48,7 +48,7 @@ func Failure(c *fiber.Ctx, err error) error {
 		}
 	}
 
-	return ReturnJson(c, res.Status, &FailedResponse{Err: res.Message, Msg: res.Err.Error()})
+	return ReturnJson(c, res.Status, &FailedResponse{Err: res.Message, Msg: res.ERR.Error()})
 }
 
 // Unauthorized response.status = 401 when token error or token is fail
@@ -84,14 +84,14 @@ func ReturnJson(c *fiber.Ctx, status int, v interface{}) error {
 // ParseQuery Parse query parameter to struct
 func ParseQuery(c *fiber.Ctx, obj interface{}) error {
 	if err := c.QueryParser(obj); err != nil {
-		return errors.Wrap400Error(err)
+		return errors.New400Error(err.Error())
 	}
 	return nil
 }
 
 func ParseBody(c *fiber.Ctx, obj interface{}) error {
 	if err := c.BodyParser(obj); err != nil {
-		return errors.Wrap400Error(err)
+		return errors.New400Error(err.Error())
 	}
 	return nil
 }

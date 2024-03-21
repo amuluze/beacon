@@ -31,6 +31,16 @@ type DiskIO struct {
 	Write uint64 `json:"write"`
 }
 
+type SystemInfo struct {
+	Uptime          string
+	Hostname        string
+	Os              string
+	Platform        string
+	PlatformVersion string
+	KernelVersion   string
+	KernelArch      string
+}
+
 func GetMemInfo() (float64, uint64, uint64, error) {
 	v, err := mem.VirtualMemory()
 	if err != nil {
@@ -109,14 +119,22 @@ func GetNetworkIO(eth map[string]struct{}) (map[string]NetIO, error) {
 	return netMap, nil
 }
 
-// GetSystemUpTime 获取系统运行时间
-func GetSystemUpTime() (string, error) {
-	timestamp, err := host.BootTime()
+// GetSystemInfo 获取系统信息
+func GetSystemInfo() (*SystemInfo, error) {
+	info, err := host.Info()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	t := time.Unix(int64(timestamp), 0)
-	return t.Local().Format("2006-01-02 15:04:05"), nil
+	systemInfo := &SystemInfo{
+		Uptime:          time.Unix(int64(info.BootTime), 0).Local().Format("2006-01-02 15:04:05"),
+		Hostname:        info.HostID,
+		Os:              info.OS,
+		Platform:        info.Platform,
+		PlatformVersion: info.PlatformVersion,
+		KernelVersion:   info.KernelVersion,
+		KernelArch:      info.KernelArch,
+	}
+	return systemInfo, nil
 }
 
 // 字节单位转换
