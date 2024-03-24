@@ -7,11 +7,10 @@ package service
 import (
 	"bufio"
 	"context"
+	"github.com/amuluze/amutool/docker"
 	"log/slog"
 	"time"
-
-	"github.com/amuluze/amprobe/pkg/docker"
-	"github.com/docker/docker/api/types/container"
+	
 	"github.com/gofiber/contrib/websocket"
 )
 
@@ -31,7 +30,7 @@ func (l *LoggerHandler) Handler(c *websocket.Conn) {
 	containerId := c.Params("id")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	reader, err := l.manager.ContainerLogs(ctx, containerId, container.LogsOptions{ShowStdout: true, ShowStderr: true, Follow: true, Timestamps: false})
+	reader, err := l.manager.ContainerLogs(ctx, containerId)
 	if err != nil {
 		return
 	}
