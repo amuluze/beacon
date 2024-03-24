@@ -4,6 +4,17 @@
  * @Description:
  */
 
+export interface HostInfo {
+    timestamp: number;
+    uptime: string;
+    hostname: string;
+    os: string;
+    platform: string;
+    platform_version: string;
+    kernel_version: string;
+    kernel_arch: string;
+}
+
 export interface Usage {
     timestamp: number;
     value: number;

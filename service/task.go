@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
-
+	
 	"github.com/amuluze/amprobe/pkg/psutil"
 	"github.com/amuluze/amprobe/service/model"
 	"github.com/amuluze/amutool/database"
@@ -33,17 +33,17 @@ func NewTimedTask(conf *Config, db *database.DB) *TimedTask {
 	if err != nil {
 		return nil
 	}
-
+	
 	dev := make(map[string]struct{})
 	for _, d := range conf.Disk.Devices {
 		dev[d] = struct{}{}
 	}
-
+	
 	eth := make(map[string]struct{})
 	for _, d := range conf.Ethernet.Names {
 		eth[d] = struct{}{}
 	}
-
+	
 	return &TimedTask{
 		devices:  dev,
 		ethernet: eth,
@@ -62,9 +62,11 @@ func (a *TimedTask) Execute() {
 	go a.memory(timestamp)
 	go a.disk(timestamp)
 	go a.network(timestamp)
-
+	
 	// 处理 Docker 容器指标
 	go a.docker(timestamp)
+	go a.container(timestamp)
+	go a.image(timestamp)
 }
 
 func (a *TimedTask) Run() {
@@ -154,7 +156,7 @@ func (a *TimedTask) network(timestamp time.Time) {
 func (a *TimedTask) container(timestamp time.Time) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-
+	
 	cs, err := a.manager.ListContainer(ctx)
 	if err != nil {
 		slog.Error("failed to list containers", "error", err)
@@ -170,19 +172,19 @@ func (a *TimedTask) container(timestamp time.Time) {
 		d.Image = info.Image
 		d.Uptime = info.Uptime
 		d.IP = info.IP
-
+		
 		cpuPercent, err := a.manager.GetContainerCPU(ctx, info.ID)
 		if err != nil {
 			slog.Error("failed to get container cpu", "error", err)
 		}
 		d.CPUPercent = cpuPercent
-
+		
 		memPercent, used, limit, err := a.manager.GetContainerMem(ctx, info.ID)
 		if err != nil {
 			slog.Error("failed to get container mem", "error", err)
 		}
 		d.MemPercent = memPercent
-
+		
 		d.MemUsage = used
 		d.MemLimit = limit
 		containers = append(containers, d)
@@ -193,7 +195,44 @@ func (a *TimedTask) container(timestamp time.Time) {
 func (a *TimedTask) docker(timestamp time.Time) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
+	
+	dockerVersion, err := a.manager.Version(ctx)
+	if err != nil {
+		slog.Error("failed to get docker version", "error", err)
+		return
+	}
+	a.db.Model(&model.Docker{}).Create(&model.Docker{
+		Timestamp:     timestamp,
+		DockerVersion: dockerVersion.DockerVersion,
+		APIVersion:    dockerVersion.APIVersion,
+		MinAPIVersion: dockerVersion.MinAPIVersion,
+		GitCommit:     dockerVersion.GitCommit,
+		GoVersion:     dockerVersion.GoVersion,
+		Os:            dockerVersion.OS,
+		Arch:          dockerVersion.Arch,
+	})
+}
 
+func (a *TimedTask) image(timestamp time.Time) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	
+	images, err := a.manager.ListImage(ctx)
+	if err != nil {
+		slog.Error("failed to get version", "error", err)
+		return
+	}
+	var list model.Images
+	for _, im := range images {
+		list = append(list, model.Image{
+			ID:      im.ID,
+			Name:    im.Name,
+			Tag:     im.Tag,
+			Created: im.Created,
+			Size:    im.Size,
+		})
+	}
+	a.db.Model(&model.Image{}).Create(&list)
 }
 
 func (a *TimedTask) clearOldRecord() {

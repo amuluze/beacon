@@ -1,10 +1,12 @@
 <template>
     <div class="am-host-container">
-        <el-card class="am-host-container__operator">
-            <el-select v-model="value" placeholder="Select" size="default" style="width: 240px">
-                <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
-        </el-card>
+        <div class="am-host-container__operator">
+            <el-card>
+                <el-select v-model="value" placeholder="Select" size="default" style="width: 240px">
+                    <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
+                </el-select>
+            </el-card>
+        </div>
         <el-row :gutter="4">
             <el-col :span="12">
                 <el-card>
@@ -53,7 +55,6 @@
         </el-row>
     </div>
 </template>
-
 <script setup lang="ts">
 import {
     queryCPUUsage,
@@ -316,36 +317,46 @@ watch(
 
 <style scoped lang="scss">
 @include b(host-container) {
-    margin: 0 8px;
     overflow: hidden;
+    background-color: #ffffff;
     .el-row {
         margin-bottom: 4px;
         .el-col {
-            height: 350px;
-            .el-card {
-                height: 100%;
-                width: 100%;
-                :deep(.el-card__body) {
-                    height: 100% !important;
-                    //padding: 0 !important;
-                }
+            height: 300px;
+        }
+    }
+
+    .el-card {
+        height: 100%;
+        width: 100%;
+        :deep(.el-card__body) {
+            height: 100% !important;
+            width: 100% !important;
+        }
+    }
+
+    @include e(operator) {
+        height: 48px;
+        width: 100%;
+        margin-bottom: 4px;
+        .el-card {
+            height: 100%;
+            :deep(.el-card__body) {
+                height: 100% !important;
+                padding: 0 8px 0 0;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
             }
         }
     }
-    @include e(operator) {
-        height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        background-color: #ffffff;
-    }
 
     @include e(image-title) {
-        font-size: 16px;
+        font-size: 14px;
         font-weight: bold;
     }
     @include e(image-description) {
-        font-size: 14px;
+        font-size: 12px;
         color: #73767a;
     }
 }

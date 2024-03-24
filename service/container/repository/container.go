@@ -6,7 +6,7 @@ package repository
 
 import (
 	"context"
-
+	
 	"github.com/amuluze/amprobe/service/model"
 	"github.com/amuluze/amutool/database"
 	"github.com/google/wire"
@@ -16,6 +16,8 @@ var ContainerRepoSet = wire.NewSet(NewContainerRepo, wire.Bind(new(IContainerRep
 
 type IContainerRepo interface {
 	ContainerList(ctx context.Context) (model.Containers, error)
+	ImageList(ctx context.Context) (model.Images, error)
+	Version(ctx context.Context) (model.Docker, error)
 }
 
 type ContainerRepo struct {
@@ -32,4 +34,20 @@ func (a *ContainerRepo) ContainerList(ctx context.Context) (model.Containers, er
 		return containers, err
 	}
 	return containers, nil
+}
+
+func (a *ContainerRepo) ImageList(ctx context.Context) (model.Images, error) {
+	var images model.Images
+	if err := a.DB.Model(&model.Image{}).Group("name").Or("created_at desc").Find(&images).Error; err != nil {
+		return images, err
+	}
+	return images, nil
+}
+
+func (a *ContainerRepo) Version(ctx context.Context) (model.Docker, error) {
+	var docker model.Docker
+	if err := a.DB.Model(&model.Docker{}).First(&docker).Error; err != nil {
+		return docker, err
+	}
+	return docker, nil
 }

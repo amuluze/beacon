@@ -21,9 +21,9 @@ func NewHostAPI(hostService service.IHostService) *HostAPI {
 	return &HostAPI{HostService: hostService}
 }
 
-func (a *HostAPI) SystemUptime(ctx *fiber.Ctx) error {
+func (a *HostAPI) HostInfo(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
-	uptime, err := a.HostService.SystemUptime(c)
+	uptime, err := a.HostService.HostInfo(c)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
 	}

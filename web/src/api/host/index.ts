@@ -11,13 +11,17 @@ import {
     CPUTrendingArgs,
     DiskInfoResult,
     DiskTrendingArgs,
-    DiskUsage,
+    DiskUsage, HostInfo,
     MemInfo,
     MemTrending,
     MemTrendingArgs,
     NetTrendingArgs,
     NetUsage,
 } from '@/interface/host.ts';
+
+export function queryHostInfo() {
+    return request.get<HostInfo>('/api/v1/host/host_info', {});
+}
 
 export function queryCPUInfo() {
     return request.get<CPUInfo>('/api/v1/host/cpu_info', {});

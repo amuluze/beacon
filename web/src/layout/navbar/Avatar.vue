@@ -1,6 +1,6 @@
 <template>
     <el-dropdown>
-        <el-avatar>
+        <el-avatar size="small">
             <i-ep-user />
         </el-avatar>
         <template #dropdown>
@@ -26,4 +26,11 @@ const doLogout = () => {
 };
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+
+.el-dropdown {
+    :deep(.el-avatar:hover) {
+        border: none;
+    }
+}
+</style>

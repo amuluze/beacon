@@ -1,10 +1,10 @@
 <template>
     <!-- 表格主体 -->
     <el-card shadow="never">
-        <el-table :data="tableData" border stripe ref="multipleTable" v-loading="loading">
+        <el-table :data="tableData" style="width: 100%" ref="multipleTable" v-loading="loading">
             <el-table-column prop="id" label="容器 ID" align="center" fixed />
             <el-table-column prop="name" label="容器名称" align="center" min-width="100" show-overflow-tooltip fixed />
-            <el-table-column prop="image" label="镜像名称" align="center" min-width="200" show-overflow-tooltip />
+            <el-table-column prop="image" label="镜像名称" align="center" min-width="150" show-overflow-tooltip />
             <el-table-column prop="ip" label="容器 IP" align="center" min-width="100" show-overflow-tooltip />
             <el-table-column prop="state" label="运行状态" align="center" min-width="90" show-overflow-tooltip>
                 <template #default="scope">
@@ -62,6 +62,7 @@
         </template>
     </el-dialog>
 </template>
+
 <script setup lang="ts">
 // 表格
 import { queryContainers } from '@/api/container';
@@ -157,4 +158,4 @@ const downloadLog = () => {
 };
 </script>
 
-<style scoped></style>
+<style scoped lang="scss"></style>

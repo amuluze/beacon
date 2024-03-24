@@ -9,6 +9,5 @@
 @include b(content-container) {
     height: 100%;
     width: 100%;
-    // background-color: darkgray;
 }
 </style>

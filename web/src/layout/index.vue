@@ -1,20 +1,24 @@
 <template>
     <div class="am-layout-container">
         <el-container>
-            <el-header class="am-header">
-                <navbar />
-            </el-header>
-            <el-container>
-                <el-main class="am-content">
+            <div class="am-layout-sidebar">
+                <sidebar />
+            </div>
+            <div class="am-layout-content">
+                <el-header>
+                    <navbar />
+                </el-header>
+                <el-main>
                     <content />
                 </el-main>
-            </el-container>
+            </div>
         </el-container>
     </div>
 </template>
 
 <script setup lang="ts">
 import Navbar from '@/layout/navbar/index.vue';
+import Sidebar from '@/layout/sidebar/index.vue';
 import Content from '@/layout/content/index.vue';
 </script>
 
@@ -22,24 +26,32 @@ import Content from '@/layout/content/index.vue';
 @include b(layout-container) {
     height: 100%;
     width: 100%;
-    background-color: #eaecef;
+    background-color: #F4F4F4;
+    overflow: hidden;
+
+    .el-container {
+        height: 100%;
+        width: 100%;
+    }
 }
 
-@include b(header) {
-    position: relative;
-    width: 100%;
-    height: 64px;
-    margin-bottom: 8px;
-    background-color: #fff;
-    border-bottom: 1px solid #e6e6e6;
+@include b(layout-sidebar) {
+    //width: 210px;
+    height: 100%;
+    background-color: #E9EFFD;
 }
 
-@include b(content) {
-    position: absolute;
-    top: 68px;
-    bottom: 0;
-    padding: 0;
+@include b(layout-content) {
+    margin: 8px 8px 0 8px;
     width: 100%;
-    overflow-y: scroll;
+    height: 100%;
+
+    .el-header {
+        height: 48px;
+    }
+
+    .el-main {
+        height: calc(100vh - 48px);
+    }
 }
 </style>

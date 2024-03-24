@@ -6,7 +6,7 @@ package service
 
 import (
 	"context"
-
+	
 	"github.com/amuluze/amprobe/service/host/repository"
 	"github.com/amuluze/amprobe/service/schema"
 	"github.com/google/wire"
@@ -15,7 +15,7 @@ import (
 var HostServiceSet = wire.NewSet(NewHostService, wire.Bind(new(IHostService), new(*HostService)))
 
 type IHostService interface {
-	SystemUptime(ctx context.Context) (schema.SystemUptimeReply, error)
+	HostInfo(ctx context.Context) (schema.HostInfoReply, error)
 	CPUInfo(ctx context.Context) (schema.CPUInfoReply, error)
 	CPUUsage(ctx context.Context, args schema.CPUUsageArgs) (schema.CPUUsageReply, error)
 	MemInfo(ctx context.Context) (schema.MemoryInfoReply, error)
@@ -33,12 +33,21 @@ func NewHostService(hostRepo repository.IHostRepo) *HostService {
 	return &HostService{HostRepo: hostRepo}
 }
 
-func (h HostService) SystemUptime(ctx context.Context) (schema.SystemUptimeReply, error) {
-	uptime, err := h.HostRepo.SystemUptime(ctx)
+func (h HostService) HostInfo(ctx context.Context) (schema.HostInfoReply, error) {
+	info, err := h.HostRepo.HostInfo(ctx)
 	if err != nil {
-		return schema.SystemUptimeReply{}, err
+		return schema.HostInfoReply{}, err
 	}
-	return schema.SystemUptimeReply{Uptime: uptime}, err
+	return schema.HostInfoReply{
+		Timestamp:       info.Timestamp.Unix(),
+		Uptime:          info.Uptime,
+		Hostname:        info.Hostname,
+		OS:              info.Os,
+		Platform:        info.Platform,
+		PlatformVersion: info.PlatformVersion,
+		KernelVersion:   info.KernelVersion,
+		KernelArch:      info.KernelArch,
+	}, err
 }
 
 func (h HostService) CPUInfo(ctx context.Context) (schema.CPUInfoReply, error) {
@@ -101,7 +110,7 @@ func (h HostService) DiskInfo(ctx context.Context) (schema.DiskInfoReply, error)
 			Used:    di.DiskUsed,
 		})
 	}
-
+	
 	return schema.DiskInfoReply{Info: list}, err
 }
 
@@ -110,7 +119,7 @@ func (h HostService) DiskUsage(ctx context.Context, args schema.DiskUsageArgs) (
 	if err != nil {
 		return schema.DiskUsageReply{}, err
 	}
-
+	
 	mDisk := make([]schema.DiskIO, 0)
 	device := ""
 	for _, item := range diskInfos {

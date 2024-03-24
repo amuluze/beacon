@@ -21,8 +21,15 @@ type DiskIO struct {
 	IOWrite   float64 `json:"io_write"`
 }
 
-type SystemUptimeReply struct {
-	Uptime string `json:"uptime"`
+type HostInfoReply struct {
+	Timestamp       int64  `json:"timestamp"`
+	Uptime          string `json:"uptime"`
+	Hostname        string `json:"hostname"`
+	OS              string `json:"os"`
+	Platform        string `json:"platform"`
+	PlatformVersion string `json:"platform_version"`
+	KernelVersion   string `json:"kernel_version"`
+	KernelArch      string `json:"kernel_arch"`
 }
 
 type CPUInfoReply struct {

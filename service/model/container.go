@@ -6,7 +6,7 @@ package model
 
 import (
 	"time"
-
+	
 	"gorm.io/gorm"
 )
 
@@ -54,5 +54,22 @@ func (d *Docker) TableName() string {
 
 func (d *Docker) AfterCreate(tx *gorm.DB) error {
 	tx.Unscoped().Where("timestamp < ?", time.Now().Add(-time.Minute*5)).Delete(&Docker{})
+	return nil
+}
+
+type Images []Image
+
+type Image struct {
+	ID      string
+	Name    string
+	Tag     string
+	Created string
+	Size    string
+}
+
+func (i *Image) TableName() string { return "s_image" }
+
+func (i *Image) AfterCreate(tx *gorm.DB) error {
+	tx.Unscoped().Where("timestamp < ?", time.Now().Add(-time.Minute*5)).Delete(&Image{})
 	return nil
 }

@@ -4,6 +4,8 @@
 // Description:
 package schema
 
+import "time"
+
 type Container struct {
 	ID            string  `json:"id"`
 	Name          string  `json:"name"`
@@ -19,4 +21,27 @@ type Container struct {
 
 type ContainerQueryRely struct {
 	Containers []Container `json:"containers"`
+}
+
+type Image struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Tag     string `json:"tag"`
+	Created string `json:"created"`
+	Size    string `json:"size"`
+}
+
+type ImageQueryReply struct {
+	Images []Image `json:"images"`
+}
+
+type Docker struct {
+	Timestamp     time.Time
+	DockerVersion string
+	APIVersion    string
+	MinAPIVersion string
+	GitCommit     string
+	GoVersion     string
+	Os            string
+	Arch          string
 }
