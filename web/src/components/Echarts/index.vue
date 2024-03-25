@@ -7,69 +7,69 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { EChartsOption } from './echarts';
-import echarts from './echarts';
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { EChartsOption } from './echarts'
+import echarts from './echarts'
 
 interface Props {
-    option: EChartsOption;
-    width?: string;
-    height?: string;
+    option: EChartsOption
+    width?: string
+    height?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
     width: '100%',
     height: '100%',
-    option: () => ({}),
-});
+    option: () => ({})
+})
 
-const chartRef = ref<HTMLElement>();
-let chart: echarts.ECharts;
+const chartRef = ref<HTMLElement>()
+let chart: echarts.ECharts
 
 const options = computed(() => {
-    return props.option;
-});
+    return props.option
+})
 
 watch(
     () => options.value,
     (options) => {
-        console.log('>>>>>>><<<<<<<<', options);
+        console.log('>>>>>>><<<<<<<<', options)
         if (chart) {
-            chart.setOption(options, true);
+            chart.setOption(options, true)
         }
     },
     {
-        deep: true,
-    },
-);
+        deep: true
+    }
+)
 
 const resizeHandler = () => {
-    chart?.resize();
-};
+    chart?.resize()
+}
 
 const initChart = () => {
-    chart = echarts.init(chartRef.value as HTMLDivElement);
-    console.log('>>>>>', props);
-    chart?.setOption(options.value as EChartsOption, true);
-};
+    chart = echarts.init(chartRef.value as HTMLDivElement)
+    console.log('>>>>>', props)
+    chart?.setOption(options.value as EChartsOption, true)
+}
 
 onMounted(() => {
-    initChart();
-    window.addEventListener('resize', resizeHandler);
-});
+    initChart()
+    window.addEventListener('resize', resizeHandler)
+})
 onDeactivated(() => {
-    console.log('deactivated');
-    window.removeEventListener('resize', resizeHandler);
-});
+    console.log('deactivated')
+    window.removeEventListener('resize', resizeHandler)
+})
 onBeforeUnmount(() => {
-    console.log('before unmount');
-    window.removeEventListener('resize', resizeHandler);
-    chart?.dispose();
-});
+    console.log('before unmount')
+    window.removeEventListener('resize', resizeHandler)
+    chart?.dispose()
+})
 onActivated(() => {
-    console.log('activated');
-    window.addEventListener('resize', resizeHandler);
-});
+    console.log('activated')
+    window.addEventListener('resize', resizeHandler)
+})
 </script>
 
 <style scoped lang="scss">

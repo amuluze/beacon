@@ -1,10 +1,10 @@
-{
+module.exports = {
     "endOfLine": "lf",
     "printWidth": 120,
     "useTabs": false,
     "tabWidth": 4,
-    "semi": true,
+    "semi": false,
     "singleQuote": true,
-    "trailingComma": "all",
+    "trailingComma": "none",
     "bracketSpacing": true
 }

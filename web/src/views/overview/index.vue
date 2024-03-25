@@ -16,9 +16,9 @@
                     <p>启动时间： {{ HostInfo?.uptime }}</p>
                     <p>os：{{ HostInfo?.os }}</p>
                     <p>platform: {{ HostInfo?.platform }}</p>
-                    <p>platform version: {{HostInfo?.platform_version }}</p>
-                    <p>kernel version: {{HostInfo?.kernel_version }}</p>
-                    <p>kernel arch: {{HostInfo?.kernel_arch }}</p>
+                    <p>platform version: {{ HostInfo?.platform_version }}</p>
+                    <p>kernel version: {{ HostInfo?.kernel_version }}</p>
+                    <p>kernel arch: {{ HostInfo?.kernel_arch }}</p>
                 </el-card>
                 <el-card>
                     <h4>容器信息</h4>
@@ -26,9 +26,9 @@
                     <p>启动时间： {{ HostInfo?.uptime }}</p>
                     <p>os：{{ HostInfo?.os }}</p>
                     <p>platform: {{ HostInfo?.platform }}</p>
-                    <p>platform version: {{HostInfo?.platform_version }}</p>
-                    <p>kernel version: {{HostInfo?.kernel_version }}</p>
-                    <p>kernel arch: {{HostInfo?.kernel_arch }}</p>
+                    <p>platform version: {{ HostInfo?.platform_version }}</p>
+                    <p>kernel version: {{ HostInfo?.kernel_version }}</p>
+                    <p>kernel arch: {{ HostInfo?.kernel_arch }}</p>
                 </el-card>
             </el-col>
         </el-row>
@@ -36,26 +36,26 @@
 </template>
 
 <script setup lang="ts">
-import { queryHostInfo } from '@/api/host';
+import { queryHostInfo } from '@/api/host'
 
 onMounted(() => {
-    getHostInfo();
-});
+    getHostInfo()
+})
 
 type HostInfoType = {
-    hostname: string;
-    uptime: string;
-    os: string;
-    platform: string;
-    platform_version: string;
-    kernel_version: string;
-    kernel_arch: string;
-};
+    hostname: string
+    uptime: string
+    os: string
+    platform: string
+    platform_version: string
+    kernel_version: string
+    kernel_arch: string
+}
 
-const HostInfo = ref<HostInfoType>();
+const HostInfo = ref<HostInfoType>()
 
 const getHostInfo = async () => {
-    const { data } = await queryHostInfo();
+    const { data } = await queryHostInfo()
     HostInfo.value = {
         hostname: data.hostname,
         uptime: data.uptime,
@@ -63,9 +63,9 @@ const getHostInfo = async () => {
         platform: data.platform,
         platform_version: data.platform_version,
         kernel_version: data.kernel_version,
-        kernel_arch: data.kernel_arch,
-    };
-};
+        kernel_arch: data.kernel_arch
+    }
+}
 </script>
 
 <style scoped lang="scss">

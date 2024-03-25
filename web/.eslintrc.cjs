@@ -1,4 +1,4 @@
-{
+module.exports = {
     "env": {
         "browser": true,
         "node": true,
@@ -17,9 +17,9 @@
         "eslint:recommended",
         "plugin:vue/vue3-recommended",
         "plugin:@typescript-eslint/recommended",
-        "plugin:prettier/recommended",
         "eslint-config-prettier",
-        "./.eslintrc-auto-import.json"
+        "./.eslintrc-auto-import.json",
+        "plugin:prettier/recommended",
     ],
     "plugins": ["vue", "@typescript-eslint", "prettier"],
     "rules": {

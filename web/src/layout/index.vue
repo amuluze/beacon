@@ -17,16 +17,16 @@
 </template>
 
 <script setup lang="ts">
-import Navbar from '@/layout/navbar/index.vue';
-import Sidebar from '@/layout/sidebar/index.vue';
-import Content from '@/layout/content/index.vue';
+import Navbar from '@/layout/navbar/index.vue'
+import Sidebar from '@/layout/sidebar/index.vue'
+import Content from '@/layout/content/index.vue'
 </script>
 
 <style scoped lang="scss">
 @include b(layout-container) {
     height: 100%;
     width: 100%;
-    background-color: #F4F4F4;
+    background-color: #f4f4f4;
     overflow: hidden;
 
     .el-container {
@@ -38,7 +38,7 @@ import Content from '@/layout/content/index.vue';
 @include b(layout-sidebar) {
     //width: 210px;
     height: 100%;
-    background-color: #E9EFFD;
+    background-color: #e9effd;
 }
 
 @include b(layout-content) {

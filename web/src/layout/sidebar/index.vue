@@ -23,13 +23,13 @@
     </el-aside>
 </template>
 <script setup lang="ts">
-import useStore from '@/store';
-import { dynamicRoutes } from '@/router/dynamic.ts';
-import Menuitem from '@/layout/sidebar/Menuitem.vue';
+import useStore from '@/store'
+import { dynamicRoutes } from '@/router/dynamic.ts'
+import Menuitem from '@/layout/sidebar/Menuitem.vue'
 
-const currentRoute = useRoute();
+const currentRoute = useRoute()
 
-const store = useStore();
+const store = useStore()
 </script>
 
 <style scoped lang="scss">
@@ -48,7 +48,7 @@ const store = useStore();
     @include e(text) {
         font-size: 20px;
         font-weight: bold;
-        color: #105EEB;
+        color: #105eeb;
         white-space: nowrap;
     }
 }
@@ -64,7 +64,7 @@ const store = useStore();
     .el-menu {
         width: 100% !important;
         height: 100%;
-        background-color: #E9EFFD !important;
+        background-color: #e9effd !important;
         border: none;
     }
 }

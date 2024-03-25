@@ -3,7 +3,7 @@
  * @Date       : 2024/3/10 17:42
  * @Description:
  */
-import { EChartsOption } from '@/components/Echarts/echarts.ts';
+import { EChartsOption } from '@/components/Echarts/echarts.ts'
 
 export const cpuOptions: EChartsOption = {
     // title: {
@@ -14,33 +14,33 @@ export const cpuOptions: EChartsOption = {
         axisPointer: {
             type: 'cross',
             label: {
-                backgroundColor: '#6a7985',
-            },
-        },
+                backgroundColor: '#6a7985'
+            }
+        }
     },
     legend: {
         data: [{ name: 'CPU 使用率' }],
-        left: 'right',
+        left: 'right'
     },
     grid: {
         left: '3%',
         right: '4%',
         bottom: '3%',
-        containLabel: true,
+        containLabel: true
     },
     xAxis: {
         type: 'category',
         boundaryGap: false,
-        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     yAxis: [
         {
             type: 'value',
             axisLabel: {
                 show: true,
-                formatter: '{value} %',
-            },
-        },
+                formatter: '{value} %'
+            }
+        }
     ],
     series: [
         {
@@ -49,12 +49,12 @@ export const cpuOptions: EChartsOption = {
             stack: 'Total',
             areaStyle: {},
             emphasis: {
-                focus: 'series',
+                focus: 'series'
             },
-            data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        },
-    ],
-};
+            data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        }
+    ]
+}
 
 export const memOptions: EChartsOption = {
     tooltip: {
@@ -62,33 +62,33 @@ export const memOptions: EChartsOption = {
         axisPointer: {
             type: 'cross',
             label: {
-                backgroundColor: '#6a7985',
-            },
-        },
+                backgroundColor: '#6a7985'
+            }
+        }
     },
     legend: {
         data: ['内存使用率'],
-        left: 'right',
+        left: 'right'
     },
     grid: {
         left: '3%',
         right: '4%',
         bottom: '3%',
-        containLabel: true,
+        containLabel: true
     },
     xAxis: {
         type: 'category',
         boundaryGap: false,
-        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     yAxis: [
         {
             type: 'value',
             axisLabel: {
                 show: true,
-                formatter: '{value} %',
-            },
-        },
+                formatter: '{value} %'
+            }
+        }
     ],
     series: [
         {
@@ -97,12 +97,12 @@ export const memOptions: EChartsOption = {
             stack: 'Total',
             areaStyle: {},
             emphasis: {
-                focus: 'series',
+                focus: 'series'
             },
             data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        },
-    ],
-};
+        }
+    ]
+}
 
 export const diskOptions: EChartsOption = {
     // title: {
@@ -113,24 +113,24 @@ export const diskOptions: EChartsOption = {
         axisPointer: {
             type: 'cross',
             label: {
-                backgroundColor: '#6a7985',
-            },
-        },
+                backgroundColor: '#6a7985'
+            }
+        }
     },
     legend: {
         data: ['磁盘'],
-        left: 'right',
+        left: 'right'
     },
     grid: {
         left: '3%',
         right: '4%',
         bottom: '3%',
-        containLabel: true,
+        containLabel: true
     },
     xAxis: {
         type: 'category',
         boundaryGap: false,
-        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     yAxis: [
         {
@@ -138,16 +138,16 @@ export const diskOptions: EChartsOption = {
             axisLabel: {
                 show: true,
                 formatter: function yAxisLabelFormatter(value: number): string {
-                    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-                    let unitIndex = 0;
+                    const units = ['B', 'KB', 'MB', 'GB', 'TB']
+                    let unitIndex = 0
                     while (value >= 1024 && unitIndex < units.length - 1) {
-                        value /= 1024;
-                        unitIndex++;
+                        value /= 1024
+                        unitIndex++
                     }
-                    return value.toFixed(2) + ' ' + units[unitIndex];
-                },
-            },
-        },
+                    return value.toFixed(2) + ' ' + units[unitIndex]
+                }
+            }
+        }
     ],
     series: [
         {
@@ -156,9 +156,9 @@ export const diskOptions: EChartsOption = {
             stack: 'Total',
             areaStyle: {},
             emphasis: {
-                focus: 'series',
+                focus: 'series'
             },
-            data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         },
         {
             name: 'Write',
@@ -166,12 +166,12 @@ export const diskOptions: EChartsOption = {
             stack: 'Total',
             areaStyle: {},
             emphasis: {
-                focus: 'series',
+                focus: 'series'
             },
-            data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        },
-    ],
-};
+            data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        }
+    ]
+}
 
 export const netOptions: EChartsOption = {
     // title: {
@@ -182,24 +182,24 @@ export const netOptions: EChartsOption = {
         axisPointer: {
             type: 'cross',
             label: {
-                backgroundColor: '#6a7985',
-            },
-        },
+                backgroundColor: '#6a7985'
+            }
+        }
     },
     legend: {
         data: ['Receive', 'Send'],
-        left: 'right',
+        left: 'right'
     },
     grid: {
         left: '3%',
         right: '4%',
         bottom: '3%',
-        containLabel: true,
+        containLabel: true
     },
     xAxis: {
         type: 'category',
         boundaryGap: false,
-        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     yAxis: [
         {
@@ -207,16 +207,16 @@ export const netOptions: EChartsOption = {
             axisLabel: {
                 show: true,
                 formatter: function yAxisLabelFormatter(value: number): string {
-                    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-                    let unitIndex = 0;
+                    const units = ['B', 'KB', 'MB', 'GB', 'TB']
+                    let unitIndex = 0
                     while (value >= 1024 && unitIndex < units.length - 1) {
-                        value /= 1024;
-                        unitIndex++;
+                        value /= 1024
+                        unitIndex++
                     }
-                    return value.toFixed(2) + ' ' + units[unitIndex];
-                },
-            },
-        },
+                    return value.toFixed(2) + ' ' + units[unitIndex]
+                }
+            }
+        }
     ],
     series: [
         {
@@ -225,9 +225,9 @@ export const netOptions: EChartsOption = {
             stack: 'Total',
             areaStyle: {},
             emphasis: {
-                focus: 'series',
+                focus: 'series'
             },
-            data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         },
         {
             name: 'Send',
@@ -235,9 +235,9 @@ export const netOptions: EChartsOption = {
             stack: 'Total',
             areaStyle: {},
             emphasis: {
-                focus: 'series',
+                focus: 'series'
             },
-            data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        },
-    ],
-};
+            data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        }
+    ]
+}

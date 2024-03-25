@@ -14,18 +14,18 @@
     </div>
 </template>
 <script setup lang="ts">
-import useStore from '@/store';
-import { RouteRecordRaw } from 'vue-router';
+import useStore from '@/store'
+import { RouteRecordRaw } from 'vue-router'
 
-const store = useStore();
-const hideSidebar = computed(() => store.app.isCollapse);
+const store = useStore()
+const hideSidebar = computed(() => store.app.isCollapse)
 
-const router = useRouter();
+const router = useRouter()
 defineProps<{
-    item: RouteRecordRaw;
-}>();
+    item: RouteRecordRaw
+}>()
 function handleClickMenu(item: RouteRecordRaw) {
-    router.push(item.path);
+    router.push(item.path)
 }
 </script>
 

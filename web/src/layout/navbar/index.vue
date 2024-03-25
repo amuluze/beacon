@@ -5,9 +5,8 @@
     </div>
 </template>
 <script setup lang="ts">
-import Avatar from '@/layout/navbar/Avatar.vue';
-import CollapseIcon from '@/layout/navbar/CollapseIcon.vue';
-
+import Avatar from '@/layout/navbar/Avatar.vue'
+import CollapseIcon from '@/layout/navbar/CollapseIcon.vue'
 </script>
 
 <style scoped lang="scss">

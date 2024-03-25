@@ -4,18 +4,18 @@
  * @Description:
  */
 
-import { AppState } from '@/interface/store';
-import { defineStore } from 'pinia';
+import { AppState } from '@/interface/store'
+import { defineStore } from 'pinia'
 
 export const useAppStore = defineStore('app', {
     state: (): AppState => ({
-        isCollapse: false,
+        isCollapse: false
     }),
     getters: {},
     actions: {
         setCollapse(collapse: boolean) {
-            this.isCollapse = collapse;
-        },
+            this.isCollapse = collapse
+        }
     },
-    persist: true,
-});
+    persist: true
+})

@@ -47,7 +47,7 @@
                     <echarts :option="netOption">
                         <div class="am-host-container__image-title">流量曲线图</div>
                         <div class="am-host-container__image-description">
-                            {{netInfo.ethernet}} 接收：{{ netInfo.read }} 发送：{{ netInfo.write }}
+                            {{ netInfo.ethernet }} 接收：{{ netInfo.read }} 发送：{{ netInfo.write }}
                         </div>
                     </echarts>
                 </el-card>
@@ -63,256 +63,249 @@ import {
     queryNetworkUsage,
     queryCPUInfo,
     queryMemInfo,
-    queryDiskInfo,
-} from '@/api/host';
-import {
-    CPUTrendingArgs,
-    DiskTrendingArgs,
-    MemTrendingArgs,
-    NetTrendingArgs,
-    DiskIO,
-    NetIO,
-} from '@/interface/host.ts';
-import { EChartsOption } from '@/components/Echarts/echarts.ts';
-import { cpuOptions, diskOptions, memOptions, netOptions } from '@/components/Echarts/line.ts';
-import { set } from 'lodash-es';
-import { dayjs } from 'element-plus';
-import { convertBytesToReadable } from '@/utils/convert.ts';
+    queryDiskInfo
+} from '@/api/host'
+import { CPUTrendingArgs, DiskTrendingArgs, MemTrendingArgs, NetTrendingArgs, DiskIO, NetIO } from '@/interface/host.ts'
+import { EChartsOption } from '@/components/Echarts/echarts.ts'
+import { cpuOptions, diskOptions, memOptions, netOptions } from '@/components/Echarts/line.ts'
+import { set } from 'lodash-es'
+import { dayjs } from 'element-plus'
+import { convertBytesToReadable } from '@/utils/convert.ts'
 
 // 时间密度下拉框
-const value = ref(600);
+const value = ref(600)
 const options = [
     {
         value: 600,
-        label: '10分钟',
+        label: '10分钟'
     },
     {
         value: 1800,
-        label: '30分钟',
+        label: '30分钟'
     },
     {
         value: 3600,
-        label: '1 小时',
+        label: '1 小时'
     },
     {
         value: 43200,
-        label: '12小时',
+        label: '12小时'
     },
     {
         value: 86400,
-        label: '24小时',
-    },
-];
+        label: '24小时'
+    }
+]
 
-const cpuPercent = ref('0.0%');
+const cpuPercent = ref('0.0%')
 const renderCPUPercent = async () => {
-    const { data } = await queryCPUInfo();
-    cpuPercent.value = data.percent.toFixed(2) + '%';
-};
+    const { data } = await queryCPUInfo()
+    cpuPercent.value = data.percent.toFixed(2) + '%'
+}
 
-const cpuOption = reactive<EChartsOption>(cpuOptions) as EChartsOption;
+const cpuOption = reactive<EChartsOption>(cpuOptions) as EChartsOption
 const renderCPU = async () => {
     const param: CPUTrendingArgs = {
         start_time: dayjs().unix() - value.value,
-        end_time: dayjs().unix(),
-    };
-    console.log(param);
-    const { data } = await queryCPUUsage(param);
-    const cpuData = data.data;
-    console.log('cpu response:', cpuData);
+        end_time: dayjs().unix()
+    }
+    console.log(param)
+    const { data } = await queryCPUUsage(param)
+    const cpuData = data.data
+    console.log('cpu response:', cpuData)
     // set(cpuOption, 'title', { text: 'CPU使用率' });
     set(
         cpuOption,
         'xAxis.data',
-        cpuData.map((item) => dayjs(item.timestamp * 1000).hour() + ':' + dayjs(item.timestamp * 1000).minute()),
-    );
-    set(cpuOption, 'legend.data', ['CPU使用率']);
+        cpuData.map((item) => dayjs(item.timestamp * 1000).hour() + ':' + dayjs(item.timestamp * 1000).minute())
+    )
+    set(cpuOption, 'legend.data', ['CPU使用率'])
     set(cpuOption, 'series', [
         {
             name: 'CPU使用率',
             data: cpuData.map((item) => item.value),
             type: 'line',
             smooth: true,
-            showSymbol: false,
-        },
-    ]);
-    console.log('cpu: ', cpuOption);
-};
+            showSymbol: false
+        }
+    ])
+    console.log('cpu: ', cpuOption)
+}
 
 const memInfo = ref({
     percent: '0%',
     total: '0',
-    used: '0',
-});
+    used: '0'
+})
 
 const renderMemInfo = async () => {
-    const { data } = await queryMemInfo();
-    memInfo.value.percent = data.percent.toFixed(2) + '%';
-    memInfo.value.total = convertBytesToReadable(data.total);
-    memInfo.value.used = convertBytesToReadable(data.used);
-};
+    const { data } = await queryMemInfo()
+    memInfo.value.percent = data.percent.toFixed(2) + '%'
+    memInfo.value.total = convertBytesToReadable(data.total)
+    memInfo.value.used = convertBytesToReadable(data.used)
+}
 
-const memOption = reactive<EChartsOption>(memOptions) as EChartsOption;
+const memOption = reactive<EChartsOption>(memOptions) as EChartsOption
 const renderMem = async () => {
     const param: MemTrendingArgs = {
         start_time: dayjs().unix() - value.value,
-        end_time: dayjs().unix(),
-    };
-    console.log(param);
-    const { data } = await queryMemUsage(param);
-    const memData = data.data;
-    console.log('mem response: ', memData);
+        end_time: dayjs().unix()
+    }
+    console.log(param)
+    const { data } = await queryMemUsage(param)
+    const memData = data.data
+    console.log('mem response: ', memData)
     // set(memOption, 'title', { text: '内存使用率' });
     set(
         memOption,
         'xAxis.data',
-        memData.map((item) => dayjs(item.timestamp * 1000).hour() + ':' + dayjs(item.timestamp * 1000).minute()),
-    );
-    set(memOption, 'legend.data', ['内存使用率']);
+        memData.map((item) => dayjs(item.timestamp * 1000).hour() + ':' + dayjs(item.timestamp * 1000).minute())
+    )
+    set(memOption, 'legend.data', ['内存使用率'])
     set(memOption, 'series', [
         {
             name: '内存使用率',
             data: memData.map((item) => item.value),
             type: 'line',
             smooth: true,
-            showSymbol: false,
-        },
-    ]);
-    console.log('mem: ', memOption);
-};
+            showSymbol: false
+        }
+    ])
+    console.log('mem: ', memOption)
+}
 
 const diskInfo = ref<
     {
-        device: string;
-        total: string;
-        used: string;
-        percent: string;
+        device: string
+        total: string
+        used: string
+        percent: string
     }[]
->([]);
+>([])
 
 const renderDiskInfo = async () => {
-    const { data } = await queryDiskInfo();
-    console.log(data.info);
-    diskInfo.value = [];
+    const { data } = await queryDiskInfo()
+    console.log(data.info)
+    diskInfo.value = []
     data.info.map((item) => {
         diskInfo.value.push({
             device: item.device,
             total: convertBytesToReadable(item.total),
             used: convertBytesToReadable(item.used),
-            percent: item.percent.toFixed(2) + '%',
-        });
-    });
-};
+            percent: item.percent.toFixed(2) + '%'
+        })
+    })
+}
 
-const diskOption = reactive<EChartsOption>(diskOptions) as EChartsOption;
+const diskOption = reactive<EChartsOption>(diskOptions) as EChartsOption
 const renderDisk = async () => {
     const param: DiskTrendingArgs = {
         start_time: dayjs().unix() - value.value,
-        end_time: dayjs().unix(),
-    };
-    console.log(param);
-    const { data } = await queryDiskUsage(param);
-    const diskData = data;
-    console.log('********<<<<>>>>>>*****', diskData, diskData.data, diskData.device);
-    console.log('disk response: ', diskData.device, diskData.data);
+        end_time: dayjs().unix()
+    }
+    console.log(param)
+    const { data } = await queryDiskUsage(param)
+    const diskData = data
+    console.log('********<<<<>>>>>>*****', diskData, diskData.data, diskData.device)
+    console.log('disk response: ', diskData.device, diskData.data)
     // set(diskOption, 'title', { text: '磁盘使用率' });
     set(
         diskOption,
         'xAxis.data',
         diskData.data.map(
-            (item: DiskIO) => dayjs(item.timestamp * 1000).hour() + ':' + dayjs(item.timestamp * 1000).minute(),
-        ),
-    );
-    set(diskOption, 'legend.data', ['Read', 'Write']);
+            (item: DiskIO) => dayjs(item.timestamp * 1000).hour() + ':' + dayjs(item.timestamp * 1000).minute()
+        )
+    )
+    set(diskOption, 'legend.data', ['Read', 'Write'])
     set(diskOption, 'series', [
         {
             name: 'Read',
             data: diskData.data.map((item: DiskIO) => item.io_read),
             type: 'line',
             smooth: true,
-            showSymbol: false,
+            showSymbol: false
         },
         {
             name: 'Write',
             data: diskData.data.map((item: DiskIO) => item.io_write),
             type: 'line',
             smooth: true,
-            showSymbol: false,
-        },
-    ]);
-    console.log('disk options: ', diskOption);
-};
+            showSymbol: false
+        }
+    ])
+    console.log('disk options: ', diskOption)
+}
 
 const netInfo = ref({
     ethernet: '',
     read: '',
-    write: '',
-});
+    write: ''
+})
 
-const netOption = reactive<EChartsOption>(netOptions) as EChartsOption;
+const netOption = reactive<EChartsOption>(netOptions) as EChartsOption
 const renderNet = async () => {
     const param: NetTrendingArgs = {
         start_time: dayjs().unix() - value.value,
-        end_time: dayjs().unix(),
-    };
-    console.log(param);
-    const { data } = await queryNetworkUsage(param);
-    const netData = data;
-    netInfo.value.ethernet = netData.ethernet;
-    netInfo.value.read = convertBytesToReadable(netData.data[netData.data.length-1].bytes_recv)
-    netInfo.value.write = convertBytesToReadable(netData.data[netData.data.length-1].bytes_sent)
-    console.log('net response: ', netData.ethernet, netData.data);
+        end_time: dayjs().unix()
+    }
+    console.log(param)
+    const { data } = await queryNetworkUsage(param)
+    const netData = data
+    netInfo.value.ethernet = netData.ethernet
+    netInfo.value.read = convertBytesToReadable(netData.data[netData.data.length - 1].bytes_recv)
+    netInfo.value.write = convertBytesToReadable(netData.data[netData.data.length - 1].bytes_sent)
+    console.log('net response: ', netData.ethernet, netData.data)
     // set(netOption, 'title', { text: '流量曲线图' });
     set(
         netOption,
         'xAxis.data',
         netData.data.map(
-            (item: NetIO) => dayjs(item.timestamp * 1000).hour() + ':' + dayjs(item.timestamp * 1000).minute(),
-        ),
-    );
-    set(netOption, 'legend.data', ['Receive', 'Send']);
+            (item: NetIO) => dayjs(item.timestamp * 1000).hour() + ':' + dayjs(item.timestamp * 1000).minute()
+        )
+    )
+    set(netOption, 'legend.data', ['Receive', 'Send'])
     set(netOption, 'series', [
         {
             name: 'Receive',
             data: netData.data.map((item: NetIO) => item.bytes_recv),
             type: 'line',
             smooth: true,
-            showSymbol: false,
+            showSymbol: false
         },
         {
             name: 'Send',
             data: netData.data.map((item: NetIO) => item.bytes_sent),
             type: 'line',
             smooth: true,
-            showSymbol: false,
-        },
-    ]);
-    console.log('net options: ', netOption);
-};
+            showSymbol: false
+        }
+    ])
+    console.log('net options: ', netOption)
+}
 
 onMounted(() => {
-    console.log('mounted');
-    renderCPUPercent();
-    renderCPU();
-    renderMemInfo();
-    renderMem();
-    renderDiskInfo();
-    renderDisk();
-    renderNet();
-});
+    console.log('mounted')
+    renderCPUPercent()
+    renderCPU()
+    renderMemInfo()
+    renderMem()
+    renderDiskInfo()
+    renderDisk()
+    renderNet()
+})
 
 watch(
     () => value.value,
     () => {
-        renderCPUPercent();
-        renderCPU();
-        renderMemInfo();
-        renderMem();
-        renderDiskInfo();
-        renderDisk();
-        renderNet();
-    },
-);
+        renderCPUPercent()
+        renderCPU()
+        renderMemInfo()
+        renderMem()
+        renderDiskInfo()
+        renderDisk()
+        renderNet()
+    }
+)
 </script>
 
 <style scoped lang="scss">

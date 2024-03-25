@@ -11,10 +11,10 @@
     </el-dropdown>
 </template>
 <script setup lang="ts">
-import {warning} from "@/components/Message/message.ts";
+import { warning } from '@/components/Message/message.ts'
 
 const doLogout = () => {
-    warning("该功能暂未实现")
+    warning('该功能暂未实现')
     // 1. 退出登录
     // logout();
     // 2.清除缓存
@@ -23,11 +23,10 @@ const doLogout = () => {
     // store.app.isCollapse = false;
     // 3.重定向到登录页
     // router.replace('/login');
-};
+}
 </script>
 
 <style scoped lang="scss">
-
 .el-dropdown {
     :deep(.el-avatar:hover) {
         border: none;

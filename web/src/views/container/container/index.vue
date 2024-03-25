@@ -65,31 +65,31 @@
 
 <script setup lang="ts">
 // 表格
-import { queryContainers } from '@/api/container';
-import { convertBytesToReadable } from '@/utils/convert';
-import { Container } from '@/interface/container.ts';
+import { queryContainers } from '@/api/container'
+import { convertBytesToReadable } from '@/utils/convert'
+import { Container } from '@/interface/container.ts'
 
-const loading = ref(true);
+const loading = ref(true)
 type tableDataType = {
-    id: string;
-    name: string;
-    state: string;
-    image: string;
-    ip: string;
-    uptime: string;
-    cpu_percent: string;
-    memory_percent: string;
-    memory_usage: string;
-    memory_limit: string;
-};
-const tableData = ref<tableDataType[]>([]);
+    id: string
+    name: string
+    state: string
+    image: string
+    ip: string
+    uptime: string
+    cpu_percent: string
+    memory_percent: string
+    memory_usage: string
+    memory_limit: string
+}
+const tableData = ref<tableDataType[]>([])
 onMounted(() => {
-    getData();
-});
+    getData()
+})
 const getData = async () => {
-    loading.value = true;
-    const { data } = await queryContainers();
-    console.log('res', data.containers);
+    loading.value = true
+    const { data } = await queryContainers()
+    console.log('res', data.containers)
     data.containers.map((item: Container) => {
         const tableDataItem: tableDataType = {
             id: item.id,
@@ -101,61 +101,61 @@ const getData = async () => {
             cpu_percent: item.cpu_percent ? item.cpu_percent.toFixed(2) + '%' : '0.00%',
             memory_percent: item.memory_percent ? item.memory_percent.toFixed(2) + '%' : '0.00%',
             memory_usage: convertBytesToReadable(item.memory_usage),
-            memory_limit: convertBytesToReadable(item.memory_limit),
-        };
-        tableData.value.push(tableDataItem);
-    });
-    loading.value = false;
-};
+            memory_limit: convertBytesToReadable(item.memory_limit)
+        }
+        tableData.value.push(tableDataItem)
+    })
+    loading.value = false
+}
 
-const dialogVisible = ref(false);
-const logData = ref('');
+const dialogVisible = ref(false)
+const logData = ref('')
 
-let ws: WebSocket;
+let ws: WebSocket
 
 const viewLog = (container_id: string) => {
-    dialogVisible.value = true;
-    console.log('container_id', container_id);
+    dialogVisible.value = true
+    console.log('container_id', container_id)
 
     // 建立 WebSocket 连接
-    ws = new WebSocket('wss://' + location.host + '/ws/' + container_id);
+    ws = new WebSocket('wss://' + location.host + '/ws/' + container_id)
     ws.onopen = () => {
-        ws.send(container_id);
-    };
+        ws.send(container_id)
+    }
 
     // 监听消息事件
     ws.addEventListener('message', (event) => {
-        logData.value = logData.value + '\n' + event.data;
-    });
+        logData.value = logData.value + '\n' + event.data
+    })
 
     // 监听错误事件
     ws.addEventListener('error', (error) => {
-        console.error(error);
-    });
+        console.error(error)
+    })
 
     // 监听连接关闭事件
     ws.addEventListener('close', () => {
-        console.log('WebSocket closed');
-    });
-};
+        console.log('WebSocket closed')
+    })
+}
 
 const handleClose = () => {
-    dialogVisible.value = false;
-    ws.close();
-};
+    dialogVisible.value = false
+    ws.close()
+}
 
 const stopLogView = () => {
-    ws.close();
-};
+    ws.close()
+}
 
 const downloadLog = () => {
-    console.log(`${logData.value}`);
-    const a = document.createElement('a');
-    a.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(logData.value)}`);
-    a.setAttribute('download', 'log.txt');
-    a.style.display = 'none';
-    a.click();
-};
+    console.log(`${logData.value}`)
+    const a = document.createElement('a')
+    a.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(logData.value)}`)
+    a.setAttribute('download', 'log.txt')
+    a.style.display = 'none'
+    a.click()
+}
 </script>
 
 <style scoped lang="scss"></style>

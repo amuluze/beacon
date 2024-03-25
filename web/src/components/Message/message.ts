@@ -2,9 +2,9 @@ export const message = (msg: string) => {
     ElMessage({
         showClose: true,
         dangerouslyUseHTMLString: true,
-        message: msg,
-    });
-};
+        message: msg
+    })
+}
 
 /**
  * 成功提示
@@ -15,9 +15,9 @@ export const success = (msg: string) => {
         showClose: true,
         dangerouslyUseHTMLString: true,
         message: msg,
-        type: 'success',
-    });
-};
+        type: 'success'
+    })
+}
 
 /**
  * 消息提示
@@ -28,9 +28,9 @@ export const info = (msg: string) => {
         showClose: true,
         dangerouslyUseHTMLString: true,
         message: msg,
-        type: 'info',
-    });
-};
+        type: 'info'
+    })
+}
 
 /**
  * 警告提示
@@ -41,9 +41,9 @@ export const warning = (msg: string) => {
         showClose: true,
         dangerouslyUseHTMLString: true,
         message: msg,
-        type: 'warning',
-    });
-};
+        type: 'warning'
+    })
+}
 
 /**
  * 错误提示
@@ -54,9 +54,9 @@ export const error = (msg: string) => {
         showClose: true,
         dangerouslyUseHTMLString: true,
         message: msg,
-        type: 'error',
-    });
-};
+        type: 'error'
+    })
+}
 
 /**
  * confirm 提示框
@@ -71,8 +71,8 @@ export const confirm = (title: string, msg: string, ok: any, okText: string, can
     ElMessageBox.confirm(msg, title ? title : '提示', {
         confirmButtonText: okText ? okText : '确定',
         cancelButtonText: cText ? cText : '取消',
-        draggable: true,
+        draggable: true
     })
         .then(ok ? ok : () => {})
-        .catch(cancel ? cancel : () => {});
-};
+        .catch(cancel ? cancel : () => {})
+}

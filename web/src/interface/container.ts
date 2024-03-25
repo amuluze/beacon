@@ -4,18 +4,18 @@
  * @Description:
  */
 export interface Container {
-    id: string;
-    name: string;
-    image: string;
-    ip: string;
-    state: string;
-    uptime: string;
-    cpu_percent: number;
-    memory_percent: number;
-    memory_usage: number;
-    memory_limit: number;
+    id: string
+    name: string
+    image: string
+    ip: string
+    state: string
+    uptime: string
+    cpu_percent: number
+    memory_percent: number
+    memory_usage: number
+    memory_limit: number
 }
 
 export interface ContainerQueryResult {
-    containers: Container[];
+    containers: Container[]
 }

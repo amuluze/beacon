@@ -1,4 +1,4 @@
-import { RouteRecordRaw } from 'vue-router';
+import { RouteRecordRaw } from 'vue-router'
 
 export const dynamicRoutes: RouteRecordRaw[] = [
     {
@@ -7,7 +7,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/overview/index.vue'),
         meta: {
             title: '总览',
-            icon: 'homepage',
+            icon: 'homepage'
         }
     },
     {
@@ -16,7 +16,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         redirect: '/container/container',
         meta: {
             title: '容器管理',
-            icon: 'system',
+            icon: 'system'
         },
         children: [
             {
@@ -25,7 +25,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
                 component: () => import('@/views/container/container/index.vue'), //路由懒加载
                 meta: {
                     title: '容器',
-                    icon: 'system',
+                    icon: 'system'
                 }
             },
             {
@@ -34,7 +34,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
                 component: () => import('@/views/container/image/index.vue'), //路由懒加载
                 meta: {
                     title: '镜像',
-                    icon: 'system',
+                    icon: 'system'
                 }
             }
         ]
@@ -46,7 +46,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         redirect: '/host/monitor',
         meta: {
             title: '主机管理',
-            icon: 'system',
+            icon: 'system'
         },
         children: [
             {
@@ -55,9 +55,9 @@ export const dynamicRoutes: RouteRecordRaw[] = [
                 component: () => import('@/views/host/monitor/index.vue'), //路由懒加载
                 meta: {
                     title: '监控',
-                    icon: 'system',
+                    icon: 'system'
                 }
             }
         ]
-    },
-];
+    }
+]

@@ -6,10 +6,10 @@
     </div>
 </template>
 <script setup lang="ts">
-import useStore from "@/store";
+import useStore from '@/store'
 
-const store = useStore();
-const changeCollapse = () => store.app.setCollapse(!store.app.isCollapse);
+const store = useStore()
+const changeCollapse = () => store.app.setCollapse(!store.app.isCollapse)
 </script>
 <style scoped lang="scss">
 .collapse-ico {

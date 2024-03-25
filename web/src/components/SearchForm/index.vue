@@ -65,21 +65,21 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ComputedRef } from 'vue';
-import { FormInstance } from 'element-plus';
+import { ComputedRef } from 'vue'
+import { FormInstance } from 'element-plus'
 
 // 接收父组件传值
 
 interface Props {
-    items: Form.FormItem[]; // 需要渲染的表达组件
-    model?: Record<string, any>;
-    options?: Form.ButtonOptions;
+    items: Form.FormItem[] // 需要渲染的表达组件
+    model?: Record<string, any>
+    options?: Form.ButtonOptions
 }
 
 // 表单数据对象
-const searchFormRef = ref<FormInstance>();
-const searchForm = ref<Record<string, any>>({});
-const props = defineProps<Props>();
+const searchFormRef = ref<FormInstance>()
+const searchForm = ref<Record<string, any>>({})
+const props = defineProps<Props>()
 // 根据 items 初始化 formModel
 // 如果formModel有传值就用传递的model数据模型，否则就给上面声明的formModel设置相应的(key,value) [item.prop]， item.value是表单的默认值（选填）
 watch(
@@ -87,49 +87,49 @@ watch(
     () => {
         props.items.map((item: Form.FormItem) => {
             // 通过 props.model 设置默认值
-            props.model ? (searchForm.value = props.model) : (searchForm.value[item.prop] = item.value);
-        });
+            props.model ? (searchForm.value = props.model) : (searchForm.value[item.prop] = item.value)
+        })
     },
-    { immediate: true },
-);
+    { immediate: true }
+)
 const _options: ComputedRef<Form.ButtonOptions> = computed(() => {
     const option = {
         labelPosition: 'right',
         disabled: false,
         submitButtonText: '搜索',
-        resetButtonText: '重置',
-    };
-    return Object.assign(option, props?.options);
-});
+        resetButtonText: '重置'
+    }
+    return Object.assign(option, props?.options)
+})
 
 interface EmitEvent {
-    (e: 'submit', params: any): void;
-    (e: 'reset'): void;
+    (e: 'submit', params: any): void
+    (e: 'reset'): void
 }
-const emit = defineEmits<EmitEvent>();
+const emit = defineEmits<EmitEvent>()
 defineExpose({
-    searchFormRef,
-});
+    searchFormRef
+})
 
 // 提交
 const onSubmit = (formEl: FormInstance | undefined) => {
-    if (!formEl) return;
+    if (!formEl) return
     formEl.validate((valid) => {
         if (valid) {
-            emit('submit', searchForm.value);
+            emit('submit', searchForm.value)
         } else {
-            return false;
+            return false
         }
-    });
-};
+    })
+}
 
 // 重置
 const resetForm = (formEl: FormInstance | undefined) => {
-    if (!formEl) return;
-    formEl.resetFields();
-};
+    if (!formEl) return
+    formEl.resetFields()
+}
 
-const handleKeyUp = () => {};
+const handleKeyUp = () => {}
 </script>
 
 <style scoped></style>

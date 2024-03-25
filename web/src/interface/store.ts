@@ -1,8 +1,8 @@
 export interface UserState {
-    token: string;
-    refresh: string;
+    token: string
+    refresh: string
 }
 
 export interface AppState {
-    isCollapse: boolean;
+    isCollapse: boolean
 }

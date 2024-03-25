@@ -1,2 +1,15 @@
 # eslint 忽略检查 (根据项目需要自行添加)
+dist
 node_modules
+public
+.husky
+.vscode
+.idea
+*.sh
+*.md
+
+src/assets
+
+.eslintrc.cjs
+.prettierrc.cjs
+.stylelintrc.cjs

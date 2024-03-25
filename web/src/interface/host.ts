@@ -5,86 +5,86 @@
  */
 
 export interface HostInfo {
-    timestamp: number;
-    uptime: string;
-    hostname: string;
-    os: string;
-    platform: string;
-    platform_version: string;
-    kernel_version: string;
-    kernel_arch: string;
+    timestamp: number
+    uptime: string
+    hostname: string
+    os: string
+    platform: string
+    platform_version: string
+    kernel_version: string
+    kernel_arch: string
 }
 
 export interface Usage {
-    timestamp: number;
-    value: number;
+    timestamp: number
+    value: number
 }
 
 export interface DiskIO {
-    timestamp: number;
-    io_read: number;
-    io_write: number;
+    timestamp: number
+    io_read: number
+    io_write: number
 }
 
 export interface DiskUsage {
-    device: string;
-    data: DiskIO[];
+    device: string
+    data: DiskIO[]
 }
 
 export interface NetIO {
-    timestamp: number;
-    bytes_sent: number;
-    bytes_recv: number;
+    timestamp: number
+    bytes_sent: number
+    bytes_recv: number
 }
 
 export interface NetUsage {
-    ethernet: string;
-    data: NetIO[];
+    ethernet: string
+    data: NetIO[]
 }
 
 export interface CPUInfo {
-    percent: number;
+    percent: number
 }
 
 export interface MemInfo {
-    percent: number;
-    total: number;
-    used: number;
+    percent: number
+    total: number
+    used: number
 }
 export interface DiskInfo {
-    device: string;
-    percent: number;
-    total: number;
-    used: number;
+    device: string
+    percent: number
+    total: number
+    used: number
 }
 export interface DiskInfoResult {
-    info: DiskInfo[];
+    info: DiskInfo[]
 }
 
 export interface CPUTrendingArgs {
-    start_time: number;
-    end_time: number;
+    start_time: number
+    end_time: number
 }
 
 export interface CPUTrending {
-    data: Usage[];
+    data: Usage[]
 }
 
 export interface MemTrendingArgs {
-    start_time: number;
-    end_time: number;
+    start_time: number
+    end_time: number
 }
 
 export interface MemTrending {
-    data: Usage[];
+    data: Usage[]
 }
 
 export interface DiskTrendingArgs {
-    start_time: number;
-    end_time: number;
+    start_time: number
+    end_time: number
 }
 
 export interface NetTrendingArgs {
-    start_time: number;
-    end_time: number;
+    start_time: number
+    end_time: number
 }
