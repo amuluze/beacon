@@ -3,6 +3,11 @@ module github.com/amuluze/amprobe
 go 1.21.4
 
 require (
+	github.com/amuluze/amutool/database v0.0.0-20240324082810-4005041af57f
+	github.com/amuluze/amutool/docker v0.0.0-20240324082810-4005041af57f
+	github.com/amuluze/amutool/errors v0.0.0-20240324082810-4005041af57f
+	github.com/amuluze/amutool/logger v0.0.0-20240324082810-4005041af57f
+	github.com/amuluze/amutool/timex v0.0.0-20240324082810-4005041af57f
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/gofiber/contrib/websocket v1.3.0
@@ -45,10 +50,6 @@ require (
 
 require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
-	github.com/amuluze/amutool/database v0.0.0-20240321051030-e0b46cb7ed5d
-	github.com/amuluze/amutool/docker v0.0.0-20240321084600-c78bad35af82
-	github.com/amuluze/amutool/errors v0.0.0-20240321022450-7a4c02a0a828
-	github.com/amuluze/amutool/timex v0.0.0-20240321051030-e0b46cb7ed5d
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/distribution/reference v0.5.0 // indirect
