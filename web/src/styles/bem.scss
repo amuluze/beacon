@@ -13,8 +13,7 @@ $modifier-sel: '--' !default;
 }
 
 @mixin b($block) {
-    $B: $namespace + $block-sel + $block;
-    .#{$B} {
+    .#{ $namespace + $block-sel + $block } {
         // 差值语法 #{}
         @content; // 内容替换
     }
@@ -22,6 +21,7 @@ $modifier-sel: '--' !default;
 
 @mixin e($element) {
     $selector: &;
+
     @at-root {
         #{$selector + $element-sel + $element} {
             @content;
@@ -31,6 +31,7 @@ $modifier-sel: '--' !default;
 
 @mixin m($modifier) {
     $selector: &;
+
     @at-root {
         #{$selector + $modifier-sel + $modifier} {
             @content;

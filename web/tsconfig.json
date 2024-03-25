@@ -3,9 +3,12 @@
         "target": "ESNext",
         "useDefineForClassFields": true,
         "module": "ESNext",
-        "lib": ["ESNext", "DOM", "DOM.Iterable"],
+        "lib": [
+            "ESNext",
+            "DOM",
+            "DOM.Iterable"
+        ],
         "skipLibCheck": true,
-
         /* Bundler mode */
         "moduleResolution": "node",
         "allowImportingTsExtensions": true,
@@ -13,7 +16,6 @@
         "isolatedModules": true,
         "noEmit": true,
         "jsx": "preserve",
-
         /* Linting */
         "strict": true,
         "noUnusedLocals": true,
@@ -22,11 +24,28 @@
         "esModuleInterop": true, // 允许使用 import 引入使用 export = 导出的内容
         "allowJs": false, //允许使用js
         "baseUrl": ".", //查询的基础路径
-        "paths": { "@/*": ["src/*"], "#/*": ["src/types/*"] }, //路径映射,配合别名使用
-        // Volar支持，指定全局组件类型
-        "types": ["element-plus/global"]
+        "paths": {
+            "@/*": [
+                "src/*"
+            ],
+            "#/*": [
+                "src/types/*"
+            ]
+        }, //路径映射,配合别名使用
     },
-    "include": ["src/**/*.d.ts", "src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "types/**/*.d.ts"],
-    "exclude": ["node_modules"],
-    "references": [{ "path": "./tsconfig.node.json" }]
+    "include": [
+        "src/**/*.d.ts",
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "src/**/*.vue",
+        "types/**/*.d.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ],
+    "references": [
+        {
+            "path": "./tsconfig.node.json"
+        }
+    ]
 }

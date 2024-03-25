@@ -20,6 +20,10 @@ module.exports = {
     ],
     // 自定义规则
     rules: {
+        // 颜色值小写
+        'color-hex-case': 'lower',
+        // 缩进
+        'indentation': 4,
         //
         'property-no-unknown': null,
         // 允许 global 、export 、v-deep等伪类
