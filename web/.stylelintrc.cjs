@@ -18,6 +18,15 @@ module.exports = {
             customSyntax: 'postcss-scss'
         }
     ],
+    ignoreFiles: [
+        '**/*.js',
+        '**/*.jsx',
+        '**/*.tsx',
+        '**/*.ts',
+        '**/*.json',
+        '**/*.md',
+        '**/*.yaml',
+    ],
     // 自定义规则
     rules: {
         // 颜色值小写

@@ -3,11 +3,7 @@
         "target": "ESNext",
         "useDefineForClassFields": true,
         "module": "ESNext",
-        "lib": [
-            "ESNext",
-            "DOM",
-            "DOM.Iterable"
-        ],
+        "lib": ["ESNext", "DOM", "DOM.Iterable"],
         "skipLibCheck": true,
         /* Bundler mode */
         "moduleResolution": "node",
@@ -25,24 +21,12 @@
         "allowJs": false, //允许使用js
         "baseUrl": ".", //查询的基础路径
         "paths": {
-            "@/*": [
-                "src/*"
-            ],
-            "#/*": [
-                "src/types/*"
-            ]
-        }, //路径映射,配合别名使用
+            "@/*": ["src/*"],
+            "#/*": ["src/types/*"]
+        } //路径映射,配合别名使用
     },
-    "include": [
-        "src/**/*.d.ts",
-        "src/**/*.ts",
-        "src/**/*.tsx",
-        "src/**/*.vue",
-        "types/**/*.d.ts"
-    ],
-    "exclude": [
-        "node_modules"
-    ],
+    "include": ["src/**/*.d.ts", "src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "types/**/*.d.ts"],
+    "exclude": ["node_modules"],
     "references": [
         {
             "path": "./tsconfig.node.json"
