@@ -6,7 +6,7 @@ package repository
 
 import (
 	"context"
-	
+
 	"github.com/amuluze/amprobe/service/model"
 	"github.com/amuluze/amutool/database"
 	"github.com/google/wire"
@@ -38,7 +38,7 @@ func (a *ContainerRepo) ContainerList(ctx context.Context) (model.Containers, er
 
 func (a *ContainerRepo) ImageList(ctx context.Context) (model.Images, error) {
 	var images model.Images
-	if err := a.DB.Model(&model.Image{}).Group("name").Or("created_at desc").Find(&images).Error; err != nil {
+	if err := a.DB.Model(&model.Image{}).Group("name").Order("created_at desc").Find(&images).Error; err != nil {
 		return images, err
 	}
 	return images, nil

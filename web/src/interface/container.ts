@@ -19,3 +19,25 @@ export interface Container {
 export interface ContainerQueryResult {
     containers: Container[]
 }
+
+export interface Image {
+    id: string
+    name: string
+    tag: string
+    created: string
+    size: string
+}
+
+export interface ImageQueryResult {
+    images: Image[]
+}
+
+export interface DockerInfo {
+    docker_version: string
+    api_version: string
+    min_api_version: string
+    git_commit: string
+    go_version: string
+    os: string
+    arch: string
+}

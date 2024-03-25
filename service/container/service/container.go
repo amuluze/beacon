@@ -7,7 +7,7 @@ package service
 import (
 	"context"
 	"time"
-	
+
 	"github.com/amuluze/amprobe/service/container/repository"
 	"github.com/amuluze/amprobe/service/schema"
 	"github.com/amuluze/amutool/errors"
@@ -81,7 +81,7 @@ func (a *ContainerService) ImageList(ctx context.Context) (*schema.ImageQueryRep
 	var list []schema.Image
 	for _, item := range images {
 		list = append(list, schema.Image{
-			ID:      item.ID,
+			ID:      item.ImageID,
 			Name:    item.Name,
 			Tag:     item.Tag,
 			Created: item.Created,

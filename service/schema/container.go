@@ -37,11 +37,11 @@ type ImageQueryReply struct {
 
 type Docker struct {
 	Timestamp     time.Time
-	DockerVersion string
-	APIVersion    string
-	MinAPIVersion string
-	GitCommit     string
-	GoVersion     string
-	Os            string
-	Arch          string
+	DockerVersion string `json:"docker_version"`
+	APIVersion    string `json:"api_version"`
+	MinAPIVersion string `json:"min_api_version"`
+	GitCommit     string `json:"git_commit"`
+	GoVersion     string `json:"go_version"`
+	Os            string `json:"os"`
+	Arch          string `json:"arch"`
 }

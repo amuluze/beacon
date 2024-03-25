@@ -17,6 +17,8 @@ func NewModels() *Models {
 func (a *Models) GetAllModels() []interface{} {
 	return []interface{}{
 		new(Container),
+		new(Docker),
+		new(Image),
 		new(Host),
 		new(CPU),
 		new(Memory),

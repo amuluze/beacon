@@ -66,8 +66,8 @@
 <script setup lang="ts">
 // 表格
 import { queryContainers } from '@/api/container'
-import { convertBytesToReadable } from '@/utils/convert'
 import { Container } from '@/interface/container.ts'
+import { convertBytesToReadable } from '@/utils/convert'
 
 const loading = ref(true)
 type tableDataType = {

@@ -7,6 +7,7 @@ module.exports = {
         'stylelint-config-html/vue',
         'stylelint-config-recess-order'
     ],
+    customSyntax: 'postcss-html',
     // 指定不同文件对应的解析器
     overrides: [
         {

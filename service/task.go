@@ -225,7 +225,7 @@ func (a *TimedTask) image(timestamp time.Time) {
 	var list model.Images
 	for _, im := range images {
 		list = append(list, model.Image{
-			ID:      im.ID,
+			ImageID: im.ID[7:19],
 			Name:    im.Name,
 			Tag:     im.Tag,
 			Created: im.Created,
@@ -233,20 +233,6 @@ func (a *TimedTask) image(timestamp time.Time) {
 		})
 	}
 	a.db.Model(&model.Image{}).Create(&list)
-	dockerVersion, err := a.manager.Version(ctx)
-	if err != nil {
-		slog.Error("failed to get docker version", "error", err)
-	}
-	a.db.Model(&model.Docker{}).Create(&model.Docker{
-		Timestamp:     timestamp,
-		DockerVersion: dockerVersion.DockerVersion,
-		APIVersion:    dockerVersion.APIVersion,
-		MinAPIVersion: dockerVersion.MinAPIVersion,
-		GitCommit:     dockerVersion.GitCommit,
-		GoVersion:     dockerVersion.GoVersion,
-		Os:            dockerVersion.OS,
-		Arch:          dockerVersion.Arch,
-	})
 }
 
 func (a *TimedTask) clearOldRecord() {

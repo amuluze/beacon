@@ -6,7 +6,7 @@ package model
 
 import (
 	"time"
-	
+
 	"gorm.io/gorm"
 )
 
@@ -38,6 +38,7 @@ func (d *Container) AfterCreate(tx *gorm.DB) error {
 }
 
 type Docker struct {
+	gorm.Model
 	Timestamp     time.Time
 	DockerVersion string
 	APIVersion    string
@@ -60,7 +61,8 @@ func (d *Docker) AfterCreate(tx *gorm.DB) error {
 type Images []Image
 
 type Image struct {
-	ID      string
+	gorm.Model
+	ImageID string
 	Name    string
 	Tag     string
 	Created string
