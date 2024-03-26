@@ -44,7 +44,15 @@ func (a *ContainerAPI) ContainerList(ctx *fiber.Ctx) error {
 
 func (a *ContainerAPI) ImageList(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
-	images, err := a.ContainerService.ImageList(c)
+
+	var args schema.ImageQueryArgs
+	if err := fiberx.ParseQuery(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	images, err := a.ContainerService.ImageList(c, &args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
 	}

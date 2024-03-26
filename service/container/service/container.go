@@ -18,7 +18,7 @@ var ContainerServiceSet = wire.NewSet(NewContainerService, wire.Bind(new(IContai
 
 type IContainerService interface {
 	ContainerList(ctx context.Context, args *schema.ContainerQueryArgs) (*schema.ContainerQueryRely, error)
-	ImageList(ctx context.Context) (*schema.ImageQueryReply, error)
+	ImageList(ctx context.Context, args *schema.ImageQueryArgs) (*schema.ImageQueryReply, error)
 	Version(ctx context.Context) (*schema.Docker, error)
 }
 
@@ -74,8 +74,8 @@ func (a *ContainerService) ContainerList(ctx context.Context, args *schema.Conta
 	return &schema.ContainerQueryRely{Data: list, Total: total, Page: args.Page, Size: args.Size}, nil
 }
 
-func (a *ContainerService) ImageList(ctx context.Context) (*schema.ImageQueryReply, error) {
-	images, err := a.ContainerRepo.ImageList(ctx)
+func (a *ContainerService) ImageList(ctx context.Context, args *schema.ImageQueryArgs) (*schema.ImageQueryReply, error) {
+	images, err := a.ContainerRepo.ImageList(ctx, args)
 	if err != nil {
 		return nil, errors.New400Error(err.Error())
 	}
@@ -89,7 +89,8 @@ func (a *ContainerService) ImageList(ctx context.Context) (*schema.ImageQueryRep
 			Size:    item.Size,
 		})
 	}
-	return &schema.ImageQueryReply{Images: list}, nil
+	total, _ := a.ContainerRepo.ImageCount(ctx)
+	return &schema.ImageQueryReply{Data: list, Total: total, Page: args.Page, Size: args.Size}, nil
 }
 
 func (a *ContainerService) Version(ctx context.Context) (*schema.Docker, error) {

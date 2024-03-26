@@ -1,12 +1,12 @@
 <template>
     <el-card shadow="never">
-        <el-table :data="data" border stripe ref="multipleTable" v-loading="loading">
+        <el-table :data="data" highlight-current-row border stripe v-loading="loading" style="width: 100%">
             <el-table-column prop="id" label="镜像 ID" align="center" fixed />
-            <el-table-column prop="name" label="镜像名称" align="center" min-width="100" show-overflow-tooltip fixed />
-            <el-table-column prop="tag" label="镜像 Tag" align="center" min-width="100" show-overflow-tooltip />
-            <el-table-column prop="created" label="创建时间" align="center" min-width="100" show-overflow-tooltip />
-            <el-table-column prop="size" label="镜像大小" align="center" min-width="100" show-overflow-tooltip />
-            <el-table-column label="操作" width="180" fixed="right" align="center">
+            <el-table-column prop="name" label="镜像名称" align="center" min-width="100" fixed />
+            <el-table-column prop="tag" label="镜像 Tag" align="center" width="100" />
+            <el-table-column prop="created" label="创建时间" align="center" width="100" />
+            <el-table-column prop="size" label="镜像大小" align="center" width="100" />
+            <el-table-column label="操作" width="160" fixed="right" align="center">
                 <template #default="scope">
                     <el-button type="primary" size="default" @click="deleteImage(scope.row.id)">
                         <i-ep-delete />删除
@@ -49,6 +49,9 @@ const deleteImage = (id: string) => {
 </script>
 
 <style scoped lang="scss">
+.el-card {
+    width: 100%;
+}
 @include b(pagination) {
     margin-top: 10px;
     display: flex;

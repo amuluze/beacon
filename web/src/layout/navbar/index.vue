@@ -15,6 +15,7 @@ import CollapseIcon from '@/layout/navbar/CollapseIcon.vue'
     align-items: center;
     justify-content: space-between;
     height: 48px;
+    width: 100%;
     background-color: #ffffff;
     box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
 

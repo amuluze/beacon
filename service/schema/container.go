@@ -39,8 +39,16 @@ type Image struct {
 	Size    string `json:"size"`
 }
 
+type ImageQueryArgs struct {
+	Page int `json:"page" validate:"required"`
+	Size int `json:"size" validate:"gte=0"`
+}
+
 type ImageQueryReply struct {
-	Images []Image `json:"images"`
+	Data  []Image `json:"data"`
+	Total int     `json:"total"`
+	Page  int     `json:"page"`
+	Size  int     `json:"size"`
 }
 
 type Docker struct {

@@ -18,7 +18,8 @@ var ContainerRepoSet = wire.NewSet(NewContainerRepo, wire.Bind(new(IContainerRep
 type IContainerRepo interface {
 	ContainerList(ctx context.Context, args *schema.ContainerQueryArgs) (model.Containers, error)
 	ContainerCount(ctx context.Context) (int, error)
-	ImageList(ctx context.Context) (model.Images, error)
+	ImageList(ctx context.Context, args *schema.ImageQueryArgs) (model.Images, error)
+	ImageCount(ctx context.Context) (int, error)
 	Version(ctx context.Context) (model.Docker, error)
 }
 
@@ -46,12 +47,20 @@ func (a *ContainerRepo) ContainerCount(ctx context.Context) (int, error) {
 	return int(total), nil
 }
 
-func (a *ContainerRepo) ImageList(ctx context.Context) (model.Images, error) {
+func (a *ContainerRepo) ImageList(ctx context.Context, args *schema.ImageQueryArgs) (model.Images, error) {
 	var images model.Images
-	if err := a.DB.Model(&model.Image{}).Group("name").Order("created_at desc").Find(&images).Error; err != nil {
+	if err := a.DB.Model(&model.Image{}).Group("name").Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&images).Error; err != nil {
 		return images, err
 	}
 	return images, nil
+}
+
+func (a *ContainerRepo) ImageCount(ctx context.Context) (int, error) {
+	var total int64
+	if err := a.DB.Model(&model.Images{}).Group("name").Order("created_at desc").Count(&total).Error; err != nil {
+		return int(total), err
+	}
+	return int(total), nil
 }
 
 func (a *ContainerRepo) Version(ctx context.Context) (model.Docker, error) {

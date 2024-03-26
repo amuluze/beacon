@@ -348,6 +348,7 @@ watch(
         font-size: 14px;
         font-weight: bold;
     }
+
     @include e(image-description) {
         font-size: 12px;
         color: #73767a;
