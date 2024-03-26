@@ -19,8 +19,16 @@ type Container struct {
 	MemoryLimit   float64 `json:"memory_limit"`
 }
 
+type ContainerQueryArgs struct {
+	Page int `json:"page" validate:"required"`
+	Size int `json:"size" validate:"gte=0"`
+}
+
 type ContainerQueryRely struct {
-	Containers []Container `json:"containers"`
+	Data  []Container `json:"data"`
+	Total int         `json:"total"`
+	Page  int         `json:"page"`
+	Size  int         `json:"size"`
 }
 
 type Image struct {

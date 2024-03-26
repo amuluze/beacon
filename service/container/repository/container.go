@@ -6,6 +6,7 @@ package repository
 
 import (
 	"context"
+	"github.com/amuluze/amprobe/service/schema"
 
 	"github.com/amuluze/amprobe/service/model"
 	"github.com/amuluze/amutool/database"
@@ -15,7 +16,8 @@ import (
 var ContainerRepoSet = wire.NewSet(NewContainerRepo, wire.Bind(new(IContainerRepo), new(*ContainerRepo)))
 
 type IContainerRepo interface {
-	ContainerList(ctx context.Context) (model.Containers, error)
+	ContainerList(ctx context.Context, args *schema.ContainerQueryArgs) (model.Containers, error)
+	ContainerCount(ctx context.Context) (int, error)
 	ImageList(ctx context.Context) (model.Images, error)
 	Version(ctx context.Context) (model.Docker, error)
 }
@@ -28,12 +30,20 @@ func NewContainerRepo(db *database.DB) *ContainerRepo {
 	return &ContainerRepo{DB: db}
 }
 
-func (a *ContainerRepo) ContainerList(ctx context.Context) (model.Containers, error) {
+func (a *ContainerRepo) ContainerList(ctx context.Context, args *schema.ContainerQueryArgs) (model.Containers, error) {
 	var containers model.Containers
-	if err := a.DB.Model(&model.Container{}).Group("name").Order("created_at desc").Find(&containers).Error; err != nil {
+	if err := a.DB.Model(&model.Container{}).Group("name").Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&containers).Error; err != nil {
 		return containers, err
 	}
 	return containers, nil
+}
+
+func (a *ContainerRepo) ContainerCount(ctx context.Context) (int, error) {
+	var total int64
+	if err := a.DB.Model(&model.Container{}).Group("name").Order("created_at desc").Count(&total).Error; err != nil {
+		return int(total), err
+	}
+	return int(total), nil
 }
 
 func (a *ContainerRepo) ImageList(ctx context.Context) (model.Images, error) {

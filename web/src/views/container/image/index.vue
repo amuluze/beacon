@@ -1,6 +1,6 @@
 <template>
     <el-card shadow="never">
-        <el-table :data="imageData" border stripe ref="multipleTable" v-loading="loading">
+        <el-table :data="data" border stripe ref="multipleTable" v-loading="loading">
             <el-table-column prop="id" label="镜像 ID" align="center" fixed />
             <el-table-column prop="name" label="镜像名称" align="center" min-width="100" show-overflow-tooltip fixed />
             <el-table-column prop="tag" label="镜像 Tag" align="center" min-width="100" show-overflow-tooltip />
@@ -14,45 +14,33 @@
                 </template>
             </el-table-column>
         </el-table>
+        <div class="am-pagination">
+            <el-config-provider :locale="zhCn">
+                <el-pagination
+                    v-model:current-page="pagination.page"
+                    :page-size="pagination.size"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :page-sizes="pagination.sizeOption"
+                    :total="pagination.total"
+                    @size-change="pagination.onSizeChange"
+                    @current-change="pagination.onPageChange"
+                />
+            </el-config-provider>
+        </div>
     </el-card>
 </template>
 
 <script setup lang="ts">
 import { queryImages } from '@/api/container'
 import { warning } from '@/components/Message/message.ts'
-import { Image } from '@/interface/container'
-
-const loading = ref(true)
-
-type imageDataType = {
-    id: string
-    name: string
-    tag: string
-    created: string
-    size: string
-}
-
-const imageData = ref<imageDataType[]>([])
+import { useTable } from '@/hooks/useTable'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
 onMounted(() => {
-    getData()
+    refresh()
 })
 
-const getData = async () => {
-    loading.value = true
-    const { data } = await queryImages()
-    data.images.map((item: Image) => {
-        const imageItem: imageDataType = {
-            id: item.id,
-            name: item.name,
-            tag: item.tag,
-            created: item.created,
-            size: item.size
-        }
-        imageData.value.push(imageItem)
-    })
-    loading.value = false
-}
+const { data, refresh, loading, pagination } = useTable(queryImages, {}, {})
 
 const deleteImage = (id: string) => {
     console.log(id)
@@ -60,4 +48,10 @@ const deleteImage = (id: string) => {
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+@include b(pagination) {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+</style>

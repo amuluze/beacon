@@ -1,8 +1,9 @@
 import request from '@/api'
 import { ContainerQueryResult, ImageQueryResult } from '@/interface/container.ts'
+import { Pagination } from '@/interface/pagination'
 
-export function queryContainers() {
-    return request.get<ContainerQueryResult>('/api/v1/container/containers', {})
+export function queryContainers(param: Pagination) {
+    return request.get<ContainerQueryResult>('/api/v1/container/containers', param)
 }
 
 export function queryImages() {

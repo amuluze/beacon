@@ -17,7 +17,7 @@ import (
 var ContainerServiceSet = wire.NewSet(NewContainerService, wire.Bind(new(IContainerService), new(*ContainerService)))
 
 type IContainerService interface {
-	ContainerList(ctx context.Context) (*schema.ContainerQueryRely, error)
+	ContainerList(ctx context.Context, args *schema.ContainerQueryArgs) (*schema.ContainerQueryRely, error)
 	ImageList(ctx context.Context) (*schema.ImageQueryReply, error)
 	Version(ctx context.Context) (*schema.Docker, error)
 }
@@ -30,8 +30,8 @@ func NewContainerService(containerRepo repository.IContainerRepo) *ContainerServ
 	return &ContainerService{ContainerRepo: containerRepo}
 }
 
-func (a *ContainerService) ContainerList(ctx context.Context) (*schema.ContainerQueryRely, error) {
-	mContainers, err := a.ContainerRepo.ContainerList(ctx)
+func (a *ContainerService) ContainerList(ctx context.Context, args *schema.ContainerQueryArgs) (*schema.ContainerQueryRely, error) {
+	mContainers, err := a.ContainerRepo.ContainerList(ctx, args)
 	if err != nil {
 		return nil, errors.New400Error(err.Error())
 	}
@@ -70,7 +70,8 @@ func (a *ContainerService) ContainerList(ctx context.Context) (*schema.Container
 			})
 		}
 	}
-	return &schema.ContainerQueryRely{Containers: list}, nil
+	total, _ := a.ContainerRepo.ContainerCount(ctx)
+	return &schema.ContainerQueryRely{Data: list, Total: total, Page: args.Page, Size: args.Size}, nil
 }
 
 func (a *ContainerService) ImageList(ctx context.Context) (*schema.ImageQueryReply, error) {

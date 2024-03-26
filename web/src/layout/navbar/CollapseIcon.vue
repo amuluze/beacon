@@ -1,8 +1,7 @@
 <!-- @format -->
 <template>
     <div class="collapse-ico" @click="changeCollapse">
-        <span v-if="!store.app.isCollapse"><i-ep-fold /></span>
-        <span v-if="store.app.isCollapse"><i-ep-expand /></span>
+        <svg-icon class="hamburger" :class="{ 'is-active': !store.app.isCollapse }" icon-class="indent-decrease" />
     </div>
 </template>
 <script setup lang="ts">
@@ -14,8 +13,18 @@ const changeCollapse = () => store.app.setCollapse(!store.app.isCollapse)
 <style scoped lang="scss">
 .collapse-ico {
     margin-right: 10px;
-    font-size: 22px;
+    font-size: 15px;
     color: #303133;
     cursor: pointer;
+}
+
+.hamburger {
+    vertical-align: middle;
+    cursor: pointer;
+    transform: scaleX(-1);
+}
+
+.hamburger.is-active {
+    transform: scaleX(1);
 }
 </style>

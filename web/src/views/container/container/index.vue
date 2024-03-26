@@ -1,10 +1,10 @@
 <template>
     <!-- 表格主体 -->
     <el-card shadow="never">
-        <el-table :data="tableData" style="width: 100%" ref="multipleTable" v-loading="loading">
+        <el-table :data="data" border stripe ref="multipleTable" v-loading="loading">
             <el-table-column prop="id" label="容器 ID" align="center" fixed />
             <el-table-column prop="name" label="容器名称" align="center" min-width="100" show-overflow-tooltip fixed />
-            <el-table-column prop="image" label="镜像名称" align="center" min-width="150" show-overflow-tooltip />
+            <el-table-column prop="image" label="镜像名称" align="center" min-width="100" show-overflow-tooltip />
             <el-table-column prop="ip" label="容器 IP" align="center" min-width="100" show-overflow-tooltip />
             <el-table-column prop="state" label="运行状态" align="center" min-width="90" show-overflow-tooltip>
                 <template #default="scope">
@@ -48,6 +48,19 @@
                 </template>
             </el-table-column>
         </el-table>
+        <div class="am-pagination">
+            <el-config-provider :locale="zhCn">
+                <el-pagination
+                    v-model:current-page="pagination.page"
+                    :page-size="pagination.size"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :page-sizes="pagination.sizeOption"
+                    :total="pagination.total"
+                    @size-change="(size) => pagination.onSizeChange(size, params)"
+                    @current-change="(page) => pagination.onPageChange(page, params)"
+                />
+            </el-config-provider>
+        </div>
     </el-card>
 
     <!--  查看日志弹窗  -->
@@ -64,49 +77,18 @@
 </template>
 
 <script setup lang="ts">
-// 表格
 import { queryContainers } from '@/api/container'
-import { Container } from '@/interface/container.ts'
-import { convertBytesToReadable } from '@/utils/convert'
+import { useTable } from '@/hooks/useTable'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
-const loading = ref(true)
-type tableDataType = {
-    id: string
-    name: string
-    state: string
-    image: string
-    ip: string
-    uptime: string
-    cpu_percent: string
-    memory_percent: string
-    memory_usage: string
-    memory_limit: string
-}
-const tableData = ref<tableDataType[]>([])
 onMounted(() => {
-    getData()
+    refresh()
 })
-const getData = async () => {
-    loading.value = true
-    const { data } = await queryContainers()
-    console.log('res', data.containers)
-    data.containers.map((item: Container) => {
-        const tableDataItem: tableDataType = {
-            id: item.id,
-            name: item.name,
-            state: item.state,
-            image: item.image,
-            ip: item.ip,
-            uptime: item.uptime,
-            cpu_percent: item.cpu_percent ? item.cpu_percent.toFixed(2) + '%' : '0.00%',
-            memory_percent: item.memory_percent ? item.memory_percent.toFixed(2) + '%' : '0.00%',
-            memory_usage: convertBytesToReadable(item.memory_usage),
-            memory_limit: convertBytesToReadable(item.memory_limit)
-        }
-        tableData.value.push(tableDataItem)
-    })
-    loading.value = false
-}
+
+const params = {}
+
+console.log('.....', params)
+const { data, refresh, loading, pagination } = useTable(queryContainers, {}, {})
 
 const dialogVisible = ref(false)
 const logData = ref('')
@@ -158,4 +140,10 @@ const downloadLog = () => {
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+@include b(pagination) {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+</style>
