@@ -17,7 +17,10 @@ export interface Container {
 }
 
 export interface ContainerQueryResult {
-    containers: Container[]
+    data: Container[]
+    total: number
+    page: number
+    size: number
 }
 
 export interface Image {
@@ -29,7 +32,10 @@ export interface Image {
 }
 
 export interface ImageQueryResult {
-    images: Image[]
+    data: Image[]
+    total: number
+    page: number
+    size: number
 }
 
 export interface DockerInfo {

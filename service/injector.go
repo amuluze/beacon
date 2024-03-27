@@ -13,19 +13,21 @@ import (
 var InjectorSet = wire.NewSet(NewInjector)
 
 type Injector struct {
-	App    *fiber.App
-	Router *Router
-	Config *Config
-	Logger *logger.Logger
-	Task   *TimedTask
+	App     *fiber.App
+	Router  *Router
+	Config  *Config
+	Prepare *Prepare
+	Logger  *logger.Logger
+	Task    *TimedTask
 }
 
-func NewInjector(app *fiber.App, router *Router, config *Config, task *TimedTask, logx *logger.Logger) (*Injector, error) {
+func NewInjector(app *fiber.App, router *Router, prepare *Prepare, config *Config, task *TimedTask, logx *logger.Logger) (*Injector, error) {
 	return &Injector{
-		App:    app,
-		Router: router,
-		Config: config,
-		Task:   task,
-		Logger: logx,
+		App:     app,
+		Router:  router,
+		Config:  config,
+		Prepare: prepare,
+		Task:    task,
+		Logger:  logx,
 	}, nil
 }

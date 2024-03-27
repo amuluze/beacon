@@ -59,7 +59,12 @@ func Init(ctx context.Context, opts ...Option) (func(), error) {
 		return nil, err
 	}
 
+	// 初始化日志
 	slog.SetDefault(injector.Logger.Logger)
+
+	// 初始化预设数据
+	injector.Prepare.Init(injector.Config)
+
 	httpServerCleanFunc := InitHttpServer(ctx, injector.Config, injector.App)
 
 	timedTask := injector.Task

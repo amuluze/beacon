@@ -7,10 +7,23 @@ package fiberx
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/amuluze/amutool/errors"
 	"github.com/gofiber/fiber/v2"
 )
+
+// GetToken Get jwt token from header (Authorization: Bearer xxx)
+func GetToken(c *fiber.Ctx) string {
+	var token string
+	auth := c.GetReqHeaders()["Authorization"][0]
+	fmt.Println(">>>>>>>>>", auth)
+	prefix := "Bearer "
+	if auth != "" && strings.HasPrefix(auth, prefix) {
+		token = auth[len(prefix):]
+	}
+	return token
+}
 
 // Success response.status = 200
 func Success(c *fiber.Ctx, v interface{}) error {

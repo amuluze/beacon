@@ -4,9 +4,25 @@
             <el-col :span="18">
                 <el-card class="am-overview-overview">
                     <h4>概览</h4>
+                    <el-row :gutter="4">
+                        <el-col :span="12">
+                            <el-card>
+                                <el-statistic title="容器数量" :value="containerCount" />
+                            </el-card>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-card>
+                                <el-statistic title="镜像数量" :value="imageCount" />
+                            </el-card>
+                        </el-col>
+                    </el-row>
                 </el-card>
                 <el-card>
                     <h4>状态</h4>
+                    <el-row :gutter="4">
+                        <el-col :span="12"> <echarts :option="cpuGaugeOption" height="200px"></echarts> </el-col>
+                        <el-col :span="12"> <echarts :option="memGaugeOption" height="200px"></echarts> </el-col>
+                    </el-row>
                 </el-card>
             </el-col>
             <el-col :span="6">
@@ -36,25 +52,30 @@
 </template>
 
 <script setup lang="ts">
-import { queryDockerInfo } from '@/api/container'
-import { queryHostInfo } from '@/api/host'
+import { queryContainers, queryDockerInfo, queryImages } from '@/api/container'
+import { queryCPUInfo, queryHostInfo, queryMemInfo } from '@/api/host'
+import { EChartsOption } from '@/components/Echarts/echarts'
+import { cpuGaugeOptions, memGaugeOptions } from '@/components/Echarts/gauge'
+import { set } from 'lodash-es'
 
 onMounted(() => {
-    getHostInfo(), getDockerInfo()
+    getHostInfo(), getDockerInfo(), renderCPUGauge(), renderMemGauge(), statisticContainer(), statisticImage()
 })
 
-type HostInfoType = {
-    hostname: string
-    uptime: string
-    os: string
-    platform: string
-    platform_version: string
-    kernel_version: string
-    kernel_arch: string
+const containerCount = ref(0)
+const imageCount = ref(0)
+
+const statisticContainer = async () => {
+    const { data } = await queryContainers({ page: 1, size: 10 })
+    containerCount.value = data.total
 }
 
-const HostInfo = ref<HostInfoType>()
+const statisticImage = async () => {
+    const { data } = await queryImages({ page: 1, size: 10 })
+    imageCount.value = data.total
+}
 
+const HostInfo = ref()
 const getHostInfo = async () => {
     const { data } = await queryHostInfo()
     HostInfo.value = {
@@ -68,17 +89,7 @@ const getHostInfo = async () => {
     }
 }
 
-type DockerInfoType = {
-    docker_version: string
-    api_version: string
-    min_api_version: string
-    git_commit: string
-    go_version: string
-    os: string
-    arch: string
-}
-const DockerInfo = ref<DockerInfoType>()
-
+const DockerInfo = ref()
 const getDockerInfo = async () => {
     const { data } = await queryDockerInfo()
     console.log(data)
@@ -92,6 +103,52 @@ const getDockerInfo = async () => {
         arch: data.arch
     }
     console.log(DockerInfo.value)
+}
+
+const cpuGaugeData = [
+    {
+        value: 20,
+        name: 'CPU',
+        title: {
+            offsetCenter: ['0%', '-15%']
+        },
+        detail: {
+            valueAnimation: true,
+            offsetCenter: ['0%', '15%']
+        }
+    }
+]
+
+const cpuGaugeOption = reactive<EChartsOption>(cpuGaugeOptions)
+const renderCPUGauge = async () => {
+    const { data } = await queryCPUInfo()
+    // 保留小数点后两位
+    cpuGaugeData[0].value = Math.round(data.percent * 100) / 100
+    set(cpuGaugeOption, 'series[0].data', cpuGaugeData)
+    console.log('gauge', cpuGaugeOption)
+}
+
+const memGaugeData = [
+    {
+        value: 20,
+        name: 'Memory',
+        title: {
+            offsetCenter: ['0%', '-15%']
+        },
+        detail: {
+            valueAnimation: true,
+            offsetCenter: ['0%', '15%']
+        }
+    }
+]
+
+const memGaugeOption = reactive<EChartsOption>(memGaugeOptions)
+const renderMemGauge = async () => {
+    const { data } = await queryMemInfo()
+    // 保留小数点后两位
+    memGaugeData[0].value = Math.round(data.percent * 100) / 100
+    set(memGaugeOption, 'series[0].data', memGaugeData)
+    console.log('gauge', memGaugeOption)
 }
 </script>
 

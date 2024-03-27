@@ -8,11 +8,13 @@ require (
 	github.com/amuluze/amutool/errors v0.0.0-20240324082810-4005041af57f
 	github.com/amuluze/amutool/logger v0.0.0-20240324082810-4005041af57f
 	github.com/amuluze/amutool/timex v0.0.0-20240324082810-4005041af57f
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/gofiber/contrib/websocket v1.3.0
 	github.com/gofiber/fiber/v2 v2.52.2
 	github.com/google/wire v0.6.0
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/shirou/gopsutil/v3 v3.24.2
 	github.com/spf13/viper v1.18.2
 	github.com/urfave/cli/v2 v2.27.1

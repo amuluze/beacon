@@ -2,7 +2,7 @@
     <div class="am-host-container">
         <div class="am-host-container__operator">
             <el-card>
-                <el-select v-model="value" placeholder="Select" size="default" style="width: 240px">
+                <el-select v-model="timeDensity" placeholder="Select" size="default" style="width: 240px">
                     <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
                 </el-select>
             </el-card>
@@ -57,23 +57,23 @@
 </template>
 <script setup lang="ts">
 import {
-    queryCPUUsage,
-    queryMemUsage,
-    queryDiskUsage,
-    queryNetworkUsage,
     queryCPUInfo,
+    queryCPUUsage,
+    queryDiskInfo,
+    queryDiskUsage,
     queryMemInfo,
-    queryDiskInfo
+    queryMemUsage,
+    queryNetworkUsage
 } from '@/api/host'
-import { CPUTrendingArgs, DiskTrendingArgs, MemTrendingArgs, NetTrendingArgs, DiskIO, NetIO } from '@/interface/host.ts'
 import { EChartsOption } from '@/components/Echarts/echarts.ts'
 import { cpuOptions, diskOptions, memOptions, netOptions } from '@/components/Echarts/line.ts'
-import { set } from 'lodash-es'
-import { dayjs } from 'element-plus'
+import { CPUTrendingArgs, DiskIO, DiskTrendingArgs, MemTrendingArgs, NetIO, NetTrendingArgs } from '@/interface/host.ts'
 import { convertBytesToReadable } from '@/utils/convert.ts'
+import { dayjs } from 'element-plus'
+import { set } from 'lodash-es'
 
 // 时间密度下拉框
-const value = ref(600)
+const timeDensity = ref(600)
 const options = [
     {
         value: 600,
@@ -103,10 +103,10 @@ const renderCPUPercent = async () => {
     cpuPercent.value = data.percent.toFixed(2) + '%'
 }
 
-const cpuOption = reactive<EChartsOption>(cpuOptions) as EChartsOption
+const cpuOption = reactive<EChartsOption>(cpuOptions)
 const renderCPU = async () => {
     const param: CPUTrendingArgs = {
-        start_time: dayjs().unix() - value.value,
+        start_time: dayjs().unix() - timeDensity.value,
         end_time: dayjs().unix()
     }
     console.log(param)
@@ -148,7 +148,7 @@ const renderMemInfo = async () => {
 const memOption = reactive<EChartsOption>(memOptions) as EChartsOption
 const renderMem = async () => {
     const param: MemTrendingArgs = {
-        start_time: dayjs().unix() - value.value,
+        start_time: dayjs().unix() - timeDensity.value,
         end_time: dayjs().unix()
     }
     console.log(param)
@@ -200,7 +200,7 @@ const renderDiskInfo = async () => {
 const diskOption = reactive<EChartsOption>(diskOptions) as EChartsOption
 const renderDisk = async () => {
     const param: DiskTrendingArgs = {
-        start_time: dayjs().unix() - value.value,
+        start_time: dayjs().unix() - timeDensity.value,
         end_time: dayjs().unix()
     }
     console.log(param)
@@ -245,7 +245,7 @@ const netInfo = ref({
 const netOption = reactive<EChartsOption>(netOptions) as EChartsOption
 const renderNet = async () => {
     const param: NetTrendingArgs = {
-        start_time: dayjs().unix() - value.value,
+        start_time: dayjs().unix() - timeDensity.value,
         end_time: dayjs().unix()
     }
     console.log(param)
@@ -282,7 +282,7 @@ const renderNet = async () => {
     ])
     console.log('net options: ', netOption)
 }
-
+const timer = ref()
 onMounted(() => {
     console.log('mounted')
     renderCPUPercent()
@@ -292,10 +292,26 @@ onMounted(() => {
     renderDiskInfo()
     renderDisk()
     renderNet()
+    timer.value = setInterval(() => {
+        console.log('start interval')
+        renderCPUPercent()
+        renderCPU()
+        renderMemInfo()
+        renderMem()
+        renderDiskInfo()
+        renderDisk()
+        renderNet()
+    }, 5000)
+    console.log('timer: ', timer.value)
+})
+
+onUnmounted(() => {
+    console.log('unmounted')
+    clearInterval(timer.value)
 })
 
 watch(
-    () => value.value,
+    () => timeDensity.value,
     () => {
         renderCPUPercent()
         renderCPU()

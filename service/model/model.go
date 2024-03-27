@@ -24,5 +24,6 @@ func (a *Models) GetAllModels() []interface{} {
 		new(Memory),
 		new(Disk),
 		new(Net),
+		new(User),
 	}
 }

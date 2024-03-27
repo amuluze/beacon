@@ -57,3 +57,20 @@ File = "/Users/amu/Desktop/probe.log"
 Level = "debug"
 RotationTime = "1"  # 每天切分一个日志文件
 MaxAge = "7"        # 最多保留 7 天的日志
+
+[Auth]
+# 是否启用
+Enable = true
+# 签名方式(支持：HS512/HS384/HS512)
+SigningMethod = "HS512"
+# 签名key
+SigningKey = "amprobe"
+# 过期时间（单位秒）
+Expired = 7200
+# key 前缀
+Prefix = "auth_"
+
+
+[InitData]
+Enable = true
+InitConfigFile = "./configs/init.yaml"

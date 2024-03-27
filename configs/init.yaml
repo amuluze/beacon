@@ -1,0 +1,7 @@
+users:
+  - username: admin
+    password: 123456
+    status: 1
+  - username: venus
+    password: 123456
+    status: 1

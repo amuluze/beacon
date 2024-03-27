@@ -5,14 +5,8 @@
                 <sidebar />
             </div>
             <div class="am-layout-content">
-                <el-container>
-                    <el-header>
-                        <navbar />
-                    </el-header>
-                    <el-main>
-                        <content />
-                    </el-main>
-                </el-container>
+                <navbar />
+                <content />
             </div>
         </el-container>
     </div>
@@ -31,26 +25,30 @@ import Sidebar from '@/layout/sidebar/index.vue'
     height: 100%;
     width: 100%;
     background-color: #f4f4f4;
+}
+@include b(layout-sidebar) {
+    //width: 210px;
+    height: 100%;
+    transition: 0.5s;
+    background-color: #e9effd;
+}
 
-    @include b(layout-sidebar) {
-        //width: 210px;
-        height: 100%;
-        transition: 0.5s;
-        background-color: #e9effd;
+@include b(layout-content) {
+    @include flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+
+    margin: 8px 8px 0 8px;
+    width: 100%;
+    height: 100%;
+
+    .el-header {
+        height: 48px;
     }
 
-    @include b(layout-content) {
-        margin: 8px 8px 0 8px;
-        width: 100%;
-        height: 100%;
-
-        .el-header {
-            height: 48px;
-        }
-
-        .el-main {
-            height: calc(100vh - 48px);
-        }
+    .el-main {
+        height: calc(100vh - 48px);
     }
 }
 </style>

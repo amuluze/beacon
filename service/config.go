@@ -16,6 +16,8 @@ type Config struct {
 	Task     Task
 	Ethernet Ethernet
 	Logger   Logger
+	Auth     Auth
+	InitData InitData
 }
 
 // NewConfig Load config file (toml/json/yaml)
@@ -80,4 +82,17 @@ type Logger struct {
 	Level        string
 	RotationTime int
 	MaxAge       int
+}
+
+type Auth struct {
+	Enable        bool
+	SigningMethod string
+	SigningKey    string
+	Expired       int
+	Prefix        string
+}
+
+type InitData struct {
+	Enable         bool
+	InitConfigFile string
 }

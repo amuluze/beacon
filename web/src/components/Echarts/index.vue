@@ -7,9 +7,9 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useEcharts } from '@/hooks/useEcharts'
+import { onMounted } from 'vue'
 import { EChartsOption } from './echarts'
-import echarts from './echarts'
 
 interface Props {
     option: EChartsOption
@@ -23,52 +23,22 @@ const props = withDefaults(defineProps<Props>(), {
     option: () => ({})
 })
 
-const chartRef = ref<HTMLElement>()
-let chart: echarts.ECharts
-
-const options = computed(() => {
-    return props.option
-})
+const chartRef = shallowRef<HTMLElement>()
+const currentOptions = shallowRef<EChartsOption>(props.option)
+const { setOptions, initCharts } = useEcharts(chartRef as Ref<HTMLDivElement>, currentOptions.value)
 
 watch(
-    () => options.value,
-    (options) => {
-        console.log('>>>>>>><<<<<<<<', options)
-        if (chart) {
-            chart.setOption(options, true)
-        }
+    () => currentOptions,
+    (currentOptions) => {
+        console.log('====================>', currentOptions)
+        setOptions(currentOptions.value)
     },
     {
         deep: true
     }
 )
-
-const resizeHandler = () => {
-    chart?.resize()
-}
-
-const initChart = () => {
-    chart = echarts.init(chartRef.value as HTMLDivElement)
-    console.log('>>>>>', props)
-    chart?.setOption(options.value as EChartsOption, true)
-}
-
 onMounted(() => {
-    initChart()
-    window.addEventListener('resize', resizeHandler)
-})
-onDeactivated(() => {
-    console.log('deactivated')
-    window.removeEventListener('resize', resizeHandler)
-})
-onBeforeUnmount(() => {
-    console.log('before unmount')
-    window.removeEventListener('resize', resizeHandler)
-    chart?.dispose()
-})
-onActivated(() => {
-    console.log('activated')
-    window.addEventListener('resize', resizeHandler)
+    initCharts()
 })
 </script>
 

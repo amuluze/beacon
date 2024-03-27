@@ -7,16 +7,16 @@
 import * as echarts from 'echarts/core'
 
 //引入柱状图和折线图组件。
-import { BarChart, LineChart } from 'echarts/charts'
+import { BarChart, GaugeChart, LineChart } from 'echarts/charts'
 
 // 引入标题、提示框、网格、数据集和数据转换器组件。
 import {
-    TitleComponent,
-    TooltipComponent,
+    DatasetComponent,
     GridComponent,
     LegendComponent,
+    TitleComponent,
     ToolboxComponent,
-    DatasetComponent, // 数据集组件
+    TooltipComponent, // 数据集组件
     TransformComponent // 内置数据转换器组件 (filter, sort)
 } from 'echarts/components'
 
@@ -27,14 +27,14 @@ import { LabelLayout, UniversalTransition } from 'echarts/features'
 import { CanvasRenderer } from 'echarts/renderers'
 
 // 系列类型的定义后缀都为 SeriesOption
-import type { BarSeriesOption, LineSeriesOption } from 'echarts/charts'
+import type { BarSeriesOption, GaugeSeriesOption, LineSeriesOption } from 'echarts/charts'
 
 // 组件类型的定义后缀都为 ComponentOption
 import type {
-    TitleComponentOption,
-    TooltipComponentOption,
+    DatasetComponentOption,
     GridComponentOption,
-    DatasetComponentOption
+    TitleComponentOption,
+    TooltipComponentOption
 } from 'echarts/components'
 
 import type { ComposeOption } from 'echarts/core'
@@ -47,6 +47,7 @@ export type EChartsOption = ComposeOption<
     | TooltipComponentOption
     | GridComponentOption
     | DatasetComponentOption
+    | GaugeSeriesOption
 >
 
 /**
@@ -63,6 +64,7 @@ echarts.use([
     TransformComponent,
     BarChart,
     LineChart,
+    GaugeChart,
     LabelLayout,
     UniversalTransition,
     CanvasRenderer

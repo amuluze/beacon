@@ -118,7 +118,7 @@ export const diskOptions: EChartsOption = {
         }
     },
     legend: {
-        data: ['磁盘'],
+        data: ['Read', 'Write'],
         left: 'right'
     },
     grid: {
