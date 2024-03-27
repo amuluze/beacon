@@ -1,8 +1,8 @@
 <template>
-    <el-aside :width="store.app.isCollapse ? '54px' : '210px'">
+    <el-aside :width="store.app.isCollapse ? '54px' : '160px'">
         <div class="am-logo">
             <img class="am-logo__img" src="@/assets/images/amprobe.png" alt="" />
-            <span v-show="!store.app.isCollapse" class="am-logo__text">AmProbe</span>
+            <span v-show="!store.app.isCollapse" class="am-logo__text">Amprobe</span>
         </div>
         <div class="am-menu">
             <el-scrollbar>
@@ -23,9 +23,9 @@
     </el-aside>
 </template>
 <script setup lang="ts">
-import useStore from '@/store'
-import { dynamicRoutes } from '@/router/dynamic.ts'
 import Menuitem from '@/layout/sidebar/Menuitem.vue'
+import { dynamicRoutes } from '@/router/dynamic.ts'
+import useStore from '@/store'
 
 const currentRoute = useRoute()
 

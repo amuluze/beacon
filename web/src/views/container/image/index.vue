@@ -8,7 +8,7 @@
             <el-table-column prop="size" label="镜像大小" align="center" width="100" />
             <el-table-column label="操作" width="160" fixed="right" align="center">
                 <template #default="scope">
-                    <el-button type="primary" size="default" @click="deleteImage(scope.row.id)">
+                    <el-button type="primary" size="small" @click="deleteImage(scope.row.id)">
                         <i-ep-delete />删除
                     </el-button>
                 </template>

@@ -11,18 +11,19 @@
     </el-dropdown>
 </template>
 <script setup lang="ts">
-import { warning } from '@/components/Message/message.ts'
+import { logout } from '@/api/auth'
+import useStore from '@/store'
 
+const store = useStore()
+const router = useRouter()
 const doLogout = () => {
-    warning('该功能暂未实现')
     // 1. 退出登录
-    // logout();
+    logout()
     // 2.清除缓存
-    // store.user.setToken('', '', 0);
-    // store.menu.menuList = [];
-    // store.app.isCollapse = false;
+    store.user.setToken('', '', 0)
+    store.app.isCollapse = false
     // 3.重定向到登录页
-    // router.replace('/login');
+    router.replace('/login')
 }
 </script>
 

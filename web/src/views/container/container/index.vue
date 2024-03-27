@@ -42,7 +42,7 @@
             />
             <el-table-column label="操作" width="180" fixed="right" align="center">
                 <template #default="scope">
-                    <el-button type="primary" size="default" @click="viewLog(scope.row.id)">
+                    <el-button type="primary" size="small" @click="viewLog(scope.row.id)">
                         <i-ep-view />查看日志
                     </el-button>
                 </template>

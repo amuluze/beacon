@@ -72,5 +72,5 @@ Prefix = "auth_"
 
 
 [InitData]
-Enable = true
+Enable = false
 InitConfigFile = "./configs/init.yaml"

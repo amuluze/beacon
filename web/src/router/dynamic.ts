@@ -11,53 +11,80 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         }
     },
     {
-        path: '/container',
+        path: '/container/container',
         name: 'container',
-        redirect: '/container/container',
+        component: () => import('@/views/container/container/index.vue'), //路由懒加载
         meta: {
-            title: '容器管理',
-            icon: 'system'
-        },
-        children: [
-            {
-                path: '/container/container',
-                name: 'container',
-                component: () => import('@/views/container/container/index.vue'), //路由懒加载
-                meta: {
-                    title: '容器',
-                    icon: 'system'
-                }
-            },
-            {
-                path: '/container/image',
-                name: 'image',
-                component: () => import('@/views/container/image/index.vue'), //路由懒加载
-                meta: {
-                    title: '镜像',
-                    icon: 'system'
-                }
-            }
-        ]
+            title: '容器',
+            icon: 'setting'
+        }
     },
     {
-        path: '/host',
-        name: 'host',
-        // component: () => import('@/views/host/index.vue'), //路由懒加载
-        redirect: '/host/monitor',
+        path: '/container/image',
+        name: 'image',
+        component: () => import('@/views/container/image/index.vue'), //路由懒加载
         meta: {
-            title: '主机管理',
-            icon: 'system'
-        },
-        children: [
-            {
-                path: '/host/monitor',
-                name: 'monitor',
-                component: () => import('@/views/host/monitor/index.vue'), //路由懒加载
-                meta: {
-                    title: '监控',
-                    icon: 'system'
-                }
-            }
-        ]
+            title: '镜像',
+            icon: 'lab'
+        }
+    },
+    {
+        path: '/host/monitor',
+        name: 'monitor',
+        component: () => import('@/views/host/monitor/index.vue'), //路由懒加载
+        meta: {
+            title: '监控',
+            icon: 'monitor'
+        }
     }
+    // {
+    //     path: '/container',
+    //     name: 'container',
+    //     redirect: '/container/container',
+    //     meta: {
+    //         title: '容器管理',
+    //         icon: 'system'
+    //     },
+    //     children: [
+    //         {
+    //             path: '/container/container',
+    //             name: 'container',
+    //             component: () => import('@/views/container/container/index.vue'), //路由懒加载
+    //             meta: {
+    //                 title: '容器',
+    //                 icon: 'system'
+    //             }
+    //         },
+    //         {
+    //             path: '/container/image',
+    //             name: 'image',
+    //             component: () => import('@/views/container/image/index.vue'), //路由懒加载
+    //             meta: {
+    //                 title: '镜像',
+    //                 icon: 'system'
+    //             }
+    //         }
+    //     ]
+    // },
+    // {
+    //     path: '/host',
+    //     name: 'host',
+    //     // component: () => import('@/views/host/index.vue'), //路由懒加载
+    //     redirect: '/host/monitor',
+    //     meta: {
+    //         title: '主机管理',
+    //         icon: 'system'
+    //     },
+    //     children: [
+    //         {
+    //             path: '/host/monitor',
+    //             name: 'monitor',
+    //             component: () => import('@/views/host/monitor/index.vue'), //路由懒加载
+    //             meta: {
+    //                 title: '监控',
+    //                 icon: 'system'
+    //             }
+    //         }
+    //     ]
+    // }
 ]
