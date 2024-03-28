@@ -20,7 +20,7 @@ const doLogout = () => {
     // 1. 退出登录
     logout()
     // 2.清除缓存
-    store.user.setToken('', '', 0)
+    store.user.setToken('', '')
     store.app.isCollapse = false
     // 3.重定向到登录页
     router.replace('/login')

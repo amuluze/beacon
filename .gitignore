@@ -17,6 +17,7 @@
 .DS_Store
 .vscode
 probe.db
+deploy.sh
 *__pycache__
 *.py[cod]
 

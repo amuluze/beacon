@@ -68,9 +68,9 @@
         <el-input v-model="logData" rows="20" type="textarea" />
         <template #footer>
             <div class="dialog-footer">
-                <el-button type="primary" plain @click="downloadLog">下载</el-button>
-                <el-button type="info" plain @click="stopLogView">停止</el-button>
-                <el-button type="success" plain @click="handleClose">关闭</el-button>
+                <el-button size="small" type="primary" plain @click="downloadLog">下载</el-button>
+                <el-button size="small" type="info" plain @click="stopLogView">停止</el-button>
+                <el-button size="small" type="success" plain @click="handleClose">关闭</el-button>
             </div>
         </template>
     </el-dialog>
@@ -100,7 +100,7 @@ const viewLog = (container_id: string) => {
     console.log('container_id', container_id)
 
     // 建立 WebSocket 连接
-    ws = new WebSocket('wss://' + location.host + '/ws/' + container_id)
+    ws = new WebSocket('ws://' + location.host + '/ws/' + container_id)
     ws.onopen = () => {
         ws.send(container_id)
     }
