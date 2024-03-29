@@ -32,7 +32,6 @@
 
 <script setup lang="ts">
 import { queryImages } from '@/api/container'
-import { warning } from '@/components/Message/message.ts'
 import { useTable } from '@/hooks/useTable'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
@@ -42,10 +41,10 @@ onMounted(() => {
 
 const { data, refresh, loading, pagination } = useTable(queryImages, {}, {})
 
-const deleteImage = (id: string) => {
-    console.log(id)
-    warning('该功能暂未实现')
-}
+// const deleteImage = (id: string) => {
+//     console.log(id)
+//     warning('该功能暂未实现')
+// }
 </script>
 
 <style scoped lang="scss">

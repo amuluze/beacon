@@ -1,1 +1,0 @@
-import{b as a,r as t}from"./index-BCNH9aZg.js";function u(){if(!arguments.length)return[];var r=arguments[0];return a(r)?r:[r]}function o(r){return t.post("/api/v1/auth/login",r)}function s(){return t.post("/api/v1/auth/logout")}export{s as a,u as c,o as l};

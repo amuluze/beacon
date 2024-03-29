@@ -1,0 +1,1 @@
+import{G as n}from"./index-Sqz7M1Rx.js";function t(e){return n.get("/api/v1/container/containers",e)}function a(e){return n.get("/api/v1/container/images",e)}function i(){return n.get("/api/v1/container/version",{})}export{a,i as b,t as q};
