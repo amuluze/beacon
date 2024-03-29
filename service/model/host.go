@@ -26,11 +26,11 @@ func (d *Host) TableName() string {
 	return "s_host"
 }
 
-func (d *Host) AfterCreate(tx *gorm.DB) error {
-	// 数据清理
-	tx.Unscoped().Where("timestamp < ?", time.Now().Add(-time.Hour*24)).Delete(&Host{})
-	return nil
-}
+// func (d *Host) AfterCreate(tx *gorm.DB) error {
+// 	// 数据清理
+// 	tx.Unscoped().Where("timestamp < ?", time.Now().Add(-time.Hour*24)).Delete(&Host{})
+// 	return nil
+// }
 
 type CPU struct {
 	gorm.Model
@@ -42,10 +42,10 @@ func (d *CPU) TableName() string {
 	return "s_cpu"
 }
 
-func (d *CPU) AfterCreate(tx *gorm.DB) error {
-	tx.Unscoped().Where("timestamp < ?", time.Now().Add(-time.Hour*24)).Delete(&CPU{})
-	return nil
-}
+// func (d *CPU) AfterCreate(tx *gorm.DB) error {
+// 	tx.Unscoped().Where("timestamp < ?", time.Now().Add(-time.Hour*24)).Delete(&CPU{})
+// 	return nil
+// }
 
 type Memory struct {
 	gorm.Model
@@ -59,10 +59,10 @@ func (d *Memory) TableName() string {
 	return "s_memory"
 }
 
-func (d *Memory) AfterCreate(tx *gorm.DB) error {
-	tx.Unscoped().Where("timestamp < ?", time.Now().Add(-time.Hour*24)).Delete(&Memory{})
-	return nil
-}
+// func (d *Memory) AfterCreate(tx *gorm.DB) error {
+// 	tx.Unscoped().Where("timestamp < ?", time.Now().Add(-time.Hour*24)).Delete(&Memory{})
+// 	return nil
+// }
 
 type Disk struct {
 	gorm.Model
@@ -79,10 +79,10 @@ func (d *Disk) TableName() string {
 	return "s_disk"
 }
 
-func (d *Disk) AfterCreate(tx *gorm.DB) error {
-	tx.Unscoped().Where("timestamp < ?", time.Now().Add(-time.Hour*24)).Delete(&Disk{})
-	return nil
-}
+// func (d *Disk) AfterCreate(tx *gorm.DB) error {
+// 	tx.Unscoped().Where("timestamp < ?", time.Now().Add(-time.Hour*24)).Delete(&Disk{})
+// 	return nil
+// }
 
 type Net struct {
 	gorm.Model
@@ -96,7 +96,7 @@ func (d *Net) TableName() string {
 	return "s_net"
 }
 
-func (d *Net) AfterCreate(tx *gorm.DB) error {
-	tx.Unscoped().Where("timestamp < ?", time.Now().Add(-time.Hour*24)).Delete(&Net{})
-	return nil
-}
+// func (d *Net) AfterCreate(tx *gorm.DB) error {
+// 	tx.Unscoped().Where("timestamp < ?", time.Now().Add(-time.Hour*24)).Delete(&Net{})
+// 	return nil
+// }

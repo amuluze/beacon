@@ -50,13 +50,13 @@ Devices = ["/dev/vda3", "/dev/vda3", "/dev/disk3s1s1"]
 Names = ["eth0", "en0"]
 
 [Task]
-Interval = 60  # 单位 s
+Interval = 60 # 单位 s
 
 [Logger]
 File = "/Users/amu/Desktop/probe.log"
 Level = "debug"
-RotationTime = "1"  # 每天切分一个日志文件
-MaxAge = "7"        # 最多保留 7 天的日志
+RotationTime = "1"                    # 每天切分一个日志文件
+MaxAge = "7"                          # 最多保留 7 天的日志
 
 [Auth]
 # 是否启用
@@ -72,5 +72,5 @@ Prefix = "auth_"
 
 
 [InitData]
-Enable = false
+Enable = true
 InitConfigFile = "./configs/init.yaml"

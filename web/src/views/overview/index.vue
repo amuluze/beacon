@@ -1,7 +1,7 @@
 <template>
     <div class="am-overview-container">
         <el-row :gutter="8">
-            <el-col :span="18">
+            <el-col :span="16">
                 <el-card class="am-overview-overview">
                     <h4>概览</h4>
                     <el-row :gutter="4">
@@ -25,26 +25,42 @@
                     </el-row>
                 </el-card>
             </el-col>
-            <el-col :span="6">
+            <el-col :span="8">
                 <el-card class="am-overview-host">
                     <h4>主机信息</h4>
-                    <p>主机名称：{{ HostInfo?.hostname }}</p>
-                    <p>启动时间： {{ HostInfo?.uptime }}</p>
-                    <p>os：{{ HostInfo?.os }}</p>
-                    <p>platform: {{ HostInfo?.platform }}</p>
-                    <p>platform version: {{ HostInfo?.platform_version }}</p>
-                    <p>kernel version: {{ HostInfo?.kernel_version }}</p>
-                    <p>kernel arch: {{ HostInfo?.kernel_arch }}</p>
+                    <p>
+                        主机名称：<el-tag>{{ HostInfo?.hostname }}</el-tag>
+                    </p>
+                    <p>
+                        启动时间：<el-tag>{{ HostInfo?.uptime }}</el-tag>
+                    </p>
+                    <p>
+                        发行版本：<el-tag>{{ HostInfo?.platform }}-{{ HostInfo?.platform_version }}</el-tag>
+                    </p>
+                    <p>
+                        内核版本：<el-tag>{{ HostInfo?.kernel_version }}</el-tag>
+                    </p>
+                    <p>
+                        系统类型：<el-tag>{{ HostInfo?.os }}/{{ HostInfo?.kernel_arch }}</el-tag>
+                    </p>
                 </el-card>
                 <el-card>
                     <h4>容器信息</h4>
-                    <p>Docker 版本：{{ DockerInfo?.docker_version }}</p>
-                    <p>API 版本： {{ DockerInfo?.api_version }}</p>
-                    <p>Min API 版本：{{ DockerInfo?.min_api_version }}</p>
-                    <p>Git Commit: {{ DockerInfo?.git_commit }}</p>
-                    <p>Go version: {{ DockerInfo?.go_version }}</p>
-                    <p>OS: {{ DockerInfo?.os }}</p>
-                    <p>Arch: {{ DockerInfo?.arch }}</p>
+                    <p>
+                        Docker 版本：<el-tag>{{ DockerInfo?.docker_version }}</el-tag>
+                    </p>
+                    <p>
+                        API 版本： <el-tag>{{ DockerInfo?.min_api_version }}-{{ DockerInfo?.api_version }}</el-tag>
+                    </p>
+                    <p>
+                        Git Commit：<el-tag>{{ DockerInfo?.git_commit }}</el-tag>
+                    </p>
+                    <p>
+                        Go version： <el-tag>{{ DockerInfo?.go_version }}</el-tag>
+                    </p>
+                    <p>
+                        系统类型： <el-tag>{{ DockerInfo?.os }}/{{ DockerInfo?.arch }}</el-tag>
+                    </p>
                 </el-card>
             </el-col>
         </el-row>

@@ -5,12 +5,13 @@
 package api
 
 import (
+	"log/slog"
+
 	"github.com/amuluze/amprobe/pkg/fiberx"
 	"github.com/amuluze/amprobe/pkg/validatex"
 	"github.com/amuluze/amprobe/service/container/service"
 	"github.com/amuluze/amprobe/service/schema"
 	"github.com/gofiber/fiber/v2"
-	"log/slog"
 )
 
 type ContainerAPI struct {
@@ -30,7 +31,7 @@ func (a *ContainerAPI) ContainerList(ctx *fiber.Ctx) error {
 	if err := fiberx.ParseQuery(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, err)
 	}
-	slog.Info("args", args)
+	slog.Info("args", "args", args)
 	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, err)
 	}

@@ -63,10 +63,12 @@ func (a *TimedTask) Execute() {
 	go a.disk(timestamp)
 	go a.network(timestamp)
 
-	// 处理 Docker 容器指标
+	// // 处理 Docker 容器指标
 	go a.docker(timestamp)
 	go a.container(timestamp)
 	go a.image(timestamp)
+
+	go a.clearOldRecord()
 }
 
 func (a *TimedTask) Run() {
@@ -120,8 +122,9 @@ func (a *TimedTask) memory(timestamp time.Time) {
 func (a *TimedTask) disk(timestamp time.Time) {
 	diskInfo, _ := psutil.GetDiskInfo(a.devices)
 	diskMap, _ := psutil.GetDiskIO(a.devices)
+	var diskInfos []model.Disk
 	for device, info := range diskInfo {
-		disk := &model.Disk{Timestamp: timestamp}
+		disk := model.Disk{Timestamp: timestamp}
 		disk.Device = device
 		disk.DiskPercent = info.Percent
 		disk.DiskTotal = float64(info.Total)
@@ -132,29 +135,32 @@ func (a *TimedTask) disk(timestamp time.Time) {
 				disk.DiskWrite = float64(state.Write)
 			}
 		}
-		a.db.Model(&model.Disk{}).Create(disk)
+		diskInfos = append(diskInfos, disk)
 	}
+	a.db.Model(&model.Disk{}).Create(diskInfos)
 }
 
 func (a *TimedTask) network(timestamp time.Time) {
 	netMap, _ := psutil.GetNetworkIO(a.ethernet)
 	time.Sleep(1 * time.Second)
 	netMapAfterSecond, _ := psutil.GetNetworkIO(a.ethernet)
+	var netInfos []model.Net
 	for eth, info := range netMap {
 		for e, i := range netMapAfterSecond {
 			if eth == e {
-				net := &model.Net{Timestamp: timestamp}
+				net := model.Net{Timestamp: timestamp}
 				net.Ethernet = eth
 				net.NetSend = float64(i.Send - info.Send)
 				net.NetRecv = float64(i.Recv - info.Recv)
-				a.db.Model(&model.Net{}).Create(net)
+				netInfos = append(netInfos, net)
 			}
 		}
 	}
+	a.db.Model(&model.Net{}).Create(netInfos)
 }
 
 func (a *TimedTask) container(timestamp time.Time) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	cs, err := a.manager.ListContainer(ctx)
@@ -166,20 +172,21 @@ func (a *TimedTask) container(timestamp time.Time) {
 	for _, info := range cs {
 		var d model.Container
 		d.Timestamp = timestamp
-		d.ContainerID = info.ID
+		d.ContainerID = info.ID[:6]
 		d.Name = info.Name
 		d.State = info.State
 		d.Image = info.Image
 		d.Uptime = info.Uptime
 		d.IP = info.IP
 
-		cpuPercent, err := a.manager.GetContainerCPU(ctx, info.ID)
+		cpuPercent, err := a.manager.GetContainerCPU(ctx, info.ID[:6])
+		fmt.Println(cpuPercent, err)
 		if err != nil {
 			slog.Error("failed to get container cpu", "error", err)
 		}
 		d.CPUPercent = cpuPercent
 
-		memPercent, used, limit, err := a.manager.GetContainerMem(ctx, info.ID)
+		memPercent, used, limit, err := a.manager.GetContainerMem(ctx, info.ID[:6])
 		if err != nil {
 			slog.Error("failed to get container mem", "error", err)
 		}
@@ -225,19 +232,24 @@ func (a *TimedTask) image(timestamp time.Time) {
 	var list model.Images
 	for _, im := range images {
 		list = append(list, model.Image{
-			ImageID: im.ID[7:19],
-			Name:    im.Name,
-			Tag:     im.Tag,
-			Created: im.Created,
-			Size:    im.Size,
+			Timestamp: timestamp,
+			ImageID:   im.ID[7:19],
+			Name:      im.Name,
+			Tag:       im.Tag,
+			Created:   im.Created,
+			Size:      im.Size,
 		})
 	}
 	a.db.Model(&model.Image{}).Create(&list)
 }
 
 func (a *TimedTask) clearOldRecord() {
-	a.db.Where("timestamp < ?", time.Now().Add(-time.Minute*5)).Delete(model.Host{})
-	a.db.Where("timestamp < ?", time.Now().Add(-time.Minute*5)).Delete(model.Container{})
-	//a.db.Where("timestamp < ?", time.Now().Add(-time.Hour*24*2)).Delete(model.Host{})
-	//a.db.Where("timestamp < ?", time.Now().Add(-time.Hour*24*2)).Delete(model.Docker{})
+	a.db.Where("timestamp < ?", time.Now().Add(-time.Minute*5)).Delete(&model.Host{})
+	a.db.Where("timestamp < ?", time.Now().Add(-time.Minute*5)).Delete(&model.Container{})
+	a.db.Where("timestamp < ?", time.Now().Add(-time.Minute*5)).Delete(&model.Image{})
+	a.db.Where("timestamp < ?", time.Now().Add(-time.Minute*5)).Delete(&model.Docker{})
+	a.db.Where("timestamp < ?", time.Now().Add(-time.Hour*24*2)).Delete(&model.CPU{})
+	a.db.Where("timestamp < ?", time.Now().Add(-time.Hour*24*2)).Delete(&model.Memory{})
+	a.db.Where("timestamp < ?", time.Now().Add(-time.Hour*24*2)).Delete(&model.Disk{})
+	a.db.Where("timestamp < ?", time.Now().Add(-time.Hour*24*2)).Delete(&model.Net{})
 }

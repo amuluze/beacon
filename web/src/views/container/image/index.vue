@@ -6,13 +6,13 @@
             <el-table-column prop="tag" label="镜像 Tag" align="center" show-overflow-tooltip width="100" />
             <el-table-column prop="created" label="创建时间" align="center" width="200" />
             <el-table-column prop="size" label="镜像大小" align="center" width="100" />
-            <el-table-column label="操作" width="160" fixed="right" align="center">
+            <!-- <el-table-column label="操作" width="160" fixed="right" align="center">
                 <template #default="scope">
                     <el-button type="primary" size="small" @click="deleteImage(scope.row.id)">
                         <i-ep-delete />删除
                     </el-button>
                 </template>
-            </el-table-column>
+            </el-table-column> -->
         </el-table>
         <div class="am-pagination">
             <el-config-provider :locale="zhCn">

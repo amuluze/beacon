@@ -98,9 +98,10 @@ let ws: WebSocket
 const viewLog = (container_id: string) => {
     dialogVisible.value = true
     console.log('container_id', container_id)
+    console.log('host', location.host)
 
     // 建立 WebSocket 连接
-    ws = new WebSocket('wss://' + location.host + '/ws/' + container_id)
+    ws = new WebSocket('ws://' + location.host + '/ws/' + container_id)
     ws.onopen = () => {
         ws.send(container_id)
     }

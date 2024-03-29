@@ -7,7 +7,7 @@ package service
 import (
 	"github.com/amuluze/amprobe/pkg/auth"
 	"github.com/amuluze/amprobe/pkg/auth/jwtauth"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"github.com/patrickmn/go-cache"
 	"time"
 )
