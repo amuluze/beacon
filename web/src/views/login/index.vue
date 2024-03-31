@@ -1,43 +1,55 @@
 <!-- @format -->
 <template>
     <div class="am-login">
-        <div class="am-login__img">
-            <img src="@/assets/images/login_left.png" alt="" />
+        <div class="am-login-left">
+            <!-- <img src="@/assets/images/login_left.png" alt="" /> -->
+            <div class="am-login-left__title">
+                <img class="am-login-left__img" src="@/assets/images/amprobe.png" alt="" />
+                <h1>Amprobe</h1>
+            </div>
+            <h3>Amprobe 是一款轻量级主机及 Docker 容器监控工具，它可以轻松的帮助我们完成以下几方面的工作:</h3>
+            <div class="am-login-left__item">
+                <span>· 监控主机的 CPU、内存、磁盘 IO、网络 IO情况</span>
+                <span>· 监控部署于主机上 Docker 容器的运行状态、CPU、内存使用情况</span>
+                <span>· 实时查看 Docker 容器的日志，并支持日志下载</span>
+            </div>
         </div>
 
-        <div class="am-login__form">
-            <el-form :model="loginForm" :rules="loginFormRules">
-                <div class="title">
-                    <span>Amprobe</span>
-                </div>
+        <div class="am-login-right">
+            <div class="am-login-right__form">
+                <el-form :model="loginForm" :rules="loginFormRules">
+                    <div class="title">
+                        <span>登录</span>
+                    </div>
 
-                <el-form-item prop="username">
-                    <el-input
-                        ref="username"
-                        v-model="loginForm.username"
-                        size="large"
-                        class="username-input"
-                        :placeholder="'请输入用户名'"
-                        name="username"
-                        autocomplete="on"
-                        :prefix-icon="User"
-                    />
-                </el-form-item>
-                <el-form-item prop="password">
-                    <el-input
-                        v-model="loginForm.password"
-                        size="large"
-                        type="password"
-                        class="password-input"
-                        :placeholder="'请输入密码'"
-                        name="password"
-                        :prefix-icon="Lock"
-                        :show-password="true"
-                    >
-                    </el-input>
-                </el-form-item>
-                <el-button class="btn" size="large" type="primary" @click.prevent="handleLogin"> 登录 </el-button>
-            </el-form>
+                    <el-form-item prop="username">
+                        <el-input
+                            ref="username"
+                            v-model="loginForm.username"
+                            size="large"
+                            class="username-input"
+                            :placeholder="'请输入用户名'"
+                            name="username"
+                            autocomplete="on"
+                            :prefix-icon="User"
+                        />
+                    </el-form-item>
+                    <el-form-item prop="password">
+                        <el-input
+                            v-model="loginForm.password"
+                            size="large"
+                            type="password"
+                            class="password-input"
+                            :placeholder="'请输入密码'"
+                            name="password"
+                            :prefix-icon="Lock"
+                            :show-password="true"
+                        >
+                        </el-input>
+                    </el-form-item>
+                    <el-button class="btn" size="large" type="primary" @click.prevent="handleLogin"> 登录 </el-button>
+                </el-form>
+            </div>
         </div>
     </div>
 </template>
@@ -93,25 +105,60 @@ const handleLogin = async () => {
 <style scoped lang="scss">
 @include b(login) {
     @include flex;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
+    height: 100%;
     min-height: 100%;
     background-color: #eee;
     background-image: url('@/assets/images/login_bg.svg');
     background-size: auto;
+}
+@include b(login-left) {
+    @include flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-image: url('@/assets/images/bg-bd839ea3.svg');
+    width: 48%;
+    height: 100%;
+    min-height: 100%;
+    background-color: #22325b;
+    color: #fff;
+    padding: 20px;
 
-    @include e(img) {
-        width: 800px;
-        margin-right: 10px;
-
-        img {
-            width: 100%;
-            height: 100%;
-        }
+    @include e(title) {
+        @include flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 30px;
     }
 
+    @include e(img) {
+        height: 36px;
+        width: 36px;
+        margin-right: 6px;
+    }
+
+    @include e(item) {
+        @include flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+    }
+}
+
+@include b(login-right) {
+    @include flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 60%;
+    height: 100%;
+
     @include e(form) {
-        width: 520px;
+        width: 400px;
         padding: 50px 40px 45px;
         background-color: var(--el-bg-color);
         border-radius: 10px;
@@ -123,7 +170,7 @@ const handleLogin = async () => {
             text-align: center;
 
             span {
-                font-size: 40px;
+                font-size: 24px;
                 font-weight: bold;
                 color: #34495e;
                 white-space: nowrap;
