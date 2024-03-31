@@ -32,17 +32,29 @@
 
 ## 界面展示
 
-**容器状态监控**
+**登录页**
 
-<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171426847.png" alt="image-20240317141005150" style="zoom:67%;" />
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amuluze/202403311350499.png" alt="image-20240317141005150" style="zoom:67%;" />
 
-**容器日志查看**
+**总览页**
 
-<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171444166.png" alt="image-20240317141050281" style="zoom:67%;" />
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amuluze/202403311351382.png" alt="image-20240317141005150" style="zoom:67%;" />
+
+**容器页**
+
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amuluze/202403311355365.png" alt="image-20240317141005150" style="zoom:67%;" />
+
+**容器日志**
+
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amuluze/202403311356168.png" alt="image-20240317141050281" style="zoom:67%;" />
+
+**镜像页**
+
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amuluze/202403311357917.png" alt="image-20240317141142487" style="zoom:67%;" />
 
 **主机状态监控**
 
-<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171445450.png" alt="image-20240317141142487" style="zoom:67%;" />
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amuluze/202403311358497.png" alt="image-20240317141142487" style="zoom:67%;" />
 
 ## 请作者喝杯咖啡
 

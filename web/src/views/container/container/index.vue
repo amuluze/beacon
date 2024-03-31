@@ -96,6 +96,7 @@ const logData = ref('')
 let ws: WebSocket
 
 const viewLog = (container_id: string) => {
+    logData.value = ''
     dialogVisible.value = true
     console.log('container_id', container_id)
     console.log('host', location.host)
@@ -103,6 +104,7 @@ const viewLog = (container_id: string) => {
     // 建立 WebSocket 连接
     console.log('建立 WebSocket 连接', location.host)
     ws = new WebSocket('ws://' + location.host + '/ws/' + container_id)
+    // ws = new WebSocket('ws://localhost:8000/ws/' + container_id)
     ws.onopen = () => {
         ws.send(container_id)
     }

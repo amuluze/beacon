@@ -1,1 +1,0 @@
-import{b as a,G as r}from"./index-Sqz7M1Rx.js";function u(){if(!arguments.length)return[];var t=arguments[0];return a(t)?t:[t]}function o(t){return r.post("/api/v1/auth/login",t)}function s(){return r.post("/api/v1/auth/logout")}export{s as a,u as c,o as l};
