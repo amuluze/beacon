@@ -103,7 +103,7 @@ const viewLog = (container_id: string) => {
 
     // 建立 WebSocket 连接
     console.log('建立 WebSocket 连接', location.host)
-    ws = new WebSocket('ws://' + location.host + '/ws/' + container_id)
+    ws = new WebSocket('wss://' + location.host + '/ws/' + container_id)
     // ws = new WebSocket('ws://localhost:8000/ws/' + container_id)
     ws.onopen = () => {
         ws.send(container_id)

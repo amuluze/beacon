@@ -1,7 +1,12 @@
 <template>
     <div class="am-navbar-container">
         <collapse-icon />
-        <avatar></avatar>
+        <div>
+            <a class="am-navbar-container__issue" href="https://support.qq.com/products/643578" target="_blank">
+                问题反馈
+            </a>
+            <avatar />
+        </div>
     </div>
 </template>
 <script setup lang="ts">
@@ -22,5 +27,11 @@ import CollapseIcon from '@/layout/navbar/CollapseIcon.vue'
     border-radius: 4px;
     margin-bottom: 8px;
     padding: 0 16px;
+
+    @include e(issue) {
+        font-size: 14px;
+        font-weight: 400;
+        margin-right: 16px;
+    }
 }
 </style>
