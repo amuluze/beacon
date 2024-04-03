@@ -23,9 +23,6 @@ deploy.sh
 
 */node_modules/*
 */.vitepress/cache/*
-*/nginx/*
-nginx/
-supervisor/
 */deploy.sh
 */pwd
 */dist/*
