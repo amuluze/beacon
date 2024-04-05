@@ -89,17 +89,20 @@ function passwordValidator(_: any, value: string, callback: any) {
 const store = useStore()
 const router = useRouter()
 const handleLogin = async () => {
-    const { data } = await login({ ...loginForm })
-
-    // 过期时间为 2h 后，是与后端的约定值
-    store.user.setToken(data.token, data.refresh)
-    // 跳转首页
-    await router.replace('/')
-    ElNotification({
-        title: '欢迎来到 Amprobe',
-        message: getTimeState(),
-        type: 'success'
-    })
+    try {
+        const { data } = await login({ ...loginForm })
+        // 过期时间为 2h 后，是与后端的约定值
+        store.user.setToken(data.token, data.refresh)
+        // 跳转首页
+        await router.replace('/')
+        ElNotification({
+            title: '欢迎来到 Amprobe',
+            message: getTimeState(),
+            type: 'success'
+        })
+    } catch (error) {
+        if (error instanceof Error) ElMessage.error(error.message)
+    }
 }
 </script>
 <style scoped lang="scss">
