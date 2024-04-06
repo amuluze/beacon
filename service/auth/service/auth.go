@@ -40,15 +40,15 @@ func (a *AuthService) Login(ctx context.Context, args *schema.LoginArgs) (*schem
 		return nil, errors.New400Error(err.Error())
 	}
 
-	tokeninfo, err := a.Auth.GenerateToken(u.ID.String())
+	tokenInfo, err := a.Auth.GenerateToken(u.ID.String())
 	if err != nil {
 		slog.Error("generate token failed", "error", err)
 		return nil, errors.New400Error(err.Error())
 	}
 	res := &schema.LoginResult{
-		Token:     tokeninfo.GetAccessToken(),
-		TokenType: tokeninfo.GetTokenType(),
-		ExpiresAt: tokeninfo.GetExpiresAt(),
+		Token:     tokenInfo.GetAccessToken(),
+		TokenType: tokenInfo.GetTokenType(),
+		ExpiresAt: tokenInfo.GetExpiresAt(),
 	}
 	return res, nil
 }

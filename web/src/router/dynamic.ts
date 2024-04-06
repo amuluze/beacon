@@ -36,6 +36,15 @@ export const dynamicRoutes: RouteRecordRaw[] = [
             title: '监控',
             icon: 'monitor'
         }
+    },
+    {
+        path: '/iterm',
+        name: 'iterm',
+        component: () => import('@/views/iterm/index.vue'), //路由懒加载
+        meta: {
+            title: '终端',
+            icon: 'monitor'
+        }
     }
     // {
     //     path: '/container',

@@ -11,7 +11,7 @@
                     <el-tag :type="scope.row.state === 'running' ? 'success' : 'danger'">{{ scope.row.state }}</el-tag>
                 </template>
             </el-table-column>
-            <el-table-column prop="uptime" label="启动时长" align="center" min-width="100" show-overflow-tooltip />
+            <el-table-column prop="uptime" label="启动时间" align="center" min-width="100" show-overflow-tooltip />
             <el-table-column
                 prop="cpu_percent"
                 label="CPU使用率"
@@ -40,11 +40,13 @@
                 min-width="100"
                 show-overflow-tooltip
             />
-            <el-table-column label="操作" width="180" fixed="right" align="center">
+            <el-table-column label="操作" width="320" fixed="right" align="center">
                 <template #default="scope">
-                    <el-button type="primary" size="small" @click="viewLog(scope.row.id)">
-                        <i-ep-view />查看日志
-                    </el-button>
+                    <el-button type="primary" size="small" @click="viewLog(scope.row.id)"> 日志 </el-button>
+                    <el-button type="primary" size="small" @click="startContainer(scope.row.id)"> 启动 </el-button>
+                    <el-button type="primary" size="small" @click="stopContainer(scope.row.id)"> 停止 </el-button>
+                    <el-button type="primary" size="small" @click="restartContainer(scope.row.id)"> 重启 </el-button>
+                    <el-button type="primary" size="small" @click="deleteContainer(scope.row.id)"> 删除 </el-button>
                 </template>
             </el-table-column>
         </el-table>
@@ -56,8 +58,8 @@
                     layout="total, sizes, prev, pager, next, jumper"
                     :page-sizes="pagination.sizeOption"
                     :total="pagination.total"
-                    @size-change="(size) => pagination.onSizeChange(size, params)"
-                    @current-change="(page) => pagination.onPageChange(page, params)"
+                    @size-change="(size: number) => pagination.onSizeChange(size, params)"
+                    @current-change="(page: number) => pagination.onPageChange(page, params)"
                 />
             </el-config-provider>
         </div>
@@ -78,8 +80,10 @@
 
 <script setup lang="ts">
 import { queryContainers } from '@/api/container'
+import { warning } from '@/components/Message/message'
 import { useTable } from '@/hooks/useTable'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
+import { Websocket } from '@/components/Websocket'
 
 onMounted(() => {
     refresh()
@@ -93,36 +97,46 @@ const { data, refresh, loading, pagination } = useTable(queryContainers, {}, {})
 const dialogVisible = ref(false)
 const logData = ref('')
 
-let ws: WebSocket
+let ws: Websocket
 
 const viewLog = (container_id: string) => {
     logData.value = ''
     dialogVisible.value = true
     console.log('container_id', container_id)
     console.log('host', location.host)
+    console.log('port', location.port)
 
-    // 建立 WebSocket 连接
-    console.log('建立 WebSocket 连接', location.host)
-    ws = new WebSocket('wss://' + location.host + '/ws/' + container_id)
-    // ws = new WebSocket('ws://localhost:8000/ws/' + container_id)
-    ws.onopen = () => {
+    const onOpen = (ws: Websocket, ev: Event) => {
+        console.log(ev)
         ws.send(container_id)
     }
 
-    // 监听消息事件
-    ws.addEventListener('message', (event) => {
-        logData.value = logData.value + '\n' + event.data
-    })
+    const onMessage = (ws: Websocket, ev: MessageEvent) => {
+        console.log(ws)
+        logData.value = logData.value + '\n' + ev.data
+    }
 
-    // 监听错误事件
-    ws.addEventListener('error', (error) => {
-        console.error(error)
-    })
+    ws = new Websocket('ws/' + container_id, onOpen, onMessage)
+}
 
-    // 监听连接关闭事件
-    ws.addEventListener('close', () => {
-        console.log('WebSocket closed')
-    })
+const startContainer = (container_id: string) => {
+    console.log('start container', container_id)
+    warning('该功能暂未开放')
+}
+
+const stopContainer = (container_id: string) => {
+    console.log('start container', container_id)
+    warning('该功能暂未开放')
+}
+
+const restartContainer = (container_id: string) => {
+    console.log('start container', container_id)
+    warning('该功能暂未开放')
+}
+
+const deleteContainer = (container_id: string) => {
+    console.log('start container', container_id)
+    warning('该功能暂未开放')
 }
 
 const handleClose = () => {

@@ -101,6 +101,7 @@ const handleLogin = async () => {
             type: 'success'
         })
     } catch (error) {
+        console.log(error)
         if (error instanceof Error) ElMessage.error(error.message)
     }
 }
