@@ -8,10 +8,9 @@ import (
 	"bufio"
 	"context"
 	"github.com/amuluze/amutool/docker"
+	"github.com/gofiber/contrib/websocket"
 	"log/slog"
 	"time"
-	
-	"github.com/gofiber/contrib/websocket"
 )
 
 type LoggerHandler struct {

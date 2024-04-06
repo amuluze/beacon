@@ -43,7 +43,16 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/iterm/index.vue'), //路由懒加载
         meta: {
             title: '终端',
-            icon: 'monitor'
+            icon: 'terminal'
+        }
+    },
+    {
+        path: '/audit',
+        name: 'audit',
+        component: () => import('@/views/audit/index.vue'), //路由懒加载
+        meta: {
+            title: '审计',
+            icon: 'audit'
         }
     }
     // {

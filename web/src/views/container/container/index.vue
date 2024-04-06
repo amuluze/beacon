@@ -42,11 +42,17 @@
             />
             <el-table-column label="操作" width="320" fixed="right" align="center">
                 <template #default="scope">
-                    <el-button type="primary" size="small" @click="viewLog(scope.row.id)"> 日志 </el-button>
-                    <el-button type="primary" size="small" @click="startContainer(scope.row.id)"> 启动 </el-button>
-                    <el-button type="primary" size="small" @click="stopContainer(scope.row.id)"> 停止 </el-button>
-                    <el-button type="primary" size="small" @click="restartContainer(scope.row.id)"> 重启 </el-button>
-                    <el-button type="primary" size="small" @click="deleteContainer(scope.row.id)"> 删除 </el-button>
+                    <el-button type="primary" size="small" plain @click="viewLog(scope.row.id)"> 日志 </el-button>
+                    <el-button type="primary" size="small" plain @click="startContainer(scope.row.id)">
+                        启动
+                    </el-button>
+                    <el-button type="warning" size="small" plain @click="stopContainer(scope.row.id)"> 停止 </el-button>
+                    <el-button type="warning" size="small" plain @click="restartContainer(scope.row.id)">
+                        重启
+                    </el-button>
+                    <el-button type="danger" size="small" plain @click="deleteContainer(scope.row.id)">
+                        删除
+                    </el-button>
                 </template>
             </el-table-column>
         </el-table>

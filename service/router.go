@@ -35,6 +35,7 @@ type Router struct {
 	authAPI      *authAPI.AuthAPI
 
 	loggerHandler *LoggerHandler
+	shellHandler  *ShellHandler
 }
 
 func (a *Router) RegisterAPI(app *fiber.App) {
@@ -87,8 +88,17 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			gHost.Get("net_trending", a.hostAPI.NetUsage)
 		}
 	}
-
-	app.Use("/ws/:id", websocket.New(a.loggerHandler.Handler))
+	app.Use("ws", func(c *fiber.Ctx) error {
+		// IsWebSocketUpgrade returns true if the client
+		// requested upgrade to the WebSocket protocol.
+		if websocket.IsWebSocketUpgrade(c) {
+			c.Locals("allowed", true)
+			return c.Next()
+		}
+		return fiber.ErrUpgradeRequired
+	})
+	app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))
+	app.Get("/ws", websocket.New(a.shellHandler.Handler))
 }
 
 func (a *Router) Register(app *fiber.App) error {

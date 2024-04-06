@@ -23,6 +23,7 @@ func BuildInjector(configFile string) (*Injector, func(), error) {
 		model.Set,
 		auth.Set,
 		NewLoggerHandler,
+		NewShellHandler,
 		RouterSet,
 		NewFiberApp,
 		NewTimedTask,

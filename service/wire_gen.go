@@ -52,6 +52,7 @@ func BuildInjector(configFile string) (*Injector, func(), error) {
 	authService := service3.NewAuthService(auther, authRepo)
 	authAPI := api3.NewLoginAPI(authService)
 	loggerHandler := NewLoggerHandler()
+	shellHandler := NewShellHandler()
 	router := &Router{
 		config:        config,
 		auth:          auther,
@@ -59,6 +60,7 @@ func BuildInjector(configFile string) (*Injector, func(), error) {
 		hostAPI:       hostAPI,
 		authAPI:       authAPI,
 		loggerHandler: loggerHandler,
+		shellHandler:  shellHandler,
 	}
 	app := NewFiberApp(config, router)
 	prepare := &Prepare{
