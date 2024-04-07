@@ -55,9 +55,6 @@ devDependencies:
   '@xterm/xterm':
     specifier: ^5.5.0
     version: 5.5.0
-  echarts-liquidfill:
-    specifier: ^3.1.0
-    version: 3.1.0(echarts@5.5.0)
   eslint:
     specifier: ^8.57.0
     version: 8.57.0
@@ -1652,19 +1649,12 @@ packages:
       domhandler: 4.3.1
     dev: true
 
-  /echarts-liquidfill@3.1.0(echarts@5.5.0):
-    resolution: {integrity: sha512-5Dlqs/jTsdTUAsd+K5LPLLTgrbbNORUSBQyk8PSy1Mg2zgHDWm83FmvA4s0ooNepCJojFYRITTQ4GU1UUSKYLw==}
-    peerDependencies:
-      echarts: ^5.0.1
-    dependencies:
-      echarts: 5.5.0
-    dev: true
-
   /echarts@5.5.0:
     resolution: {integrity: sha512-rNYnNCzqDAPCr4m/fqyUFv7fD9qIsd50S6GDFgO1DxZhncCsNsG7IfUlAlvZe5oSEQxtsjnHiUuppzccry93Xw==}
     dependencies:
       tslib: 2.3.0
       zrender: 5.5.0
+    dev: false
 
   /element-plus@2.6.2(vue@3.4.21):
     resolution: {integrity: sha512-WFMv1v83l437Xu+GeeM+ytxd9VUQpR4418BowvTVIPYItsoj6yK0ITIuSv19iCesF405FbAOaCIHXhJch0ilFA==}
@@ -4029,6 +4019,7 @@ packages:
 
   /tslib@2.3.0:
     resolution: {integrity: sha512-N82ooyxVNm6h1riLCoyS9e3fuJ3AMG2zIZs2Gd1ATcSFjSA23Q0fzjjZeh0jbJvWVDZ0cJT8yaNNaaXHzueNjg==}
+    dev: false
 
   /tslib@2.6.2:
     resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
@@ -4500,3 +4491,4 @@ packages:
     resolution: {integrity: sha512-O3MilSi/9mwoovx77m6ROZM7sXShR/O/JIanvzTwjN3FORfLSr81PsUGd7jlaYOeds9d8tw82oP44+3YucVo+w==}
     dependencies:
       tslib: 2.3.0
+    dev: false

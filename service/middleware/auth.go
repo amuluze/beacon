@@ -5,6 +5,7 @@
 package middleware
 
 import (
+	"fmt"
 	"github.com/amuluze/amprobe/pkg/auth"
 	"github.com/amuluze/amprobe/pkg/contextx"
 	"github.com/amuluze/amprobe/pkg/fiberx"
@@ -23,17 +24,20 @@ func UserAuthMiddleware(a auth.Auther, skippers ...SkipperFunc) fiber.Handler {
 		if SkipHandler(c, skippers...) {
 			return c.Next()
 		}
-
+		slog.Info("auth middleware", "token", fiberx.GetToken(c))
 		tokenUserID, err := a.ParseUserID(fiberx.GetToken(c))
 		if errors.Is(err, auth.ErrInvalidToken) {
+			slog.Error("invalid token", "err", err)
 			return fiberx.Unauthorized(c)
 		}
+		slog.Info("auth middleware qqq")
 		if err != nil {
 			slog.Error("logout failed", "error", err)
 			return fiberx.Failure(c, err)
 		}
 
 		slog.Info("user id %v", tokenUserID)
+		fmt.Println(c.Method(), c.Path(), c.Route().Name, tokenUserID)
 		wrapUserAuthContext(c, tokenUserID)
 		return c.Next()
 	}

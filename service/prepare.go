@@ -5,6 +5,7 @@
 package service
 
 import (
+	"fmt"
 	"github.com/amuluze/amprobe/pkg/utils/hash"
 	"github.com/amuluze/amprobe/pkg/utils/uuid"
 	"github.com/amuluze/amprobe/service/model"
@@ -41,6 +42,7 @@ func (a *Prepare) Init(config *Config) {
 
 	err = a.db.RunInTransaction(func(tx *gorm.DB) error {
 		for _, u := range prepareData.Users {
+			fmt.Println("--->", u)
 			var ou model.User
 			// 不存在则创建
 			if err := a.db.Model(&model.User{}).Where("username = ?", u.Username).Take(&ou).Error; err != nil {
@@ -49,10 +51,11 @@ func (a *Prepare) Init(config *Config) {
 					Username: u.Username,
 					Password: hash.SHA1String(u.Password),
 					Status:   u.Status,
+					IsAdmin:  u.IsAdmin,
 				})
 			}
 			// 存在则更新
-			a.db.Model(&model.User{}).Updates(model.User{Password: hash.SHA1String(u.Password), Status: u.Status})
+			a.db.Model(&model.User{}).Where("username = ?", u.Username).Updates(model.User{Password: hash.SHA1String(u.Password), Status: u.Status, IsAdmin: u.IsAdmin})
 		}
 		return nil
 	})
@@ -67,6 +70,7 @@ type User struct {
 	Password string `yaml:"password"`
 	Remark   string `yaml:"remark"`
 	Status   int    `yaml:"status"`
+	IsAdmin  int    `yaml:"is_admin"`
 }
 
 type Users []*User

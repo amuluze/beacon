@@ -14,7 +14,7 @@ Prefork = false
 # 定时任务执行间隔配置
 [Gorm]
 # 是否开启调试模式
-Debug = true
+Debug = false
 # 数据库类型(目前支持的数据库类型：postgres)
 DBType = "sqlite"
 # 设置连接可以重用的最长时间(单位：秒)
@@ -73,4 +73,5 @@ Prefix = "auth_"
 
 [InitData]
 Enable = true
-InitConfigFile = "../configs/init.yaml"
+#InitConfigFile = "/app/configs/init.yaml"
+InitConfigFile = "/Users/amu/Desktop/github/amprobe/configs/init.yaml"

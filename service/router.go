@@ -71,21 +71,21 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 
 		gContainer := v1.Group("container")
 		{
-			gContainer.Get("/containers", a.containerAPI.ContainerList)
-			gContainer.Get("/images", a.containerAPI.ImageList)
-			gContainer.Get("/version", a.containerAPI.Version)
+			gContainer.Get("/containers", a.containerAPI.ContainerList).Name("获取容器列表")
+			gContainer.Get("/images", a.containerAPI.ImageList).Name("获取镜像列表")
+			gContainer.Get("/version", a.containerAPI.Version).Name("获取 Docker 版本信息")
 		}
 
 		gHost := v1.Group("host")
 		{
-			gHost.Get("/host_info", a.hostAPI.HostInfo)
-			gHost.Get("/cpu_info", a.hostAPI.CPUInfo)
-			gHost.Get("/mem_info", a.hostAPI.MemInfo)
-			gHost.Get("/disk_info", a.hostAPI.DiskInfo)
-			gHost.Get("cpu_trending", a.hostAPI.CPUUsage)
-			gHost.Get("mem_trending", a.hostAPI.MemUsage)
-			gHost.Get("disk_trending", a.hostAPI.DiskUsage)
-			gHost.Get("net_trending", a.hostAPI.NetUsage)
+			gHost.Get("/host_info", a.hostAPI.HostInfo).Name("获取主机信息")
+			gHost.Get("/cpu_info", a.hostAPI.CPUInfo).Name("获取 CPU 信息")
+			gHost.Get("/mem_info", a.hostAPI.MemInfo).Name("获取内存信息")
+			gHost.Get("/disk_info", a.hostAPI.DiskInfo).Name("获取磁盘信息")
+			gHost.Get("cpu_trending", a.hostAPI.CPUUsage).Name("获取 CPU 使用率")
+			gHost.Get("mem_trending", a.hostAPI.MemUsage).Name("获取内存使用率")
+			gHost.Get("disk_trending", a.hostAPI.DiskUsage).Name("获取磁盘使用率")
+			gHost.Get("net_trending", a.hostAPI.NetUsage).Name("获取网络使用率")
 		}
 	}
 	app.Use("ws", func(c *fiber.Ctx) error {

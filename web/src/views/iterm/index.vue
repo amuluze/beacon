@@ -15,10 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import 'xterm/css/xterm.css'
-import { Terminal } from 'xterm'
-import { FitAddon } from 'xterm-addon-fit'
-// import { AttachAddon } from 'xterm-addon-attach'
+import { Terminal } from '@xterm/xterm'
 
 const xtermRef = ref<HTMLElement>()
 const ip = ref('localhost')
@@ -140,12 +137,6 @@ const connect = () => {
             })
         )
         socket.send('\n')
-        // 3.websocket集成的插件,这里要注意,网上写了很多websocket相关代码.xterm4版本没必要.
-        const fitAddon = new FitAddon() // 全屏插件
-        window.onresize = () => {
-            fitAddon.fit()
-        }
-        term.loadAddon(fitAddon) // 自适应尺寸
         term.open(xtermRef.value!)
         term.focus()
         writeDefaultInfo()
