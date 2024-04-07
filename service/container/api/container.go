@@ -68,3 +68,99 @@ func (a *ContainerAPI) Version(ctx *fiber.Ctx) error {
 	}
 	return fiberx.Success(ctx, version)
 }
+
+func (a *ContainerAPI) ContainerStart(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	var args schema.ContainerStartArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	slog.Info("args", "args", args)
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	err := a.ContainerService.ContainerStart(c, &args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
+}
+
+func (a *ContainerAPI) ContainerStop(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+
+	var args schema.ContainerStopArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+
+	slog.Info("args", "args", args)
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	err := a.ContainerService.ContainerStop(c, &args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
+}
+
+func (a *ContainerAPI) ContainerRemove(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	var args schema.ContainerRemoveArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	slog.Info("args", "args", args)
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	err := a.ContainerService.ContainerRemove(c, &args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
+}
+
+func (a *ContainerAPI) ContainerRestart(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	var args schema.ContainerRestartArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	slog.Info("args", "args", args)
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	err := a.ContainerService.ContainerRestart(c, &args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
+}
+
+func (a *ContainerAPI) ImageRemove(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	var args schema.ImageRemoveArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	slog.Info("args", "args", args)
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	err := a.ContainerService.ImageRemove(c, &args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
+}
+
+func (a *ContainerAPI) ImagesPrune(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	err := a.ContainerService.ImagesPrune(c)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
+}

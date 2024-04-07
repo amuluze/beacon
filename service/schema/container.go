@@ -24,6 +24,22 @@ type ContainerQueryArgs struct {
 	Size int `json:"size" validate:"gte=0"`
 }
 
+type ContainerStartArgs struct {
+	ContainerID string `json:"container_id" validate:"required"`
+}
+
+type ContainerStopArgs struct {
+	ContainerID string `json:"container_id" validate:"required"`
+}
+
+type ContainerRemoveArgs struct {
+	ContainerID string `json:"container_id" validate:"required"`
+}
+
+type ContainerRestartArgs struct {
+	ContainerID string `json:"container_id" validate:"required"`
+}
+
 type ContainerQueryRely struct {
 	Data  []Container `json:"data"`
 	Total int         `json:"total"`
@@ -49,6 +65,10 @@ type ImageQueryReply struct {
 	Total int     `json:"total"`
 	Page  int     `json:"page"`
 	Size  int     `json:"size"`
+}
+
+type ImageRemoveArgs struct {
+	ImageID string `json:"image_id" validate:"required"`
 }
 
 type Docker struct {

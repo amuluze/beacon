@@ -72,7 +72,13 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 		gContainer := v1.Group("container")
 		{
 			gContainer.Get("/containers", a.containerAPI.ContainerList).Name("获取容器列表")
+			gContainer.Post("/container_start", a.containerAPI.ContainerStart).Name("启动容器")
+			gContainer.Post("/container_stop", a.containerAPI.ContainerStop).Name("停止容器")
+			gContainer.Post("/container_restart", a.containerAPI.ContainerRestart).Name("重启容器")
+			gContainer.Post("/container_remove", a.containerAPI.ContainerRemove).Name("删除容器")
 			gContainer.Get("/images", a.containerAPI.ImageList).Name("获取镜像列表")
+			gContainer.Post("/image_remove", a.containerAPI.ImageRemove).Name("删除镜像")
+			gContainer.Post("/images_prune", a.containerAPI.ImagesPrune).Name("清理虚悬镜像")
 			gContainer.Get("/version", a.containerAPI.Version).Name("获取 Docker 版本信息")
 		}
 

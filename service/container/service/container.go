@@ -19,7 +19,13 @@ var ContainerServiceSet = wire.NewSet(NewContainerService, wire.Bind(new(IContai
 
 type IContainerService interface {
 	ContainerList(ctx context.Context, args *schema.ContainerQueryArgs) (*schema.ContainerQueryRely, error)
+	ContainerStart(ctx context.Context, args *schema.ContainerStartArgs) error
+	ContainerStop(ctx context.Context, args *schema.ContainerStopArgs) error
+	ContainerRemove(ctx context.Context, args *schema.ContainerRemoveArgs) error
+	ContainerRestart(ctx context.Context, args *schema.ContainerRestartArgs) error
 	ImageList(ctx context.Context, args *schema.ImageQueryArgs) (*schema.ImageQueryReply, error)
+	ImageRemove(ctx context.Context, args *schema.ImageRemoveArgs) error
+	ImagesPrune(ctx context.Context) error
 	Version(ctx context.Context) (*schema.Docker, error)
 }
 
@@ -90,4 +96,28 @@ func (a *ContainerService) Version(ctx context.Context) (*schema.Docker, error) 
 		Os:            version.Os,
 		Arch:          version.Arch,
 	}, nil
+}
+
+func (a *ContainerService) ContainerStart(ctx context.Context, args *schema.ContainerStartArgs) error {
+	return a.ContainerRepo.ContainerStart(ctx, args)
+}
+
+func (a *ContainerService) ContainerStop(ctx context.Context, args *schema.ContainerStopArgs) error {
+	return a.ContainerRepo.ContainerStop(ctx, args)
+}
+
+func (a *ContainerService) ContainerRemove(ctx context.Context, args *schema.ContainerRemoveArgs) error {
+	return a.ContainerRepo.ContainerRemove(ctx, args)
+}
+
+func (a *ContainerService) ContainerRestart(ctx context.Context, args *schema.ContainerRestartArgs) error {
+	return a.ContainerRepo.ContainerRestart(ctx, args)
+}
+
+func (a *ContainerService) ImageRemove(ctx context.Context, args *schema.ImageRemoveArgs) error {
+	return a.ImageRemove(ctx, args)
+}
+
+func (a *ContainerService) ImagesPrune(ctx context.Context) error {
+	return a.ImagesPrune(ctx)
 }

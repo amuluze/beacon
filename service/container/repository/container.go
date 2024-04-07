@@ -7,6 +7,7 @@ package repository
 import (
 	"context"
 	"github.com/amuluze/amprobe/service/schema"
+	"github.com/amuluze/amutool/docker"
 
 	"github.com/amuluze/amprobe/service/model"
 	"github.com/amuluze/amutool/database"
@@ -18,17 +19,24 @@ var ContainerRepoSet = wire.NewSet(NewContainerRepo, wire.Bind(new(IContainerRep
 type IContainerRepo interface {
 	ContainerList(ctx context.Context, args *schema.ContainerQueryArgs) (model.Containers, error)
 	ContainerCount(ctx context.Context) (int, error)
+	ContainerStart(ctx context.Context, args *schema.ContainerStartArgs) error
+	ContainerStop(ctx context.Context, args *schema.ContainerStopArgs) error
+	ContainerRemove(ctx context.Context, args *schema.ContainerRemoveArgs) error
+	ContainerRestart(ctx context.Context, args *schema.ContainerRestartArgs) error
 	ImageList(ctx context.Context, args *schema.ImageQueryArgs) (model.Images, error)
+	ImageRemove(ctx context.Context, args *schema.ImageRemoveArgs) error
+	ImagesPrune(ctx context.Context) error
 	ImageCount(ctx context.Context) (int, error)
 	Version(ctx context.Context) (model.Docker, error)
 }
 
 type ContainerRepo struct {
-	DB *database.DB
+	DB      *database.DB
+	Manager *docker.Manager
 }
 
-func NewContainerRepo(db *database.DB) *ContainerRepo {
-	return &ContainerRepo{DB: db}
+func NewContainerRepo(db *database.DB, manager *docker.Manager) *ContainerRepo {
+	return &ContainerRepo{DB: db, Manager: manager}
 }
 
 func (a *ContainerRepo) ContainerList(ctx context.Context, args *schema.ContainerQueryArgs) (model.Containers, error) {
@@ -69,4 +77,28 @@ func (a *ContainerRepo) Version(ctx context.Context) (model.Docker, error) {
 		return docker, err
 	}
 	return docker, nil
+}
+
+func (a *ContainerRepo) ContainerStart(ctx context.Context, args *schema.ContainerStartArgs) error {
+	return a.Manager.StartContainer(ctx, args.ContainerID)
+}
+
+func (a *ContainerRepo) ContainerStop(ctx context.Context, args *schema.ContainerStopArgs) error {
+	return a.Manager.StopContainer(ctx, args.ContainerID)
+}
+
+func (a *ContainerRepo) ContainerRemove(ctx context.Context, args *schema.ContainerRemoveArgs) error {
+	return a.Manager.DeleteContainer(ctx, args.ContainerID)
+}
+
+func (a *ContainerRepo) ContainerRestart(ctx context.Context, args *schema.ContainerRestartArgs) error {
+	return a.Manager.RestartContainer(ctx, args.ContainerID)
+}
+
+func (a *ContainerRepo) ImageRemove(ctx context.Context, args *schema.ImageRemoveArgs) error {
+	return a.Manager.RemoveImage(ctx, args.ImageID)
+}
+
+func (a *ContainerRepo) ImagesPrune(ctx context.Context) error {
+	return a.Manager.PruneImages(ctx)
 }
