@@ -85,11 +85,12 @@ type Logger struct {
 }
 
 type Auth struct {
-	Enable        bool
-	SigningMethod string
-	SigningKey    string
-	Expired       int
-	Prefix        string
+	Enable         bool
+	SigningMethod  string
+	SigningKey     string
+	Expired        int
+	RefreshExpired int
+	Prefix         string
 }
 
 type InitData struct {

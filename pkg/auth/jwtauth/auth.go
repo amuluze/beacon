@@ -5,55 +5,92 @@
 package jwtauth
 
 import (
+	"fmt"
 	"github.com/amuluze/amprobe/pkg/auth"
+	"github.com/amuluze/amprobe/service/model"
+	"github.com/amuluze/amutool/database"
 	"github.com/golang-jwt/jwt"
-	"log/slog"
+	"strings"
 	"time"
 )
 
 type JWTAuth struct {
 	opts  *options
 	store Storer
+	db    *database.DB
 }
 
-func New(store Storer, opts ...Option) *JWTAuth {
+func New(store Storer, db *database.DB, opts ...Option) *JWTAuth {
 	o := defaultOptions
 	for _, opt := range opts {
 		opt(&o)
 	}
-	return &JWTAuth{opts: &o, store: store}
+	return &JWTAuth{opts: &o, store: store, db: db}
 }
 
-// GenerateToken 生成令牌
-func (a *JWTAuth) GenerateToken(userID string) (auth.TokenInfo, error) {
+func (a *JWTAuth) generateAccessToken(userID string, username string, isAdmin string) (string, error) {
 	now := time.Now()
 	expiresAt := now.Add(time.Duration(a.opts.expired) * time.Second).Unix()
-	expiresTime := now.Add(time.Duration(a.opts.expired) * time.Second).Format("2006-01-02T15:04:05.616Z")
 
 	token := jwt.NewWithClaims(a.opts.signingMethod, &jwt.StandardClaims{
 		IssuedAt:  now.Unix(),
 		ExpiresAt: expiresAt,
 		NotBefore: now.Unix(),
-		Subject:   userID,
+		Subject:   userID + "." + username + "." + isAdmin,
 	})
 
 	tokenString, err := token.SignedString(a.opts.signingKey)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	err = a.callStore(func(storer Storer) error {
 		return storer.Set(tokenString, time.Duration(a.opts.expired)*time.Second)
 	})
 	if err != nil {
-		slog.Error("store token string error: %#v", "err", err)
+		return "", err
+	}
+	return tokenString, nil
+}
+
+func (a *JWTAuth) generateRefreshToken(userID string, username string, isAdmin string) (string, error) {
+	now := time.Now()
+	expiresAt := now.Add(time.Duration(a.opts.refreshExpired) * time.Second).Unix()
+
+	token := jwt.NewWithClaims(a.opts.signingMethod, &jwt.StandardClaims{
+		IssuedAt:  now.Unix(),
+		ExpiresAt: expiresAt,
+		NotBefore: now.Unix(),
+		Subject:   username + "." + userID + "." + isAdmin,
+	})
+
+	tokenString, err := token.SignedString(a.opts.signingKey)
+	if err != nil {
+		return "", err
+	}
+	err = a.callStore(func(storer Storer) error {
+		return storer.Set(tokenString, time.Duration(a.opts.refreshExpired)*time.Second)
+	})
+	if err != nil {
+		return "", err
+	}
+	return tokenString, nil
+}
+
+// GenerateToken 生成令牌
+func (a *JWTAuth) GenerateToken(userID string, username string, isAdmin string) (auth.TokenInfo, error) {
+	fmt.Println("generating token", userID, username, isAdmin)
+	accessToken, err := a.generateAccessToken(userID, username, isAdmin)
+	if err != nil {
 		return nil, err
 	}
-
+	refreshToken, err := a.generateRefreshToken(userID, username, isAdmin)
+	if err != nil {
+		return nil, err
+	}
 	tokenInfo := &tokenInfo{
-		ExpiresAt: expiresTime,
-		TokenType: a.opts.tokenType,
-		Token:     tokenString,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 	}
 	return tokenInfo, nil
 }
@@ -82,10 +119,10 @@ func (a *JWTAuth) DestroyToken(tokenString string) error {
 	})
 }
 
-// ParseUserID 解析用户 ID
-func (a *JWTAuth) ParseUserID(tokenString string) (string, error) {
+// ParseToken 解析用户 ID, username
+func (a *JWTAuth) ParseToken(tokenString string, tokenType string) (string, string, string, error) {
 	if tokenString == "" {
-		return "", auth.ErrInvalidToken
+		return "", "", "", auth.ErrInvalidToken
 	}
 
 	err := a.callStore(func(storer Storer) error {
@@ -98,14 +135,22 @@ func (a *JWTAuth) ParseUserID(tokenString string) (string, error) {
 	})
 
 	if err != nil {
-		return "", err
+		return "", "", "", err
 	}
 
 	claims, err := a.parseToken(tokenString)
 	if err != nil {
-		return "", err
+		return "", "", "", err
 	}
-	return claims.Subject, nil
+	fmt.Println("token parse: ", claims.Subject)
+	switch tokenType {
+	case "access_token":
+		return strings.Split(claims.Subject, ".")[0], strings.Split(claims.Subject, ".")[1], strings.Split(claims.Subject, ".")[2], nil
+	case "refresh_token":
+		return strings.Split(claims.Subject, ".")[1], strings.Split(claims.Subject, ".")[0], strings.Split(claims.Subject, ".")[2], nil
+	default:
+		return "", "", "", auth.ErrInvalidToken
+	}
 }
 
 // Release 释放资源
@@ -113,4 +158,8 @@ func (a *JWTAuth) Release() error {
 	return a.callStore(func(storer Storer) error {
 		return storer.Close()
 	})
+}
+
+func (a *JWTAuth) RecordAudit(username string, operate string) {
+	a.db.Model(&model.Audit{}).Create(&model.Audit{Username: username, Operate: operate})
 }

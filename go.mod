@@ -4,10 +4,11 @@ go 1.21.4
 
 require (
 	github.com/amuluze/amutool/database v0.0.0-20240329052546-d5fbbede26a1
-	github.com/amuluze/amutool/docker v0.0.0-20240329052546-d5fbbede26a1
+	github.com/amuluze/amutool/docker v0.0.0-20240408023446-ec916475d43e
 	github.com/amuluze/amutool/errors v0.0.0-20240329052546-d5fbbede26a1
 	github.com/amuluze/amutool/logger v0.0.0-20240329052546-d5fbbede26a1
 	github.com/amuluze/amutool/timex v0.0.0-20240329052546-d5fbbede26a1
+	github.com/creack/pty v1.1.11
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/gofiber/contrib/websocket v1.3.0

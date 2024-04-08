@@ -17,7 +17,6 @@ import (
 func GetToken(c *fiber.Ctx) string {
 	var token string
 	auth := c.GetReqHeaders()["Authorization"][0]
-	fmt.Println(">>>>>>>>>", auth)
 	prefix := "Bearer "
 	if auth != "" && strings.HasPrefix(auth, prefix) {
 		token = auth[len(prefix):]

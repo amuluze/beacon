@@ -6,13 +6,13 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/amuluze/amprobe/pkg/auth"
 	"github.com/amuluze/amprobe/service/auth/repository"
 	"github.com/amuluze/amprobe/service/schema"
 	"github.com/amuluze/amutool/errors"
 	"github.com/google/wire"
 	"log/slog"
-	"strings"
 )
 
 var AuthServiceSet = wire.NewSet(NewAuthService, wire.Bind(new(IAuthService), new(*AuthService)))
@@ -39,16 +39,15 @@ func (a *AuthService) Login(ctx context.Context, args *schema.LoginArgs) (*schem
 		slog.Error("auth repo login failed", "error", err)
 		return nil, errors.New400Error(err.Error())
 	}
-
-	tokenInfo, err := a.Auth.GenerateToken(u.ID.String())
+	fmt.Printf("login user: %#v\n", u)
+	tokenInfo, err := a.Auth.GenerateToken(u.ID.String(), u.Username, u.IsAdmin)
 	if err != nil {
 		slog.Error("generate token failed", "error", err)
 		return nil, errors.New400Error(err.Error())
 	}
 	res := &schema.LoginResult{
-		Token:     tokenInfo.GetAccessToken(),
-		TokenType: tokenInfo.GetTokenType(),
-		ExpiresAt: tokenInfo.GetExpiresAt(),
+		AccessToken:  tokenInfo.GetAccessToken(),
+		RefreshToken: tokenInfo.GetRefreshToken(),
 	}
 	return res, nil
 }
@@ -85,23 +84,21 @@ func (a *AuthService) TokenUpdate(ctx context.Context, token string) (*schema.Lo
 		return nil, errors.New400Error(err.Error())
 	}
 
-	tokenUserID, err := a.Auth.ParseUserID(token)
+	userID, username, isAdmin, err := a.Auth.ParseToken(token, "refresh_token")
 	if err != nil {
 		slog.Error("parse token failed", "error", err)
 		return nil, errors.New400Error(err.Error())
 	}
-	userID := strings.Split(tokenUserID, ".")[0]
-
-	tokenInfo, err := a.Auth.GenerateToken(userID)
+	fmt.Println("======>", userID, username, isAdmin)
+	tokenInfo, err := a.Auth.GenerateToken(userID, username, isAdmin)
 	if err != nil {
 		slog.Error("generate new token failed", "error", err)
 		return nil, errors.New400Error(err.Error())
 	}
 
 	res := &schema.LoginResult{
-		Token:     tokenInfo.GetAccessToken(),
-		TokenType: tokenInfo.GetTokenType(),
-		ExpiresAt: tokenInfo.GetExpiresAt(),
+		AccessToken:  tokenInfo.GetAccessToken(),
+		RefreshToken: tokenInfo.GetRefreshToken(),
 	}
 
 	return res, nil

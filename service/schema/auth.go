@@ -10,9 +10,8 @@ type LoginArgs struct {
 }
 
 type LoginResult struct {
-	Token     string `json:"token" description:"访问令牌"`
-	TokenType string `json:"token_type" description:"令牌类型"`
-	ExpiresAt string `json:"expires_at" description:"过期时间戳"`
+	AccessToken  string `json:"access_token" description:"访问令牌"`
+	RefreshToken string `json:"refresh_token" description:"刷新令牌"`
 }
 
 type PasswordUpdateArgs struct {

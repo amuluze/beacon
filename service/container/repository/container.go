@@ -35,7 +35,11 @@ type ContainerRepo struct {
 	Manager *docker.Manager
 }
 
-func NewContainerRepo(db *database.DB, manager *docker.Manager) *ContainerRepo {
+func NewContainerRepo(db *database.DB) *ContainerRepo {
+	manager, err := docker.NewManager()
+	if err != nil {
+		panic(err)
+	}
 	return &ContainerRepo{DB: db, Manager: manager}
 }
 

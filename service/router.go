@@ -7,6 +7,7 @@ package service
 import (
 	"fmt"
 	"github.com/amuluze/amprobe/pkg/auth"
+	"github.com/amuluze/amprobe/service/middleware"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 
@@ -44,12 +45,12 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 	// 以下是 http 服务
 	g := app.Group("/api")
 
-	//if a.config.Auth.Enable {
-	//	g.Use(middleware.UserAuthMiddleware(
-	//		a.auth,
-	//		middleware.AllowPathPrefixSkipper("/api/v1/auth/login"),
-	//	))
-	//}
+	if a.config.Auth.Enable {
+		g.Use(middleware.UserAuthMiddleware(
+			a.auth,
+			middleware.AllowPathPrefixSkipper("/api/v1/auth/login"),
+		))
+	}
 
 	v1 := g.Group("v1")
 	{

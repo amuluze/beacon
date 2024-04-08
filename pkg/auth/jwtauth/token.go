@@ -7,21 +7,16 @@ package jwtauth
 import "encoding/json"
 
 type tokenInfo struct {
-	Token     string `json:"token"`      // 访问令牌
-	TokenType string `json:"token_type"` // 令牌类型
-	ExpiresAt string `json:"expires_at"` // 过期时间
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 func (t *tokenInfo) GetAccessToken() string {
-	return t.Token
+	return t.AccessToken
 }
 
-func (t *tokenInfo) GetTokenType() string {
-	return t.TokenType
-}
-
-func (t *tokenInfo) GetExpiresAt() string {
-	return t.ExpiresAt
+func (t *tokenInfo) GetRefreshToken() string {
+	return t.RefreshToken
 }
 
 func (t *tokenInfo) EncodeToJSON() ([]byte, error) {

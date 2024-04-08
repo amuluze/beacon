@@ -12,14 +12,13 @@ var ErrInvalidToken = errors.New("invalid token")
 
 type TokenInfo interface {
 	GetAccessToken() string
-	GetTokenType() string
-	GetExpiresAt() string
-	EncodeToJSON() ([]byte, error)
+	GetRefreshToken() string
 }
 
 type Auther interface {
-	GenerateToken(userID string) (TokenInfo, error)
+	GenerateToken(userID string, username string, isAdmin string) (TokenInfo, error)
 	DestroyToken(token string) error
-	ParseUserID(token string) (string, error)
+	ParseToken(token string, tokenType string) (string, string, string, error)
 	Release() error
+	RecordAudit(username string, operate string)
 }

@@ -43,14 +43,16 @@
             <el-table-column label="操作" width="320" fixed="right" align="center">
                 <template #default="scope">
                     <el-button type="primary" size="small" plain @click="viewLog(scope.row.id)"> 日志 </el-button>
-                    <el-button type="primary" size="small" plain @click="startContainer(scope.row.id)">
+                    <el-button type="primary" size="small" plain @click="startContainerByID(scope.row.id)">
                         启动
                     </el-button>
-                    <el-button type="warning" size="small" plain @click="stopContainer(scope.row.id)"> 停止 </el-button>
-                    <el-button type="warning" size="small" plain @click="restartContainer(scope.row.id)">
+                    <el-button type="warning" size="small" plain @click="stopContainerByID(scope.row.id)">
+                        停止
+                    </el-button>
+                    <el-button type="warning" size="small" plain @click="restartContainerByID(scope.row.id)">
                         重启
                     </el-button>
-                    <el-button type="danger" size="small" plain @click="deleteContainer(scope.row.id)">
+                    <el-button type="danger" size="small" plain @click="deleteContainerByID(scope.row.id)">
                         删除
                     </el-button>
                 </template>
@@ -85,11 +87,16 @@
 </template>
 
 <script setup lang="ts">
-import { queryContainers } from '@/api/container'
-import { warning } from '@/components/Message/message'
+import { queryContainers, removeContainer, restartContainer, startContainer, stopContainer } from '@/api/container'
 import { useTable } from '@/hooks/useTable'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import { Websocket } from '@/components/Websocket'
+import {
+    RemoveContainerArgs,
+    RestartContainerArgs,
+    StartContainerArgs,
+    StopContainerArgs
+} from '@/interface/container.ts'
 
 onMounted(() => {
     refresh()
@@ -125,24 +132,36 @@ const viewLog = (container_id: string) => {
     ws = new Websocket('ws/' + container_id, onOpen, onMessage)
 }
 
-const startContainer = (container_id: string) => {
+const startContainerByID = (container_id: string) => {
     console.log('start container', container_id)
-    warning('该功能暂未开放')
+    const params: StartContainerArgs = {
+        container_id: container_id
+    }
+    startContainer(params)
 }
 
-const stopContainer = (container_id: string) => {
+const stopContainerByID = (container_id: string) => {
     console.log('start container', container_id)
-    warning('该功能暂未开放')
+    const params: StopContainerArgs = {
+        container_id: container_id
+    }
+    stopContainer(params)
 }
 
-const restartContainer = (container_id: string) => {
+const restartContainerByID = (container_id: string) => {
     console.log('start container', container_id)
-    warning('该功能暂未开放')
+    const params: RestartContainerArgs = {
+        container_id: container_id
+    }
+    restartContainer(params)
 }
 
-const deleteContainer = (container_id: string) => {
+const deleteContainerByID = (container_id: string) => {
     console.log('start container', container_id)
-    warning('该功能暂未开放')
+    const params: RemoveContainerArgs = {
+        container_id: container_id
+    }
+    removeContainer(params)
 }
 
 const handleClose = () => {

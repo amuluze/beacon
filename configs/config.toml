@@ -65,8 +65,10 @@ Enable = true
 SigningMethod = "HS512"
 # 签名key
 SigningKey = "amprobe"
-# 过期时间（单位秒）
+# access_token 过期时间（单位秒, 2h）
 Expired = 7200
+# refresh_token 过期时间（单位秒, 1d）
+RefreshExpired = 86400
 # key 前缀
 Prefix = "auth_"
 

@@ -16,6 +16,19 @@ export interface Container {
     memory_limit: number
 }
 
+export interface StartContainerArgs {
+    container_id: string
+}
+export interface StopContainerArgs {
+    container_id: string
+}
+export interface RemoveContainerArgs {
+    container_id: string
+}
+export interface RestartContainerArgs {
+    container_id: string
+}
+
 export interface ContainerQueryResult {
     data: Container[]
     total: number
@@ -29,6 +42,10 @@ export interface Image {
     tag: string
     created: string
     size: string
+}
+
+export interface RemoveImageArgs {
+    image_id: string
 }
 
 export interface ImageQueryResult {

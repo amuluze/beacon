@@ -69,8 +69,8 @@ type User struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 	Remark   string `yaml:"remark"`
+	IsAdmin  string `yaml:"is_admin"`
 	Status   int    `yaml:"status"`
-	IsAdmin  int    `yaml:"is_admin"`
 }
 
 type Users []*User

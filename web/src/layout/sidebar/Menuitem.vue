@@ -25,6 +25,7 @@ defineProps<{
     item: RouteRecordRaw
 }>()
 function handleClickMenu(item: RouteRecordRaw) {
+    console.log(item)
     router.push(item.path)
 }
 </script>

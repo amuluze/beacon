@@ -91,8 +91,9 @@ const router = useRouter()
 const handleLogin = async () => {
     try {
         const { data } = await login({ ...loginForm })
+        console.log('login', data)
         // 过期时间为 2h 后，是与后端的约定值
-        store.user.setToken(data.token, data.refresh)
+        store.user.setToken(data.access_token, data.refresh_token)
         // 跳转首页
         await router.replace('/')
         ElNotification({

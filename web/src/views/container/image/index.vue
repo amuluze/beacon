@@ -1,7 +1,7 @@
 <template>
     <div class="am-image-operator">
         <el-card>
-            <el-button type="primary">清理虚悬镜像</el-button>
+            <el-button type="primary" @click="pruneImagesForce">清理虚悬镜像</el-button>
         </el-card>
     </div>
     <el-card shadow="never">
@@ -14,7 +14,9 @@
             <el-table-column prop="size" label="镜像大小" align="center" width="100" />
             <el-table-column label="操作" width="160" fixed="right" align="center">
                 <template #default="scope">
-                    <el-button type="danger" plain size="small" @click="deleteImage(scope.row.id)"> 删除 </el-button>
+                    <el-button type="danger" plain size="small" @click="deleteImageByID(scope.row.id)">
+                        删除
+                    </el-button>
                 </template>
             </el-table-column>
         </el-table>
@@ -35,10 +37,10 @@
 </template>
 
 <script setup lang="ts">
-import { queryImages } from '@/api/container'
-import { warning } from '@/components/Message/message'
+import { pruneImages, queryImages, removeImage } from '@/api/container'
 import { useTable } from '@/hooks/useTable'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
+import { RemoveImageArgs } from '@/interface/container.ts'
 
 onMounted(() => {
     refresh()
@@ -46,9 +48,16 @@ onMounted(() => {
 
 const { data, refresh, loading, pagination } = useTable(queryImages, {}, {})
 
-const deleteImage = (id: string) => {
+const deleteImageByID = (id: string) => {
     console.log(id)
-    warning('该功能暂未实现')
+    const params: RemoveImageArgs = {
+        image_id: id
+    }
+    removeImage(params)
+}
+
+const pruneImagesForce = () => {
+    pruneImages()
 }
 </script>
 

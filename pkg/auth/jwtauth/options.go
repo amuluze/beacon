@@ -25,11 +25,12 @@ var defaultOptions = options{
 }
 
 type options struct {
-	signingMethod jwt.SigningMethod
-	signingKey    interface{}
-	keyfunc       jwt.Keyfunc
-	expired       int
-	tokenType     string
+	signingMethod  jwt.SigningMethod
+	signingKey     interface{}
+	keyfunc        jwt.Keyfunc
+	expired        int
+	refreshExpired int
+	tokenType      string
 }
 
 type Option func(*options)
@@ -55,5 +56,11 @@ func SetKeyfunc(keyFunc jwt.Keyfunc) Option {
 func SetExpired(expired int) Option {
 	return func(o *options) {
 		o.expired = expired
+	}
+}
+
+func SetRefreshExpired(expired int) Option {
+	return func(o *options) {
+		o.refreshExpired = expired
 	}
 }

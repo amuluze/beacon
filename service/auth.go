@@ -7,6 +7,7 @@ package service
 import (
 	"github.com/amuluze/amprobe/pkg/auth"
 	"github.com/amuluze/amprobe/pkg/auth/jwtauth"
+	"github.com/amuluze/amutool/database"
 	"github.com/golang-jwt/jwt"
 	"github.com/patrickmn/go-cache"
 	"time"
@@ -22,9 +23,10 @@ func InitAuthStore(config *Config) (*jwtauth.Store, func(), error) {
 	return authStore, cleanFunc, err
 }
 
-func InitAuth(config *Config, authStore *jwtauth.Store) (auth.Auther, func(), error) {
+func InitAuth(config *Config, authStore *jwtauth.Store, db *database.DB) (auth.Auther, func(), error) {
 	var opts []jwtauth.Option
 	opts = append(opts, jwtauth.SetExpired(config.Auth.Expired))
+	opts = append(opts, jwtauth.SetRefreshExpired(config.Auth.RefreshExpired))
 	opts = append(opts, jwtauth.SetSigningKey([]byte(config.Auth.SigningKey)))
 	opts = append(opts, jwtauth.SetKeyfunc(func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -43,7 +45,7 @@ func InitAuth(config *Config, authStore *jwtauth.Store) (auth.Auther, func(), er
 	}
 	opts = append(opts, jwtauth.SetSigningMethod(method))
 	var err error
-	jAuth := jwtauth.New(authStore, opts...)
+	jAuth := jwtauth.New(authStore, db, opts...)
 	cleanFunc := func() {
 		err = jAuth.Release()
 	}

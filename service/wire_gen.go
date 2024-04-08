@@ -30,15 +30,14 @@ func BuildInjector(configFile string) (*Injector, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	auther, cleanup2, err := InitAuth(config, store)
+	models := model.NewModels()
+	db, err := NewDB(config, models)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
-	models := model.NewModels()
-	db, err := NewDB(config, models)
+	auther, cleanup2, err := InitAuth(config, store, db)
 	if err != nil {
-		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}

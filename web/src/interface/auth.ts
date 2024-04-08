@@ -10,8 +10,8 @@ export interface loginFormData {
 }
 
 export interface LoginResponseData {
-    token: string
-    refresh: string
+    access_token: string
+    refresh_token: string
 }
 
 export interface UpdatePassword {
