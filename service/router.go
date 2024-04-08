@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/wire"
 
+	auditAPI "github.com/amuluze/amprobe/service/audit/api"
 	authAPI "github.com/amuluze/amprobe/service/auth/api"
 	containerAPI "github.com/amuluze/amprobe/service/container/api"
 	hostAPI "github.com/amuluze/amprobe/service/host/api"
@@ -34,9 +35,9 @@ type Router struct {
 	containerAPI *containerAPI.ContainerAPI
 	hostAPI      *hostAPI.HostAPI
 	authAPI      *authAPI.AuthAPI
+	auditAPI     *auditAPI.AuditAPI
 
 	loggerHandler *LoggerHandler
-	shellHandler  *ShellHandler
 }
 
 func (a *Router) RegisterAPI(app *fiber.App) {
@@ -94,6 +95,11 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			gHost.Get("disk_trending", a.hostAPI.DiskUsage).Name("获取磁盘使用率")
 			gHost.Get("net_trending", a.hostAPI.NetUsage).Name("获取网络使用率")
 		}
+
+		gAudit := v1.Group("audit")
+		{
+			gAudit.Get("/query", a.auditAPI.AuditQuery).Name("获取审计日志")
+		}
 	}
 	app.Use("ws", func(c *fiber.Ctx) error {
 		// IsWebSocketUpgrade returns true if the client
@@ -105,7 +111,6 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 		return fiber.ErrUpgradeRequired
 	})
 	app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))
-	app.Get("/ws", websocket.New(a.shellHandler.Handler))
 }
 
 func (a *Router) Register(app *fiber.App) error {

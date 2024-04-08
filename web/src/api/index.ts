@@ -70,6 +70,7 @@ class Request {
 
                         // 发起刷新请求
                         const config = {
+                            baseURL: '/api',
                             timeout: 30000,
                             headers: {
                                 'Content-Type': 'application/json;charset=utf-8',

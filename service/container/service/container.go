@@ -65,7 +65,7 @@ func (a *ContainerService) ContainerList(ctx context.Context, args *schema.Conta
 func (a *ContainerService) ImageList(ctx context.Context, args *schema.ImageQueryArgs) (*schema.ImageQueryReply, error) {
 	images, err := a.ContainerRepo.ImageList(ctx, args)
 	if err != nil {
-		return nil, errors.New400Error(err.Error())
+		return &schema.ImageQueryReply{}, errors.New400Error(err.Error())
 	}
 	var list []schema.Image
 	for _, item := range images {

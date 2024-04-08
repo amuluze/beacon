@@ -4,6 +4,7 @@
 package service
 
 import (
+	"github.com/amuluze/amprobe/service/audit"
 	"github.com/amuluze/amprobe/service/auth"
 	"github.com/amuluze/amprobe/service/container"
 	"github.com/amuluze/amprobe/service/host"
@@ -22,8 +23,8 @@ func BuildInjector(configFile string) (*Injector, func(), error) {
 		host.Set,
 		model.Set,
 		auth.Set,
+		audit.Set,
 		NewLoggerHandler,
-		NewShellHandler,
 		RouterSet,
 		NewFiberApp,
 		NewTimedTask,

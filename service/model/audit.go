@@ -8,6 +8,8 @@ import (
 	"gorm.io/gorm"
 )
 
+type Audits []Audit
+
 type Audit struct {
 	gorm.Model
 	Username string `gorm:"type:varchar(255);not null"`

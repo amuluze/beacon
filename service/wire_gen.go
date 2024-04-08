@@ -7,6 +7,9 @@
 package service
 
 import (
+	api4 "github.com/amuluze/amprobe/service/audit/api"
+	repository4 "github.com/amuluze/amprobe/service/audit/repository"
+	service4 "github.com/amuluze/amprobe/service/audit/service"
 	api3 "github.com/amuluze/amprobe/service/auth/api"
 	repository3 "github.com/amuluze/amprobe/service/auth/repository"
 	service3 "github.com/amuluze/amprobe/service/auth/service"
@@ -50,16 +53,18 @@ func BuildInjector(configFile string) (*Injector, func(), error) {
 	authRepo := repository3.NewAuthRepo(db)
 	authService := service3.NewAuthService(auther, authRepo)
 	authAPI := api3.NewLoginAPI(authService)
+	auditRepo := repository4.NewAuditRepo(db)
+	auditService := service4.NewAuditService(auditRepo)
+	auditAPI := api4.NewAuditAPI(auditService)
 	loggerHandler := NewLoggerHandler()
-	shellHandler := NewShellHandler()
 	router := &Router{
 		config:        config,
 		auth:          auther,
 		containerAPI:  containerAPI,
 		hostAPI:       hostAPI,
 		authAPI:       authAPI,
+		auditAPI:      auditAPI,
 		loggerHandler: loggerHandler,
-		shellHandler:  shellHandler,
 	}
 	app := NewFiberApp(config, router)
 	prepare := &Prepare{

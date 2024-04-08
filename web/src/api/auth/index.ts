@@ -6,7 +6,7 @@
 
 import request from '@/api'
 
-import { loginFormData, LoginResponseData, UpdatePassword } from '@/interface/auth.ts'
+import { loginFormData, LoginResponseData } from '@/interface/auth.ts'
 
 /**
  * 登录
@@ -17,22 +17,8 @@ export function login(data: loginFormData) {
 }
 
 /**
- * 更新 token
- */
-export function updateToken() {
-    return request.post<LoginResponseData>('/api/v1/auth/token_update')
-}
-
-/**
  * 登出
  */
 export function logout() {
     return request.post('/api/v1/auth/logout')
-}
-
-/**
- * 更新密码
- */
-export function updatePassword(params: UpdatePassword) {
-    return request.post('/api/v1/auth/pass_update', params)
 }

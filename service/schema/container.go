@@ -57,7 +57,7 @@ type Image struct {
 
 type ImageQueryArgs struct {
 	Page int `json:"page" validate:"required"`
-	Size int `json:"size" validate:"gte=0"`
+	Size int `json:"size" validate:"gt=0"`
 }
 
 type ImageQueryReply struct {
