@@ -5,7 +5,6 @@
 package service
 
 import (
-	"fmt"
 	"github.com/amuluze/amprobe/pkg/auth"
 	"github.com/amuluze/amprobe/service/middleware"
 	"github.com/gofiber/contrib/websocket"
@@ -50,6 +49,7 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 		g.Use(middleware.UserAuthMiddleware(
 			a.auth,
 			middleware.AllowPathPrefixSkipper("/api/v1/auth/login"),
+			middleware.AllowPathPrefixSkipper("/api/v1/auth/token_update"),
 		))
 	}
 
@@ -58,7 +58,6 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 		gIndex := v1.Group("index")
 		{
 			gIndex.Get("/index", func(c *fiber.Ctx) error {
-				fmt.Println("i am here")
 				return c.SendString("hello world")
 			})
 		}

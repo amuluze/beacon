@@ -61,6 +61,7 @@ class Request {
                 return response
             },
             async (error: AxiosError) => {
+                const router = useRouter()
                 // https://zhuanlan.zhihu.com/p/653595209
                 const originalRequest: InternalAxiosRequestConfig<any> = error.config as InternalAxiosRequestConfig<any>
                 const store = useStore()
@@ -85,10 +86,10 @@ class Request {
                                 store.user.setToken(res.data.access_token, res.data.refresh_token)
                             })
                             .catch((err) => {
-                                console.log(err)
+                                console.log('update token error: ', err)
                                 // 刷新 token 失败，跳转到登录页面
                                 store.user.setToken('', '')
-                                const router = useRouter()
+
                                 router.replace('/login')
                             })
                             .finally(() => {

@@ -5,7 +5,6 @@
 package middleware
 
 import (
-	"fmt"
 	"github.com/amuluze/amprobe/pkg/auth"
 	"github.com/amuluze/amprobe/pkg/contextx"
 	"github.com/amuluze/amprobe/pkg/fiberx"
@@ -41,8 +40,7 @@ func UserAuthMiddleware(a auth.Auther, skippers ...SkipperFunc) fiber.Handler {
 			return fiberx.Unauthorized(c)
 		}
 
-		slog.Info("user id", userID)
-		fmt.Printf("method: %v, path: %v, user id: %v, username: %v, is admin: %v\n", c.Method(), c.Path(), userID, username, isAdmin)
+		slog.Info("user id", "user_id", userID)
 		wrapUserAuthContext(c, userID, username)
 		if c.Method() == "POST" && isAdmin != "1" {
 			return fiberx.Forbidden(c)

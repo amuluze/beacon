@@ -58,7 +58,11 @@ func (a *ContainerService) ContainerList(ctx context.Context, args *schema.Conta
 			MemoryUsage:   utils.ConvertBytesToReadable(item.MemUsage),
 		})
 	}
-	total, _ := a.ContainerRepo.ContainerCount(ctx)
+	total, err := a.ContainerRepo.ContainerCount(ctx)
+	if err != nil {
+		slog.Error("query container count error", "err", err)
+		return nil, errors.New400Error(err.Error())
+	}
 	return &schema.ContainerQueryRely{Data: list, Total: total, Page: args.Page, Size: args.Size}, nil
 }
 
@@ -115,9 +119,9 @@ func (a *ContainerService) ContainerRestart(ctx context.Context, args *schema.Co
 }
 
 func (a *ContainerService) ImageRemove(ctx context.Context, args *schema.ImageRemoveArgs) error {
-	return a.ImageRemove(ctx, args)
+	return a.ContainerRepo.ImageRemove(ctx, args)
 }
 
 func (a *ContainerService) ImagesPrune(ctx context.Context) error {
-	return a.ImagesPrune(ctx)
+	return a.ContainerRepo.ImagesPrune(ctx)
 }

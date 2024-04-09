@@ -5,7 +5,6 @@
 package service
 
 import (
-	"fmt"
 	"github.com/amuluze/amprobe/pkg/utils/hash"
 	"github.com/amuluze/amprobe/pkg/utils/uuid"
 	"github.com/amuluze/amprobe/service/model"
@@ -42,7 +41,6 @@ func (a *Prepare) Init(config *Config) {
 
 	err = a.db.RunInTransaction(func(tx *gorm.DB) error {
 		for _, u := range prepareData.Users {
-			fmt.Println("--->", u)
 			var ou model.User
 			// 不存在则创建
 			if err := a.db.Model(&model.User{}).Where("username = ?", u.Username).Take(&ou).Error; err != nil {

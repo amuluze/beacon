@@ -103,7 +103,6 @@ func GetDiskIO(devices map[string]struct{}) (map[string]DiskIO, error) {
 func GetNetworkIO(eth map[string]struct{}) (map[string]NetIO, error) {
 	netMap := make(map[string]NetIO)
 	IOCountersStat, err := net.IOCounters(true)
-	//fmt.Printf("*************%#v, %#v\n", IOCountersStat, err)
 	if err != nil {
 		return netMap, err
 	}

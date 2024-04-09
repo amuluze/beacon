@@ -1,7 +1,8 @@
 <template>
     <!-- 表格主体 -->
     <el-card shadow="never">
-        <el-table :data="data" border stripe ref="multipleTable" v-loading="loading">
+        <!-- https://blog.csdn.net/qq_24950043/article/details/114292940 -->
+        <el-table :data="data" :key="containerKey" border stripe ref="multipleTable" v-loading="loading">
             <el-table-column prop="id" label="容器 ID" align="center" fixed />
             <el-table-column prop="name" label="容器名称" align="center" min-width="100" show-overflow-tooltip fixed />
             <el-table-column prop="image" label="镜像名称" align="center" min-width="100" show-overflow-tooltip />
@@ -108,6 +109,7 @@ console.log('.....', params)
 const { data, refresh, loading, pagination } = useTable(queryContainers, {}, {})
 
 const dialogVisible = ref(false)
+const containerKey = ref(0)
 const logData = ref('')
 
 let ws: Websocket
@@ -137,7 +139,10 @@ const startContainerByID = (container_id: string) => {
     const params: StartContainerArgs = {
         container_id: container_id
     }
-    startContainer(params)
+    startContainer(params).finally(() => {
+        refresh()
+        containerKey.value += 1
+    })
 }
 
 const stopContainerByID = (container_id: string) => {
@@ -145,7 +150,10 @@ const stopContainerByID = (container_id: string) => {
     const params: StopContainerArgs = {
         container_id: container_id
     }
-    stopContainer(params)
+    stopContainer(params).finally(() => {
+        refresh()
+        containerKey.value += 1
+    })
 }
 
 const restartContainerByID = (container_id: string) => {
@@ -161,7 +169,10 @@ const deleteContainerByID = (container_id: string) => {
     const params: RemoveContainerArgs = {
         container_id: container_id
     }
-    removeContainer(params)
+    removeContainer(params).finally(() => {
+        refresh()
+        containerKey.value += 1
+    })
 }
 
 const handleClose = () => {

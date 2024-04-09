@@ -5,7 +5,6 @@
 package jwtauth
 
 import (
-	"fmt"
 	"github.com/amuluze/amprobe/pkg/auth"
 	"github.com/amuluze/amprobe/service/model"
 	"github.com/amuluze/amutool/database"
@@ -79,7 +78,6 @@ func (a *JWTAuth) generateRefreshToken(userID string, username string, isAdmin s
 
 // GenerateToken 生成令牌
 func (a *JWTAuth) GenerateToken(userID string, username string, isAdmin string) (auth.TokenInfo, error) {
-	fmt.Println("generating token", userID, username, isAdmin)
 	accessToken, err := a.generateAccessToken(userID, username, isAdmin)
 	if err != nil {
 		return nil, err
@@ -142,7 +140,7 @@ func (a *JWTAuth) ParseToken(tokenString string, tokenType string) (string, stri
 	if err != nil {
 		return "", "", "", err
 	}
-	fmt.Println("token parse: ", claims.Subject)
+
 	switch tokenType {
 	case "access_token":
 		return strings.Split(claims.Subject, ".")[0], strings.Split(claims.Subject, ".")[1], strings.Split(claims.Subject, ".")[2], nil

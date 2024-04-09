@@ -5,7 +5,15 @@
         </el-card>
     </div>
     <el-card shadow="never">
-        <el-table :data="data" highlight-current-row border stripe v-loading="loading" style="width: 100%">
+        <el-table
+            :data="data"
+            :key="imageKey"
+            highlight-current-row
+            border
+            stripe
+            v-loading="loading"
+            style="width: 100%"
+        >
             <el-table-column prop="id" label="镜像 ID" align="center" width="150" fixed />
             <el-table-column prop="name" label="镜像名称" align="center" min-width="100" show-overflow-tooltip fixed />
             <el-table-column prop="tag" label="容器数量" align="center" show-overflow-tooltip width="100" />
@@ -46,6 +54,8 @@ onMounted(() => {
     refresh()
 })
 
+const imageKey = ref(0)
+
 const { data, refresh, loading, pagination } = useTable(queryImages, {}, {})
 
 const deleteImageByID = (id: string) => {
@@ -53,7 +63,10 @@ const deleteImageByID = (id: string) => {
     const params: RemoveImageArgs = {
         image_id: id
     }
-    removeImage(params)
+    removeImage(params).finally(() => {
+        refresh()
+        imageKey.value += 1
+    })
 }
 
 const pruneImagesForce = () => {

@@ -8,6 +8,7 @@ import (
 	"context"
 	"github.com/amuluze/amprobe/service/schema"
 	"github.com/amuluze/amutool/docker"
+	"github.com/amuluze/amutool/errors"
 
 	"github.com/amuluze/amprobe/service/model"
 	"github.com/amuluze/amutool/database"
@@ -84,11 +85,21 @@ func (a *ContainerRepo) Version(ctx context.Context) (model.Docker, error) {
 }
 
 func (a *ContainerRepo) ContainerStart(ctx context.Context, args *schema.ContainerStartArgs) error {
-	return a.Manager.StartContainer(ctx, args.ContainerID)
+	err := a.Manager.StartContainer(ctx, args.ContainerID)
+	if err != nil {
+		return errors.Wrap(err, "start container")
+	}
+	a.DB.Model(&model.Container{}).Where("container_id = ?", args.ContainerID).Update("state", "running")
+	return err
 }
 
 func (a *ContainerRepo) ContainerStop(ctx context.Context, args *schema.ContainerStopArgs) error {
-	return a.Manager.StopContainer(ctx, args.ContainerID)
+	err := a.Manager.StopContainer(ctx, args.ContainerID)
+	if err != nil {
+		return errors.Wrap(err, "failed to stop container")
+	}
+	a.DB.Model(&model.Container{}).Where("container_id = ?", args.ContainerID).Update("state", "exited")
+	return err
 }
 
 func (a *ContainerRepo) ContainerRemove(ctx context.Context, args *schema.ContainerRemoveArgs) error {
@@ -100,7 +111,12 @@ func (a *ContainerRepo) ContainerRestart(ctx context.Context, args *schema.Conta
 }
 
 func (a *ContainerRepo) ImageRemove(ctx context.Context, args *schema.ImageRemoveArgs) error {
-	return a.Manager.RemoveImage(ctx, args.ImageID)
+	err := a.Manager.RemoveImage(ctx, args.ImageID)
+	if err != nil {
+		return errors.Wrap(err, "remove image")
+	}
+	a.DB.Where("image_id = ?", args.ImageID).Delete(&model.Image{})
+	return err
 }
 
 func (a *ContainerRepo) ImagesPrune(ctx context.Context) error {

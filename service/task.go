@@ -89,6 +89,9 @@ func (a *TimedTask) Stop() {
 
 func (a *TimedTask) host(timestamp time.Time) {
 	info, _ := psutil.GetSystemInfo()
+	if err := a.db.Unscoped().Where("1 = 1").Delete(&model.Host{}).Error; err != nil {
+		slog.Error("Error deleting host table", "error", err)
+	}
 	a.db.Model(&model.Host{}).Create(&model.Host{
 		Timestamp:       timestamp,
 		Uptime:          info.Uptime,
@@ -180,7 +183,6 @@ func (a *TimedTask) container(timestamp time.Time) {
 		d.IP = info.IP
 
 		cpuPercent, err := a.manager.GetContainerCPU(ctx, info.ID[:6])
-		fmt.Println(cpuPercent, err)
 		if err != nil {
 			slog.Error("failed to get container cpu", "error", err)
 		}
@@ -196,6 +198,9 @@ func (a *TimedTask) container(timestamp time.Time) {
 		d.MemLimit = limit
 		containers = append(containers, d)
 	}
+	if err := a.db.Unscoped().Where("1 = 1").Delete(&model.Container{}).Error; err != nil {
+		slog.Error("failed to delete container", "error", err)
+	}
 	a.db.Model(&model.Container{}).Create(&containers)
 }
 
@@ -207,6 +212,9 @@ func (a *TimedTask) docker(timestamp time.Time) {
 	if err != nil {
 		slog.Error("failed to get docker version", "error", err)
 		return
+	}
+	if err := a.db.Unscoped().Where("1 = 1").Delete(&model.Docker{}).Error; err != nil {
+		slog.Error("failed to delete docker container", "error", err)
 	}
 	a.db.Model(&model.Docker{}).Create(&model.Docker{
 		Timestamp:     timestamp,
@@ -239,6 +247,9 @@ func (a *TimedTask) image(timestamp time.Time) {
 			Created:   im.Created,
 			Size:      im.Size,
 		})
+	}
+	if err := a.db.Unscoped().Where("1 = 1").Delete(&model.Image{}).Error; err != nil {
+		slog.Error("failed to delete image", "error", err)
 	}
 	a.db.Model(&model.Image{}).Create(&list)
 }

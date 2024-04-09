@@ -6,7 +6,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"github.com/amuluze/amprobe/pkg/auth"
 	"github.com/amuluze/amprobe/service/auth/repository"
 	"github.com/amuluze/amprobe/service/schema"
@@ -39,7 +38,6 @@ func (a *AuthService) Login(ctx context.Context, args *schema.LoginArgs) (*schem
 		slog.Error("auth repo login failed", "error", err)
 		return nil, errors.New400Error(err.Error())
 	}
-	fmt.Printf("login user: %#v\n", u)
 	tokenInfo, err := a.Auth.GenerateToken(u.ID.String(), u.Username, u.IsAdmin)
 	if err != nil {
 		slog.Error("generate token failed", "error", err)
@@ -89,7 +87,7 @@ func (a *AuthService) TokenUpdate(ctx context.Context, token string) (*schema.Lo
 		slog.Error("parse token failed", "error", err)
 		return nil, errors.New400Error(err.Error())
 	}
-	fmt.Println("======>", userID, username, isAdmin)
+
 	tokenInfo, err := a.Auth.GenerateToken(userID, username, isAdmin)
 	if err != nil {
 		slog.Error("generate new token failed", "error", err)
