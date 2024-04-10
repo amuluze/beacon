@@ -20,5 +20,5 @@ export function login(data: loginFormData) {
  * 登出
  */
 export function logout() {
-    return request.post('/api/v1/auth/logout')
+    return request.post<any>('/api/v1/auth/logout', {})
 }

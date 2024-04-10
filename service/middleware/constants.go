@@ -13,7 +13,6 @@ var OperateEvent = map[string]string{
 	"/api/v1/container/container_stop":    "停止容器",
 	"/api/v1/container/container_remove":  "删除容器",
 	"/api/v1/container/container_restart": "重启容器",
-	"/api/v1/image/image_remove":          "删除镜像",
-	"/api/v1/image/images_prune":          "删除虚悬镜像",
-	"/ws":                                 "SSH 连接",
+	"/api/v1/container/image_remove":      "删除镜像",
+	"/api/v1/container/images_prune":      "删除虚悬镜像",
 }

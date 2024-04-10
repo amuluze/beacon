@@ -8,6 +8,7 @@
         <el-table
             :data="data"
             :key="imageKey"
+            max-height="600"
             highlight-current-row
             border
             stripe

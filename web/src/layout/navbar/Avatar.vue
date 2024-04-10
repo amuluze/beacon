@@ -16,14 +16,14 @@ import useStore from '@/store'
 
 const store = useStore()
 const router = useRouter()
-const doLogout = () => {
+const doLogout = async () => {
     // 1. 退出登录
-    logout()
+    await logout()
     // 2.清除缓存
     store.user.setToken('', '')
     store.app.isCollapse = false
     // 3.重定向到登录页
-    router.replace('/login')
+    await router.replace('/login')
 }
 </script>
 

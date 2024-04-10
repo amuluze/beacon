@@ -116,6 +116,8 @@ github.com/amuluze/amutool/docker v0.0.0-20240408023446-ec916475d43e h1:7tsTiGWX
 github.com/amuluze/amutool/docker v0.0.0-20240408023446-ec916475d43e/go.mod h1:0fJE1xESetX+Z+betFhczY/GFkEAlrfDe8popJVCdR0=
 github.com/amuluze/amutool/errors v0.0.0-20240408023446-ec916475d43e h1:55KOCRuRP1HHNSQ6iK6dt2qV1F6vORc/Xy911RgTXbs=
 github.com/amuluze/amutool/errors v0.0.0-20240408023446-ec916475d43e/go.mod h1:0ihSw6Kx+ZKoxxdmgxM66x9G1LISH4srjemQ9ysegP4=
+github.com/amuluze/amutool/errors v0.0.0-20240409163639-4b2153b70b7a h1:pClvDJdbCVe6JA4eLVJCvHAvcwwccahnR9yCspqQEA8=
+github.com/amuluze/amutool/errors v0.0.0-20240409163639-4b2153b70b7a/go.mod h1:0ihSw6Kx+ZKoxxdmgxM66x9G1LISH4srjemQ9ysegP4=
 github.com/amuluze/amutool/logger v0.0.0-20240329052546-d5fbbede26a1 h1:0VIEkQkSSrmXeOLW18NSAQUQRPbNAdHrqBbhi0WhZ/0=
 github.com/amuluze/amutool/logger v0.0.0-20240329052546-d5fbbede26a1/go.mod h1:ls8rWJ1mHWfov8Lps2bL6CiX2xtDMQwrgZ3jOntLmuA=
 github.com/amuluze/amutool/timex v0.0.0-20240329052546-d5fbbede26a1 h1:r7MhJA46FNrYtAmYfs4Ro6Jom847YxLJhmn7+WIT2to=

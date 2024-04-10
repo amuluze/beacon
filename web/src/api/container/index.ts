@@ -27,7 +27,7 @@ export function removeContainer(params: RemoveContainerArgs) {
 }
 
 export function restartContainer(params: RestartContainerArgs) {
-    return request.post('/api/v1/container/container_stop', params)
+    return request.post('/api/v1/container/container_restart', params)
 }
 
 export function removeImage(params: RemoveImageArgs) {

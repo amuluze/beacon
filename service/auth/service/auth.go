@@ -75,19 +75,12 @@ func (a *AuthService) PassUpdate(ctx context.Context, args *schema.PasswordUpdat
 }
 
 func (a *AuthService) TokenUpdate(ctx context.Context, token string) (*schema.LoginResult, error) {
-	// 先删除旧的 token
-	err := a.Auth.DestroyToken(token)
-	if err != nil {
-		slog.Error("destroy old token failed", "error", err)
-		return nil, errors.New400Error(err.Error())
-	}
-
 	userID, username, isAdmin, err := a.Auth.ParseToken(token, "refresh_token")
 	if err != nil {
 		slog.Error("parse token failed", "error", err)
 		return nil, errors.New400Error(err.Error())
 	}
-
+	slog.Info("token update", "user_id", userID)
 	tokenInfo, err := a.Auth.GenerateToken(userID, username, isAdmin)
 	if err != nil {
 		slog.Error("generate new token failed", "error", err)

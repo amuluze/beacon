@@ -2,7 +2,7 @@
     <!-- 表格主体 -->
     <el-card shadow="never">
         <!-- https://blog.csdn.net/qq_24950043/article/details/114292940 -->
-        <el-table :data="data" :key="containerKey" border stripe ref="multipleTable" v-loading="loading">
+        <el-table :data="data" :key="containerKey" border stripe ref="multipleTable" max-height="600" v-loading="loading">
             <el-table-column prop="id" label="容器 ID" align="center" fixed />
             <el-table-column prop="name" label="容器名称" align="center" min-width="100" show-overflow-tooltip fixed />
             <el-table-column prop="image" label="镜像名称" align="center" min-width="100" show-overflow-tooltip />
@@ -161,7 +161,10 @@ const restartContainerByID = (container_id: string) => {
     const params: RestartContainerArgs = {
         container_id: container_id
     }
-    restartContainer(params)
+    restartContainer(params).finally(() => {
+        refresh()
+        containerKey.value += 1
+    })
 }
 
 const deleteContainerByID = (container_id: string) => {

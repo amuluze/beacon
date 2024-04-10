@@ -87,7 +87,7 @@ func (a *ContainerRepo) Version(ctx context.Context) (model.Docker, error) {
 func (a *ContainerRepo) ContainerStart(ctx context.Context, args *schema.ContainerStartArgs) error {
 	err := a.Manager.StartContainer(ctx, args.ContainerID)
 	if err != nil {
-		return errors.Wrap(err, "start container")
+		return errors.New400Error("failed start container")
 	}
 	a.DB.Model(&model.Container{}).Where("container_id = ?", args.ContainerID).Update("state", "running")
 	return err
@@ -96,24 +96,33 @@ func (a *ContainerRepo) ContainerStart(ctx context.Context, args *schema.Contain
 func (a *ContainerRepo) ContainerStop(ctx context.Context, args *schema.ContainerStopArgs) error {
 	err := a.Manager.StopContainer(ctx, args.ContainerID)
 	if err != nil {
-		return errors.Wrap(err, "failed to stop container")
+		return errors.New400Error("failed to stop container")
 	}
 	a.DB.Model(&model.Container{}).Where("container_id = ?", args.ContainerID).Update("state", "exited")
 	return err
 }
 
 func (a *ContainerRepo) ContainerRemove(ctx context.Context, args *schema.ContainerRemoveArgs) error {
-	return a.Manager.DeleteContainer(ctx, args.ContainerID)
+	err := a.Manager.DeleteContainer(ctx, args.ContainerID)
+	if err != nil {
+		return errors.New400Error("failed to remove container")
+	}
+	return nil
 }
 
 func (a *ContainerRepo) ContainerRestart(ctx context.Context, args *schema.ContainerRestartArgs) error {
-	return a.Manager.RestartContainer(ctx, args.ContainerID)
+	err := a.Manager.RestartContainer(ctx, args.ContainerID)
+	if err != nil {
+		return errors.New400Error("failed to restart container")
+	}
+	a.DB.Model(&model.Container{}).Where("container_id = ?", args.ContainerID).Update("state", "running")
+	return err
 }
 
 func (a *ContainerRepo) ImageRemove(ctx context.Context, args *schema.ImageRemoveArgs) error {
 	err := a.Manager.RemoveImage(ctx, args.ImageID)
 	if err != nil {
-		return errors.Wrap(err, "remove image")
+		return errors.New400Error(err.Error())
 	}
 	a.DB.Where("image_id = ?", args.ImageID).Delete(&model.Image{})
 	return err

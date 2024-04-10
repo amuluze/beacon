@@ -5,7 +5,7 @@ go 1.21.4
 require (
 	github.com/amuluze/amutool/database v0.0.0-20240329052546-d5fbbede26a1
 	github.com/amuluze/amutool/docker v0.0.0-20240408023446-ec916475d43e
-	github.com/amuluze/amutool/errors v0.0.0-20240408023446-ec916475d43e
+	github.com/amuluze/amutool/errors v0.0.0-20240409163639-4b2153b70b7a
 	github.com/amuluze/amutool/logger v0.0.0-20240329052546-d5fbbede26a1
 	github.com/amuluze/amutool/timex v0.0.0-20240329052546-d5fbbede26a1
 	github.com/fsnotify/fsnotify v1.7.0

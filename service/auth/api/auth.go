@@ -5,6 +5,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/amuluze/amprobe/pkg/contextx"
 	"github.com/amuluze/amprobe/pkg/fiberx"
 	"github.com/amuluze/amprobe/pkg/validatex"
@@ -44,6 +45,7 @@ func (a *AuthAPI) Logout(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	userID := contextx.FromUserID(c)
 	tokenString := fiberx.GetToken(ctx)
+	fmt.Println(userID, tokenString)
 	if err := a.AuthService.Logout(c, userID, tokenString); err != nil {
 		return fiberx.Failure(ctx, err)
 	}

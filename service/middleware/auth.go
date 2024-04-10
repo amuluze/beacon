@@ -12,7 +12,6 @@ import (
 	"github.com/amuluze/amutool/errors"
 	"github.com/gofiber/fiber/v2"
 	"log/slog"
-	"strings"
 )
 
 func wrapUserAuthContext(c *fiber.Ctx, userID string, username string) {
@@ -31,17 +30,13 @@ func UserAuthMiddleware(a auth.Auther, skippers ...SkipperFunc) fiber.Handler {
 			}
 			return c.Next()
 		}
+
 		slog.Info("auth middleware", "token", fiberx.GetToken(c))
 		var userID string
 		var username string
 		var isAdmin string
 		var err error
-
-		if strings.HasSuffix(c.Path(), "token_update") {
-			userID, username, isAdmin, err = a.ParseToken(fiberx.GetToken(c), "refresh_token")
-		} else {
-			userID, username, isAdmin, err = a.ParseToken(fiberx.GetToken(c), "access_token")
-		}
+		userID, username, isAdmin, err = a.ParseToken(fiberx.GetToken(c), "access_token")
 
 		if errors.Is(err, auth.ErrInvalidToken) {
 			slog.Error("invalid token", "err", err)
@@ -53,12 +48,16 @@ func UserAuthMiddleware(a auth.Auther, skippers ...SkipperFunc) fiber.Handler {
 
 		slog.Info("user id", "user_id", userID)
 		wrapUserAuthContext(c, userID, username)
-		if c.Method() == "POST" && isAdmin != "1" {
+		if c.Method() == "POST" && isAdmin != "1" && c.Path() != "/api/v1/auth/logout" {
 			return fiberx.Forbidden(c)
 		}
-		if c.Method() == "POST" && isAdmin == "1" {
-			a.RecordAudit(username, OperateEvent[c.Path()])
+		if err := c.Next(); err == nil {
+			if c.Method() == "POST" && isAdmin == "1" {
+				a.RecordAudit(username, OperateEvent[c.Path()])
+			}
+			return nil
+		} else {
+			return fiberx.Failure(c, err)
 		}
-		return c.Next()
 	}
 }

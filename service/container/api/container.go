@@ -151,6 +151,7 @@ func (a *ContainerAPI) ImageRemove(ctx *fiber.Ctx) error {
 	}
 	err := a.ContainerService.ImageRemove(c, &args)
 	if err != nil {
+		slog.Error("api remove image error", "err", err, "args", args)
 		return fiberx.Failure(ctx, err)
 	}
 	return fiberx.NoContent(ctx)
