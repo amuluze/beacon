@@ -12,6 +12,7 @@ import (
 	"github.com/amuluze/amutool/errors"
 	"github.com/gofiber/fiber/v2"
 	"log/slog"
+	"strings"
 )
 
 func wrapUserAuthContext(c *fiber.Ctx, userID string, username string) {
@@ -31,7 +32,17 @@ func UserAuthMiddleware(a auth.Auther, skippers ...SkipperFunc) fiber.Handler {
 			return c.Next()
 		}
 		slog.Info("auth middleware", "token", fiberx.GetToken(c))
-		userID, username, isAdmin, err := a.ParseToken(fiberx.GetToken(c), "access_token")
+		var userID string
+		var username string
+		var isAdmin string
+		var err error
+
+		if strings.HasSuffix(c.Path(), "token_update") {
+			userID, username, isAdmin, err = a.ParseToken(fiberx.GetToken(c), "refresh_token")
+		} else {
+			userID, username, isAdmin, err = a.ParseToken(fiberx.GetToken(c), "access_token")
+		}
+
 		if errors.Is(err, auth.ErrInvalidToken) {
 			slog.Error("invalid token", "err", err)
 			return fiberx.Unauthorized(c)
