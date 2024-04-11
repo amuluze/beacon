@@ -23,7 +23,7 @@ export function stopContainer(params: StopContainerArgs) {
 }
 
 export function removeContainer(params: RemoveContainerArgs) {
-    return request.post('/api/v1/container/container_stop', params)
+    return request.post('/api/v1/container/container_remove', params)
 }
 
 export function restartContainer(params: RestartContainerArgs) {

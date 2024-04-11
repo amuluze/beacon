@@ -38,7 +38,7 @@ func (a AuditService) AuditQuery(ctx context.Context, args *schema.AuditQueryArg
 			ID:       audit.ID,
 			Username: audit.Username,
 			Operate:  audit.Operate,
-			Created:  audit.CreatedAt,
+			Created:  audit.CreatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}
 	total, _ := a.AuditRepo.AuditCount(ctx)

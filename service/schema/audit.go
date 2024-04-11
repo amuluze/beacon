@@ -4,13 +4,11 @@
 // Description:
 package schema
 
-import "time"
-
 type Audit struct {
-	ID       uint      `json:"id"`
-	Username string    `json:"username"`
-	Operate  string    `json:"operate"`
-	Created  time.Time `json:"created"`
+	ID       uint   `json:"id"`
+	Username string `json:"username"`
+	Operate  string `json:"operate"`
+	Created  string `json:"created"`
 }
 
 type AuditQueryArgs struct {

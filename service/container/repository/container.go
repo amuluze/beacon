@@ -107,7 +107,8 @@ func (a *ContainerRepo) ContainerRemove(ctx context.Context, args *schema.Contai
 	if err != nil {
 		return errors.New400Error("failed to remove container")
 	}
-	return nil
+	a.DB.Model(&model.Container{}).Delete(&model.Container{ContainerID: args.ContainerID})
+	return err
 }
 
 func (a *ContainerRepo) ContainerRestart(ctx context.Context, args *schema.ContainerRestartArgs) error {

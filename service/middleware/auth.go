@@ -52,7 +52,7 @@ func UserAuthMiddleware(a auth.Auther, skippers ...SkipperFunc) fiber.Handler {
 			return fiberx.Forbidden(c)
 		}
 		if err := c.Next(); err == nil {
-			if c.Method() == "POST" && isAdmin == "1" {
+			if (c.Method() == "POST" && isAdmin == "1") || c.Path() == "/api/v1/auth/logout" {
 				a.RecordAudit(username, OperateEvent[c.Path()])
 			}
 			return nil
