@@ -38,23 +38,27 @@
 
 **总览页**
 
-<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amuluze/202403311351382.png" alt="image-20240317141005150" style="zoom:67%;" />
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe202404130036387.png" alt="image-20240317141005150" style="zoom:67%;" />
 
 **容器页**
 
-<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amuluze/202403311355365.png" alt="image-20240317141005150" style="zoom:67%;" />
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe202404130037909.png" alt="image-20240317141005150" style="zoom:67%;" />
 
 **容器日志**
 
-<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amuluze/202403311356168.png" alt="image-20240317141050281" style="zoom:67%;" />
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe202404130038803.png" alt="image-20240317141050281" style="zoom:67%;" />
 
 **镜像页**
 
-<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amuluze/202403311357917.png" alt="image-20240317141142487" style="zoom:67%;" />
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe202404130039117.png" alt="image-20240317141142487" style="zoom:67%;" />
 
 **主机状态监控**
 
-<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amuluze/202403311358497.png" alt="image-20240317141142487" style="zoom:67%;" />
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe202404130039077.png" alt="image-20240317141142487" style="zoom:67%;" />
+
+**审计页**
+
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe202404130043116.png" alt="image-20240317141142487" style="zoom:67%;" />
 
 ## 请作者喝杯咖啡
 
