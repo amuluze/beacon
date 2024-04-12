@@ -249,11 +249,19 @@ func (a *TimedTask) image(timestamp time.Time) {
 		return
 	}
 	var list model.Images
+	duplicateImage := make(map[string]struct{})
 	for _, im := range images {
 		val, ok := a.cache.Get(im.Name + ":" + im.Tag)
 		if !ok {
 			slog.Error("failed to get image cache", "error", err)
 			val = 0
+		}
+		if _, ok := duplicateImage[im.ID]; !ok {
+			duplicateImage[im.ID] = struct{}{}
+		} else {
+			if im.Tag != "latest" {
+				continue
+			}
 		}
 		list = append(list, model.Image{
 			Timestamp: timestamp,

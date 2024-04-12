@@ -95,11 +95,6 @@ const pruneImagesForce = () => {
             type: 'success',
             message: '清理完成'
         })
-    }).catch(() => {
-        ElMessage({
-            type: 'error',
-            message: '清理失败'
-        })
     })
 }
 </script>
