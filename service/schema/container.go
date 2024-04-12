@@ -53,6 +53,7 @@ type Image struct {
 	Tag     string `json:"tag"`
 	Created string `json:"created"`
 	Size    string `json:"size"`
+	Number  int    `json:"number"`
 }
 
 type ImageQueryArgs struct {

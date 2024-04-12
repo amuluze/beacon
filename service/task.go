@@ -7,6 +7,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/patrickmn/go-cache"
 	"log/slog"
 	"time"
 
@@ -24,6 +25,7 @@ type TimedTask struct {
 	ethernet map[string]struct{}
 	ticker   timex.Ticker
 	stopCh   chan struct{}
+	cache    *cache.Cache
 }
 
 func NewTimedTask(conf *Config, db *database.DB) *TimedTask {
@@ -51,6 +53,7 @@ func NewTimedTask(conf *Config, db *database.DB) *TimedTask {
 		stopCh:   make(chan struct{}),
 		db:       db,
 		manager:  manager,
+		cache:    cache.New(5*time.Minute, 60*time.Second),
 	}
 }
 
@@ -64,9 +67,11 @@ func (a *TimedTask) Execute() {
 	go a.network(timestamp)
 
 	// // 处理 Docker 容器指标
-	go a.docker(timestamp)
 	go a.container(timestamp)
-	go a.image(timestamp)
+	go func() {
+		a.docker(timestamp)
+		a.image(timestamp)
+	}()
 
 	go a.clearOldRecord()
 }
@@ -163,7 +168,7 @@ func (a *TimedTask) network(timestamp time.Time) {
 }
 
 func (a *TimedTask) container(timestamp time.Time) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	cs, err := a.manager.ListContainer(ctx)
@@ -196,6 +201,12 @@ func (a *TimedTask) container(timestamp time.Time) {
 
 		d.MemUsage = used
 		d.MemLimit = limit
+		if _, ok := a.cache.Get(info.Image); !ok {
+			a.cache.Set(info.Image, 1, 2*time.Minute)
+		} else {
+			count, err := a.cache.IncrementInt(info.Image, 1)
+			slog.Info("container image cache", "image", info.Image, "count", count, "error", err)
+		}
 		containers = append(containers, d)
 	}
 	if err := a.db.Unscoped().Where("1 = 1").Delete(&model.Container{}).Error; err != nil {
@@ -205,7 +216,7 @@ func (a *TimedTask) container(timestamp time.Time) {
 }
 
 func (a *TimedTask) docker(timestamp time.Time) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	dockerVersion, err := a.manager.Version(ctx)
@@ -229,7 +240,7 @@ func (a *TimedTask) docker(timestamp time.Time) {
 }
 
 func (a *TimedTask) image(timestamp time.Time) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	images, err := a.manager.ListImage(ctx)
@@ -239,14 +250,21 @@ func (a *TimedTask) image(timestamp time.Time) {
 	}
 	var list model.Images
 	for _, im := range images {
+		val, ok := a.cache.Get(im.Name + ":" + im.Tag)
+		if !ok {
+			slog.Error("failed to get image cache", "error", err)
+			val = 0
+		}
 		list = append(list, model.Image{
 			Timestamp: timestamp,
 			ImageID:   im.ID[7:19],
 			Name:      im.Name,
+			Number:    val.(int),
 			Tag:       im.Tag,
 			Created:   im.Created,
 			Size:      im.Size,
 		})
+		a.cache.Delete(im.Name + ":" + im.Tag)
 	}
 	if err := a.db.Unscoped().Where("1 = 1").Delete(&model.Image{}).Error; err != nil {
 		slog.Error("failed to delete image", "error", err)

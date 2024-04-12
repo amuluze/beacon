@@ -79,6 +79,7 @@ func (a *ContainerService) ImageList(ctx context.Context, args *schema.ImageQuer
 			Tag:     item.Tag,
 			Created: item.Created,
 			Size:    item.Size,
+			Number:  item.Number,
 		})
 	}
 	total, _ := a.ContainerRepo.ImageCount(ctx)

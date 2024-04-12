@@ -46,7 +46,7 @@ func NewContainerRepo(db *database.DB) *ContainerRepo {
 
 func (a *ContainerRepo) ContainerList(ctx context.Context, args *schema.ContainerQueryArgs) (model.Containers, error) {
 	var containers model.Containers
-	if err := a.DB.Model(&model.Container{}).Group("name").Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&containers).Error; err != nil {
+	if err := a.DB.Model(&model.Container{}).Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&containers).Error; err != nil {
 		return containers, err
 	}
 	return containers, nil
@@ -54,7 +54,7 @@ func (a *ContainerRepo) ContainerList(ctx context.Context, args *schema.Containe
 
 func (a *ContainerRepo) ContainerCount(ctx context.Context) (int, error) {
 	var total int64
-	if err := a.DB.Model(&model.Container{}).Group("name").Order("created_at desc").Count(&total).Error; err != nil {
+	if err := a.DB.Model(&model.Container{}).Order("created_at desc").Count(&total).Error; err != nil {
 		return int(total), err
 	}
 	return int(total), nil
@@ -62,7 +62,7 @@ func (a *ContainerRepo) ContainerCount(ctx context.Context) (int, error) {
 
 func (a *ContainerRepo) ImageList(ctx context.Context, args *schema.ImageQueryArgs) (model.Images, error) {
 	var images model.Images
-	if err := a.DB.Model(&model.Image{}).Group("name").Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&images).Error; err != nil {
+	if err := a.DB.Model(&model.Image{}).Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&images).Error; err != nil {
 		return images, err
 	}
 	return images, nil
@@ -70,7 +70,7 @@ func (a *ContainerRepo) ImageList(ctx context.Context, args *schema.ImageQueryAr
 
 func (a *ContainerRepo) ImageCount(ctx context.Context) (int, error) {
 	var total int64
-	if err := a.DB.Model(&model.Images{}).Group("name").Order("created_at desc").Count(&total).Error; err != nil {
+	if err := a.DB.Model(&model.Images{}).Order("created_at desc").Count(&total).Error; err != nil {
 		return int(total), err
 	}
 	return int(total), nil

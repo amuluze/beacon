@@ -42,6 +42,7 @@ export interface Image {
     tag: string
     created: string
     size: string
+    number: number
 }
 
 export interface RemoveImageArgs {
