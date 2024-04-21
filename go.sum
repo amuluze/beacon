@@ -112,10 +112,6 @@ github.com/alexflint/go-filemutex v0.0.0-20171022225611-72bdc8eae2ae/go.mod h1:C
 github.com/alexflint/go-filemutex v1.1.0/go.mod h1:7P4iRhttt/nUvUOrYIhcpMzv2G6CY9UnI16Z+UJqRyk=
 github.com/amuluze/amutool/database v0.0.0-20240329052546-d5fbbede26a1 h1:V0y+lPgC19LD+HLI3iIKhDBQ3hWe4GuLO2ZmH6WgJ8Y=
 github.com/amuluze/amutool/database v0.0.0-20240329052546-d5fbbede26a1/go.mod h1:JlinOdHx/H3IfAzkD4ed5AV4JlPTvIXi5aJKDoZ0inI=
-github.com/amuluze/amutool/docker v0.0.0-20240409163639-4b2153b70b7a h1:OLZFhmXWukpDIGp7hnGLNlYhBw508xwg4kiGYzsCNXA=
-github.com/amuluze/amutool/docker v0.0.0-20240409163639-4b2153b70b7a/go.mod h1:0fJE1xESetX+Z+betFhczY/GFkEAlrfDe8popJVCdR0=
-github.com/amuluze/amutool/docker v0.0.0-20240412111543-0df6e29ee226 h1:kNUpfsSab1qyrqu7FNpb2v9NNeeprGV5cURyXCJ/u/Y=
-github.com/amuluze/amutool/docker v0.0.0-20240412111543-0df6e29ee226/go.mod h1:0fJE1xESetX+Z+betFhczY/GFkEAlrfDe8popJVCdR0=
 github.com/amuluze/amutool/docker v0.0.0-20240412134521-f5acb72cb7dd h1:AS+w6Kb2nP+UnsHcAbXJNoshcYVfvOC5XelEuqfS4Ew=
 github.com/amuluze/amutool/docker v0.0.0-20240412134521-f5acb72cb7dd/go.mod h1:0fJE1xESetX+Z+betFhczY/GFkEAlrfDe8popJVCdR0=
 github.com/amuluze/amutool/errors v0.0.0-20240409163639-4b2153b70b7a h1:pClvDJdbCVe6JA4eLVJCvHAvcwwccahnR9yCspqQEA8=
