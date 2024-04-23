@@ -10,7 +10,7 @@ import { warning } from '@/components/Message/message.ts'
 
 const config = {
     // 默认地址请求地址，可在 .env.*** 文件中修改
-    baseURL: '/api',
+    baseURL: '/',
     // baseURL: import.meta.env.VITE_API_URL,
     // 设置超时时间
     timeout: 30000,
@@ -93,7 +93,7 @@ class Request {
                             })
                         this.requestQueue = []
                         this.isRefreshing = false
-                        window.location.href = "/login"
+                        window.location.href = '/login'
                     } else {
                         // 正在刷新 token，将当前请求加入队列，等待刷新完成后再重新发送
                         return new Promise((resolve) => {

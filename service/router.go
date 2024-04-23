@@ -43,17 +43,17 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 	// 以下是 websocket service
 
 	// 以下是 http 服务
-	g := app.Group("/api")
+	//g := app.Group("/api")
 
 	if a.config.Auth.Enable {
-		g.Use(middleware.UserAuthMiddleware(
+		app.Use(middleware.UserAuthMiddleware(
 			a.auth,
-			middleware.AllowPathPrefixSkipper("/api/v1/auth/login"),
-			middleware.AllowPathPrefixSkipper("/api/v1/auth/token_update"),
+			middleware.AllowPathPrefixSkipper("/v1/auth/login"),
+			middleware.AllowPathPrefixSkipper("/v1/auth/token_update"),
 		))
 	}
 
-	v1 := g.Group("v1")
+	v1 := app.Group("v1")
 	{
 		gIndex := v1.Group("index")
 		{
