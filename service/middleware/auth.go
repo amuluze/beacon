@@ -25,7 +25,7 @@ func UserAuthMiddleware(a auth.Auther, skippers ...SkipperFunc) fiber.Handler {
 		if SkipHandler(c, skippers...) {
 			var args schema.LoginArgs
 			_ = c.BodyParser(&args)
-			if c.Path() == "/api/v1/auth/login" {
+			if c.Path() == "/v1/auth/login" {
 				a.RecordAudit(args.Username, "登录")
 			}
 			return c.Next()
@@ -48,11 +48,11 @@ func UserAuthMiddleware(a auth.Auther, skippers ...SkipperFunc) fiber.Handler {
 
 		slog.Info("user id", "user_id", userID)
 		wrapUserAuthContext(c, userID, username)
-		if c.Method() == "POST" && isAdmin != "1" && c.Path() != "/api/v1/auth/logout" {
+		if c.Method() == "POST" && isAdmin != "1" && c.Path() != "/v1/auth/logout" {
 			return fiberx.Forbidden(c)
 		}
 		if err := c.Next(); err == nil {
-			if (c.Method() == "POST" && isAdmin == "1") || c.Path() == "/api/v1/auth/logout" {
+			if (c.Method() == "POST" && isAdmin == "1") || c.Path() == "/v1/auth/logout" {
 				a.RecordAudit(username, OperateEvent[c.Path()])
 			}
 			return nil
