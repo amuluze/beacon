@@ -45,6 +45,17 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 	// 以下是 http 服务
 	//g := app.Group("/api")
 
+	app.Use("ws", func(c *fiber.Ctx) error {
+		// IsWebSocketUpgrade returns true if the client
+		// requested upgrade to the WebSocket protocol.
+		if websocket.IsWebSocketUpgrade(c) {
+			c.Locals("allowed", true)
+			return c.Next()
+		}
+		return fiber.ErrUpgradeRequired
+	})
+	app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))
+
 	if a.config.Auth.Enable {
 		app.Use(middleware.UserAuthMiddleware(
 			a.auth,
@@ -100,16 +111,7 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			gAudit.Get("/query", a.auditAPI.AuditQuery).Name("获取审计日志")
 		}
 	}
-	app.Use("ws", func(c *fiber.Ctx) error {
-		// IsWebSocketUpgrade returns true if the client
-		// requested upgrade to the WebSocket protocol.
-		if websocket.IsWebSocketUpgrade(c) {
-			c.Locals("allowed", true)
-			return c.Next()
-		}
-		return fiber.ErrUpgradeRequired
-	})
-	app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))
+
 }
 
 func (a *Router) Register(app *fiber.App) error {

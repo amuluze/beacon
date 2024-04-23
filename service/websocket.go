@@ -7,6 +7,7 @@ package service
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"github.com/amuluze/amutool/docker"
 	"github.com/gofiber/contrib/websocket"
 	"log/slog"
@@ -26,6 +27,7 @@ func NewLoggerHandler() *LoggerHandler {
 }
 
 func (l *LoggerHandler) Handler(c *websocket.Conn) {
+	fmt.Println("websocket handler")
 	containerId := c.Params("id")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
