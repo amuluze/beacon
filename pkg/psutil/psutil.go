@@ -6,6 +6,8 @@ package psutil
 
 import (
 	"fmt"
+	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/shirou/gopsutil/v3/cpu"
@@ -65,11 +67,14 @@ func GetDiskInfo(devices map[string]struct{}) (map[string]DiskInfo, error) {
 		if usedInfo == nil {
 			continue
 		}
-		if _, ok := devices[info.Device]; !ok {
+		slog.Info("---------------------", "info", info)
+		slog.Info("---------------------", "devices", devices)
+		dev := strings.Split(info.Device, "/")[len(strings.Split(info.Device, "/"))-1]
+		if _, ok := devices[dev]; !ok {
 			continue
 		}
-		if _, ok := diskMap[info.Device]; !ok {
-			diskMap[info.Device] = DiskInfo{
+		if _, ok := diskMap[dev]; !ok {
+			diskMap[dev] = DiskInfo{
 				Total:   usedInfo.Total,
 				Percent: usedInfo.UsedPercent,
 				Used:    usedInfo.Used,
@@ -86,9 +91,10 @@ func GetDiskIO(devices map[string]struct{}) (map[string]DiskIO, error) {
 	if err != nil {
 		return diskMap, err
 	}
-
+	slog.Error("========> ", "devices", devices)
 	// 将获取到的磁盘IO信息填充到map中
 	for k, v := range stat {
+		slog.Error("=========", k, v)
 		if _, ok := devices[k]; !ok {
 			continue
 		}
