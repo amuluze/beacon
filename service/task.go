@@ -19,7 +19,15 @@ import (
 	"github.com/amuluze/amutool/timex"
 )
 
+const (
+	LatestDiskReadKey   = "latest_disk_io_read_"
+	LatestDisKWriteKey  = "latest_disk_io_write_"
+	LatestNetReceiveKey = "latest_net_io_receive_"
+	LatestNetSendKey    = "latest_net_io_send_"
+)
+
 type TimedTask struct {
+	interval int
 	db       *database.DB
 	manager  *docker.Manager
 	devices  map[string]struct{}
@@ -48,6 +56,7 @@ func NewTimedTask(conf *Config, db *database.DB) *TimedTask {
 	}
 
 	return &TimedTask{
+		interval: interval,
 		devices:  dev,
 		ethernet: eth,
 		ticker:   tk,
@@ -128,22 +137,36 @@ func (a *TimedTask) memory(timestamp time.Time) {
 	})
 }
 
+/*
+disk 函数用于获取磁盘指标，并将其存储到数据库中。
+计算方法：两次采样间隔之间磁盘读写的平均速率
+*/
 func (a *TimedTask) disk(timestamp time.Time) {
 	diskInfo, _ := psutil.GetDiskInfo(a.devices)
-	diskMap, _ := psutil.GetDiskIO(a.devices)
+	diskIOMap, _ := psutil.GetDiskIO(a.devices)
 	var diskInfos []model.Disk
-	slog.Error("disk info: ", "diskInfo", diskInfo)
-	slog.Error("disk map: ", "diskMap", diskMap)
+	slog.Info("disk info: ", "diskInfo", diskInfo)
+	slog.Info("disk io map: ", "diskIOMap", diskIOMap)
 	for device, info := range diskInfo {
 		disk := model.Disk{Timestamp: timestamp}
 		disk.Device = device
 		disk.DiskPercent = info.Percent
 		disk.DiskTotal = float64(info.Total)
 		disk.DiskUsed = float64(info.Used)
-		for dev, state := range diskMap {
+		for dev, state := range diskIOMap {
 			if dev == device {
-				disk.DiskRead = float64(state.Read)
-				disk.DiskWrite = float64(state.Write)
+				if latestReadBytes, ok := a.cache.Get(LatestDiskReadKey + device); ok {
+					disk.DiskRead = float64((state.Read - latestReadBytes.(uint64)) / uint64(a.interval))
+				} else {
+					a.cache.Set(LatestDiskReadKey+device, state.Read, 0)
+					disk.DiskRead = 0
+				}
+				if latestWriteBytes, ok := a.cache.Get(LatestDisKWriteKey + device); ok {
+					disk.DiskWrite = float64((state.Write - latestWriteBytes.(uint64)) / uint64(a.interval))
+				} else {
+					a.cache.Set(LatestDisKWriteKey+device, state.Write, 0)
+					disk.DiskWrite = 0
+				}
 			}
 		}
 		diskInfos = append(diskInfos, disk)
@@ -151,23 +174,30 @@ func (a *TimedTask) disk(timestamp time.Time) {
 	a.db.Model(&model.Disk{}).Create(diskInfos)
 }
 
+/*
+network 函数用于获取网络指标，并将其存储到数据库中。
+计算方法：两次采样间隔之间发送、接收的平均速率
+*/
 func (a *TimedTask) network(timestamp time.Time) {
 	netMap, _ := psutil.GetNetworkIO(a.ethernet)
-	time.Sleep(1 * time.Second)
-	netMapAfterSecond, _ := psutil.GetNetworkIO(a.ethernet)
 	slog.Error("net map: ", "netMap", netMap)
-	slog.Error("net map after second: ", "netMapAfterSecond", netMapAfterSecond)
 	var netInfos []model.Net
 	for eth, info := range netMap {
-		for e, i := range netMapAfterSecond {
-			if eth == e {
-				net := model.Net{Timestamp: timestamp}
-				net.Ethernet = eth
-				net.NetSend = float64(i.Send - info.Send)
-				net.NetRecv = float64(i.Recv - info.Recv)
-				netInfos = append(netInfos, net)
-			}
+		net := model.Net{Timestamp: timestamp}
+		net.Ethernet = eth
+		if LatestNetReceiveBytes, ok := a.cache.Get(LatestNetReceiveKey + eth); ok {
+			net.NetRecv = float64((info.Recv - LatestNetReceiveBytes.(uint64)) / uint64(a.interval))
+		} else {
+			a.cache.Set(LatestNetReceiveKey+eth, info.Recv, 0)
+			net.NetRecv = 0
 		}
+		if LatestNetSendBytes, ok := a.cache.Get(LatestNetSendKey + eth); ok {
+			net.NetSend = float64((info.Send - LatestNetSendBytes.(uint64)) / uint64(a.interval))
+		} else {
+			a.cache.Set(LatestNetSendKey+eth, info.Send, 0)
+			net.NetSend = 0
+		}
+		netInfos = append(netInfos, net)
 	}
 	a.db.Model(&model.Net{}).Create(netInfos)
 }

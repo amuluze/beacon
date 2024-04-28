@@ -67,15 +67,14 @@ func GetDiskInfo(devices map[string]struct{}) (map[string]DiskInfo, error) {
 	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{common.HostProcEnvKey: "/host/proc"})
 	diskMap := make(map[string]DiskInfo)
 	infos, _ := disk.PartitionsWithContext(ctx, false)
-	slog.Error("================ infos", "infos", infos)
-	slog.Error("================ devices", "devices", devices)
+	slog.Info("disk infos", "infos", infos)
+	slog.Info("devices", "devices", devices)
 	for _, info := range infos {
 		usedInfo, _ := disk.UsageWithContext(ctx, info.Mountpoint)
 		if usedInfo == nil {
 			continue
 		}
-		slog.Info("---------------------", "info", info)
-		slog.Info("---------------------", "devices", devices)
+		slog.Info("disk info", "info", info)
 		dev := strings.Split(info.Device, "/")[len(strings.Split(info.Device, "/"))-1]
 		if _, ok := devices[dev]; !ok {
 			continue
@@ -99,22 +98,21 @@ func GetDiskIO(devices map[string]struct{}) (map[string]DiskIO, error) {
 	for k := range devices {
 		names = append(names, k)
 	}
-	slog.Error("---------------------- names", "names", names)
+	slog.Error("device names", "names", names)
 	stat, err := disk.IOCountersWithContext(ctx, names...)
 	if err != nil {
-		slog.Error("----------------------get disk io err", "err", err)
+		slog.Error("get disk io err", "err", err)
 		return diskMap, err
 	}
-	slog.Error("========> ", "devices", devices)
 	// 将获取到的磁盘IO信息填充到map中
 	for k, v := range stat {
-		slog.Error("=========", k, v)
+		slog.Info("disk stat value", "value", v)
 		if _, ok := devices[k]; !ok {
 			continue
 		}
 		diskMap[k] = DiskIO{
-			Read:  v.ReadCount,
-			Write: v.WriteCount,
+			Read:  v.ReadBytes,
+			Write: v.WriteBytes,
 		}
 	}
 	return diskMap, nil
@@ -124,13 +122,13 @@ func GetNetworkIO(eth map[string]struct{}) (map[string]NetIO, error) {
 	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{common.HostProcEnvKey: "/host/proc"})
 
 	netMap := make(map[string]NetIO)
-	IOCountersStat, err := net.IOCountersWithContext(ctx, false)
+	IOCountersStat, err := net.IOCountersWithContext(ctx, true)
 	if err != nil {
-		slog.Error("----------------------get network io err", "err", err)
+		slog.Error("get network io err", "err", err)
 		return netMap, err
 	}
-	slog.Error("---------------------- eth", "eth", eth)
-	slog.Error("---------------------- IOCountersStat", "IOCountersStat", IOCountersStat)
+	slog.Error("eth", "eth", eth)
+	slog.Error("IOCountersStat", "IOCountersStat", IOCountersStat)
 	for _, stat := range IOCountersStat {
 		if _, ok := eth[stat.Name]; !ok {
 			continue
@@ -148,7 +146,6 @@ func GetSystemInfo() (*SystemInfo, error) {
 	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{
 		common.HostSysEnvKey:  "/host/sys",
 		common.HostProcEnvKey: "/host/proc",
-		common.HostDevEnvKey:  "/host/dev",
 	})
 
 	info, err := host.InfoWithContext(ctx)
