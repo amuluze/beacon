@@ -11,6 +11,10 @@ export const cpuOptions: EChartsOption = {
     // },
     tooltip: {
         trigger: 'axis',
+        formatter: function (params: any) {
+            params = params[0]
+            return params.value[1] + '%'
+        },
         axisPointer: {
             type: 'cross',
             label: {
