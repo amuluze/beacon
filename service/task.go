@@ -7,9 +7,10 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/patrickmn/go-cache"
 	"log/slog"
 	"time"
+
+	"github.com/patrickmn/go-cache"
 
 	"github.com/amuluze/amprobe/pkg/psutil"
 	"github.com/amuluze/amprobe/service/model"
@@ -131,6 +132,8 @@ func (a *TimedTask) disk(timestamp time.Time) {
 	diskInfo, _ := psutil.GetDiskInfo(a.devices)
 	diskMap, _ := psutil.GetDiskIO(a.devices)
 	var diskInfos []model.Disk
+	slog.Error("disk info: ", "diskInfo", diskInfo)
+	slog.Error("disk map: ", "diskMap", diskMap)
 	for device, info := range diskInfo {
 		disk := model.Disk{Timestamp: timestamp}
 		disk.Device = device
@@ -152,6 +155,8 @@ func (a *TimedTask) network(timestamp time.Time) {
 	netMap, _ := psutil.GetNetworkIO(a.ethernet)
 	time.Sleep(1 * time.Second)
 	netMapAfterSecond, _ := psutil.GetNetworkIO(a.ethernet)
+	slog.Error("net map: ", "netMap", netMap)
+	slog.Error("net map after second: ", "netMapAfterSecond", netMapAfterSecond)
 	var netInfos []model.Net
 	for eth, info := range netMap {
 		for e, i := range netMapAfterSecond {

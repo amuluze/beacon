@@ -5,7 +5,9 @@
 package psutil
 
 import (
+	"context"
 	"fmt"
+	"github.com/shirou/gopsutil/v3/common"
 	"log/slog"
 	"strings"
 	"time"
@@ -44,7 +46,8 @@ type SystemInfo struct {
 }
 
 func GetMemInfo() (float64, uint64, uint64, error) {
-	v, err := mem.VirtualMemory()
+	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{common.HostProcEnvKey: "/host/proc"})
+	v, err := mem.VirtualMemoryWithContext(ctx)
 	if err != nil {
 		return 0.0, 0, 0, err
 	}
@@ -52,7 +55,8 @@ func GetMemInfo() (float64, uint64, uint64, error) {
 }
 
 func GetCPUPercent() (float64, error) {
-	totalPercent, err := cpu.Percent(3*time.Second, false)
+	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{common.HostProcEnvKey: "/host/proc"})
+	totalPercent, err := cpu.PercentWithContext(ctx, 3*time.Second, false)
 	if err != nil {
 		return 0.0, err
 	}
@@ -60,10 +64,13 @@ func GetCPUPercent() (float64, error) {
 }
 
 func GetDiskInfo(devices map[string]struct{}) (map[string]DiskInfo, error) {
+	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{common.HostProcEnvKey: "/host/proc"})
 	diskMap := make(map[string]DiskInfo)
-	infos, _ := disk.Partitions(false)
+	infos, _ := disk.PartitionsWithContext(ctx, false)
+	slog.Error("================ infos", "infos", infos)
+	slog.Error("================ devices", "devices", devices)
 	for _, info := range infos {
-		usedInfo, _ := disk.Usage(info.Mountpoint)
+		usedInfo, _ := disk.UsageWithContext(ctx, info.Mountpoint)
 		if usedInfo == nil {
 			continue
 		}
@@ -85,10 +92,17 @@ func GetDiskInfo(devices map[string]struct{}) (map[string]DiskInfo, error) {
 }
 
 func GetDiskIO(devices map[string]struct{}) (map[string]DiskIO, error) {
+	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{common.HostProcEnvKey: "/host/proc"})
 	diskMap := make(map[string]DiskIO)
 	// 实现磁盘IO的获取逻辑
-	stat, err := disk.IOCounters()
+	var names []string
+	for k := range devices {
+		names = append(names, k)
+	}
+	slog.Error("---------------------- names", "names", names)
+	stat, err := disk.IOCountersWithContext(ctx, names...)
 	if err != nil {
+		slog.Error("----------------------get disk io err", "err", err)
 		return diskMap, err
 	}
 	slog.Error("========> ", "devices", devices)
@@ -107,11 +121,16 @@ func GetDiskIO(devices map[string]struct{}) (map[string]DiskIO, error) {
 }
 
 func GetNetworkIO(eth map[string]struct{}) (map[string]NetIO, error) {
+	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{common.HostProcEnvKey: "/host/proc"})
+
 	netMap := make(map[string]NetIO)
-	IOCountersStat, err := net.IOCounters(true)
+	IOCountersStat, err := net.IOCountersWithContext(ctx, false)
 	if err != nil {
+		slog.Error("----------------------get network io err", "err", err)
 		return netMap, err
 	}
+	slog.Error("---------------------- eth", "eth", eth)
+	slog.Error("---------------------- IOCountersStat", "IOCountersStat", IOCountersStat)
 	for _, stat := range IOCountersStat {
 		if _, ok := eth[stat.Name]; !ok {
 			continue
@@ -126,7 +145,13 @@ func GetNetworkIO(eth map[string]struct{}) (map[string]NetIO, error) {
 
 // GetSystemInfo 获取系统信息
 func GetSystemInfo() (*SystemInfo, error) {
-	info, err := host.Info()
+	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{
+		common.HostSysEnvKey:  "/host/sys",
+		common.HostProcEnvKey: "/host/proc",
+		common.HostDevEnvKey:  "/host/dev",
+	})
+
+	info, err := host.InfoWithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
