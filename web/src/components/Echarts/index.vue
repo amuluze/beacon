@@ -45,6 +45,6 @@ onMounted(() => {
 <style scoped lang="scss">
 @include b(box) {
     width: 100%;
-    height: 90%;
+    height: 80%;
 }
 </style>

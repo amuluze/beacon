@@ -46,10 +46,9 @@ export const cpuOptions: EChartsOption = {
         {
             name: 'CPU 使用率',
             type: 'line',
-            stack: 'Total',
-            areaStyle: {},
-            emphasis: {
-                focus: 'series'
+            smooth: true,
+            lineStyle: {
+                width: 2
             },
             data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         }
@@ -94,10 +93,9 @@ export const memOptions: EChartsOption = {
         {
             name: '内存使用率',
             type: 'line',
-            stack: 'Total',
-            areaStyle: {},
-            emphasis: {
-                focus: 'series'
+            smooth: true,
+            lineStyle: {
+                width: 2
             },
             data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         }
@@ -153,20 +151,18 @@ export const diskOptions: EChartsOption = {
         {
             name: 'Read',
             type: 'line',
-            stack: 'Total',
-            areaStyle: {},
-            emphasis: {
-                focus: 'series'
+            smooth: true,
+            lineStyle: {
+                width: 2
             },
             data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         },
         {
             name: 'Write',
             type: 'line',
-            stack: 'Total',
-            areaStyle: {},
-            emphasis: {
-                focus: 'series'
+            smooth: true,
+            lineStyle: {
+                width: 2
             },
             data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         }
@@ -222,20 +218,18 @@ export const netOptions: EChartsOption = {
         {
             name: 'Receive',
             type: 'line',
-            stack: 'Total',
-            areaStyle: {},
-            emphasis: {
-                focus: 'series'
+            smooth: true,
+            lineStyle: {
+                width: 2
             },
             data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         },
         {
             name: 'Send',
             type: 'line',
-            stack: 'Total',
-            areaStyle: {},
-            emphasis: {
-                focus: 'series'
+            smooth: true,
+            lineStyle: {
+                width: 2
             },
             data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         }

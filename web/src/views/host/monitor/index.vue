@@ -123,7 +123,7 @@ const renderCPU = async () => {
     set(cpuOption, 'series', [
         {
             name: 'CPU使用率',
-            data: cpuData.map((item) => item.value),
+            data: cpuData.map((item) => item.value.toFixed(2)),
             type: 'line',
             smooth: true,
             showSymbol: false
@@ -165,7 +165,7 @@ const renderMem = async () => {
     set(memOption, 'series', [
         {
             name: '内存使用率',
-            data: memData.map((item) => item.value),
+            data: memData.map((item) => item.value.toFixed(2)),
             type: 'line',
             smooth: true,
             showSymbol: false
@@ -220,17 +220,17 @@ const renderDisk = async () => {
     set(diskOption, 'series', [
         {
             name: 'Read',
-            data: diskData.data.map((item: DiskIO) => convertBytesToReadable(item.io_read)),
+            data: diskData.data.map((item: DiskIO) => item.io_read),
             type: 'line',
             smooth: true,
-            showSymbol: false
+            showSymbol: true
         },
         {
             name: 'Write',
-            data: diskData.data.map((item: DiskIO) => convertBytesToReadable(item.io_write)),
+            data: diskData.data.map((item: DiskIO) => item.io_write),
             type: 'line',
             smooth: true,
-            showSymbol: false
+            showSymbol: true
         }
     ])
     console.log('disk options: ', diskOption)
@@ -267,17 +267,21 @@ const renderNet = async () => {
     set(netOption, 'series', [
         {
             name: 'Receive',
-            data: netData.data.map((item: NetIO) => convertBytesToReadable(item.bytes_recv)),
+            data: netData.data.map((item: NetIO) => item.bytes_recv),
             type: 'line',
-            smooth: true,
-            showSymbol: false
+            showSymbol: true,
+            symbolSize: 2,
+            hoverAnimation: true,
+            smooth: true
         },
         {
             name: 'Send',
-            data: netData.data.map((item: NetIO) => convertBytesToReadable(item.bytes_sent)),
+            data: netData.data.map((item: NetIO) => item.bytes_sent),
             type: 'line',
-            smooth: true,
-            showSymbol: false
+            showSymbol: true,
+            symbolSize: 2,
+            hoverAnimation: true,
+            smooth: true
         }
     ])
     console.log('net options: ', netOption)
@@ -331,7 +335,7 @@ watch(
     .el-row {
         margin-bottom: 4px;
         .el-col {
-            height: 300px;
+            height: 360px;
         }
     }
 

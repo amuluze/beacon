@@ -11,7 +11,7 @@ import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-    base: './', // 设置打包路径
+    base: '/', // 设置打包路径
     plugins: [
         vue(),
         AutoImport({

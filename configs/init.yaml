@@ -1,6 +1,6 @@
 users:
   - username: admin
-    password: amu123456
+    password: 123456
     status: 1
     is_admin: 1
   - username: amprobe
