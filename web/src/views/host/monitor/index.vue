@@ -220,14 +220,14 @@ const renderDisk = async () => {
     set(diskOption, 'series', [
         {
             name: 'Read',
-            data: diskData.data.map((item: DiskIO) => item.io_read),
+            data: diskData.data.map((item: DiskIO) => convertBytesToReadable(item.io_read)),
             type: 'line',
             smooth: true,
             showSymbol: false
         },
         {
             name: 'Write',
-            data: diskData.data.map((item: DiskIO) => item.io_write),
+            data: diskData.data.map((item: DiskIO) => convertBytesToReadable(item.io_write)),
             type: 'line',
             smooth: true,
             showSymbol: false
@@ -267,14 +267,14 @@ const renderNet = async () => {
     set(netOption, 'series', [
         {
             name: 'Receive',
-            data: netData.data.map((item: NetIO) => item.bytes_recv),
+            data: netData.data.map((item: NetIO) => convertBytesToReadable(item.bytes_recv)),
             type: 'line',
             smooth: true,
             showSymbol: false
         },
         {
             name: 'Send',
-            data: netData.data.map((item: NetIO) => item.bytes_sent),
+            data: netData.data.map((item: NetIO) => convertBytesToReadable(item.bytes_sent)),
             type: 'line',
             smooth: true,
             showSymbol: false

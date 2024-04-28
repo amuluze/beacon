@@ -8,25 +8,18 @@ const router = createRouter({
 
 router.beforeEach(async (to, _, next) => {
     const store = useStore()
-    // 未登录，to 登录页
-    if (store.user.token === '' && to.name === 'login') {
+    console.log('to', to)
+    if (store.user.token === '' && to.name !== 'login') {
+        // 未登录，to 非登录页  --> 跳转登录页
+        next({ name: 'login' })
+    } else if (store.user.token === '' && to.name === 'login') {
+        // 未登录，to 登录页
+        next()
+    } else if (store.user.token !== '' && to.name === 'login') {
+        // 跳转首页
+        next({ name: 'overview' })
+    } else {
         next()
     }
-
-    // 未登录，to 非登录页
-    if (store.user.token === '' && to.name !== 'login') {
-        // 跳转登录页
-        next({ name: 'login' })
-    }
-
-    // 登录
-    if (store.user.token !== '' && to.name === 'login') {
-        // to 登录页
-        if (to.name === 'login') {
-            // 跳转首页
-            next({ name: 'overview' })
-        }
-    }
-    next()
 })
 export default router

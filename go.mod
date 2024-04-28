@@ -1,6 +1,6 @@
 module github.com/amuluze/amprobe
 
-go 1.21.9
+go 1.21
 
 require (
 	github.com/amuluze/amutool/database v0.0.0-20240425152605-07fd57342644

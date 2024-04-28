@@ -5,7 +5,7 @@
  */
 
 export function convertBytesToReadable(bytes: number): string {
-    const units = ['B', 'KB', 'MB', 'GB', 'TB']
+    const units = ['Bps', 'KBps', 'MBps', 'GBps', 'TBps']
     let unitIndex = 0
     while (bytes >= 1024 && unitIndex < units.length - 1) {
         bytes /= 1024
