@@ -2,7 +2,7 @@
 # http监听地址
 Host = "0.0.0.0"
 # http监听端口
-Port = 9527
+Port = 8000
 # http优雅关闭等待超时时长(单位秒)
 ShutdownTimeout = 30
 SeverHeader = "probe"
@@ -44,11 +44,11 @@ SSLMode = ""
 
 [Disk]
 # 需要监控的磁盘设备，可以根据 lsblk 命令查看
-Devices = ["sda", "sdb2"]
+Devices = ["vda2"]
 
 [Ethernet]
 # 需要监控的网口，可以通过 ifconfig 命令查看
-Names = ["mgmt"]
+Names = ["eth0"]
 
 [Task]
 # 主机监控数据的采集频率

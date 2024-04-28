@@ -13,7 +13,7 @@ export const cpuOptions: EChartsOption = {
         trigger: 'axis',
         formatter: function (params: any) {
             params = params[0]
-            return params.value[1] + '%'
+            return params.value + '%'
         },
         axisPointer: {
             type: 'cross',
@@ -62,6 +62,10 @@ export const cpuOptions: EChartsOption = {
 export const memOptions: EChartsOption = {
     tooltip: {
         trigger: 'axis',
+        formatter: function (params: any) {
+            params = params[0]
+            return params.value + '%'
+        },
         axisPointer: {
             type: 'cross',
             label: {
@@ -112,6 +116,19 @@ export const diskOptions: EChartsOption = {
     // },
     tooltip: {
         trigger: 'axis',
+        formatter: function (params: any): string {
+            let res = ''
+            params.forEach((item: any) => {
+                const units = ['B', 'KB', 'MB', 'GB', 'TB']
+                let unitIndex = 0
+                while (item.value >= 1024 && unitIndex < units.length - 1) {
+                    item.value /= 1024
+                    unitIndex++
+                }
+                res += item.seriesName + ': ' + item.value.toFixed(2) + ' ' + units[unitIndex] + '<br/>'
+            })
+            return res
+        },
         axisPointer: {
             type: 'cross',
             label: {
@@ -179,6 +196,19 @@ export const netOptions: EChartsOption = {
     // },
     tooltip: {
         trigger: 'axis',
+        formatter: function (params: any): string {
+            let res = ''
+            params.forEach((item: any) => {
+                const units = ['B', 'KB', 'MB', 'GB', 'TB']
+                let unitIndex = 0
+                while (item.value >= 1024 && unitIndex < units.length - 1) {
+                    item.value /= 1024
+                    unitIndex++
+                }
+                res += item.seriesName + ': ' + item.value.toFixed(2) + ' ' + units[unitIndex] + '<br/>'
+            })
+            return res
+        },
         axisPointer: {
             type: 'cross',
             label: {
