@@ -11,13 +11,13 @@ import {
     CPUTrendingArgs,
     DiskInfoResult,
     DiskTrendingArgs,
-    DiskUsage,
+    DiskUsageResult,
     HostInfo,
     MemInfo,
     MemTrending,
     MemTrendingArgs,
     NetTrendingArgs,
-    NetUsage
+    NetUsageResult
 } from '@/interface/host.ts'
 
 export function queryHostInfo() {
@@ -43,9 +43,9 @@ export function queryDiskInfo() {
 }
 
 export function queryDiskUsage(param: DiskTrendingArgs) {
-    return request.get<DiskUsage>('/api/v1/host/disk_trending', param)
+    return request.get<DiskUsageResult>('/api/v1/host/disk_trending', param)
 }
 
 export function queryNetworkUsage(param: NetTrendingArgs) {
-    return request.get<NetUsage>('/api/v1/host/net_trending', param)
+    return request.get<NetUsageResult>('/api/v1/host/net_trending', param)
 }

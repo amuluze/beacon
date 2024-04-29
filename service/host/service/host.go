@@ -6,7 +6,6 @@ package service
 
 import (
 	"context"
-	
 	"github.com/amuluze/amprobe/service/host/repository"
 	"github.com/amuluze/amprobe/service/schema"
 	"github.com/google/wire"
@@ -110,7 +109,7 @@ func (h HostService) DiskInfo(ctx context.Context) (schema.DiskInfoReply, error)
 			Used:    di.DiskUsed,
 		})
 	}
-	
+
 	return schema.DiskInfoReply{Info: list}, err
 }
 
@@ -119,18 +118,31 @@ func (h HostService) DiskUsage(ctx context.Context, args schema.DiskUsageArgs) (
 	if err != nil {
 		return schema.DiskUsageReply{}, err
 	}
-	
-	mDisk := make([]schema.DiskIO, 0)
-	device := ""
+	var reply schema.DiskUsageReply
+	usageMap := make(map[string][]schema.DiskIO)
+
 	for _, item := range diskInfos {
-		device = item.Device
-		mDisk = append(mDisk, schema.DiskIO{
-			Timestamp: item.Timestamp.Unix(),
-			IORead:    item.DiskRead,
-			IOWrite:   item.DiskWrite,
+		if _, ok := usageMap[item.Device]; !ok {
+			usageMap[item.Device] = []schema.DiskIO{{
+				Timestamp: item.Timestamp.Unix(),
+				IORead:    item.DiskRead,
+				IOWrite:   item.DiskWrite,
+			}}
+		} else {
+			usageMap[item.Device] = append(usageMap[item.Device], schema.DiskIO{
+				Timestamp: item.Timestamp.Unix(),
+				IORead:    item.DiskRead,
+				IOWrite:   item.DiskWrite,
+			})
+		}
+	}
+	for key, item := range usageMap {
+		reply.Usage = append(reply.Usage, schema.DiskUsage{
+			Device: key,
+			Data:   item,
 		})
 	}
-	return schema.DiskUsageReply{Device: device, Data: mDisk}, nil
+	return reply, nil
 }
 
 func (h HostService) NetUsage(ctx context.Context, args schema.NetworkUsageArgs) (schema.NetworkUsageReply, error) {
@@ -138,15 +150,30 @@ func (h HostService) NetUsage(ctx context.Context, args schema.NetworkUsageArgs)
 	if err != nil {
 		return schema.NetworkUsageReply{}, err
 	}
-	mNet := make([]schema.NetIO, 0)
-	ethernet := ""
+
+	var reply schema.NetworkUsageReply
+	usageMap := make(map[string][]schema.NetIO)
+
 	for _, item := range netInfos {
-		ethernet = item.Ethernet
-		mNet = append(mNet, schema.NetIO{
-			Timestamp: item.Timestamp.Unix(),
-			BytesSent: item.NetSend,
-			BytesRecv: item.NetRecv,
+		if _, ok := usageMap[item.Ethernet]; !ok {
+			usageMap[item.Ethernet] = []schema.NetIO{{
+				Timestamp: item.Timestamp.Unix(),
+				BytesSent: item.NetSend,
+				BytesRecv: item.NetRecv,
+			}}
+		} else {
+			usageMap[item.Ethernet] = append(usageMap[item.Ethernet], schema.NetIO{
+				Timestamp: item.Timestamp.Unix(),
+				BytesSent: item.NetSend,
+				BytesRecv: item.NetRecv,
+			})
+		}
+	}
+	for key, item := range usageMap {
+		reply.Usage = append(reply.Usage, schema.NetUsage{
+			Ethernet: key,
+			Data:     item,
 		})
 	}
-	return schema.NetworkUsageReply{Data: mNet, Ethernet: ethernet}, nil
+	return reply, nil
 }

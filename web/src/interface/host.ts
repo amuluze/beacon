@@ -31,6 +31,10 @@ export interface DiskUsage {
     data: DiskIO[]
 }
 
+export interface DiskUsageResult {
+    usage: DiskUsage[]
+}
+
 export interface NetIO {
     timestamp: number
     bytes_sent: number
@@ -40,6 +44,10 @@ export interface NetIO {
 export interface NetUsage {
     ethernet: string
     data: NetIO[]
+}
+
+export interface NetUsageResult {
+    usage: NetUsage[]
 }
 
 export interface CPUInfo {

@@ -67,6 +67,16 @@ type DiskInfo struct {
 	Used    float64 `json:"used"`
 }
 
+type DiskUsage struct {
+	Device string   `json:"device"`
+	Data   []DiskIO `json:"data"`
+}
+
+type NetUsage struct {
+	Ethernet string  `json:"ethernet"`
+	Data     []NetIO `json:"data"`
+}
+
 type DiskInfoReply struct {
 	Info []DiskInfo `json:"info"`
 }
@@ -77,8 +87,7 @@ type DiskUsageArgs struct {
 }
 
 type DiskUsageReply struct {
-	Device string   `json:"device"`
-	Data   []DiskIO `json:"data"`
+	Usage []DiskUsage `json:"usage"`
 }
 
 type NetworkUsageArgs struct {
@@ -87,6 +96,5 @@ type NetworkUsageArgs struct {
 }
 
 type NetworkUsageReply struct {
-	Ethernet string  `json:"ethernet"`
-	Data     []NetIO `json:"data"`
+	Usage []NetUsage `json:"usage"`
 }

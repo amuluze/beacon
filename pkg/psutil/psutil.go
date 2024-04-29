@@ -70,7 +70,7 @@ func GetDiskInfo(devices map[string]struct{}) (map[string]DiskInfo, error) {
 	slog.Info("disk infos", "infos", infos)
 	slog.Info("devices", "devices", devices)
 	for _, info := range infos {
-		usedInfo, _ := disk.UsageWithContext(ctx, info.Mountpoint)
+		usedInfo, _ := disk.UsageWithContext(ctx, info.Device)
 		if usedInfo == nil {
 			continue
 		}
