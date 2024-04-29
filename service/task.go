@@ -157,12 +157,14 @@ func (a *TimedTask) disk(timestamp time.Time) {
 			if dev == device {
 				if latestReadBytes, ok := a.cache.Get(LatestDiskReadKey + device); ok {
 					disk.DiskRead = float64((state.Read - latestReadBytes.(uint64)) / uint64(a.interval))
+					a.cache.Set(LatestDiskReadKey+device, state.Read, 0)
 				} else {
 					a.cache.Set(LatestDiskReadKey+device, state.Read, 0)
 					disk.DiskRead = 0
 				}
 				if latestWriteBytes, ok := a.cache.Get(LatestDisKWriteKey + device); ok {
 					disk.DiskWrite = float64((state.Write - latestWriteBytes.(uint64)) / uint64(a.interval))
+					a.cache.Set(LatestDisKWriteKey+device, state.Write, 0)
 				} else {
 					a.cache.Set(LatestDisKWriteKey+device, state.Write, 0)
 					disk.DiskWrite = 0
@@ -187,12 +189,14 @@ func (a *TimedTask) network(timestamp time.Time) {
 		net.Ethernet = eth
 		if LatestNetReceiveBytes, ok := a.cache.Get(LatestNetReceiveKey + eth); ok {
 			net.NetRecv = float64((info.Recv - LatestNetReceiveBytes.(uint64)) / uint64(a.interval))
+			a.cache.Set(LatestNetReceiveKey+eth, info.Recv, 0)
 		} else {
 			a.cache.Set(LatestNetReceiveKey+eth, info.Recv, 0)
 			net.NetRecv = 0
 		}
 		if LatestNetSendBytes, ok := a.cache.Get(LatestNetSendKey + eth); ok {
 			net.NetSend = float64((info.Send - LatestNetSendBytes.(uint64)) / uint64(a.interval))
+			a.cache.Set(LatestNetSendKey+eth, info.Send, 0)
 		} else {
 			a.cache.Set(LatestNetSendKey+eth, info.Send, 0)
 			net.NetSend = 0
