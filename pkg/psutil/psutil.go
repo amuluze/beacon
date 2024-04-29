@@ -64,27 +64,27 @@ func GetCPUPercent() (float64, error) {
 }
 
 func GetDiskInfo(devices map[string]struct{}) (map[string]DiskInfo, error) {
-	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{common.HostProcEnvKey: "/host/proc"})
+	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{common.HostRootEnvKey: "/rootfs"})
 	diskMap := make(map[string]DiskInfo)
 	infos, _ := disk.PartitionsWithContext(ctx, false)
 	slog.Info("disk infos", "infos", infos)
 	slog.Info("devices", "devices", devices)
 	for _, info := range infos {
-		usedInfo, _ := disk.UsageWithContext(ctx, info.Device)
+		usedInfo, err := disk.UsageWithContext(ctx, info.Mountpoint)
 		if usedInfo == nil {
+			slog.Error("get disk usage err", "err", err)
 			continue
 		}
-		slog.Info("disk info", "info", info)
+		slog.Info("used info", "usedInfo", usedInfo)
 		dev := strings.Split(info.Device, "/")[len(strings.Split(info.Device, "/"))-1]
+		slog.Info(">>>>>>>>>>>>>>>>>>>> dev", "dev", dev)
 		if _, ok := devices[dev]; !ok {
 			continue
 		}
-		if _, ok := diskMap[dev]; !ok {
-			diskMap[dev] = DiskInfo{
-				Total:   usedInfo.Total,
-				Percent: usedInfo.UsedPercent,
-				Used:    usedInfo.Used,
-			}
+		diskMap[dev] = DiskInfo{
+			Total:   usedInfo.Total,
+			Percent: usedInfo.UsedPercent,
+			Used:    usedInfo.Used,
 		}
 	}
 	return diskMap, nil
@@ -106,7 +106,7 @@ func GetDiskIO(devices map[string]struct{}) (map[string]DiskIO, error) {
 	}
 	// 将获取到的磁盘IO信息填充到map中
 	for k, v := range stat {
-		slog.Info("disk stat value", "value", v)
+		slog.Info("disk stat value", "value", v, "key", k)
 		if _, ok := devices[k]; !ok {
 			continue
 		}

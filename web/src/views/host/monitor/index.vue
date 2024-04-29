@@ -210,6 +210,58 @@ const renderDiskInfo = async () => {
 }
 
 const diskOption = reactive<EChartsOption>(diskOptions) as EChartsOption
+
+const generateDiskLegendData = (data: DiskUsage[]) => {
+    let options: string[] = ['Read', 'Write']
+    let res: string[] = []
+    options.forEach((item: string) => {
+        data.forEach((i: DiskUsage) => {
+            res.push(i.device + '_' + item)
+        })
+    })
+    return res
+}
+
+interface DiskSeriesData {
+    name: string
+    data: number[]
+    type: string
+    showSymbol: boolean
+    symbolSize: number
+    hoverAnimation: boolean
+    smooth: boolean
+}
+
+const generateDiskSeriesData = (data: DiskUsage[]) => {
+    let options: string[] = ['Read', 'Write']
+    let series: DiskSeriesData[] = []
+    options.forEach((item: string) => {
+        data.forEach((i: DiskUsage) => {
+            if (item === 'Read') {
+                series.push({
+                    name: i.device + '_' + item,
+                    data: i.data.map((val: DiskIO) => val.io_read),
+                    type: 'line',
+                    smooth: true,
+                    showSymbol: true,
+                    symbolSize: 2,
+                    hoverAnimation: true
+                })
+            } else {
+                series.push({
+                    name: i.device + '_' + item,
+                    data: i.data.map((val: DiskIO) => val.io_write),
+                    type: 'line',
+                    smooth: true,
+                    showSymbol: true,
+                    symbolSize: 2,
+                    hoverAnimation: true
+                })
+            }
+        })
+    })
+    return series
+}
 const renderDisk = async () => {
     const param: DiskTrendingArgs = {
         start_time: dayjs().unix() - timeDensity.value,
@@ -230,38 +282,12 @@ const renderDisk = async () => {
     set(
         diskOption,
         'legend.data',
-        ['Read', 'Write'].map((item: string) => {
-            return diskData.usage.map((i: DiskUsage) => {
-                let dev = i.device.split('/')[-1]
-                return dev + '-' + item
-            })
-        })
+        generateDiskLegendData(diskData.usage)
     )
     set(
         diskOption,
         'series',
-        ['Read', 'Write'].map((item: string) => {
-            return diskData.usage.map((i: DiskUsage) => {
-                let dev = i.device.split('/')[-1]
-                if (item === 'Read') {
-                    return {
-                        name: dev + '-' + item,
-                        data: i.data.map((val: DiskIO) => val.io_read),
-                        type: 'line',
-                        smooth: true,
-                        showSymbol: true
-                    }
-                } else {
-                    return {
-                        name: dev + '-' + item,
-                        data: i.data.map((val: DiskIO) => val.io_write),
-                        type: 'line',
-                        smooth: true,
-                        showSymbol: true
-                    }
-                }
-            })
-        })
+        generateDiskSeriesData(diskData.usage)
     )
     console.log('disk options: ', diskOption)
 }
@@ -275,6 +301,58 @@ const netInfo = ref<
 >([])
 
 const netOption = reactive<EChartsOption>(netOptions) as EChartsOption
+
+const generateNetLegendData = (data: NetUsage[]) => {
+    let options: string[] = ['Receive', 'Send']
+    let res: string[] = []
+    options.forEach((item: string) => {
+        data.forEach((i: NetUsage) => {
+            res.push(i.ethernet + '_' + item)
+        })
+    })
+    return res
+}
+
+interface NetSeriesData {
+    name: string
+    data: number[]
+    type: string
+    showSymbol: boolean
+    symbolSize: number
+    hoverAnimation: boolean
+    smooth: boolean
+}
+
+const generateNetSeriesData = (data: NetUsage[]) => {
+    let options: string[] = ['Receive', 'Send']
+    let series: NetSeriesData[] = []
+    options.forEach((item: string) => {
+        data.forEach((i: NetUsage) => {
+            if (item === 'Receive') {
+                series.push({
+                    name: i.ethernet + '_' + item,
+                    data: i.data.map((val: NetIO) => val.bytes_recv),
+                    type: 'line',
+                    showSymbol: true,
+                    symbolSize: 2,
+                    hoverAnimation: true,
+                    smooth: true
+                })
+            } else {
+                series.push({
+                    name: i.ethernet + '_' + item,
+                    data: i.data.map((val: NetIO) => val.bytes_sent),
+                    type: 'line',
+                    showSymbol: true,
+                    symbolSize: 2,
+                    hoverAnimation: true,
+                    smooth: true
+                })
+            }
+        })
+    })
+    return series
+}
 const renderNet = async () => {
     const param: NetTrendingArgs = {
         start_time: dayjs().unix() - timeDensity.value,
@@ -283,6 +361,7 @@ const renderNet = async () => {
     console.log(param)
     const { data } = await queryNetworkUsage(param)
     const netData = data
+    netInfo.value = []
     netData.usage.map((item: NetUsage) => {
         netInfo.value.push({
             ethernet: item.ethernet,
@@ -292,7 +371,6 @@ const renderNet = async () => {
     })
 
     console.log('net response: ', netData.usage)
-    // set(netOption, 'title', { text: '流量曲线图' });
     set(
         netOption,
         'xAxis.data',
@@ -300,44 +378,8 @@ const renderNet = async () => {
             (item: NetIO) => dayjs(item.timestamp * 1000).hour() + ':' + dayjs(item.timestamp * 1000).minute()
         )
     )
-    set(
-        netOption,
-        'legend.data',
-        ['Receive', 'Send'].map((item: string) => {
-            return netData.usage.map((i: NetUsage) => {
-                return i.ethernet + '-' + item
-            })
-        })
-    )
-    set(
-        netOption,
-        'series',
-        ['Receive', 'Send'].map((item: string) => {
-            return netData.usage.map((i: NetUsage) => {
-                if (item === 'Receive') {
-                    return {
-                        name: i.ethernet + '-' + item,
-                        data: i.data.map((item: NetIO) => item.bytes_recv),
-                        type: 'line',
-                        showSymbol: true,
-                        symbolSize: 2,
-                        hoverAnimation: true,
-                        smooth: true
-                    }
-                } else {
-                    return {
-                        name: i.ethernet + '-' + item,
-                        data: i.data.map((item: NetIO) => item.bytes_sent),
-                        type: 'line',
-                        showSymbol: true,
-                        symbolSize: 2,
-                        hoverAnimation: true,
-                        smooth: true
-                    }
-                }
-            })
-        })
-    )
+    set(netOption, 'legend.data', generateNetLegendData(netData.usage))
+    set(netOption, 'series', generateNetSeriesData(netData.usage))
     console.log('net options: ', netOption)
 }
 const timer = ref()
@@ -384,7 +426,7 @@ watch(
 
 <style scoped lang="scss">
 @include b(host-container) {
-    overflow: hidden;
+    overflow: scroll;
     background-color: #ffffff;
     .el-row {
         margin-bottom: 4px;

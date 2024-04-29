@@ -119,7 +119,7 @@ export const diskOptions: EChartsOption = {
         formatter: function (params: any): string {
             let res = ''
             params.forEach((item: any) => {
-                const units = ['B', 'KB', 'MB', 'GB', 'TB']
+                const units = ['bps', 'Kbps', 'Mbps', 'Gbps']
                 let unitIndex = 0
                 while (item.value >= 1024 && unitIndex < units.length - 1) {
                     item.value /= 1024
@@ -157,7 +157,7 @@ export const diskOptions: EChartsOption = {
             axisLabel: {
                 show: true,
                 formatter: function yAxisLabelFormatter(value: number): string {
-                    const units = ['B', 'KB', 'MB', 'GB', 'TB']
+                    const units = ['bps', 'Kbps', 'Mbps', 'Gbps']
                     let unitIndex = 0
                     while (value >= 1024 && unitIndex < units.length - 1) {
                         value /= 1024
@@ -199,7 +199,7 @@ export const netOptions: EChartsOption = {
         formatter: function (params: any): string {
             let res = ''
             params.forEach((item: any) => {
-                const units = ['B', 'KB', 'MB', 'GB', 'TB']
+                const units = ['bps', 'Kbps', 'Mbps', 'Gbps']
                 let unitIndex = 0
                 while (item.value >= 1024 && unitIndex < units.length - 1) {
                     item.value /= 1024
@@ -237,7 +237,7 @@ export const netOptions: EChartsOption = {
             axisLabel: {
                 show: true,
                 formatter: function yAxisLabelFormatter(value: number): string {
-                    const units = ['B', 'KB', 'MB', 'GB', 'TB']
+                    const units = ['bps', 'Kbps', 'Mbps', 'Gbps']
                     let unitIndex = 0
                     while (value >= 1024 && unitIndex < units.length - 1) {
                         value /= 1024

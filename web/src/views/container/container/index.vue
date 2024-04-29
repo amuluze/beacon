@@ -11,22 +11,23 @@
             max-height="600"
             v-loading="loading"
         >
-            <el-table-column prop="id" label="容器 ID" align="center" fixed />
-            <el-table-column prop="name" label="容器名称" align="center" min-width="100" show-overflow-tooltip fixed />
-            <el-table-column prop="image" label="镜像名称" align="center" min-width="100" show-overflow-tooltip />
-            <el-table-column prop="ip" label="容器 IP" align="center" min-width="100" show-overflow-tooltip />
+            <el-table-column prop="id" label="容器 ID" align="center" fixed sortable />
+            <el-table-column prop="name" label="容器名称" align="center" min-width="100" show-overflow-tooltip fixed sortable />
+            <el-table-column prop="image" label="镜像名称" align="center" min-width="100" show-overflow-tooltip sortable />
+            <el-table-column prop="ip" label="容器 IP" align="center" min-width="100" show-overflow-tooltip sortable />
             <el-table-column prop="state" label="运行状态" align="center" min-width="90" show-overflow-tooltip>
                 <template #default="scope">
                     <el-tag :type="scope.row.state === 'running' ? 'success' : 'danger'">{{ scope.row.state }}</el-tag>
                 </template>
             </el-table-column>
-            <el-table-column prop="uptime" label="启动时间" align="center" min-width="100" show-overflow-tooltip />
+            <el-table-column prop="uptime" label="启动时间" align="center" min-width="100" show-overflow-tooltip sortable />
             <el-table-column
                 prop="cpu_percent"
                 label="CPU使用率"
                 align="center"
                 min-width="100"
                 show-overflow-tooltip
+                sortable
             />
             <el-table-column
                 prop="memory_percent"
@@ -34,6 +35,7 @@
                 align="center"
                 min-width="100"
                 show-overflow-tooltip
+                sortable
             />
             <el-table-column
                 prop="memory_usage"
@@ -41,6 +43,7 @@
                 align="center"
                 min-width="100"
                 show-overflow-tooltip
+                sortable
             />
             <el-table-column
                 prop="memory_limit"

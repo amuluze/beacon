@@ -15,12 +15,12 @@
             v-loading="loading"
             style="width: 100%"
         >
-            <el-table-column prop="id" label="镜像 ID" align="center" width="150" fixed />
-            <el-table-column prop="name" label="镜像名称" align="center" min-width="100" show-overflow-tooltip fixed />
-            <el-table-column prop="number" label="容器数量" align="center" show-overflow-tooltip width="100" />
+            <el-table-column prop="id" label="镜像 ID" align="center" width="150" fixed sortable />
+            <el-table-column prop="name" label="镜像名称" align="center" min-width="100" show-overflow-tooltip fixed sortable />
+            <el-table-column prop="number" label="容器数量" align="center" show-overflow-tooltip width="100" sortable />
             <el-table-column prop="tag" label="镜像 Tag" align="center" show-overflow-tooltip width="100" />
-            <el-table-column prop="created" label="创建时间" align="center" width="200" />
-            <el-table-column prop="size" label="镜像大小" align="center" width="100" />
+            <el-table-column prop="created" label="创建时间" align="center" width="200" sortable />
+            <el-table-column prop="size" label="镜像大小" align="center" width="100" sortable />
             <el-table-column label="操作" width="160" fixed="right" align="center">
                 <template #default="scope">
                     <el-button type="danger" plain size="small" @click="deleteImageByID(scope.row.id)">
