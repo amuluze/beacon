@@ -14,6 +14,8 @@
 
 安装文档：[文档 | Amprobe (amuluze.com)](https://amprobedoc.amuluze.com/)
 
+> **docker 版本要求：>= 20.10.9**
+
 ## 技术栈
 
 `Amprobe` 采用前后端分离的技术架构。
@@ -79,4 +81,3 @@
 ## License
 
 MIT
-
