@@ -12,7 +12,7 @@
 - 针对管理员用户提供简单的 Docker 容器、镜像运维操作
 - 操作日志记录
 
-安装文档：[文档 | Amprobe (amuluze.com)](https://amprobedoc.amuluze.com/)
+官网地址：[官网 | Amprobe (amprobe.amuluze.com)](https://amprobe.amuluze.com/)
 
 > **docker 版本要求：>= 20.10.9**
 
@@ -22,47 +22,17 @@
 
 **前端技术栈:**
 
--   `Vue3`
--   `TypeScript`
--   `Element+`
--   `Vue-router`
--   `Pinia`
+- `Vue3`
+- `TypeScript`
+- `Element+`
+- `Vue-router`
+- `Pinia`
 
 **后端技术栈:**
 
--   `Golang`
--   `Fiber`
--   `Sqlite`
-
-## 界面展示
-
-**登录页**
-
-<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amuluze/202403311350499.png" alt="image-20240317141005150" style="zoom:67%;" />
-
-**总览页**
-
-<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe202404130036387.png" alt="image-20240317141005150" style="zoom:67%;" />
-
-**容器页**
-
-<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe202404130037909.png" alt="image-20240317141005150" style="zoom:67%;" />
-
-**容器日志**
-
-<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe202404130038803.png" alt="image-20240317141050281" style="zoom:67%;" />
-
-**镜像页**
-
-<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe202404130039117.png" alt="image-20240317141142487" style="zoom:67%;" />
-
-**主机状态监控**
-
-<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe202404130039077.png" alt="image-20240317141142487" style="zoom:67%;" />
-
-**审计页**
-
-<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe202404130043116.png" alt="image-20240317141142487" style="zoom:67%;" />
+- `Golang`
+- `Fiber`
+- `Sqlite`
 
 ## 请作者喝杯咖啡
 
