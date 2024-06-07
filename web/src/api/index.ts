@@ -3,14 +3,14 @@
  * @Date       : 2024/1/8 14:18
  * @Description:
  */
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+import { warning } from '@/components/Message/message.ts'
 import { ResultData } from '@/interface/result.ts'
 import useStore from '@/store'
-import { warning } from '@/components/Message/message.ts'
+import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 
 const config = {
     // 默认地址请求地址，可在 .env.*** 文件中修改
-    baseURL: '/',
+    baseURL: '/app/',
     // baseURL: import.meta.env.VITE_API_URL,
     // 设置超时时间
     timeout: 30000,
