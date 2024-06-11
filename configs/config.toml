@@ -9,6 +9,9 @@ SeverHeader = "probe"
 AppName = "probe"
 Prefork = false
 
+[Rpc]
+Address = "/app/amvector.socket"
+
 # 数据库文件存放位置的配置
 # 需要监控的磁盘设备配置
 # 定时任务执行间隔配置
@@ -52,13 +55,13 @@ Names = ["eth0"]
 
 [Task]
 # 主机监控数据的采集频率
-Interval = 30  # 单位 s
+Interval = 30 # 单位 s
 
 [Logger]
 File = "/app/probe.log"
 Level = "debug"
-RotationTime = "1"  # 每天切分一个日志文件
-MaxAge = "7"        # 最多保留 7 天的日志
+RotationTime = "1"      # 每天切分一个日志文件
+MaxAge = "7"            # 最多保留 7 天的日志
 
 [Auth]
 # 是否启用

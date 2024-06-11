@@ -21,6 +21,8 @@ type DiskIO struct {
 	IOWrite   float64 `json:"io_write"`
 }
 
+type HostArgs struct{}
+
 type HostInfoReply struct {
 	Timestamp       int64  `json:"timestamp"`
 	Uptime          string `json:"uptime"`

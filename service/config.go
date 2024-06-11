@@ -10,6 +10,7 @@ import (
 
 type Config struct {
 	Fiber    Fiber
+	Rpc      Rpc
 	Gorm     Gorm
 	DB       DB
 	Disk     Disk
@@ -43,6 +44,10 @@ type Fiber struct {
 	SeverHeader     string
 	AppName         string
 	Prefork         bool
+}
+
+type Rpc struct {
+	Address string
 }
 
 type Gorm struct {
