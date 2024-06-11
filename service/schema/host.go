@@ -34,6 +34,8 @@ type HostInfoReply struct {
 	KernelArch      string `json:"kernel_arch"`
 }
 
+type CPUArgs struct{}
+
 type CPUInfoReply struct {
 	Percent float64 `json:"percent"`
 }
@@ -46,6 +48,8 @@ type CPUUsageArgs struct {
 type CPUUsageReply struct {
 	Data []Usage `json:"data"`
 }
+
+type MemoryArgs struct{}
 
 type MemoryInfoReply struct {
 	Percent float64 `json:"percent"`
@@ -61,6 +65,8 @@ type MemoryUsageArgs struct {
 type MemoryUsageReply struct {
 	Data []Usage `json:"data"`
 }
+
+type DiskArgs struct{}
 
 type DiskInfo struct {
 	Device  string  `json:"device"`

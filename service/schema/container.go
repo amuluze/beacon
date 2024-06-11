@@ -6,6 +6,8 @@ package schema
 
 import "time"
 
+type VersionArgs struct{}
+
 type Container struct {
 	ID            string `json:"id"`
 	Name          string `json:"name"`
@@ -24,21 +26,35 @@ type ContainerQueryArgs struct {
 	Size int `json:"size" validate:"gte=0"`
 }
 
+type QueryCountArgs struct{}
+
+type QueryCountReply struct {
+	Count int
+}
+
 type ContainerStartArgs struct {
 	ContainerID string `json:"container_id" validate:"required"`
 }
+
+type ContainerStartReply struct{}
 
 type ContainerStopArgs struct {
 	ContainerID string `json:"container_id" validate:"required"`
 }
 
+type ContainerStopReply struct{}
+
 type ContainerRemoveArgs struct {
 	ContainerID string `json:"container_id" validate:"required"`
 }
 
+type ContainerRemoveReply struct{}
+
 type ContainerRestartArgs struct {
 	ContainerID string `json:"container_id" validate:"required"`
 }
+
+type ContainerRestartReply struct{}
 
 type ContainerQueryRely struct {
 	Data  []Container `json:"data"`
@@ -70,6 +86,14 @@ type ImageQueryReply struct {
 
 type ImageRemoveArgs struct {
 	ImageID string `json:"image_id" validate:"required"`
+}
+
+type ImageRemoveReply struct{}
+
+type ImageCountArgs struct{}
+
+type ImageCountReply struct {
+	Count int
 }
 
 type Docker struct {
