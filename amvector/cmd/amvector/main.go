@@ -23,7 +23,7 @@ var dependencies = []string{""}
 var configFile string
 
 func main() {
-	flag.StringVar(&configFile, "conf", "/data/amvector/configs/config.toml", "config file path")
+	flag.StringVar(&configFile, "conf", "/home/amu/amvector/configs/config.toml", "config file path")
 	flag.Parse()
 
 	var kind daemon.Kind
