@@ -18,14 +18,14 @@ import (
 var ContainerRepoSet = wire.NewSet(NewContainerRepo, wire.Bind(new(IContainerRepo), new(*ContainerRepo)))
 
 type IContainerRepo interface {
-	ContainerList(ctx context.Context, args *schema.ContainerQueryArgs) (model.Containers, error)
+	ContainerList(ctx context.Context, args schema.ContainerQueryArgs) (model.Containers, error)
 	ContainerCount(ctx context.Context) (int, error)
-	ContainerStart(ctx context.Context, args *schema.ContainerStartArgs) error
-	ContainerStop(ctx context.Context, args *schema.ContainerStopArgs) error
-	ContainerRemove(ctx context.Context, args *schema.ContainerRemoveArgs) error
-	ContainerRestart(ctx context.Context, args *schema.ContainerRestartArgs) error
-	ImageList(ctx context.Context, args *schema.ImageQueryArgs) (model.Images, error)
-	ImageRemove(ctx context.Context, args *schema.ImageRemoveArgs) error
+	ContainerStart(ctx context.Context, args schema.ContainerStartArgs) error
+	ContainerStop(ctx context.Context, args schema.ContainerStopArgs) error
+	ContainerRemove(ctx context.Context, args schema.ContainerRemoveArgs) error
+	ContainerRestart(ctx context.Context, args schema.ContainerRestartArgs) error
+	ImageList(ctx context.Context, args schema.ImageQueryArgs) (model.Images, error)
+	ImageRemove(ctx context.Context, args schema.ImageRemoveArgs) error
 	ImagesPrune(ctx context.Context) error
 	ImageCount(ctx context.Context) (int, error)
 	Version(ctx context.Context) (model.Docker, error)
@@ -77,11 +77,11 @@ func (a *ContainerRepo) ImageCount(ctx context.Context) (int, error) {
 }
 
 func (a *ContainerRepo) Version(ctx context.Context) (model.Docker, error) {
-	var docker model.Docker
-	if err := a.DB.Model(&model.Docker{}).First(&docker).Error; err != nil {
-		return docker, err
+	var res model.Docker
+	if err := a.DB.Model(&model.Docker{}).First(&res).Error; err != nil {
+		return res, err
 	}
-	return docker, nil
+	return res, nil
 }
 
 func (a *ContainerRepo) ContainerStart(ctx context.Context, args *schema.ContainerStartArgs) error {

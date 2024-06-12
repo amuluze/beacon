@@ -36,7 +36,7 @@ func (a *ContainerAPI) ContainerList(ctx *fiber.Ctx) error {
 		return fiberx.Failure(ctx, err)
 	}
 
-	container, err := a.ContainerService.ContainerList(c, &args)
+	container, err := a.ContainerService.ContainerList(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
 	}
@@ -53,7 +53,7 @@ func (a *ContainerAPI) ImageList(ctx *fiber.Ctx) error {
 	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, err)
 	}
-	images, err := a.ContainerService.ImageList(c, &args)
+	images, err := a.ContainerService.ImageList(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
 	}
@@ -79,7 +79,7 @@ func (a *ContainerAPI) ContainerStart(ctx *fiber.Ctx) error {
 	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, err)
 	}
-	err := a.ContainerService.ContainerStart(c, &args)
+	err := a.ContainerService.ContainerStart(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
 	}
@@ -98,7 +98,7 @@ func (a *ContainerAPI) ContainerStop(ctx *fiber.Ctx) error {
 	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, err)
 	}
-	err := a.ContainerService.ContainerStop(c, &args)
+	err := a.ContainerService.ContainerStop(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
 	}
@@ -115,7 +115,7 @@ func (a *ContainerAPI) ContainerRemove(ctx *fiber.Ctx) error {
 	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, err)
 	}
-	err := a.ContainerService.ContainerRemove(c, &args)
+	err := a.ContainerService.ContainerRemove(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
 	}
@@ -132,7 +132,7 @@ func (a *ContainerAPI) ContainerRestart(ctx *fiber.Ctx) error {
 	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, err)
 	}
-	err := a.ContainerService.ContainerRestart(c, &args)
+	err := a.ContainerService.ContainerRestart(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
 	}
@@ -149,7 +149,7 @@ func (a *ContainerAPI) ImageRemove(ctx *fiber.Ctx) error {
 	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, err)
 	}
-	err := a.ContainerService.ImageRemove(c, &args)
+	err := a.ContainerService.ImageRemove(c, args)
 	if err != nil {
 		slog.Error("api remove image error", "err", err, "args", args)
 		return fiberx.Failure(ctx, err)

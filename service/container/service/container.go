@@ -18,15 +18,15 @@ import (
 var ContainerServiceSet = wire.NewSet(NewContainerService, wire.Bind(new(IContainerService), new(*ContainerService)))
 
 type IContainerService interface {
-	ContainerList(ctx context.Context, args *schema.ContainerQueryArgs) (*schema.ContainerQueryRely, error)
-	ContainerStart(ctx context.Context, args *schema.ContainerStartArgs) error
-	ContainerStop(ctx context.Context, args *schema.ContainerStopArgs) error
-	ContainerRemove(ctx context.Context, args *schema.ContainerRemoveArgs) error
-	ContainerRestart(ctx context.Context, args *schema.ContainerRestartArgs) error
-	ImageList(ctx context.Context, args *schema.ImageQueryArgs) (*schema.ImageQueryReply, error)
-	ImageRemove(ctx context.Context, args *schema.ImageRemoveArgs) error
+	ContainerList(ctx context.Context, args schema.ContainerQueryArgs) (schema.ContainerQueryRely, error)
+	ContainerStart(ctx context.Context, args schema.ContainerStartArgs) error
+	ContainerStop(ctx context.Context, args schema.ContainerStopArgs) error
+	ContainerRemove(ctx context.Context, args schema.ContainerRemoveArgs) error
+	ContainerRestart(ctx context.Context, args schema.ContainerRestartArgs) error
+	ImageList(ctx context.Context, args schema.ImageQueryArgs) (schema.ImageQueryReply, error)
+	ImageRemove(ctx context.Context, args schema.ImageRemoveArgs) error
 	ImagesPrune(ctx context.Context) error
-	Version(ctx context.Context) (*schema.Docker, error)
+	Version(ctx context.Context) (schema.Docker, error)
 }
 
 type ContainerService struct {
@@ -37,10 +37,10 @@ func NewContainerService(containerRepo repository.IContainerRepo) *ContainerServ
 	return &ContainerService{ContainerRepo: containerRepo}
 }
 
-func (a *ContainerService) ContainerList(ctx context.Context, args *schema.ContainerQueryArgs) (*schema.ContainerQueryRely, error) {
+func (a *ContainerService) ContainerList(ctx context.Context, args schema.ContainerQueryArgs) (schema.ContainerQueryRely, error) {
 	mContainers, err := a.ContainerRepo.ContainerList(ctx, args)
 	if err != nil {
-		return nil, errors.New400Error(err.Error())
+		return schema.ContainerQueryRely{}, errors.New400Error(err.Error())
 	}
 	slog.Info("container list", "list", mContainers)
 	var list []schema.Container
@@ -61,15 +61,15 @@ func (a *ContainerService) ContainerList(ctx context.Context, args *schema.Conta
 	total, err := a.ContainerRepo.ContainerCount(ctx)
 	if err != nil {
 		slog.Error("query container count error", "err", err)
-		return nil, errors.New400Error(err.Error())
+		return schema.ContainerQueryRely{}, errors.New400Error(err.Error())
 	}
-	return &schema.ContainerQueryRely{Data: list, Total: total, Page: args.Page, Size: args.Size}, nil
+	return schema.ContainerQueryRely{Data: list, Total: total, Page: args.Page, Size: args.Size}, nil
 }
 
-func (a *ContainerService) ImageList(ctx context.Context, args *schema.ImageQueryArgs) (*schema.ImageQueryReply, error) {
+func (a *ContainerService) ImageList(ctx context.Context, args schema.ImageQueryArgs) (schema.ImageQueryReply, error) {
 	images, err := a.ContainerRepo.ImageList(ctx, args)
 	if err != nil {
-		return &schema.ImageQueryReply{}, errors.New400Error(err.Error())
+		return schema.ImageQueryReply{}, errors.New400Error(err.Error())
 	}
 	var list []schema.Image
 	for _, item := range images {
@@ -83,15 +83,15 @@ func (a *ContainerService) ImageList(ctx context.Context, args *schema.ImageQuer
 		})
 	}
 	total, _ := a.ContainerRepo.ImageCount(ctx)
-	return &schema.ImageQueryReply{Data: list, Total: total, Page: args.Page, Size: args.Size}, nil
+	return schema.ImageQueryReply{Data: list, Total: total, Page: args.Page, Size: args.Size}, nil
 }
 
-func (a *ContainerService) Version(ctx context.Context) (*schema.Docker, error) {
+func (a *ContainerService) Version(ctx context.Context) (schema.Docker, error) {
 	version, err := a.ContainerRepo.Version(ctx)
 	if err != nil {
-		return nil, errors.New400Error(err.Error())
+		return schema.Docker{}, errors.New400Error(err.Error())
 	}
-	return &schema.Docker{
+	return schema.Docker{
 		Timestamp:     version.Timestamp,
 		DockerVersion: version.DockerVersion,
 		APIVersion:    version.APIVersion,
@@ -103,23 +103,23 @@ func (a *ContainerService) Version(ctx context.Context) (*schema.Docker, error) 
 	}, nil
 }
 
-func (a *ContainerService) ContainerStart(ctx context.Context, args *schema.ContainerStartArgs) error {
+func (a *ContainerService) ContainerStart(ctx context.Context, args schema.ContainerStartArgs) error {
 	return a.ContainerRepo.ContainerStart(ctx, args)
 }
 
-func (a *ContainerService) ContainerStop(ctx context.Context, args *schema.ContainerStopArgs) error {
+func (a *ContainerService) ContainerStop(ctx context.Context, args schema.ContainerStopArgs) error {
 	return a.ContainerRepo.ContainerStop(ctx, args)
 }
 
-func (a *ContainerService) ContainerRemove(ctx context.Context, args *schema.ContainerRemoveArgs) error {
+func (a *ContainerService) ContainerRemove(ctx context.Context, args schema.ContainerRemoveArgs) error {
 	return a.ContainerRepo.ContainerRemove(ctx, args)
 }
 
-func (a *ContainerService) ContainerRestart(ctx context.Context, args *schema.ContainerRestartArgs) error {
+func (a *ContainerService) ContainerRestart(ctx context.Context, args schema.ContainerRestartArgs) error {
 	return a.ContainerRepo.ContainerRestart(ctx, args)
 }
 
-func (a *ContainerService) ImageRemove(ctx context.Context, args *schema.ImageRemoveArgs) error {
+func (a *ContainerService) ImageRemove(ctx context.Context, args schema.ImageRemoveArgs) error {
 	return a.ContainerRepo.ImageRemove(ctx, args)
 }
 
