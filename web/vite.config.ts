@@ -11,7 +11,7 @@ import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-    base: './', // 设置打包路径
+    base: '/app', // 设置打包路径
     plugins: [
         vue(),
         AutoImport({
