@@ -59,6 +59,7 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 	if a.config.Auth.Enable {
 		app.Use(middleware.UserAuthMiddleware(
 			a.auth,
+			middleware.AllowPathPrefixSkipper("/v1/index/index"),
 			middleware.AllowPathPrefixSkipper("/v1/auth/login"),
 			middleware.AllowPathPrefixSkipper("/v1/auth/token_update"),
 		))

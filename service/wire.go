@@ -28,7 +28,7 @@ func BuildInjector(configFile string) (*Injector, func(), error) {
 		NewLoggerHandler,
 		RouterSet,
 		NewFiberApp,
-		NewTimedTask,
+		//NewTimedTask,
 		PrepareSet,
 		InjectorSet,
 	)

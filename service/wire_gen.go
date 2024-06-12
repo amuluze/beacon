@@ -72,9 +72,8 @@ func BuildInjector(configFile string) (*Injector, func(), error) {
 	prepare := &Prepare{
 		db: db,
 	}
-	timedTask := NewTimedTask(config, db)
 	logger := NewLogger(config)
-	injector, err := NewInjector(app, router, prepare, config, timedTask, logger)
+	injector, err := NewInjector(app, router, prepare, config, logger)
 	if err != nil {
 		cleanup2()
 		cleanup()
