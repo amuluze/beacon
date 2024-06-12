@@ -19,3 +19,13 @@ bin:
 # generate wire
 wire:
 	wire ./service/
+
+.PHONY: amd
+# docker amd64 image
+amd:
+	docker buildx build --platform=linux/amd64 -o type=docker -t amuluze/amprobe:v1.3.4 .
+
+.PHONY: arm
+# docker arm64 image
+arm:
+	docker buildx build --platform=linux/arm64 -o type=docker -t amuluze/amprobe_arm:v1.3.4 -f ./Dockerfile.arm .

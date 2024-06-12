@@ -1,5 +1,4 @@
-
-PNPM ?= pnpm
+PNPM = pnpm
 
 .PHONY: build
 build:

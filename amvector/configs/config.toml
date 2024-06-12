@@ -1,17 +1,7 @@
-[Fiber]
-# http监听地址
-Host = "0.0.0.0"
-# http监听端口
-Port = 8000
-# http优雅关闭等待超时时长(单位秒)
-ShutdownTimeout = 30
-SeverHeader = "probe"
-AppName = "probe"
-Prefork = false
+[Rpc]
+Address = "/data/amvector/amvector.socket"
 
 # 数据库文件存放位置的配置
-# 需要监控的磁盘设备配置
-# 定时任务执行间隔配置
 [Gorm]
 # 是否开启调试模式
 Debug = true
@@ -38,41 +28,24 @@ User = ""
 # 密码
 Password = ""
 # 数据库
-DBName = "/Users/amu/Desktop/amprobe"
+DBName = "/data/amvector/vector"
 # SSL模式
 SSLMode = ""
 
 [Disk]
 # 需要监控的磁盘设备，可以根据 lsblk 命令查看
-Devices = ["disk3s1s1"]
+Devices = ["vda2"]
 
 [Ethernet]
 # 需要监控的网口，可以通过 ifconfig 命令查看
-Names = ["en0"]
+Names = ["eth0"]
 
 [Task]
 # 主机监控数据的采集频率
-Interval = 30  # 单位 s
+Interval = 30 # 单位 s
 
 [Logger]
-File = "/Users/amu/Desktop/probe.log"
+File = "/data/amvector/vector.log"
 Level = "debug"
-RotationTime = "1"  # 每天切分一个日志文件
-MaxAge = "7"        # 最多保留 7 天的日志
-
-[Auth]
-# 是否启用
-Enable = true
-# 签名方式(支持：HS512/HS384/HS512)
-SigningMethod = "HS512"
-# 签名key
-SigningKey = "amprobe"
-# 过期时间（单位秒）
-Expired = 7200
-# key 前缀
-Prefix = "auth_"
-
-
-[InitData]
-Enable = true
-InitConfigFile = "./configs/init.yaml"
+RotationTime = 1  # 每天切分一个日志文件
+MaxAge = 7        # 最多保留 7 天的日志
