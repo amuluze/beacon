@@ -1,15 +1,10 @@
 version: '3'
 services:
     amprobe:
-        image: amuluze/amprobe:v1.3.3
+        image: amuluze/amprobe:v1.3.4
         container_name: amprobe
         restart: always
-        network_mode: "host"
         volumes:
-            - /var/run/docker.sock:/var/run/docker.sock
-            - /proc:/host/proc:ro
-            - /sys:/host/sys:ro
-            - /dev:/host/dev:ro
             - /data/amprobe/configs:/app/configs
             - /data/amprobe/nginx/nginx.conf:/etc/nginx/nginx.conf
-            #- /data/amprobe/supervisor:/etc/supervisor/conf.d
+            - /data/amvector/amvector.socket:/app/amvector.socket

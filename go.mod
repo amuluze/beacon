@@ -17,6 +17,7 @@ require (
 	github.com/google/wire v0.6.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/shirou/gopsutil/v3 v3.24.3
+	github.com/smallnest/rpcx v1.8.31
 	github.com/spf13/viper v1.18.2
 	github.com/urfave/cli/v2 v2.27.1
 	gopkg.in/yaml.v3 v3.0.1
@@ -103,7 +104,6 @@ require (
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/smallnest/quick v0.2.0 // indirect
-	github.com/smallnest/rpcx v1.8.31 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
