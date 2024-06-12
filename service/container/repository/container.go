@@ -84,7 +84,7 @@ func (a *ContainerRepo) Version(ctx context.Context) (model.Docker, error) {
 	return res, nil
 }
 
-func (a *ContainerRepo) ContainerStart(ctx context.Context, args *schema.ContainerStartArgs) error {
+func (a *ContainerRepo) ContainerStart(ctx context.Context, args schema.ContainerStartArgs) error {
 	err := a.Manager.StartContainer(ctx, args.ContainerID)
 	if err != nil {
 		return errors.New400Error("failed start container")
@@ -93,7 +93,7 @@ func (a *ContainerRepo) ContainerStart(ctx context.Context, args *schema.Contain
 	return err
 }
 
-func (a *ContainerRepo) ContainerStop(ctx context.Context, args *schema.ContainerStopArgs) error {
+func (a *ContainerRepo) ContainerStop(ctx context.Context, args schema.ContainerStopArgs) error {
 	err := a.Manager.StopContainer(ctx, args.ContainerID)
 	if err != nil {
 		return errors.New400Error("failed to stop container")
@@ -102,7 +102,7 @@ func (a *ContainerRepo) ContainerStop(ctx context.Context, args *schema.Containe
 	return err
 }
 
-func (a *ContainerRepo) ContainerRemove(ctx context.Context, args *schema.ContainerRemoveArgs) error {
+func (a *ContainerRepo) ContainerRemove(ctx context.Context, args schema.ContainerRemoveArgs) error {
 	err := a.Manager.DeleteContainer(ctx, args.ContainerID)
 	if err != nil {
 		return errors.New400Error("failed to remove container")
@@ -111,7 +111,7 @@ func (a *ContainerRepo) ContainerRemove(ctx context.Context, args *schema.Contai
 	return err
 }
 
-func (a *ContainerRepo) ContainerRestart(ctx context.Context, args *schema.ContainerRestartArgs) error {
+func (a *ContainerRepo) ContainerRestart(ctx context.Context, args schema.ContainerRestartArgs) error {
 	err := a.Manager.RestartContainer(ctx, args.ContainerID)
 	if err != nil {
 		return errors.New400Error("failed to restart container")
@@ -120,7 +120,7 @@ func (a *ContainerRepo) ContainerRestart(ctx context.Context, args *schema.Conta
 	return err
 }
 
-func (a *ContainerRepo) ImageRemove(ctx context.Context, args *schema.ImageRemoveArgs) error {
+func (a *ContainerRepo) ImageRemove(ctx context.Context, args schema.ImageRemoveArgs) error {
 	err := a.Manager.RemoveImage(ctx, args.ImageID)
 	if err != nil {
 		return errors.New400Error(err.Error())

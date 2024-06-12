@@ -7,17 +7,17 @@ package api
 import (
 	"github.com/amuluze/amprobe/pkg/fiberx"
 	"github.com/amuluze/amprobe/pkg/validatex"
-	"github.com/amuluze/amprobe/service/host/service"
+	"github.com/amuluze/amprobe/service/host/rpc"
 	"github.com/amuluze/amprobe/service/schema"
 	"github.com/amuluze/amutool/errors"
 	"github.com/gofiber/fiber/v2"
 )
 
 type HostAPI struct {
-	HostService service.IHostService
+	HostService rpc.IHostService
 }
 
-func NewHostAPI(hostService service.IHostService) *HostAPI {
+func NewHostAPI(hostService rpc.IHostService) *HostAPI {
 	return &HostAPI{HostService: hostService}
 }
 

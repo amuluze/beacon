@@ -17,6 +17,7 @@ func BuildInjector(configFile string) (*Injector, func(), error) {
 		NewConfig,
 		NewLogger,
 		NewDB,
+		NewRPCClient,
 		InitAuthStore,
 		InitAuth,
 		container.Set,

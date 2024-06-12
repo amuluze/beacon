@@ -8,17 +8,15 @@ package service
 
 import (
 	api4 "github.com/amuluze/amprobe/service/audit/api"
-	repository4 "github.com/amuluze/amprobe/service/audit/repository"
-	service4 "github.com/amuluze/amprobe/service/audit/service"
+	repository2 "github.com/amuluze/amprobe/service/audit/repository"
+	service2 "github.com/amuluze/amprobe/service/audit/service"
 	api3 "github.com/amuluze/amprobe/service/auth/api"
-	repository3 "github.com/amuluze/amprobe/service/auth/repository"
-	service3 "github.com/amuluze/amprobe/service/auth/service"
+	"github.com/amuluze/amprobe/service/auth/repository"
+	"github.com/amuluze/amprobe/service/auth/service"
 	"github.com/amuluze/amprobe/service/container/api"
-	"github.com/amuluze/amprobe/service/container/repository"
-	"github.com/amuluze/amprobe/service/container/service"
+	"github.com/amuluze/amprobe/service/container/rpc"
 	api2 "github.com/amuluze/amprobe/service/host/api"
-	repository2 "github.com/amuluze/amprobe/service/host/repository"
-	service2 "github.com/amuluze/amprobe/service/host/service"
+	rpc2 "github.com/amuluze/amprobe/service/host/rpc"
 	"github.com/amuluze/amprobe/service/model"
 )
 
@@ -44,17 +42,21 @@ func BuildInjector(configFile string) (*Injector, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	containerRepo := repository.NewContainerRepo(db)
-	containerService := service.NewContainerService(containerRepo)
+	client, err := NewRPCClient(config)
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	containerService := rpc.NewContainerService(client)
 	containerAPI := api.NewContainerAPI(containerService)
-	hostRepo := repository2.NewHostRepo(db)
-	hostService := service2.NewHostService(hostRepo)
+	hostService := rpc2.NewHostService(client)
 	hostAPI := api2.NewHostAPI(hostService)
-	authRepo := repository3.NewAuthRepo(db)
-	authService := service3.NewAuthService(auther, authRepo)
+	authRepo := repository.NewAuthRepo(db)
+	authService := service.NewAuthService(auther, authRepo)
 	authAPI := api3.NewLoginAPI(authService)
-	auditRepo := repository4.NewAuditRepo(db)
-	auditService := service4.NewAuditService(auditRepo)
+	auditRepo := repository2.NewAuditRepo(db)
+	auditService := service2.NewAuditService(auditRepo)
 	auditAPI := api4.NewAuditAPI(auditService)
 	loggerHandler := NewLoggerHandler()
 	router := &Router{

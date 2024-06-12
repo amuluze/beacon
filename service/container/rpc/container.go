@@ -7,9 +7,8 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"github.com/amuluze/amprobe/pkg/rpc"
 	"github.com/amuluze/amprobe/pkg/utils"
-
-	"github.com/amuluze/amprobe/service"
 	"github.com/amuluze/amprobe/service/model"
 	"github.com/amuluze/amprobe/service/schema"
 	"github.com/google/wire"
@@ -30,10 +29,10 @@ type IContainerService interface {
 }
 
 type ContainerService struct {
-	RPCClient *service.RPCClient
+	RPCClient *rpc.Client
 }
 
-func NewContainerService(client *service.RPCClient) *ContainerService {
+func NewContainerService(client *rpc.Client) *ContainerService {
 	return &ContainerService{RPCClient: client}
 }
 
@@ -99,7 +98,7 @@ func (c ContainerService) ContainerStart(ctx context.Context, args schema.Contai
 	return nil
 }
 
-func (c ContainerService) ContainerStop(ctx context.Context, args *schema.ContainerStopArgs) error {
+func (c ContainerService) ContainerStop(ctx context.Context, args schema.ContainerStopArgs) error {
 	var reply schema.ContainerStopReply
 	err := c.RPCClient.Call(ctx, "ContainerStop", args, &reply)
 	if err != nil {
@@ -108,7 +107,7 @@ func (c ContainerService) ContainerStop(ctx context.Context, args *schema.Contai
 	return nil
 }
 
-func (c ContainerService) ContainerRemove(ctx context.Context, args *schema.ContainerRemoveArgs) error {
+func (c ContainerService) ContainerRemove(ctx context.Context, args schema.ContainerRemoveArgs) error {
 	var reply schema.ContainerRemoveReply
 	err := c.RPCClient.Call(ctx, "ContainerRemove", args, &reply)
 	if err != nil {
@@ -117,7 +116,7 @@ func (c ContainerService) ContainerRemove(ctx context.Context, args *schema.Cont
 	return nil
 }
 
-func (c ContainerService) ContainerRestart(ctx context.Context, args *schema.ContainerRestartArgs) error {
+func (c ContainerService) ContainerRestart(ctx context.Context, args schema.ContainerRestartArgs) error {
 	var reply schema.ContainerRestartReply
 	err := c.RPCClient.Call(ctx, "ContainerRestart", args, &reply)
 	if err != nil {
@@ -157,7 +156,7 @@ func (c ContainerService) ImageList(ctx context.Context, args schema.ImageQueryA
 	return result, nil
 }
 
-func (c ContainerService) ImageRemove(ctx context.Context, args *schema.ImageRemoveArgs) error {
+func (c ContainerService) ImageRemove(ctx context.Context, args schema.ImageRemoveArgs) error {
 	var reply schema.ImageRemoveReply
 	err := c.RPCClient.Call(ctx, "ImageDelete", args, &reply)
 	if err != nil {

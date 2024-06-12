@@ -6,10 +6,10 @@ package rpc
 
 import (
 	"context"
+	"github.com/amuluze/amprobe/pkg/rpc"
 
 	"github.com/amuluze/amprobe/service/model"
 
-	"github.com/amuluze/amprobe/service"
 	"github.com/amuluze/amprobe/service/schema"
 	"github.com/google/wire"
 )
@@ -28,10 +28,10 @@ type IHostService interface {
 }
 
 type HostService struct {
-	RPCClient *service.RPCClient
+	RPCClient *rpc.Client
 }
 
-func NewHostService(client *service.RPCClient) *HostService {
+func NewHostService(client *rpc.Client) *HostService {
 	return &HostService{
 		RPCClient: client,
 	}
