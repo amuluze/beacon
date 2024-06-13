@@ -35,12 +35,6 @@ func parseConfig() []string {
 	return flag.Args()
 }
 
-func serviceArgs() []string {
-	args := []string{}
-	args = append(args, "--conf", configFile)
-	return args
-}
-
 func main() {
 	flag.Usage = usage
 	args := parseConfig()

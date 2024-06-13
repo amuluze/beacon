@@ -49,7 +49,7 @@ func (s *Service) manager(args []string) (string, error) {
 		command := args[0]
 		switch command {
 		case "install":
-			installArgs := serviceArgs()
+			installArgs := args[1:]
 			return s.daemon.Install(installArgs...)
 		case "remove":
 			return s.daemon.Remove()
