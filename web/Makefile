@@ -1,11 +1,11 @@
 .PHONY: install
 install:
-    pnpm install
+    @pnpm install
 
 .PHONY: build
 build:
-	pnpm run build
+    @pnpm run build
 
 .PHONY: dev
 dev:
-	pnpm run dev
+    @pnpm run dev
