@@ -54,15 +54,15 @@ function amvector() {
 }
 
 function package() {
-    FILELIST="run.sh amvector/amvector amvector/configs amprobe/configs amprobe/nginx"
+    FILELIST="run.sh amvector/configs amprobe/configs amprobe/nginx"
     if [ $1 -eq 'amd64' ]; then
         docker save amuluze/amprobe:v1.3.4 | gzip > amprobe.tar.gz
-        FILELIST="${FILELIST} amprobe.tar.gz"
+        FILELIST="${FILELIST} amprobe.tar.gz  amvector/amvector"
         zip -0qr amprobe.installer.zip ${FILELIST}
         rm amprobe.tar.gz
     else
         docker save amuluze/amprobe_arm:v1.3.4 | gzip > amprobe.arm.tar.gz
-        FILELIST="${FILELIST} amprobe.arm.tar.gz"
+        FILELIST="${FILELIST} amprobe.arm.tar.gz amvector/amvector_arm"
         zip -0qr amprobe.installer.arm.zip ${FILELIST}
         rm amprobe.arm.tar.gz
     fi
