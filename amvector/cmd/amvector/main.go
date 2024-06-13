@@ -37,7 +37,7 @@ func parseConfig() []string {
 
 func serviceArgs() []string {
 	args := []string{}
-	args = append(args, configFile)
+	args = append(args, "--conf", configFile)
 	return args
 }
 
