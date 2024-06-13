@@ -22,6 +22,7 @@ function clear() {
 function web() {
     cd web
     rm -rf dist
+    make install
     make build
     cp -r dist ../amprobe/dist
     cd ..
