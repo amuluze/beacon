@@ -9,6 +9,7 @@
 set -ex
 
 echo $1
+type=$1
 
 function clear() {
     rm -rf amprobe/dist
@@ -32,7 +33,7 @@ function web() {
 function amprobe() {
     cd amprobe
     make wire
-    if [ $1 -eq 'amd64' ]; then
+    if [ ${type} = "amd64" ]; then
         make amd64
     else
         make arm64
@@ -45,7 +46,7 @@ function amvector() {
     cd amvector
     rm amvector
     make wire
-    if [ $1 -eq 'amd64' ]; then
+    if [ ${type} = "amd64" ]; then
         make amd64
     else
         make arm64
@@ -55,7 +56,7 @@ function amvector() {
 
 function package() {
     FILELIST="run.sh amvector/configs amprobe/configs amprobe/nginx"
-    if [ $1 -eq 'amd64' ]; then
+    if [ ${type} = "amd64" ]; then
         docker save amuluze/amprobe:v1.3.4 | gzip > amprobe.tar.gz
         FILELIST="${FILELIST} amprobe.tar.gz  amvector/amvector"
         zip -0qr amprobe.installer.zip ${FILELIST}
