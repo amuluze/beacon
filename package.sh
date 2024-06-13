@@ -14,7 +14,9 @@ type=$1
 function clear() {
     rm -rf amprobe/dist
     rm -rf amvector/amvector
+    rm -rf amvector/amvector_arm
     rm -rf amprobe.tar.gz
+    rm -rf amprobe.arm.tar.gz
     rm -rf amprobe.installer.zip
     rm -rf amprobe.installer.arm.zip
 }

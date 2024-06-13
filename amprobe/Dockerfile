@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 golang:1.21 as build
+FROM golang:1.21 as build
 COPY . /app/amprobe
 ENV GO111MODULE="on" \
     GOPROXY=https://goproxy.cn,direct
@@ -6,7 +6,7 @@ ENV GO111MODULE="on" \
 RUN cd /app/amprobe && \
     GOOS=linux go build -a -tags netgo -o /app/amprobe/amprobe ./cmd/amprobe
 
-FROM --platform=linux/amd64 ubuntu:22.04
+FROM ubuntu:22.04
 WORKDIR /app
 
 COPY --from=build /app/amprobe/amprobe /app/
