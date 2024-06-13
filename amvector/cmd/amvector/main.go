@@ -22,9 +22,28 @@ var dependencies = []string{""}
 
 var configFile string
 
-func main() {
-	flag.StringVar(&configFile, "conf", "/home/amu/amvector/configs/config.toml", "config file path")
+func usage() {
+	fmt.Println("Description: \n\t", description)
+	fmt.Println("Usage: \n\t", os.Args[0], " [--flag arguments] install | remove | start | stop | status")
+	fmt.Println("Flags: ")
+	flag.PrintDefaults()
+}
+
+func parseConfig() []string {
+	flag.StringVar(&configFile, "conf", "/data/amvector/configs/config.toml", "config file path")
 	flag.Parse()
+	return flag.Args()
+}
+
+func serviceArgs() []string {
+	args := []string{}
+	args = append(args, configFile)
+	return args
+}
+
+func main() {
+	flag.Usage = usage
+	args := parseConfig()
 
 	var kind daemon.Kind
 	if runtime.GOOS == "darwin" {
@@ -39,7 +58,7 @@ func main() {
 		os.Exit(1)
 	}
 	service := &Service{daemon: src, configFile: configFile}
-	status, err := service.manager()
+	status, err := service.manager(args)
 	if err != nil {
 		fmt.Println(status, "\nError: ", err)
 		os.Exit(1)

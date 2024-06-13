@@ -44,14 +44,13 @@ func (s *Service) Stop() {
 	fmt.Println("Stopping amvector bootstrap service...")
 }
 
-func (s *Service) manager() (string, error) {
-	usage := "Usage: amvector install | remove | start | stop | status"
-	fmt.Printf("os args: %#v\n", os.Args)
-	if len(os.Args) > 1 {
-		cmd := os.Args[1]
-		switch cmd {
+func (s *Service) manager(args []string) (string, error) {
+	if len(args) > 0 {
+		command := args[0]
+		switch command {
 		case "install":
-			return s.daemon.Install()
+			installArgs := serviceArgs()
+			return s.daemon.Install(installArgs...)
 		case "remove":
 			return s.daemon.Remove()
 		case "start":
@@ -61,7 +60,8 @@ func (s *Service) manager() (string, error) {
 		case "status":
 			return s.daemon.Status()
 		default:
-			return usage, nil
+			usage()
+			return "", nil
 		}
 	}
 
