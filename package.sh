@@ -46,7 +46,6 @@ function amprobe() {
 # amvector
 function amvector() {
     cd amvector
-    rm amvector
     make wire
     if [ ${type} = "amd64" ]; then
         make amd64
