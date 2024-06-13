@@ -1,6 +1,6 @@
 .idea/
 .DS_Store
-
+*/pnpm-lock.yaml
 */node_modules/*
 */.vitepress/cache/*
 */deploy.sh
