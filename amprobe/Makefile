@@ -23,7 +23,7 @@ wire:
 .PHONY: amd64
 # docker amd64 image
 amd64:
-	# docker build -t amuluze/amprobe:v1.3.4 .
+	# docker build -t amuluze/amprobe:v1.3.4 -f ./Dockerfile.amd .
 	docker buildx build --platform linux/amd64 -t amuluze/amprobe:v1.3.4 -o type=docker .
 
 .PHONY: arm64

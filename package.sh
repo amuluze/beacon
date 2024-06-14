@@ -12,19 +12,23 @@ echo $1
 type=$1
 
 function clear() {
+    rm -rf web/disk
+    rm -rf web/node_modules
     rm -rf amprobe/dist
-    rm -rf amvector/amvector
-    rm -rf amvector/amvector_arm
-    rm -rf amprobe.tar.gz
-    rm -rf amprobe.arm.tar.gz
-    rm -rf amprobe.installer.zip
-    rm -rf amprobe.installer.arm.zip
+    if [ ${type} = "amd64" ]; then
+        rm -rf amvector/amvector
+        rm -rf amprobe.tar.gz
+        rm -rf amprobe.installer.zip
+    else
+        rm -rf amvector/amvector_arm
+        rm -rf amprobe.arm.tar.gz
+        rm -rf amprobe.installer.arm.zip
+    fi
 }
 
 # web
 function web() {
     cd web
-    rm -rf dist
     pnpm install
     pnpm run build
     cp -r dist ../amprobe/dist
