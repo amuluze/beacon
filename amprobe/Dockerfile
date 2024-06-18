@@ -19,7 +19,7 @@ RUN apt update && \
     chmod +x /app/amprobe
 
 COPY ./configs /app/configs
-COPY ./dist /usr/share/nginx/html
+COPY ./dist /usr/share/nginx/html/app
 COPY ./nginx/nginx.conf /etc/nginx/nginx.conf
 COPY ./supervisor /etc/supervisor/conf.d
 
