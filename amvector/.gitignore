@@ -2,3 +2,6 @@
 .DS_Store
 amvector
 amvector_arm
+vector.db
+vector.log*
+configs/config-dev.toml
