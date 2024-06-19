@@ -20,9 +20,17 @@
                 </el-menu>
             </el-scrollbar>
         </div>
+        <div class="am-user">
+            <avatar />
+        </div>
+        <div class="am-collapse">
+            <collapse-icon />
+        </div>
     </el-aside>
 </template>
 <script setup lang="ts">
+import Avatar from '@/layout/sidebar/Avatar.vue'
+import CollapseIcon from '@/layout/sidebar/CollapseIcon.vue'
 import Menuitem from '@/layout/sidebar/Menuitem.vue'
 import { dynamicRoutes } from '@/router/dynamic.ts'
 import useStore from '@/store'
