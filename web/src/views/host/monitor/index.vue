@@ -46,11 +46,7 @@
                 <el-card>
                     <echarts :option="netOption">
                         <div class="am-host-container__image-title">流量曲线图</div>
-                        <div
-                            v-for="(item, index) in netInfo"
-                            :key="index"
-                            class="am-host-container__image-description"
-                        >
+                        <div v-for="(item, index) in netInfo" :key="index" class="am-host-container__image-description">
                             {{ item.ethernet }} 接收：{{ item.read }} 发送：{{ item.write }}
                         </div>
                     </echarts>
@@ -78,8 +74,9 @@ import {
     DiskUsage,
     MemTrendingArgs,
     NetIO,
-    NetTrendingArgs, NetUsage,
-} from '@/interface/host.ts';
+    NetTrendingArgs,
+    NetUsage
+} from '@/interface/host.ts'
 import { convertBytesToReadable } from '@/utils/convert.ts'
 import { dayjs } from 'element-plus'
 import { set } from 'lodash-es'
@@ -87,6 +84,14 @@ import { set } from 'lodash-es'
 // 时间密度下拉框
 const timeDensity = ref(600)
 const options = [
+    {
+        value: 120,
+        label: '2分钟'
+    },
+    {
+        value: 300,
+        label: '5分钟'
+    },
     {
         value: 600,
         label: '10分钟'
@@ -279,16 +284,8 @@ const renderDisk = async () => {
             (item: DiskIO) => dayjs(item.timestamp * 1000).hour() + ':' + dayjs(item.timestamp * 1000).minute()
         )
     )
-    set(
-        diskOption,
-        'legend.data',
-        generateDiskLegendData(diskData.usage)
-    )
-    set(
-        diskOption,
-        'series',
-        generateDiskSeriesData(diskData.usage)
-    )
+    set(diskOption, 'legend.data', generateDiskLegendData(diskData.usage))
+    set(diskOption, 'series', generateDiskSeriesData(diskData.usage))
     console.log('disk options: ', diskOption)
 }
 

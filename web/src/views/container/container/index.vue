@@ -12,15 +12,37 @@
             v-loading="loading"
         >
             <el-table-column prop="id" label="容器 ID" align="center" fixed sortable />
-            <el-table-column prop="name" label="容器名称" align="center" min-width="100" show-overflow-tooltip fixed sortable />
-            <el-table-column prop="image" label="镜像名称" align="center" min-width="100" show-overflow-tooltip sortable />
+            <el-table-column
+                prop="name"
+                label="容器名称"
+                align="center"
+                min-width="100"
+                show-overflow-tooltip
+                fixed
+                sortable
+            />
+            <el-table-column
+                prop="image"
+                label="镜像名称"
+                align="center"
+                min-width="100"
+                show-overflow-tooltip
+                sortable
+            />
             <el-table-column prop="ip" label="容器 IP" align="center" min-width="100" show-overflow-tooltip sortable />
             <el-table-column prop="state" label="运行状态" align="center" min-width="90" show-overflow-tooltip>
                 <template #default="scope">
                     <el-tag :type="scope.row.state === 'running' ? 'success' : 'danger'">{{ scope.row.state }}</el-tag>
                 </template>
             </el-table-column>
-            <el-table-column prop="uptime" label="启动时间" align="center" min-width="100" show-overflow-tooltip sortable />
+            <el-table-column
+                prop="uptime"
+                label="启动时间"
+                align="center"
+                min-width="100"
+                show-overflow-tooltip
+                sortable
+            />
             <el-table-column
                 prop="cpu_percent"
                 label="CPU使用率"
@@ -100,15 +122,15 @@
 
 <script setup lang="ts">
 import { queryContainers, removeContainer, restartContainer, startContainer, stopContainer } from '@/api/container'
-import { useTable } from '@/hooks/useTable'
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import { Websocket } from '@/components/Websocket'
+import { useTable } from '@/hooks/useTable'
 import {
     RemoveContainerArgs,
     RestartContainerArgs,
     StartContainerArgs,
     StopContainerArgs
 } from '@/interface/container.ts'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
 onMounted(() => {
     refresh()
@@ -228,6 +250,10 @@ const downloadLog = () => {
 </script>
 
 <style scoped lang="scss">
+.el-table {
+    height: 100%;
+}
+
 @include b(pagination) {
     margin-top: 10px;
     display: flex;

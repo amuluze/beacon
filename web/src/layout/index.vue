@@ -39,6 +39,6 @@ import Sidebar from '@/layout/sidebar/index.vue'
     margin: 16px 16px;
     width: 100%;
     height: calc(100vh - 32px);
-    overflow-y: scroll;
+    overflow: scroll;
 }
 </style>

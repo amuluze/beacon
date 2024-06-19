@@ -48,9 +48,11 @@ const store = useStore()
     justify-content: center;
     height: 64px;
     line-height: 64px;
+    border-bottom: #cdcfd2 1px solid;
+
     @include e(img) {
-        height: 36px;
-        width: 36px;
+        height: 28px;
+        width: 28px;
         margin-right: 6px;
     }
     @include e(text) {
@@ -62,8 +64,8 @@ const store = useStore()
 }
 
 @include b(menu) {
+    height: calc(100vh - 64px - 64px);
     .el-scrollbar {
-        height: calc(100% - 64px);
         .is-active {
             color: #409eff !important;
         }
@@ -75,5 +77,33 @@ const store = useStore()
         background-color: #e9effd !important;
         border: none;
     }
+}
+
+@include b(user) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 64px;
+    border-top: #cdcfd2 1px solid;
+    cursor: pointer;
+}
+
+@include b(collapse) {
+    width: 12px;
+    height: 32px;
+    background: #e9effd;
+    border-radius: 0 5px 5px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    bottom: 16px;
+    z-index: 999;
+    right: -12px;
+    border-top: 1px solid;
+    border-bottom: 1px solid;
+    border-right: 1px solid;
+    border-color: #e9e9ea;
 }
 </style>

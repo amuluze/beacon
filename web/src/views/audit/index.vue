@@ -23,9 +23,9 @@
 </template>
 
 <script setup lang="ts">
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
-import { useTable } from '@/hooks/useTable.ts'
 import { queryAudit } from '@/api/audit'
+import { useTable } from '@/hooks/useTable.ts'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
 onMounted(() => {
     refresh()
@@ -33,4 +33,10 @@ onMounted(() => {
 const { data, refresh, loading, pagination } = useTable(queryAudit, {}, {})
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+@include b(pagination) {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+</style>
