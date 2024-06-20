@@ -2,96 +2,99 @@
     <!-- 表格主体 -->
     <el-card shadow="never">
         <!-- https://blog.csdn.net/qq_24950043/article/details/114292940 -->
-        <el-table
-            :data="data"
-            :key="containerKey"
-            border
-            stripe
-            ref="multipleTable"
-            max-height="600"
-            v-loading="loading"
-        >
-            <el-table-column prop="id" label="容器 ID" align="center" fixed sortable />
-            <el-table-column
-                prop="name"
-                label="容器名称"
-                align="center"
-                min-width="100"
-                show-overflow-tooltip
-                fixed
-                sortable
-            />
-            <el-table-column
-                prop="image"
-                label="镜像名称"
-                align="center"
-                min-width="100"
-                show-overflow-tooltip
-                sortable
-            />
-            <el-table-column prop="ip" label="容器 IP" align="center" min-width="100" show-overflow-tooltip sortable />
-            <el-table-column prop="state" label="运行状态" align="center" min-width="90" show-overflow-tooltip>
-                <template #default="scope">
-                    <el-tag :type="scope.row.state === 'running' ? 'success' : 'danger'">{{ scope.row.state }}</el-tag>
-                </template>
-            </el-table-column>
-            <el-table-column
-                prop="uptime"
-                label="启动时间"
-                align="center"
-                min-width="100"
-                show-overflow-tooltip
-                sortable
-            />
-            <el-table-column
-                prop="cpu_percent"
-                label="CPU使用率"
-                align="center"
-                min-width="100"
-                show-overflow-tooltip
-                sortable
-            />
-            <el-table-column
-                prop="memory_percent"
-                label="内存使用率"
-                align="center"
-                min-width="100"
-                show-overflow-tooltip
-                sortable
-            />
-            <el-table-column
-                prop="memory_usage"
-                label="内存使用量"
-                align="center"
-                min-width="100"
-                show-overflow-tooltip
-                sortable
-            />
-            <el-table-column
-                prop="memory_limit"
-                label="内存限制"
-                align="center"
-                min-width="100"
-                show-overflow-tooltip
-            />
-            <el-table-column label="操作" width="320" fixed="right" align="center">
-                <template #default="scope">
-                    <el-button type="primary" size="small" plain @click="viewLog(scope.row.id)"> 日志 </el-button>
-                    <el-button type="primary" size="small" plain @click="startContainerByID(scope.row.id)">
-                        启动
-                    </el-button>
-                    <el-button type="warning" size="small" plain @click="stopContainerByID(scope.row.id)">
-                        停止
-                    </el-button>
-                    <el-button type="warning" size="small" plain @click="restartContainerByID(scope.row.id)">
-                        重启
-                    </el-button>
-                    <el-button type="danger" size="small" plain @click="deleteContainerByID(scope.row.id)">
-                        删除
-                    </el-button>
-                </template>
-            </el-table-column>
-        </el-table>
+        <div class="am-table">
+            <el-table :data="data" :key="containerKey" stripe ref="multipleTable" v-loading="loading">
+                <el-table-column prop="id" label="容器 ID" align="center" fixed sortable />
+                <el-table-column
+                    prop="name"
+                    label="容器名称"
+                    align="center"
+                    min-width="100"
+                    show-overflow-tooltip
+                    fixed
+                    sortable
+                />
+                <el-table-column
+                    prop="image"
+                    label="镜像名称"
+                    align="center"
+                    min-width="100"
+                    show-overflow-tooltip
+                    sortable
+                />
+                <el-table-column
+                    prop="ip"
+                    label="容器 IP"
+                    align="center"
+                    min-width="100"
+                    show-overflow-tooltip
+                    sortable
+                />
+                <el-table-column prop="state" label="运行状态" align="center" min-width="90" show-overflow-tooltip>
+                    <template #default="scope">
+                        <el-tag :type="scope.row.state === 'running' ? 'success' : 'danger'">{{
+                            scope.row.state
+                        }}</el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column
+                    prop="uptime"
+                    label="启动时间"
+                    align="center"
+                    min-width="100"
+                    show-overflow-tooltip
+                    sortable
+                />
+                <el-table-column
+                    prop="cpu_percent"
+                    label="CPU使用率"
+                    align="center"
+                    min-width="100"
+                    show-overflow-tooltip
+                    sortable
+                />
+                <el-table-column
+                    prop="memory_percent"
+                    label="内存使用率"
+                    align="center"
+                    min-width="100"
+                    show-overflow-tooltip
+                    sortable
+                />
+                <el-table-column
+                    prop="memory_usage"
+                    label="内存使用量"
+                    align="center"
+                    min-width="100"
+                    show-overflow-tooltip
+                    sortable
+                />
+                <el-table-column
+                    prop="memory_limit"
+                    label="内存限制"
+                    align="center"
+                    min-width="100"
+                    show-overflow-tooltip
+                />
+                <el-table-column label="操作" width="320" fixed="right" align="center">
+                    <template #default="scope">
+                        <el-button type="primary" size="small" plain @click="viewLog(scope.row.id)"> 日志 </el-button>
+                        <el-button type="primary" size="small" plain @click="startContainerByID(scope.row.id)">
+                            启动
+                        </el-button>
+                        <el-button type="warning" size="small" plain @click="stopContainerByID(scope.row.id)">
+                            停止
+                        </el-button>
+                        <el-button type="warning" size="small" plain @click="restartContainerByID(scope.row.id)">
+                            重启
+                        </el-button>
+                        <el-button type="danger" size="small" plain @click="deleteContainerByID(scope.row.id)">
+                            删除
+                        </el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </div>
         <div class="am-pagination">
             <el-config-provider :locale="zhCn">
                 <el-pagination
@@ -258,5 +261,9 @@ const downloadLog = () => {
     margin-top: 10px;
     display: flex;
     justify-content: flex-end;
+}
+@include b(table) {
+    width: 100%;
+    height: calc(100vh - 118px);
 }
 </style>

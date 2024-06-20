@@ -1,11 +1,13 @@
 <template>
     <el-card>
-        <el-table :data="data" highlight-current-row stripe v-loading="loading" style="width: 100%">
-            <el-table-column prop="id" label="ID" align="center" min-width="150" />
-            <el-table-column prop="username" label="用户名" align="center" min-width="150" />
-            <el-table-column prop="operate" label="操作" align="center" show-overflow-tooltip min-width="150" />
-            <el-table-column prop="created" label="操作时间" align="center" min-width="200" />
-        </el-table>
+        <div class="am-table">
+            <el-table :data="data" highlight-current-row stripe v-loading="loading" style="width: 100%">
+                <el-table-column prop="id" label="ID" align="center" min-width="150" />
+                <el-table-column prop="username" label="用户名" align="center" min-width="150" />
+                <el-table-column prop="operate" label="操作" align="center" show-overflow-tooltip min-width="150" />
+                <el-table-column prop="created" label="操作时间" align="center" min-width="200" />
+            </el-table>
+        </div>
         <div class="am-pagination">
             <el-config-provider :locale="zhCn">
                 <el-pagination
@@ -38,5 +40,9 @@ const { data, refresh, loading, pagination } = useTable(queryAudit, {}, {})
     margin-top: 10px;
     display: flex;
     justify-content: flex-end;
+}
+@include b(table) {
+    width: 100%;
+    height: calc(100vh - 118px);
 }
 </style>

@@ -5,30 +5,39 @@
         </el-card>
     </div>
     <el-card shadow="never">
-        <el-table
-            :data="data"
-            :key="imageKey"
-            max-height="600"
-            highlight-current-row
-            border
-            stripe
-            v-loading="loading"
-            style="width: 100%"
-        >
-            <el-table-column prop="id" label="镜像 ID" align="center" width="150" fixed sortable />
-            <el-table-column prop="name" label="镜像名称" align="center" min-width="100" show-overflow-tooltip fixed sortable />
-            <el-table-column prop="number" label="容器数量" align="center" show-overflow-tooltip width="100" sortable />
-            <el-table-column prop="tag" label="镜像 Tag" align="center" show-overflow-tooltip width="100" />
-            <el-table-column prop="created" label="创建时间" align="center" width="200" sortable />
-            <el-table-column prop="size" label="镜像大小" align="center" width="100" sortable />
-            <el-table-column label="操作" width="160" fixed="right" align="center">
-                <template #default="scope">
-                    <el-button type="danger" plain size="small" @click="deleteImageByID(scope.row.id)">
-                        删除
-                    </el-button>
-                </template>
-            </el-table-column>
-        </el-table>
+        <div class="am-table">
+            <el-table :data="data" :key="imageKey" highlight-current-row height="100%" stripe v-loading="loading">
+                <el-table-column prop="id" label="镜像 ID" align="center" width="150" fixed sortable />
+                <el-table-column
+                    prop="name"
+                    label="镜像名称"
+                    align="center"
+                    min-width="100"
+                    show-overflow-tooltip
+                    fixed
+                    sortable
+                />
+                <el-table-column
+                    prop="number"
+                    label="容器数量"
+                    align="center"
+                    show-overflow-tooltip
+                    width="100"
+                    sortable
+                />
+                <el-table-column prop="tag" label="镜像 Tag" align="center" show-overflow-tooltip width="100" />
+                <el-table-column prop="created" label="创建时间" align="center" width="200" sortable />
+                <el-table-column prop="size" label="镜像大小" align="center" width="100" sortable />
+                <el-table-column label="操作" width="160" fixed="right" align="center">
+                    <template #default="scope">
+                        <el-button type="danger" plain size="small" @click="deleteImageByID(scope.row.id)">
+                            删除
+                        </el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </div>
+
         <div class="am-pagination">
             <el-config-provider :locale="zhCn">
                 <el-pagination
@@ -46,10 +55,10 @@
 </template>
 
 <script setup lang="ts">
-import {pruneImages, queryImages, removeImage} from '@/api/container'
+import { pruneImages, queryImages, removeImage } from '@/api/container'
 import { useTable } from '@/hooks/useTable'
+import { RemoveImageArgs } from '@/interface/container.ts'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
-import {RemoveImageArgs} from '@/interface/container.ts'
 
 onMounted(() => {
     refresh()
@@ -124,5 +133,10 @@ const pruneImagesForce = () => {
     margin-top: 10px;
     display: flex;
     justify-content: flex-end;
+}
+
+@include b(table) {
+    width: 100%;
+    height: calc(100vh - 170px);
 }
 </style>
