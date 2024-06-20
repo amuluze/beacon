@@ -1,23 +1,22 @@
 <template>
     <div class="am-overview-container">
+        <div class="am-overview-container__title">
+            <span>总览</span>
+        </div>
         <el-row :gutter="8">
             <el-col :span="16">
                 <el-card class="am-overview-overview">
                     <h4>概览</h4>
                     <el-row :gutter="4">
                         <el-col :span="12">
-                            <el-card>
-                                <el-statistic title="容器数量" :value="containerCount" />
-                            </el-card>
+                            <el-statistic title="容器数量" :value="containerCount" />
                         </el-col>
                         <el-col :span="12">
-                            <el-card>
-                                <el-statistic title="镜像数量" :value="imageCount" />
-                            </el-card>
+                            <el-statistic title="镜像数量" :value="imageCount" />
                         </el-col>
                     </el-row>
                 </el-card>
-                <el-card>
+                <el-card class="am-overview-status">
                     <h4>状态</h4>
                     <el-row :gutter="4">
                         <el-col :span="12"> <echarts :option="cpuGaugeOption" height="200px"></echarts> </el-col>
@@ -43,20 +42,12 @@
                     <p>
                         系统类型：<el-tag>{{ HostInfo?.os }}/{{ HostInfo?.kernel_arch }}</el-tag>
                     </p>
-                </el-card>
-                <el-card>
-                    <h4>容器信息</h4>
+                    <h4>Docker信息</h4>
                     <p>
                         Docker 版本：<el-tag>{{ DockerInfo?.docker_version }}</el-tag>
                     </p>
                     <p>
                         API 版本： <el-tag>{{ DockerInfo?.min_api_version }}-{{ DockerInfo?.api_version }}</el-tag>
-                    </p>
-                    <p>
-                        Git Commit：<el-tag>{{ DockerInfo?.git_commit }}</el-tag>
-                    </p>
-                    <p>
-                        Go version： <el-tag>{{ DockerInfo?.go_version }}</el-tag>
                     </p>
                     <p>
                         系统类型： <el-tag>{{ DockerInfo?.os }}/{{ DockerInfo?.arch }}</el-tag>
@@ -171,15 +162,54 @@ const renderMemGauge = async () => {
 <style scoped lang="scss">
 @include b(overview-container) {
     font-size: 14px;
-    .el-row {
+
+    @include e(title) {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 48px;
+        width: 100%;
+        background-color: #ffffff;
+        box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+
+        border-radius: 4px;
         margin-bottom: 8px;
+        padding: 0 16px;
+        span {
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+            font-weight: 600;
+            color: #105eeb;
+            margin-left: 16px;
+            &::before {
+                content: ' ';
+                position: absolute;
+                left: 20px;
+                width: 4px;
+                height: 16px;
+                text-align: center;
+                background-color: #2f7bff;
+                border-radius: 2px;
+            }
+        }
     }
 }
+
 @include b(overview-overview) {
     margin-bottom: 8px;
+    height: 160px;
+    .el-row {
+        text-align: center;
+    }
+}
+
+@include b(overview-status) {
+    height: 300px;
 }
 
 @include b(overview-host) {
-    margin-bottom: 8px;
+    height: 468px;
+    overflow-y: auto;
 }
 </style>

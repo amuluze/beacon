@@ -1,11 +1,15 @@
 <template>
     <div class="am-host-container">
         <div class="am-host-container__operator">
-            <el-card>
+            <div>
+                <span class="am-host-container__operator--title">主机监控</span>
+            </div>
+            <div>
+                <span>时间密度：</span>
                 <el-select v-model="timeDensity" placeholder="Select" size="default" style="width: 240px">
                     <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
                 </el-select>
-            </el-card>
+            </div>
         </div>
         <el-row :gutter="4">
             <el-col :span="12">
@@ -442,9 +446,27 @@ watch(
     }
 
     @include e(operator) {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         height: 48px;
         width: 100%;
         margin-bottom: 4px;
+        background-color: #ffffff;
+        box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+
+        border-radius: 4px;
+        margin-bottom: 8px;
+        padding: 0 16px;
+        @include m(title) {
+            font-size: 16px;
+            font-weight: 600;
+            color: #105eeb;
+        }
+        span {
+            font-size: 14px;
+        }
+
         .el-card {
             height: 100%;
             :deep(.el-card__body) {

@@ -1,4 +1,7 @@
 <template>
+    <div class="am-audit-title">
+        <span>审计日志</span>
+    </div>
     <el-card>
         <div class="am-table">
             <el-table :data="data" highlight-current-row stripe v-loading="loading" style="width: 100%">
@@ -36,6 +39,24 @@ const { data, refresh, loading, pagination } = useTable(queryAudit, {}, {})
 </script>
 
 <style scoped lang="scss">
+@include b(audit-title) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 48px;
+    width: 100%;
+    background-color: #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+
+    border-radius: 4px;
+    margin-bottom: 8px;
+    padding: 0 16px;
+    span {
+        font-size: 16px;
+        font-weight: 600;
+        color: #105eeb;
+    }
+}
 @include b(pagination) {
     margin-top: 10px;
     display: flex;
@@ -43,6 +64,7 @@ const { data, refresh, loading, pagination } = useTable(queryAudit, {}, {})
 }
 @include b(table) {
     width: 100%;
-    height: calc(100vh - 118px);
+    height: calc(100vh - 174px);
+    overflow-y: auto;
 }
 </style>

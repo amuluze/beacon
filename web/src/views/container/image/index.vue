@@ -138,5 +138,6 @@ const pruneImagesForce = () => {
 @include b(table) {
     width: 100%;
     height: calc(100vh - 170px);
+    overflow-y: auto;
 }
 </style>

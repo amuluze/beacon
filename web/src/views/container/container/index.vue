@@ -265,5 +265,6 @@ const downloadLog = () => {
 @include b(table) {
     width: 100%;
     height: calc(100vh - 118px);
+    overflow-y: auto;
 }
 </style>
