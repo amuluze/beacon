@@ -1,4 +1,9 @@
 <template>
+    <div class="am-image-title">
+        <span @click="$router.push('/container/container')">容器</span>
+        <span @click="$router.push('/container/image')">镜像</span>
+        <span @click="$router.push('/container/network')">网络</span>
+    </div>
     <div class="am-image-operator">
         <el-card>
             <el-button type="primary" @click="pruneImagesForce">清理虚悬镜像</el-button>
@@ -109,6 +114,43 @@ const pruneImagesForce = () => {
 </script>
 
 <style scoped lang="scss">
+@include b(image-title) {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    height: 48px;
+    width: 100%;
+    background-color: #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+
+    border-radius: 4px;
+    margin-bottom: 8px;
+    padding: 0 16px;
+    span {
+        display: flex;
+        align-items: center;
+        font-size: 16px;
+        font-weight: 600;
+        color: #424244;
+        margin-left: 16px;
+        margin-right: 16px;
+        cursor: pointer;
+        &:nth-child(2) {
+            color: #2f7bff;
+            &::before {
+                content: '';
+                position: absolute;
+                left: 84px;
+                width: 4px;
+                height: 16px;
+                text-align: center;
+                background-color: #2f7bff;
+                border-radius: 2px;
+            }
+        }
+    }
+}
 @include b(image-operator) {
     height: 48px;
     width: 100%;
@@ -117,10 +159,10 @@ const pruneImagesForce = () => {
         height: 100%;
         :deep(.el-card__body) {
             height: 100% !important;
-            padding: 0 8px 0 0;
+            padding: 0 0 0 16px;
             display: flex;
             align-items: center;
-            justify-content: flex-end;
+            justify-content: flex-start;
         }
     }
 }
@@ -137,7 +179,7 @@ const pruneImagesForce = () => {
 
 @include b(table) {
     width: 100%;
-    height: calc(100vh - 170px);
+    height: calc(100vh - 230px);
     overflow-y: auto;
 }
 </style>

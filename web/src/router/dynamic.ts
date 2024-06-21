@@ -7,7 +7,18 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/overview/index.vue'),
         meta: {
             title: '总览',
-            icon: 'homepage'
+            icon: 'homepage',
+            show: true
+        }
+    },
+    {
+        path: '/host/monitor',
+        name: 'monitor',
+        component: () => import('@/views/host/monitor/index.vue'), //路由懒加载
+        meta: {
+            title: '主机',
+            icon: 'monitor',
+            show: true
         }
     },
     {
@@ -16,7 +27,8 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/container/container/index.vue'), //路由懒加载
         meta: {
             title: '容器',
-            icon: 'setting'
+            icon: 'setting',
+            show: true
         }
     },
     {
@@ -25,16 +37,18 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/container/image/index.vue'), //路由懒加载
         meta: {
             title: '镜像',
-            icon: 'lab'
+            icon: 'lab',
+            show: false
         }
     },
     {
-        path: '/host/monitor',
-        name: 'monitor',
-        component: () => import('@/views/host/monitor/index.vue'), //路由懒加载
+        path: '/container/network',
+        name: 'network',
+        component: () => import('@/views/container/network/index.vue'), //路由懒加载
         meta: {
-            title: '监控',
-            icon: 'monitor'
+            title: '网络',
+            icon: 'lab',
+            show: false
         }
     },
     {
@@ -43,7 +57,8 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/audit/index.vue'), //路由懒加载
         meta: {
             title: '审计',
-            icon: 'audit'
+            icon: 'audit',
+            show: true
         }
     }
 ]

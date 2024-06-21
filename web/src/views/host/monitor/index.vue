@@ -1,16 +1,16 @@
 <template>
-    <div class="am-host-container">
-        <div class="am-host-container__operator">
-            <div>
-                <span class="am-host-container__operator--title">主机监控</span>
-            </div>
-            <div>
-                <span>时间密度：</span>
-                <el-select v-model="timeDensity" placeholder="Select" size="default" style="width: 240px">
-                    <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
-                </el-select>
-            </div>
+    <div class="am-host-header">
+        <div>
+            <span class="am-host-header__title">主机监控</span>
         </div>
+        <div>
+            <span>时间密度：</span>
+            <el-select v-model="timeDensity" placeholder="Select" size="default" style="width: 240px">
+                <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+        </div>
+    </div>
+    <div class="am-host-container">
         <el-row :gutter="4">
             <el-col :span="12">
                 <el-card>
@@ -41,7 +41,8 @@
                             :key="index"
                             class="am-host-container__image-description"
                         >
-                            {{ item.device }} 总量：{{ item.total }} 使用：{{ item.used }} 百分比： {{ item.percent }}
+                            {{ item.device }} 总量：{{ item.total }} 使用：{{ item.used }} 百分比：
+                            {{ item.percent }}
                         </div>
                     </echarts>
                 </el-card>
@@ -426,9 +427,55 @@ watch(
 </script>
 
 <style scoped lang="scss">
-@include b(host-container) {
-    overflow: scroll;
+@include b(host-header) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 48px;
+    width: 100%;
+    margin-bottom: 4px;
     background-color: #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+
+    border-radius: 4px;
+    margin-bottom: 8px;
+    padding: 0 16px;
+    @include e(title) {
+        display: flex;
+        align-items: center;
+        font-size: 16px;
+        font-weight: 600;
+        color: #105eeb;
+        margin-left: 16px;
+        &::before {
+            content: ' ';
+            position: absolute;
+            left: 20px;
+            width: 4px;
+            height: 16px;
+            text-align: center;
+            background-color: #2f7bff;
+            border-radius: 2px;
+        }
+    }
+
+    .el-card {
+        height: 100%;
+        :deep(.el-card__body) {
+            height: 100% !important;
+            padding: 0 8px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+    }
+}
+@include b(host-container) {
+    // background-color: #ffffff;
+    width: 100%;
+    height: calc(100vh - 88px);
+    overflow-y: auto;
+
     .el-row {
         margin-bottom: 4px;
         .el-col {
@@ -442,40 +489,6 @@ watch(
         :deep(.el-card__body) {
             height: 100% !important;
             width: 100% !important;
-        }
-    }
-
-    @include e(operator) {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        height: 48px;
-        width: 100%;
-        margin-bottom: 4px;
-        background-color: #ffffff;
-        box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
-
-        border-radius: 4px;
-        margin-bottom: 8px;
-        padding: 0 16px;
-        @include m(title) {
-            font-size: 16px;
-            font-weight: 600;
-            color: #105eeb;
-        }
-        span {
-            font-size: 14px;
-        }
-
-        .el-card {
-            height: 100%;
-            :deep(.el-card__body) {
-                height: 100% !important;
-                padding: 0 8px 0 0;
-                display: flex;
-                align-items: center;
-                justify-content: flex-end;
-            }
         }
     }
 

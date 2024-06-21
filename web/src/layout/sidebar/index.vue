@@ -16,7 +16,7 @@
                     active-text-color="#105EEB"
                     mode="vertical"
                 >
-                    <menuitem v-for="(item, index) in dynamicRoutes" :key="index" :item="item" />
+                    <menuitem v-for="(item, index) in dRoutes" :key="index" :item="item" />
                 </el-menu>
             </el-scrollbar>
         </div>
@@ -38,6 +38,10 @@ import useStore from '@/store'
 const currentRoute = useRoute()
 
 const store = useStore()
+
+const dRoutes = computed(() => {
+    return dynamicRoutes.filter((item) => item.meta?.show)
+})
 </script>
 
 <style scoped lang="scss">
