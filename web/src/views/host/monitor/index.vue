@@ -1,19 +1,21 @@
 <template>
     <div class="am-host-header">
-        <div>
-            <span class="am-host-header__title">主机监控</span>
-        </div>
-        <div>
+        <span @click="$router.push('/host/monitor')">监控</span>
+        <span @click="$router.push('/host/file')">文件</span>
+        <span @click="$router.push('/host/terminal')">终端</span>
+    </div>
+    <div class="am-host-operator">
+        <el-card shadow="never">
             <span>时间密度：</span>
             <el-select v-model="timeDensity" placeholder="Select" size="default" style="width: 240px">
                 <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
-        </div>
+        </el-card>
     </div>
-    <div class="am-host-container">
+    <div class="am-host-content">
         <el-row :gutter="4">
             <el-col :span="12">
-                <el-card>
+                <el-card shadow="never">
                     <echarts :option="cpuOption">
                         <div class="am-host-container__image-title">CPU 总使用率</div>
                         <div class="am-host-container__image-description">百分比： {{ cpuPercent }}</div>
@@ -21,7 +23,7 @@
                 </el-card>
             </el-col>
             <el-col :span="12">
-                <el-card>
+                <el-card shadow="never">
                     <echarts :option="memOption">
                         <div class="am-host-container__image-title">内存使用率</div>
                         <div class="am-host-container__image-description">
@@ -33,7 +35,7 @@
         </el-row>
         <el-row :gutter="4">
             <el-col :span="12">
-                <el-card>
+                <el-card shadow="never">
                     <echarts :option="diskOption">
                         <div class="am-host-container__image-title">磁盘使用率</div>
                         <div
@@ -48,7 +50,7 @@
                 </el-card>
             </el-col>
             <el-col :span="12">
-                <el-card>
+                <el-card shadow="never">
                     <echarts :option="netOption">
                         <div class="am-host-container__image-title">流量曲线图</div>
                         <div v-for="(item, index) in netInfo" :key="index" class="am-host-container__image-description">
@@ -429,33 +431,40 @@ watch(
 <style scoped lang="scss">
 @include b(host-header) {
     display: flex;
-    justify-content: space-between;
+    flex-direction: row;
     align-items: center;
+    justify-content: flex-start;
     height: 48px;
     width: 100%;
-    margin-bottom: 4px;
     background-color: #ffffff;
-    box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+    // box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
 
     border-radius: 4px;
     margin-bottom: 8px;
     padding: 0 16px;
-    @include e(title) {
+    span {
         display: flex;
+        flex-direction: row;
         align-items: center;
+        justify-content: flex-start;
         font-size: 16px;
         font-weight: 600;
-        color: #105eeb;
         margin-left: 16px;
-        &::before {
-            content: ' ';
-            position: absolute;
-            left: 20px;
-            width: 4px;
-            height: 16px;
-            text-align: center;
-            background-color: #2f7bff;
-            border-radius: 2px;
+        margin-right: 16px;
+        color: #424244;
+        cursor: pointer;
+        &:first-child {
+            color: #2f7bff;
+            &::before {
+                content: '';
+                position: absolute;
+                left: 20px;
+                width: 4px;
+                height: 16px;
+                text-align: center;
+                background-color: #2f7bff;
+                border-radius: 2px;
+            }
         }
     }
 
@@ -470,10 +479,29 @@ watch(
         }
     }
 }
-@include b(host-container) {
+@include b(host-operator) {
+    height: 48px;
+    width: 100%;
+    margin-bottom: 4px;
+    .el-card {
+        height: 100%;
+        :deep(.el-card__body) {
+            height: 100% !important;
+            padding: 0 0 0 16px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-end;
+        }
+    }
+
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+@include b(host-content) {
     // background-color: #ffffff;
     width: 100%;
-    height: calc(100vh - 88px);
+    height: calc(100vh - 152px);
     overflow-y: auto;
 
     .el-row {

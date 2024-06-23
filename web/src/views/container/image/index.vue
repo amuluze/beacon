@@ -1,23 +1,26 @@
 <template>
     <div class="am-image-title">
-        <span @click="$router.push('/container/container')">容器</span>
-        <span @click="$router.push('/container/image')">镜像</span>
-        <span @click="$router.push('/container/network')">网络</span>
+        <span @click="$router.push('/docker/container')">容器</span>
+        <span @click="$router.push('/docker/image')">镜像</span>
+        <span @click="$router.push('/docker/network')">网络</span>
+        <span @click="$router.push('/docker/settings')">配置</span>
     </div>
     <div class="am-image-operator">
-        <el-card>
-            <el-button type="primary" @click="pruneImagesForce">清理虚悬镜像</el-button>
+        <el-card shadow="never">
+            <el-button type="primary">拉取镜像</el-button>
+            <el-button type="primary">导入镜像</el-button>
+            <el-button type="warning" @click="pruneImagesForce">清理虚悬镜像</el-button>
         </el-card>
     </div>
     <el-card shadow="never">
         <div class="am-table">
             <el-table :data="data" :key="imageKey" highlight-current-row height="100%" stripe v-loading="loading">
-                <el-table-column prop="id" label="镜像 ID" align="center" width="150" fixed sortable />
+                <el-table-column prop="id" label="镜像 ID" align="center" width="120" fixed sortable />
                 <el-table-column
                     prop="name"
                     label="镜像名称"
                     align="center"
-                    min-width="100"
+                    min-width="150"
                     show-overflow-tooltip
                     fixed
                     sortable
@@ -27,14 +30,15 @@
                     label="容器数量"
                     align="center"
                     show-overflow-tooltip
-                    width="100"
+                    width="120"
                     sortable
                 />
-                <el-table-column prop="tag" label="镜像 Tag" align="center" show-overflow-tooltip width="100" />
+                <el-table-column prop="tag" label="镜像 Tag" align="center" show-overflow-tooltip width="120" />
                 <el-table-column prop="created" label="创建时间" align="center" width="200" sortable />
-                <el-table-column prop="size" label="镜像大小" align="center" width="100" sortable />
+                <el-table-column prop="size" label="镜像大小" align="center" width="120" sortable />
                 <el-table-column label="操作" width="160" fixed="right" align="center">
                     <template #default="scope">
+                        <el-button type="danger" plain size="small"> 导出 </el-button>
                         <el-button type="danger" plain size="small" @click="deleteImageByID(scope.row.id)">
                             删除
                         </el-button>
@@ -122,7 +126,7 @@ const pruneImagesForce = () => {
     height: 48px;
     width: 100%;
     background-color: #ffffff;
-    box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+    // box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
 
     border-radius: 4px;
     margin-bottom: 8px;

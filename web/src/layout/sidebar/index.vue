@@ -7,7 +7,7 @@
         <div class="am-menu">
             <el-scrollbar>
                 <el-menu
-                    :default-active="currentRoute.path"
+                    :default-active="onRoutes"
                     :collapse="store.app.isCollapse"
                     :unique-opened="true"
                     :collapse-transition="false"
@@ -41,6 +41,11 @@ const store = useStore()
 
 const dRoutes = computed(() => {
     return dynamicRoutes.filter((item) => item.meta?.show)
+})
+
+const onRoutes = computed(() => {
+    if (currentRoute.meta.activeMenu) return currentRoute.meta.activeMenu as string
+    return currentRoute.path
 })
 </script>
 
