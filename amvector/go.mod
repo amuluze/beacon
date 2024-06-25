@@ -5,6 +5,7 @@ go 1.21.9
 require (
 	github.com/amuluze/amutool/database v0.0.0-20240510090832-32eaf1044cf1
 	github.com/amuluze/amutool/timex v0.0.0-20240510090832-32eaf1044cf1
+	github.com/docker/docker v26.0.0+incompatible
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/shirou/gopsutil/v3 v3.24.5
@@ -22,9 +23,9 @@ require (
 	github.com/apache/thrift v0.20.0 // indirect
 	github.com/cenk/backoff v2.2.1+incompatible // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
+	github.com/containerd/log v0.1.0 // indirect
 	github.com/dgryski/go-jump v0.0.0-20211018200510-ba001c3ffce0 // indirect
 	github.com/distribution/reference v0.5.0 // indirect
-	github.com/docker/docker v26.0.0+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/edwingeng/doublejump v1.0.1 // indirect
@@ -91,6 +92,7 @@ require (
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/smallnest/quick v0.2.0 // indirect
 	github.com/smallnest/statsview v1.0.1 // indirect
 	github.com/soheilhy/cmux v0.1.5 // indirect

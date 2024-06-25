@@ -4,8 +4,7 @@
 // Description:
 package schema
 
-type GetDNSArgs struct {
-}
+type GetDNSArgs struct{}
 
 type GetDNSReply struct {
 	DNS []string
@@ -15,5 +14,28 @@ type SetDNSArgs struct {
 	DNS []string
 }
 
-type SetDNSReply struct {
+type SetDNSReply struct{}
+
+type GetSystemTimeArgs struct{}
+
+type GetSystemTimeReply struct {
+	SystemTime int64
 }
+
+type SetSystemTimeArgs struct {
+	SystemTime int64
+}
+
+type SetSystemTimeReply struct{}
+
+type GetSystemTimeZoneArgs struct{}
+
+type GetSystemTimeZoneReply struct {
+	SystemTimeZone string
+}
+
+type SetSystemTimeZoneArgs struct {
+	SystemTimeZone string
+}
+
+type SetSystemTimeZoneReply struct{}

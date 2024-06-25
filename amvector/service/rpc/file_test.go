@@ -7,10 +7,25 @@ package rpc
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/amuluze/amvector/service/schema"
 )
+
+func DirSize(path string) (int64, error) {
+	var size int64
+	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return err
+	})
+	return size, err
+}
 
 func TestFilesSearch(t *testing.T) {
 
@@ -23,10 +38,9 @@ func TestFilesSearch(t *testing.T) {
 		return
 	}
 	for _, file := range files {
-		fmt.Println(file.Name())
-		info, _ := file.Info()
-		fmt.Printf("file type: %#v\n", info.IsDir())
-		fmt.Printf("file info: %#v\n", info.Size())
-		fmt.Println("==================")
+		if file.IsDir() {
+			size, _ := DirSize(filepath.Join(args.Path, file.Name()))
+			fmt.Println(size)
+		}
 	}
 }
