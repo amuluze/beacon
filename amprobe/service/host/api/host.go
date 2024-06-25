@@ -121,8 +121,20 @@ func (a *HostAPI) NetUsage(ctx *fiber.Ctx) error {
 	return fiberx.Success(ctx, usage)
 }
 
-func (a *HostAPI) FileSearch(ctx *fiber.Ctx) error {
-	return nil
+func (a *HostAPI) FilesSearch(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	var args schema.FilesSearchArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	if err := validatex.ValidateStruct(args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	files, err := a.HostService.FilesSearch(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.Success(ctx, files)
 }
 
 func (a *HostAPI) FileUpload(ctx *fiber.Ctx) error {
@@ -138,25 +150,79 @@ func (a *HostAPI) FileDelete(ctx *fiber.Ctx) error {
 }
 
 func (a *HostAPI) GetDNSSettings(ctx *fiber.Ctx) error {
-	return nil
+	c := ctx.UserContext()
+	args := schema.GetDNSSettingsArgs{}
+	settings, err := a.HostService.GetDNSSettings(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.Success(ctx, settings)
 }
 
 func (a *HostAPI) SetDNSSettings(ctx *fiber.Ctx) error {
-	return nil
+	c := ctx.UserContext()
+	args := schema.SetDNSSettingsArgs{}
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	if err := validatex.ValidateStruct(args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	err := a.HostService.SetDNSSettings(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
 }
 
 func (a *HostAPI) GetSystemTime(ctx *fiber.Ctx) error {
-	return nil
+	c := ctx.UserContext()
+	args := schema.GetSystemTimeArgs{}
+	time, err := a.HostService.GetSystemTime(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.Success(ctx, time)
 }
 
 func (a *HostAPI) SetSystemTime(ctx *fiber.Ctx) error {
-	return nil
+	c := ctx.UserContext()
+	args := schema.SetSystemTimeArgs{}
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	if err := validatex.ValidateStruct(args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	err := a.HostService.SetSystemTime(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
 }
 
-func (a *HostAPI) GetSystemZone(ctx *fiber.Ctx) error {
-	return nil
+func (a *HostAPI) GetSystemTimezone(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	args := schema.GetSystemTimezoneArgs{}
+	zone, err := a.HostService.GetSystemTimezone(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.Success(ctx, zone)
 }
 
-func (a *HostAPI) SetSystemZone(ctx *fiber.Ctx) error {
-	return nil
+func (a *HostAPI) SetSystemTimezone(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	args := schema.SetSystemTimezoneArgs{}
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	if err := validatex.ValidateStruct(args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	err := a.HostService.SetSystemTimezone(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
 }

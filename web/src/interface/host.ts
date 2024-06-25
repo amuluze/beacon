@@ -96,3 +96,18 @@ export interface NetTrendingArgs {
     start_time: number
     end_time: number
 }
+
+export interface FilesSearchArgs {
+    path: string
+}
+
+export interface FileInfo {
+    name: string
+    size: number
+    mode: string
+    mod_time: number
+    is_dir: boolean
+}
+export interface FilesSearchResult {
+    files: FileInfo[]
+}

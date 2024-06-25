@@ -5,8 +5,9 @@
 package api
 
 import (
-	"github.com/amuluze/amprobe/service/container/rpc"
 	"log/slog"
+
+	"github.com/amuluze/amprobe/service/container/rpc"
 
 	"github.com/amuluze/amprobe/pkg/fiberx"
 	"github.com/amuluze/amprobe/pkg/validatex"
@@ -166,18 +167,20 @@ func (a *ContainerAPI) ImagesPrune(ctx *fiber.Ctx) error {
 	return fiberx.NoContent(ctx)
 }
 
-func (a *ContainerAPI) GetDockerImageSettings(ctx *fiber.Ctx) error {
+func (a *ContainerAPI) GetDockerRegistryMirrors(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
-	res, err := a.ContainerService.GetDockerImageSettings(c)
+	args := schema.GetDockerRegistryMirrorsArgs{}
+	res, err := a.ContainerService.GetDockerRegistryMirrors(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
 	}
 	return fiberx.Success(ctx, res)
 }
 
-func (a *ContainerAPI) SetDockerImageSettings(ctx *fiber.Ctx) error {
+func (a *ContainerAPI) SetDockerRegistryMirrors(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
-	err := a.SetDockerImageSettings(c)
+	args := schema.SetDockerRegistryMirrorsArgs{}
+	err := a.ContainerService.SetDockerRegistryMirrors(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
 	}

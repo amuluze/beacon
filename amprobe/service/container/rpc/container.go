@@ -7,6 +7,7 @@ package rpc
 import (
 	"context"
 	"fmt"
+
 	"github.com/amuluze/amprobe/pkg/rpc"
 	"github.com/amuluze/amprobe/pkg/utils"
 	"github.com/amuluze/amprobe/service/model"
@@ -26,8 +27,8 @@ type IContainerService interface {
 	ImageRemove(ctx context.Context, args schema.ImageRemoveArgs) error
 	ImagesPrune(ctx context.Context) error
 	Version(ctx context.Context) (schema.Docker, error)
-	GetDockerImageSettings(ctx context.Context, args schema.GetDockerImageSettingsArgs) (schema.GetDockerImageSettingsReply, error)
-	SetDockerImageSettings(ctx context.Context, args schema.SetDockerImageSettingsArgs) error
+	GetDockerRegistryMirrors(ctx context.Context, args schema.GetDockerRegistryMirrorsArgs) (schema.GetDockerRegistryMirrorsReply, error)
+	SetDockerRegistryMirrors(ctx context.Context, args schema.SetDockerRegistryMirrorsArgs) error
 }
 
 type ContainerService struct {
@@ -175,10 +176,22 @@ func (c ContainerService) ImagesPrune(ctx context.Context) error {
 	return nil
 }
 
-func (c ContainerService) GetDockerImageSettings(ctx context.Context, args schema.GetDockerImageSettingsArgs) (schema.GetDockerImageSettingsReply, error) {
-	return schema.GetDockerImageSettingsReply{}, nil
+func (c ContainerService) GetDockerRegistryMirrors(ctx context.Context, args schema.GetDockerRegistryMirrorsArgs) (schema.GetDockerRegistryMirrorsReply, error) {
+	var reply schema.GetDockerRegistryMirrorsReply
+	// 调用rpc获取数据
+	err := c.RPCClient.Call(ctx, "GetDockerRegistryMirrors", args, &reply)
+	if err != nil {
+		return schema.GetDockerRegistryMirrorsReply{}, err
+	}
+	return reply, nil
 }
 
-func (c ContainerService) SetDockerImageSettings(ctx context.Context, args schema.SetDockerImageSettingsArgs) error {
+func (c ContainerService) SetDockerRegistryMirrors(ctx context.Context, args schema.SetDockerRegistryMirrorsArgs) error {
+	var reply schema.SetDockerRegistryMirrorsReply
+	// 调用rpc设置数据
+	err := c.RPCClient.Call(ctx, "SetDockerRegistryMirrors", args, &reply)
+	if err != nil {
+		return err
+	}
 	return nil
 }

@@ -1,10 +1,12 @@
 import request from '@/api'
 import {
     ContainerQueryResult,
+    GetDockerRegistryMirrorsResult,
     ImageQueryResult,
     RemoveContainerArgs,
     RemoveImageArgs,
     RestartContainerArgs,
+    SetDockerRegistryMirrorsArgs,
     StartContainerArgs,
     StopContainerArgs
 } from '@/interface/container.ts'
@@ -44,4 +46,12 @@ export function queryImages(params: Pagination) {
 
 export function queryDockerInfo() {
     return request.get<any>('/api/v1/container/version', {})
+}
+
+export function getDockerRegistryMirrors() {
+    return request.get<GetDockerRegistryMirrorsResult>('/api/v1/container/get_docker_registry_mirrors', {})
+}
+
+export function SetDockerRegistryirMirrors(params: SetDockerRegistryMirrorsArgs) {
+    return request.post('/api/v1/container/set_docker_registry_mirrors', params)
 }

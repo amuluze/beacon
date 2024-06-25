@@ -90,8 +90,8 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			gContainer.Post("/image_remove", a.containerAPI.ImageRemove).Name("删除镜像")
 			gContainer.Post("/images_prune", a.containerAPI.ImagesPrune).Name("清理虚悬镜像")
 			gContainer.Get("/version", a.containerAPI.Version).Name("获取 Docker 版本信息")
-			gContainer.Get("/docker_image_settings", a.containerAPI.GetDockerImageSettings).Name("获取 Docker 镜像设置")
-			gContainer.Post("/docker_image_settings", a.containerAPI.SetDockerImageSettings).Name("更新 Docker 镜像设置")
+			gContainer.Get("/get_docker_registry_mirrors", a.containerAPI.GetDockerRegistryMirrors).Name("获取 Docker 镜像设置")
+			gContainer.Post("/set_docker_registry_mirrors", a.containerAPI.SetDockerRegistryMirrors).Name("更新 Docker 镜像设置")
 		}
 
 		gHost := v1.Group("host")
@@ -104,15 +104,15 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			gHost.Get("/mem_trending", a.hostAPI.MemUsage).Name("获取内存使用率")
 			gHost.Get("/disk_trending", a.hostAPI.DiskUsage).Name("获取磁盘使用率")
 			gHost.Get("/net_trending", a.hostAPI.NetUsage).Name("获取网络使用率")
-			gHost.Get("/file_search", a.hostAPI.FileSearch).Name("文件搜索")
+			gHost.Get("/file_search", a.hostAPI.FilesSearch).Name("文件搜索")
 			gHost.Post("/file_upload", a.hostAPI.FileUpload).Name("文件上传")
 			gHost.Post("/file_download", a.hostAPI.FileDownload).Name("文件下载")
 			gHost.Get("/get_dns_settings", a.hostAPI.GetDNSSettings).Name("获取 DNS 设置")
 			gHost.Post("/set_dns_settings", a.hostAPI.SetDNSSettings).Name("更新 DNS 设置")
 			gHost.Get("/get_system_time", a.hostAPI.GetSystemTime).Name("获取系统时间")
 			gHost.Post("/set_system_time", a.hostAPI.SetSystemTime).Name("更新系统时间")
-			gHost.Get("/get_system_zone", a.hostAPI.GetSystemZone).Name("获取系统时区")
-			gHost.Post("/set_system_zone", a.hostAPI.SetSystemZone).Name("更新系统时区")
+			gHost.Get("/get_system_timezone", a.hostAPI.GetSystemTimezone).Name("获取系统时区")
+			gHost.Post("/set_system_timezone", a.hostAPI.SetSystemTimezone).Name("更新系统时区")
 		}
 
 		gAudit := v1.Group("audit")

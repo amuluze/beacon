@@ -107,11 +107,15 @@ type Docker struct {
 	Arch          string `json:"arch"`
 }
 
-type GetDockerImageSettingsArgs struct {
+type GetDockerRegistryMirrorsArgs struct {
 }
 
-type GetDockerImageSettingsReply struct {
+type GetDockerRegistryMirrorsReply struct {
+	Mirrors []string `json:"registry_mirrors"`
 }
 
-type SetDockerImageSettingsArgs struct {
+type SetDockerRegistryMirrorsArgs struct {
+	Mirrors []string `json:"registry_mirrors"`
 }
+
+type SetDockerRegistryMirrorsReply struct{}

@@ -12,6 +12,8 @@ import {
     DiskInfoResult,
     DiskTrendingArgs,
     DiskUsageResult,
+    FilesSearchArgs,
+    FilesSearchResult,
     HostInfo,
     MemInfo,
     MemTrending,
@@ -48,4 +50,8 @@ export function queryDiskUsage(param: DiskTrendingArgs) {
 
 export function queryNetworkUsage(param: NetTrendingArgs) {
     return request.get<NetUsageResult>('/api/v1/host/net_trending', param)
+}
+
+export function queryFiles(params: FilesSearchArgs) {
+    return request.get<FilesSearchResult>('/api/v1/host/file_search', params)
 }

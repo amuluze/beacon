@@ -6,8 +6,12 @@ package rpc
 
 import (
 	"context"
+	"encoding/json"
+	"os"
+
 	"github.com/amuluze/amvector/pkg/timectl"
 
+	"github.com/amuluze/amvector/service/constants"
 	"github.com/amuluze/amvector/service/schema"
 	"github.com/docker/docker/libnetwork/resolvconf"
 )
@@ -65,5 +69,62 @@ func (s *Service) SetSystemTimeZone(ctx context.Context, args schema.SetSystemTi
 	if err := timectl.SetTimeZone(ctx, args.SystemTimeZone); err != nil {
 		return err
 	}
+	return nil
+}
+
+// GetDockerRegistryMirrors 读取 Docker daemon.json 配置文件
+func (s *Service) GetDockerRegistryMirrors(ctx context.Context, args schema.GetDockerRegistryMirrorsArgs, reply *schema.GetDockerRegistryMirrorsReply) error {
+	if _, err := os.Stat(constants.DaemonJsonPath); err != nil {
+		return err
+	}
+	file, err := os.ReadFile(constants.DaemonJsonPath)
+	if err != nil {
+		return err
+	}
+	daemonMap := make(map[string]interface{})
+	if err := json.Unmarshal(file, &daemonMap); err != nil {
+		return err
+	}
+	if daemonMap["registry-mirrors"] != nil {
+		reply.Mirrors = daemonMap["registry-mirrors"].([]string)
+	}
+	return nil
+}
+
+// SetDockerRegistryMirrors 更新 Docker daemon.json 配置文件
+func (s *Service) SetDockerRegistryMirrors(ctx context.Context, args schema.SetDockerRegistryMirrorsArgs, reply *schema.SetDockerRegistryMirrorsReply) error {
+	// 判断 constants.DaemonJsonPath 文件是否存在
+	if _, err := os.Stat(constants.DaemonJsonPath); err != nil {
+		// 创建 constants.DaemonJsonPath
+		daemonMap := map[string]interface{}{
+			"registry-mirrors": args.Mirrors,
+		}
+		// 将 daemonMap 写入 constants.DaemonJsonPath 文件
+		setting, err := json.Marshal(daemonMap)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(constants.DaemonJsonPath, setting, 0644); err != nil {
+			return err
+		}
+	} else {
+		file, err := os.ReadFile(constants.DaemonJsonPath)
+		if err != nil {
+			return err
+		}
+		daemonMap := make(map[string]interface{})
+		if err := json.Unmarshal(file, &daemonMap); err != nil {
+			return err
+		}
+		daemonMap["registry-mirrors"] = args.Mirrors
+		setting, err := json.Marshal(daemonMap)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(constants.DaemonJsonPath, setting, 0644); err != nil {
+			return err
+		}
+	}
+	// TODO: 重启 Docker 服务
 	return nil
 }

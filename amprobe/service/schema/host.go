@@ -107,11 +107,23 @@ type NetworkUsageReply struct {
 	Usage []NetUsage `json:"usage"`
 }
 
-type FileSearchArgs struct{}
-
-type FileSearchReply struct{}
+type FilesSearchArgs struct {
+	Path string
+}
+type FileInfo struct {
+	Name    string
+	Size    int64
+	Mode    string
+	ModTime int64
+	IsDir   bool
+}
+type FilesSearchReply struct {
+	Files []FileInfo `json:"files"`
+}
 
 type FileUploadArgs struct{}
+
+type FIleUploadReply struct{}
 
 type FileDownloadArgs struct{}
 
@@ -123,18 +135,36 @@ type FileDeleteReply struct{}
 
 type GetDNSSettingsArgs struct{}
 
-type GetDNSSettingsReply struct{}
+type GetDNSSettingsReply struct {
+	DNS []string `json:"dns"`
+}
 
-type SetDNSSettingsArgs struct{}
+type SetDNSSettingsArgs struct {
+	DNS []string `json:"dns"`
+}
 
-type GetSystemTimeArgs struct{}
+type SetDNSSettingsReply struct{}
+
+type GetSystemTimeArgs struct {
+	SystemTime string `json:"system_time"`
+}
 
 type GetSystemTimeReply struct{}
 
-type SetSystemTimeArgs struct{}
+type SetSystemTimeArgs struct {
+	SystemTime string `json:"system_time"`
+}
 
-type GetSystemZoneArgs struct{}
+type SetSystemTimeReply struct{}
 
-type GetSystemZoneReply struct{}
+type GetSystemTimezoneArgs struct{}
 
-type SetSystemZoneArgs struct{}
+type GetSystemTimezoneReply struct {
+	SystemTimeZone string `json:"system_timezone"`
+}
+
+type SetSystemTimezoneArgs struct {
+	SystemTimeZone string `json:"system_timezone"`
+}
+
+type SetSystemTimezoneReply struct{}

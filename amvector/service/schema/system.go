@@ -39,3 +39,15 @@ type SetSystemTimeZoneArgs struct {
 }
 
 type SetSystemTimeZoneReply struct{}
+
+type GetDockerRegistryMirrorsArgs struct{}
+
+type GetDockerRegistryMirrorsReply struct {
+	Mirrors []string
+}
+
+type SetDockerRegistryMirrorsArgs struct {
+	Mirrors []string
+}
+
+type SetDockerRegistryMirrorsReply struct{}

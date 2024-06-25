@@ -6,6 +6,7 @@ package rpc
 
 import (
 	"context"
+
 	"github.com/amuluze/amprobe/pkg/rpc"
 	"github.com/amuluze/amprobe/service/model"
 
@@ -24,7 +25,7 @@ type IHostService interface {
 	DiskInfo(ctx context.Context) (schema.DiskInfoReply, error)
 	DiskUsage(ctx context.Context, args schema.DiskUsageArgs) (schema.DiskUsageReply, error)
 	NetUsage(ctx context.Context, args schema.NetworkUsageArgs) (schema.NetworkUsageReply, error)
-	FileSearch(ctx context.Context, args schema.FileSearchArgs) (schema.FileSearchReply, error)
+	FilesSearch(ctx context.Context, args schema.FilesSearchArgs) (schema.FilesSearchReply, error)
 	FileUpload(ctx context.Context, args schema.FileUploadArgs) error
 	FileDownload(ctx context.Context, args schema.FileDownloadArgs) (schema.FileDownloadReply, error)
 	FileDelete(ctx context.Context, args schema.FileDeleteArgs) error
@@ -32,8 +33,8 @@ type IHostService interface {
 	SetDNSSettings(ctx context.Context, args schema.SetDNSSettingsArgs) error
 	GetSystemTime(ctx context.Context, args schema.GetSystemTimeArgs) (schema.GetSystemTimeReply, error)
 	SetSystemTime(ctx context.Context, args schema.SetSystemTimeArgs) error
-	GetSystemZone(ctx context.Context, args schema.GetSystemZoneArgs) (schema.GetSystemZoneReply, error)
-	SetSystemZone(ctx context.Context, args schema.SetSystemZoneArgs) error
+	GetSystemTimezone(ctx context.Context, args schema.GetSystemTimezoneArgs) (schema.GetSystemTimezoneReply, error)
+	SetSystemTimezone(ctx context.Context, args schema.SetSystemTimezoneArgs) error
 }
 
 type HostService struct {
@@ -200,8 +201,13 @@ func (h HostService) NetUsage(ctx context.Context, args schema.NetworkUsageArgs)
 	return result, nil
 }
 
-func (h HostService) FileSearch(ctx context.Context, args schema.FileSearchArgs) (schema.FileSearchReply, error) {
-	return schema.FileSearchReply{}, nil
+func (h HostService) FilesSearch(ctx context.Context, args schema.FilesSearchArgs) (schema.FilesSearchReply, error) {
+	var reply schema.FilesSearchReply
+	err := h.RPCClient.Call(ctx, "FilesSearch", args, &reply)
+	if err != nil {
+		return schema.FilesSearchReply{}, err
+	}
+	return reply, nil
 }
 
 func (h HostService) FileUpload(ctx context.Context, args schema.FileUploadArgs) error {
@@ -217,23 +223,53 @@ func (h HostService) FileDelete(ctx context.Context, args schema.FileDeleteArgs)
 }
 
 func (h HostService) GetDNSSettings(ctx context.Context, args schema.GetDNSSettingsArgs) (schema.GetDNSSettingsReply, error) {
-	return schema.GetDNSSettingsReply{}, nil
+	var reply schema.GetDNSSettingsReply
+	err := h.RPCClient.Call(ctx, "GetDNS", args, &reply)
+	if err != nil {
+		return schema.GetDNSSettingsReply{}, err
+	}
+	return reply, nil
 }
 
 func (h HostService) SetDNSSettings(ctx context.Context, args schema.SetDNSSettingsArgs) error {
+	var reply schema.SetDNSSettingsReply
+	err := h.RPCClient.Call(ctx, "SetDNS", args, &reply)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func (h HostService) GetSystemTime(ctx context.Context, args schema.GetSystemTimeArgs) (schema.GetSystemTimeReply, error) {
-	return schema.GetSystemTimeReply{}, nil
+	var reply schema.GetSystemTimeReply
+	err := h.RPCClient.Call(ctx, "GetSystemTime", args, &reply)
+	if err != nil {
+		return schema.GetSystemTimeReply{}, err
+	}
+	return reply, nil
 }
 
 func (h HostService) SetSystemTime(ctx context.Context, args schema.SetSystemTimeArgs) error {
+	var reply schema.SetSystemTimeReply
+	err := h.RPCClient.Call(ctx, "SetSystemTime", args, &reply)
+	if err != nil {
+		return err
+	}
 	return nil
 }
-func (h HostService) GetSystemZone(ctx context.Context, args schema.GetSystemZoneArgs) (schema.GetSystemZoneReply, error) {
-	return schema.GetSystemZoneReply{}, nil
+func (h HostService) GetSystemTimezone(ctx context.Context, args schema.GetSystemTimezoneArgs) (schema.GetSystemTimezoneReply, error) {
+	var reply schema.GetSystemTimezoneReply
+	err := h.RPCClient.Call(ctx, "GetSystemTimezone", args, &reply)
+	if err != nil {
+		return schema.GetSystemTimezoneReply{}, err
+	}
+	return reply, nil
 }
-func (h HostService) SetSystemZone(ctx context.Context, args schema.SetSystemZoneArgs) error {
+func (h HostService) SetSystemTimezone(ctx context.Context, args schema.SetSystemTimezoneArgs) error {
+	var reply schema.SetSystemTimezoneReply
+	err := h.RPCClient.Call(ctx, "SetSystemTimezone", args, &reply)
+	if err != nil {
+		return err
+	}
 	return nil
 }

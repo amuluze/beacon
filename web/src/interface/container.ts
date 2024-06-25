@@ -65,3 +65,11 @@ export interface DockerInfo {
     os: string
     arch: string
 }
+
+export interface GetDockerRegistryMirrorsResult {
+    registry_mirrors: string[]
+}
+
+export interface SetDockerRegistryMirrorsArgs {
+    registry_mirrors: string[]
+}
