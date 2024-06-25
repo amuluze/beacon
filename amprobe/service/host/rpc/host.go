@@ -7,7 +7,6 @@ package rpc
 import (
 	"context"
 	"github.com/amuluze/amprobe/pkg/rpc"
-
 	"github.com/amuluze/amprobe/service/model"
 
 	"github.com/amuluze/amprobe/service/schema"
@@ -25,6 +24,16 @@ type IHostService interface {
 	DiskInfo(ctx context.Context) (schema.DiskInfoReply, error)
 	DiskUsage(ctx context.Context, args schema.DiskUsageArgs) (schema.DiskUsageReply, error)
 	NetUsage(ctx context.Context, args schema.NetworkUsageArgs) (schema.NetworkUsageReply, error)
+	FileSearch(ctx context.Context, args schema.FileSearchArgs) (schema.FileSearchReply, error)
+	FileUpload(ctx context.Context, args schema.FileUploadArgs) error
+	FileDownload(ctx context.Context, args schema.FileDownloadArgs) (schema.FileDownloadReply, error)
+	FileDelete(ctx context.Context, args schema.FileDeleteArgs) error
+	GetDNSSettings(ctx context.Context, args schema.GetDNSSettingsArgs) (schema.GetDNSSettingsReply, error)
+	SetDNSSettings(ctx context.Context, args schema.SetDNSSettingsArgs) error
+	GetSystemTime(ctx context.Context, args schema.GetSystemTimeArgs) (schema.GetSystemTimeReply, error)
+	SetSystemTime(ctx context.Context, args schema.SetSystemTimeArgs) error
+	GetSystemZone(ctx context.Context, args schema.GetSystemZoneArgs) (schema.GetSystemZoneReply, error)
+	SetSystemZone(ctx context.Context, args schema.SetSystemZoneArgs) error
 }
 
 type HostService struct {
@@ -189,4 +198,42 @@ func (h HostService) NetUsage(ctx context.Context, args schema.NetworkUsageArgs)
 	}
 	result.Usage = data
 	return result, nil
+}
+
+func (h HostService) FileSearch(ctx context.Context, args schema.FileSearchArgs) (schema.FileSearchReply, error) {
+	return schema.FileSearchReply{}, nil
+}
+
+func (h HostService) FileUpload(ctx context.Context, args schema.FileUploadArgs) error {
+	return nil
+}
+
+func (h HostService) FileDownload(ctx context.Context, args schema.FileDownloadArgs) (schema.FileDownloadReply, error) {
+	return schema.FileDownloadReply{}, nil
+}
+
+func (h HostService) FileDelete(ctx context.Context, args schema.FileDeleteArgs) error {
+	return nil
+}
+
+func (h HostService) GetDNSSettings(ctx context.Context, args schema.GetDNSSettingsArgs) (schema.GetDNSSettingsReply, error) {
+	return schema.GetDNSSettingsReply{}, nil
+}
+
+func (h HostService) SetDNSSettings(ctx context.Context, args schema.SetDNSSettingsArgs) error {
+	return nil
+}
+
+func (h HostService) GetSystemTime(ctx context.Context, args schema.GetSystemTimeArgs) (schema.GetSystemTimeReply, error) {
+	return schema.GetSystemTimeReply{}, nil
+}
+
+func (h HostService) SetSystemTime(ctx context.Context, args schema.SetSystemTimeArgs) error {
+	return nil
+}
+func (h HostService) GetSystemZone(ctx context.Context, args schema.GetSystemZoneArgs) (schema.GetSystemZoneReply, error) {
+	return schema.GetSystemZoneReply{}, nil
+}
+func (h HostService) SetSystemZone(ctx context.Context, args schema.SetSystemZoneArgs) error {
+	return nil
 }

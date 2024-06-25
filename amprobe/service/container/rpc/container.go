@@ -26,6 +26,8 @@ type IContainerService interface {
 	ImageRemove(ctx context.Context, args schema.ImageRemoveArgs) error
 	ImagesPrune(ctx context.Context) error
 	Version(ctx context.Context) (schema.Docker, error)
+	GetDockerImageSettings(ctx context.Context, args schema.GetDockerImageSettingsArgs) (schema.GetDockerImageSettingsReply, error)
+	SetDockerImageSettings(ctx context.Context, args schema.SetDockerImageSettingsArgs) error
 }
 
 type ContainerService struct {
@@ -170,5 +172,13 @@ func (c ContainerService) ImagesPrune(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (c ContainerService) GetDockerImageSettings(ctx context.Context, args schema.GetDockerImageSettingsArgs) (schema.GetDockerImageSettingsReply, error) {
+	return schema.GetDockerImageSettingsReply{}, nil
+}
+
+func (c ContainerService) SetDockerImageSettings(ctx context.Context, args schema.SetDockerImageSettingsArgs) error {
 	return nil
 }

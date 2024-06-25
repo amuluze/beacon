@@ -165,3 +165,21 @@ func (a *ContainerAPI) ImagesPrune(ctx *fiber.Ctx) error {
 	}
 	return fiberx.NoContent(ctx)
 }
+
+func (a *ContainerAPI) GetDockerImageSettings(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	res, err := a.ContainerService.GetDockerImageSettings(c)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.Success(ctx, res)
+}
+
+func (a *ContainerAPI) SetDockerImageSettings(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	err := a.SetDockerImageSettings(c)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
+}

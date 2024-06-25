@@ -9,6 +9,8 @@ import (
 	"github.com/amuluze/amutool/docker"
 	"github.com/amuluze/amvector/service/rpc"
 	"github.com/smallnest/rpcx/server"
+	"github.com/smallnest/rpcx/share"
+	"net"
 )
 
 type Server struct {
@@ -18,6 +20,8 @@ type Server struct {
 
 func NewRPCServer(config *Config, db *database.DB) (*Server, error) {
 	srv := server.NewServer()
+	p := server.NewFileTransfer("0.0.0.0:9527", uploadFileHandler, downloadFileHandler, 1000)
+	srv.EnableFileTransfer(share.SendFileServiceName, p)
 	manager, err := docker.NewManager()
 	if err != nil {
 		return nil, err
@@ -41,4 +45,12 @@ func (s *Server) Start() error {
 
 func (s *Server) Stop() error {
 	return s.server.Close()
+}
+
+func uploadFileHandler(conn net.Conn, args *share.FileTransferArgs) {
+	return
+}
+
+func downloadFileHandler(conn net.Conn, args *share.DownloadFileArgs) {
+	return
 }

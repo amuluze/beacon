@@ -106,3 +106,35 @@ type NetworkUsageArgs struct {
 type NetworkUsageReply struct {
 	Usage []NetUsage `json:"usage"`
 }
+
+type FileSearchArgs struct{}
+
+type FileSearchReply struct{}
+
+type FileUploadArgs struct{}
+
+type FileDownloadArgs struct{}
+
+type FileDownloadReply struct{}
+
+type FileDeleteArgs struct{}
+
+type FileDeleteReply struct{}
+
+type GetDNSSettingsArgs struct{}
+
+type GetDNSSettingsReply struct{}
+
+type SetDNSSettingsArgs struct{}
+
+type GetSystemTimeArgs struct{}
+
+type GetSystemTimeReply struct{}
+
+type SetSystemTimeArgs struct{}
+
+type GetSystemZoneArgs struct{}
+
+type GetSystemZoneReply struct{}
+
+type SetSystemZoneArgs struct{}

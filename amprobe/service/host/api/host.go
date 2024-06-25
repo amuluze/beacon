@@ -120,3 +120,43 @@ func (a *HostAPI) NetUsage(ctx *fiber.Ctx) error {
 	}
 	return fiberx.Success(ctx, usage)
 }
+
+func (a *HostAPI) FileSearch(ctx *fiber.Ctx) error {
+	return nil
+}
+
+func (a *HostAPI) FileUpload(ctx *fiber.Ctx) error {
+	return nil
+}
+
+func (a *HostAPI) FileDownload(ctx *fiber.Ctx) error {
+	return nil
+}
+
+func (a *HostAPI) FileDelete(ctx *fiber.Ctx) error {
+	return nil
+}
+
+func (a *HostAPI) GetDNSSettings(ctx *fiber.Ctx) error {
+	return nil
+}
+
+func (a *HostAPI) SetDNSSettings(ctx *fiber.Ctx) error {
+	return nil
+}
+
+func (a *HostAPI) GetSystemTime(ctx *fiber.Ctx) error {
+	return nil
+}
+
+func (a *HostAPI) SetSystemTime(ctx *fiber.Ctx) error {
+	return nil
+}
+
+func (a *HostAPI) GetSystemZone(ctx *fiber.Ctx) error {
+	return nil
+}
+
+func (a *HostAPI) SetSystemZone(ctx *fiber.Ctx) error {
+	return nil
+}

@@ -37,14 +37,10 @@ type Router struct {
 	auditAPI     *auditAPI.AuditAPI
 
 	loggerHandler *LoggerHandler
+	termHandler   *TermHandler
 }
 
 func (a *Router) RegisterAPI(app *fiber.App) {
-	// 以下是 websocket service
-
-	// 以下是 http 服务
-	//g := app.Group("/api")
-
 	app.Use("ws", func(c *fiber.Ctx) error {
 		// IsWebSocketUpgrade returns true if the client
 		// requested upgrade to the WebSocket protocol.
@@ -55,6 +51,7 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 		return fiber.ErrUpgradeRequired
 	})
 	app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))
+	app.Get("/ws/term", websocket.New(a.termHandler.Handler))
 
 	if a.config.Auth.Enable {
 		app.Use(middleware.UserAuthMiddleware(
@@ -93,6 +90,8 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			gContainer.Post("/image_remove", a.containerAPI.ImageRemove).Name("删除镜像")
 			gContainer.Post("/images_prune", a.containerAPI.ImagesPrune).Name("清理虚悬镜像")
 			gContainer.Get("/version", a.containerAPI.Version).Name("获取 Docker 版本信息")
+			gContainer.Get("/docker_image_settings", a.containerAPI.GetDockerImageSettings).Name("获取 Docker 镜像设置")
+			gContainer.Post("/docker_image_settings", a.containerAPI.SetDockerImageSettings).Name("更新 Docker 镜像设置")
 		}
 
 		gHost := v1.Group("host")
@@ -101,10 +100,19 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			gHost.Get("/cpu_info", a.hostAPI.CPUInfo).Name("获取 CPU 信息")
 			gHost.Get("/mem_info", a.hostAPI.MemInfo).Name("获取内存信息")
 			gHost.Get("/disk_info", a.hostAPI.DiskInfo).Name("获取磁盘信息")
-			gHost.Get("cpu_trending", a.hostAPI.CPUUsage).Name("获取 CPU 使用率")
-			gHost.Get("mem_trending", a.hostAPI.MemUsage).Name("获取内存使用率")
-			gHost.Get("disk_trending", a.hostAPI.DiskUsage).Name("获取磁盘使用率")
-			gHost.Get("net_trending", a.hostAPI.NetUsage).Name("获取网络使用率")
+			gHost.Get("/cpu_trending", a.hostAPI.CPUUsage).Name("获取 CPU 使用率")
+			gHost.Get("/mem_trending", a.hostAPI.MemUsage).Name("获取内存使用率")
+			gHost.Get("/disk_trending", a.hostAPI.DiskUsage).Name("获取磁盘使用率")
+			gHost.Get("/net_trending", a.hostAPI.NetUsage).Name("获取网络使用率")
+			gHost.Get("/file_search", a.hostAPI.FileSearch).Name("文件搜索")
+			gHost.Post("/file_upload", a.hostAPI.FileUpload).Name("文件上传")
+			gHost.Post("/file_download", a.hostAPI.FileDownload).Name("文件下载")
+			gHost.Get("/get_dns_settings", a.hostAPI.GetDNSSettings).Name("获取 DNS 设置")
+			gHost.Post("/set_dns_settings", a.hostAPI.SetDNSSettings).Name("更新 DNS 设置")
+			gHost.Get("/get_system_time", a.hostAPI.GetSystemTime).Name("获取系统时间")
+			gHost.Post("/set_system_time", a.hostAPI.SetSystemTime).Name("更新系统时间")
+			gHost.Get("/get_system_zone", a.hostAPI.GetSystemZone).Name("获取系统时区")
+			gHost.Post("/set_system_zone", a.hostAPI.SetSystemZone).Name("更新系统时区")
 		}
 
 		gAudit := v1.Group("audit")

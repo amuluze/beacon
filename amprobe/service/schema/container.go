@@ -106,3 +106,12 @@ type Docker struct {
 	Os            string `json:"os"`
 	Arch          string `json:"arch"`
 }
+
+type GetDockerImageSettingsArgs struct {
+}
+
+type GetDockerImageSettingsReply struct {
+}
+
+type SetDockerImageSettingsArgs struct {
+}
