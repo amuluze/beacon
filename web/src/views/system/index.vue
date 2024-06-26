@@ -3,19 +3,21 @@
         <span>系统设置</span>
     </div>
     <el-row :gutter="4" class="am-system-settings">
-        <el-col :span="8">
+        <!-- <el-col :span="8">
             <el-card shadow="never">
                 <h4>DNS 设置</h4>
+                <el-divider />
                 <div class="am-system-settings__content">
                     <span>DNS 设置：</span>
                     <span></span>
                     <svg-icon icon-class="edit" />
                 </div>
             </el-card>
-        </el-col>
-        <el-col :span="8">
+        </el-col> -->
+        <el-col :span="12">
             <el-card shadow="never">
                 <h4>系统时区设置</h4>
+                <el-divider />
                 <div class="am-system-settings__content">
                     <span>系统时区设置：</span>
                     <span></span>
@@ -23,9 +25,10 @@
                 </div>
             </el-card>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="12">
             <el-card shadow="never">
                 <h4>系统时间设置</h4>
+                <el-divider />
                 <div class="am-system-settings__content">
                     <span>系统时间设置：</span>
                     <span></span>
