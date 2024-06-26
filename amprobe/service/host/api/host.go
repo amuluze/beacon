@@ -226,3 +226,29 @@ func (a *HostAPI) SetSystemTimezone(ctx *fiber.Ctx) error {
 	}
 	return fiberx.NoContent(ctx)
 }
+
+func (a *HostAPI) Reboot(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	args := schema.RebootArgs{}
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	err := a.HostService.Reboot(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
+}
+
+func (a *HostAPI) Shutdown(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	args := schema.ShutdownArgs{}
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	err := a.HostService.Shutdown(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
+}

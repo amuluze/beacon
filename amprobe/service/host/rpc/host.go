@@ -35,6 +35,8 @@ type IHostService interface {
 	SetSystemTime(ctx context.Context, args schema.SetSystemTimeArgs) error
 	GetSystemTimezone(ctx context.Context, args schema.GetSystemTimezoneArgs) (schema.GetSystemTimezoneReply, error)
 	SetSystemTimezone(ctx context.Context, args schema.SetSystemTimezoneArgs) error
+	Reboot(ctx context.Context, args schema.RebootArgs) error
+	Shutdown(ctx context.Context, args schema.ShutdownArgs) error
 }
 
 type HostService struct {
@@ -268,6 +270,24 @@ func (h HostService) GetSystemTimezone(ctx context.Context, args schema.GetSyste
 func (h HostService) SetSystemTimezone(ctx context.Context, args schema.SetSystemTimezoneArgs) error {
 	var reply schema.SetSystemTimezoneReply
 	err := h.RPCClient.Call(ctx, "SetSystemTimezone", args, &reply)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (h HostService) Reboot(ctx context.Context, args schema.RebootArgs) error {
+	var reply schema.RebootReply
+	err := h.RPCClient.Call(ctx, "Reboot", args, &reply)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (h HostService) Shutdown(ctx context.Context, args schema.ShutdownArgs) error {
+	var reply schema.ShutdownReply
+	err := h.RPCClient.Call(ctx, "Shutdown", args, &reply)
 	if err != nil {
 		return err
 	}

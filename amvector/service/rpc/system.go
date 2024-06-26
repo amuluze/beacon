@@ -7,6 +7,8 @@ package rpc
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"github.com/amuluze/amvector/pkg/utils"
 	"os"
 
 	"github.com/amuluze/amvector/pkg/timectl"
@@ -15,6 +17,22 @@ import (
 	"github.com/amuluze/amvector/service/schema"
 	"github.com/docker/docker/libnetwork/resolvconf"
 )
+
+// Reboot 重启
+func (s *Service) Reboot(ctx context.Context, args schema.RebootArgs, reply *schema.RebootReply) error {
+	if _, err := utils.RunCommand(ctx, "reboot"); err != nil {
+		return errors.New("failed to reboot: " + err.Error())
+	}
+	return nil
+}
+
+// Shutdown 关机
+func (s *Service) Shutdown(ctx context.Context, args schema.ShutdownArgs, reply *schema.ShutdownReply) error {
+	if _, err := utils.RunCommand(ctx, "shutdown"); err != nil {
+		return errors.New("failed to shutdown: " + err.Error())
+	}
+	return nil
+}
 
 // GetDNS 获取 DNS 配置
 func (s *Service) GetDNS(ctx context.Context, args schema.GetDNSArgs, reply *schema.GetDNSReply) error {

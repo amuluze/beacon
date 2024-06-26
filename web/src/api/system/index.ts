@@ -13,6 +13,14 @@ import {
     SetSystemTimezoneArgs
 } from '@/interface/system'
 
+export function reboot() {
+    return request.post('/api/v1/host/reboot', {})
+}
+
+export function shutdown() {
+    return request.post('/api/v1/host/shutdown', {})
+}
+
 export function getDNS() {
     return request.get<GetDNSResult>('/api/v1/host/get_dns_settings', {})
 }

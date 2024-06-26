@@ -168,3 +168,11 @@ type SetSystemTimezoneArgs struct {
 }
 
 type SetSystemTimezoneReply struct{}
+
+type RebootArgs struct{}
+
+type RebootReply struct{}
+
+type ShutdownArgs struct{}
+
+type ShutdownReply struct{}

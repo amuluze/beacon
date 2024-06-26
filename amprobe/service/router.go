@@ -113,6 +113,8 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			gHost.Post("/set_system_time", a.hostAPI.SetSystemTime).Name("更新系统时间")
 			gHost.Get("/get_system_timezone", a.hostAPI.GetSystemTimezone).Name("获取系统时区")
 			gHost.Post("/set_system_timezone", a.hostAPI.SetSystemTimezone).Name("更新系统时区")
+			gHost.Post("/reboot", a.hostAPI.Reboot).Name("重启系统")
+			gHost.Post("/shutdown", a.hostAPI.Shutdown).Name("关闭系统")
 		}
 
 		gAudit := v1.Group("audit")
