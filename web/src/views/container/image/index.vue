@@ -3,7 +3,7 @@
         <span @click="$router.push('/docker/container')">容器</span>
         <span @click="$router.push('/docker/image')">镜像</span>
         <span @click="$router.push('/docker/network')">网络</span>
-        <span @click="$router.push('/docker/settings')">配置</span>
+        <span @click="$router.push('/docker/settings')">设置</span>
     </div>
     <div class="am-image-operator">
         <el-card shadow="never">

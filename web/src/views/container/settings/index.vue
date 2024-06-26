@@ -3,9 +3,11 @@
         <span @click="$router.push('/docker/container')">容器</span>
         <span @click="$router.push('/docker/image')">镜像</span>
         <span @click="$router.push('/docker/network')">网络</span>
-        <span @click="$router.push('/docker/settings')">配置</span>
+        <span @click="$router.push('/docker/settings')">设置</span>
     </div>
     <el-card shadow="never" class="am-settings-image">
+        <h4>镜像加速设置</h4>
+        <el-divider />
         <el-input
             v-model="textarea"
             style="width: 240px"
@@ -72,7 +74,7 @@ const drawer = ref(false)
 }
 
 @include b(settings-image) {
-    width: 100%;
+    width: 50%;
 
     :deep(.el-textarea) {
         min-width: 320px !important;
