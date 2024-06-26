@@ -3,6 +3,7 @@
         <span @click="$router.push('/host/monitor')">监控</span>
         <span @click="$router.push('/host/file')">文件</span>
         <span @click="$router.push('/host/terminal')">终端</span>
+        <span @click="$router.push('/host/settings')">设置</span>
     </div>
     <div class="am-host-operator">
         <el-card shadow="never">

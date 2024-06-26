@@ -55,6 +55,17 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         }
     },
     {
+        path: '/host/settings',
+        name: 'host-settings',
+        component: () => import('@/views/host/settings/index.vue'), //路由懒加载
+        meta: {
+            title: '设置',
+            icon: 'setting',
+            show: false,
+            activeMenu: '/host'
+        }
+    },
+    {
         path: '/docker',
         name: 'docker',
         redirect: '/docker/container',
@@ -100,10 +111,10 @@ export const dynamicRoutes: RouteRecordRaw[] = [
     },
     {
         path: '/docker/settings',
-        name: 'settings',
+        name: 'docker-settings',
         component: () => import('@/views/container/settings/index.vue'), //路由懒加载
         meta: {
-            title: '配置',
+            title: '设置',
             icon: 'lab',
             show: false,
             activeMenu: '/docker'
@@ -118,15 +129,15 @@ export const dynamicRoutes: RouteRecordRaw[] = [
             icon: 'audit',
             show: true
         }
-    },
-    {
-        path: '/system',
-        name: 'system',
-        component: () => import('@/views/system/index.vue'), //路由懒加载
-        meta: {
-            title: '系统',
-            icon: 'settings',
-            show: true
-        }
     }
+    // {
+    //     path: '/system',
+    //     name: 'system',
+    //     component: () => import('@/views/system/index.vue'), //路由懒加载
+    //     meta: {
+    //         title: '系统',
+    //         icon: 'settings',
+    //         show: true
+    //     }
+    // }
 ]
