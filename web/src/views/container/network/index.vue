@@ -114,4 +114,16 @@ const deleteImageByID = (id: string) => {
         }
     }
 }
+
+@include b(pagination) {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+@include b(table) {
+    width: 100%;
+    height: calc(100vh - 230px);
+    overflow-y: auto;
+}
 </style>

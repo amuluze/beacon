@@ -6,10 +6,16 @@
     </div>
     <div class="am-host-operator">
         <el-card shadow="never">
-            <span>时间密度：</span>
-            <el-select v-model="timeDensity" placeholder="Select" size="default" style="width: 240px">
-                <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
+            <div class="am-host-operator__left">
+                <el-button type="warning" @click="reboot">重启</el-button>
+                <el-button type="danger" @click="shutdown">关机</el-button>
+            </div>
+            <div class="am-host-operator__right">
+                <span>时间密度：</span>
+                <el-select v-model="timeDensity" placeholder="Select" size="default" style="width: 240px">
+                    <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
+                </el-select>
+            </div>
         </el-card>
     </div>
     <div class="am-host-content">
@@ -87,6 +93,7 @@ import {
 import { convertBytesToReadable } from '@/utils/convert.ts'
 import { dayjs } from 'element-plus'
 import { set } from 'lodash-es'
+import { shutdown, reboot } from '@/api/system'
 
 // 时间密度下拉框
 const timeDensity = ref(600)
@@ -482,16 +489,16 @@ watch(
 @include b(host-operator) {
     height: 48px;
     width: 100%;
-    margin-bottom: 4px;
+
     .el-card {
         height: 100%;
         :deep(.el-card__body) {
             height: 100% !important;
-            padding: 0 0 0 16px;
+            padding: 0 16px 0 16px;
             display: flex;
             flex-direction: row;
             align-items: center;
-            justify-content: flex-end;
+            justify-content: space-between;
         }
     }
 

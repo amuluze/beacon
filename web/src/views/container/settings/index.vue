@@ -5,19 +5,17 @@
         <span @click="$router.push('/docker/network')">网络</span>
         <span @click="$router.push('/docker/settings')">配置</span>
     </div>
-    <el-tabs type="border-card">
-        <el-tab-pane label="镜像加速" class="am-settings-image">
-            <el-input
-                v-model="textarea"
-                style="width: 240px"
-                :rows="6"
-                type="textarea"
-                placeholder="https://docker.nju.edu.cn&#10;https://mirror.baidubce.com"
-            />
-            <p>优先使用加速 URL 执行操作，设置为空则取消镜像加速。</p>
-            <el-button type="primary" plain @click="drawer = true"><svg-icon icon-class="settings" /> 设置</el-button>
-        </el-tab-pane>
-    </el-tabs>
+    <el-card shadow="never" class="am-settings-image">
+        <el-input
+            v-model="textarea"
+            style="width: 240px"
+            :rows="6"
+            type="textarea"
+            placeholder="https://docker.nju.edu.cn&#10;https://mirror.baidubce.com"
+        />
+        <p>优先使用加速 URL 执行操作，设置为空则取消镜像加速。</p>
+        <el-button type="primary" plain @click="drawer = true"><svg-icon icon-class="settings" /> 设置</el-button>
+    </el-card>
     <div class="am-settings-drawer">
         <el-drawer v-model="drawer" size="420" title="镜像加速">
             <div class="am-settings-drawer__input">
@@ -74,7 +72,7 @@ const drawer = ref(false)
 }
 
 @include b(settings-image) {
-    margin-left: 16px;
+    width: 100%;
 
     :deep(.el-textarea) {
         min-width: 320px !important;

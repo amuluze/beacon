@@ -2,11 +2,38 @@
     <div class="am-system-title">
         <span>系统设置</span>
     </div>
-    <el-tabs type="border-card">
-        <el-tab-pane label="DNS" class="am-settings-image"> DNS </el-tab-pane>
-        <el-tab-pane label="时区" class="am-settings-image"> 系统时区 </el-tab-pane>
-        <el-tab-pane label="NTP" class="am-settings-image"> NTP 服务器 </el-tab-pane>
-    </el-tabs>
+    <el-row :gutter="4" class="am-system-settings">
+        <el-col :span="8">
+            <el-card shadow="never">
+                <h4>DNS 设置</h4>
+                <div class="am-system-settings__content">
+                    <span>DNS 设置：</span>
+                    <span></span>
+                    <svg-icon icon-class="edit" />
+                </div>
+            </el-card>
+        </el-col>
+        <el-col :span="8">
+            <el-card shadow="never">
+                <h4>系统时区设置</h4>
+                <div class="am-system-settings__content">
+                    <span>系统时区设置：</span>
+                    <span></span>
+                    <svg-icon icon-class="edit" />
+                </div>
+            </el-card>
+        </el-col>
+        <el-col :span="8">
+            <el-card shadow="never">
+                <h4>系统时间设置</h4>
+                <div class="am-system-settings__content">
+                    <span>系统时间设置：</span>
+                    <span></span>
+                    <svg-icon icon-class="edit" />
+                </div>
+            </el-card>
+        </el-col>
+    </el-row>
 </template>
 <script setup lang="ts"></script>
 <style scoped lang="scss">
@@ -38,6 +65,19 @@
             text-align: center;
             background-color: #2f7bff;
             border-radius: 2px;
+        }
+    }
+}
+
+@include b(system-settings) {
+    @include e(content) {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+
+        .svg-icon {
+            color: #2f7bff;
         }
     }
 }

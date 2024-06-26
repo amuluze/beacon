@@ -4,9 +4,75 @@
         <span @click="$router.push('/host/file')">文件</span>
         <span @click="$router.push('/host/terminal')">终端</span>
     </div>
-    <div>file</div>
+    <div class="am-host-operator">
+        <el-card shadow="never">
+            <el-dropdown>
+                <el-button type="info"> 新建 <svg-icon icon-class="down" /> </el-button>
+                <template #dropdown>
+                    <el-dropdown-menu>
+                        <el-dropdown-item>文件夹</el-dropdown-item>
+                        <el-dropdown-item>文件</el-dropdown-item>
+                    </el-dropdown-menu>
+                </template>
+            </el-dropdown>
+            <el-button-group class="ml-4">
+                <el-button type="primary"> 上传 </el-button>
+                <el-button type="primary"> 下载 </el-button>
+                <el-button type="primary"> 删除 </el-button>
+            </el-button-group>
+        </el-card>
+    </div>
+    <el-card shadow="never">
+        <!-- https://blog.csdn.net/qq_24950043/article/details/114292940 -->
+        <div class="am-table">
+            <el-table :data="data" :key="containerKey" stripe ref="multipleTable" v-loading="loading">
+                <el-table-column type="selection" width="55" />
+                <el-table-column prop="name" label="名称" min-width="100" align="center" fixed sortable />
+                <el-table-column prop="size" label="大小" align="center" min-width="100" sortable />
+                <el-table-column prop="mode" label="权限" align="center" min-width="100" />
+                <el-table-column prop="mod_time" label="修改时间" align="center" min-width="160" sortable />
+                <el-table-column label="操作" width="200" fixed="right" align="center">
+                    <template #default="scope">
+                        <el-button type="primary" size="small" @click="deleteFile(scope.row.id)"> 删除 </el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </div>
+        <div class="am-pagination">
+            <el-config-provider :locale="zhCn">
+                <el-pagination
+                    v-model:current-page="pagination.page"
+                    :page-size="pagination.size"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :page-sizes="pagination.sizeOption"
+                    :total="pagination.total"
+                    @size-change="(size: number) => pagination.onSizeChange(size, params)"
+                    @current-change="(page: number) => pagination.onPageChange(page, params)"
+                />
+            </el-config-provider>
+        </div>
+    </el-card>
 </template>
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { queryContainers } from '@/api/container'
+import { useTable } from '@/hooks/useTable'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
+
+onMounted(() => {
+    refresh()
+})
+
+const params = {}
+
+console.log('.....', params)
+const { data, refresh, loading, pagination } = useTable(queryContainers, {}, {})
+
+const containerKey = ref(0)
+
+const deleteFile = (id: string) => {
+    console.log(id)
+}
+</script>
 <style scoped lang="scss">
 @include b(host-header) {
     display: flex;
@@ -57,5 +123,36 @@
             justify-content: flex-end;
         }
     }
+}
+
+@include b(host-operator) {
+    height: 48px;
+    width: 100%;
+    margin-bottom: 4px;
+    .el-card {
+        height: 100%;
+        :deep(.el-card__body) {
+            height: 100% !important;
+            padding: 0 0 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+    }
+    .el-dropdown {
+        margin-right: 16px;
+    }
+}
+
+@include b(pagination) {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+@include b(table) {
+    width: 100%;
+    height: calc(100vh - 230px);
+    overflow-y: auto;
 }
 </style>
