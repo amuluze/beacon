@@ -77,7 +77,7 @@ const drawer = ref(false)
     width: 50%;
 
     :deep(.el-textarea) {
-        min-width: 320px !important;
+        min-width: 100% !important;
     }
 
     p {

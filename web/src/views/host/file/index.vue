@@ -39,7 +39,7 @@
                 </el-table-column>
             </el-table>
         </div>
-        <div class="am-pagination">
+        <!-- <div class="am-pagination">
             <el-config-provider :locale="zhCn">
                 <el-pagination
                     v-model:current-page="pagination.page"
@@ -51,13 +51,12 @@
                     @current-change="(page: number) => pagination.onPageChange(page, params)"
                 />
             </el-config-provider>
-        </div>
+        </div> -->
     </el-card>
 </template>
 <script setup lang="ts">
-import { queryContainers } from '@/api/container'
+import { queryFiles } from '@/api/host'
 import { useTable } from '@/hooks/useTable'
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
 onMounted(() => {
     refresh()
@@ -66,7 +65,7 @@ onMounted(() => {
 const params = {}
 
 console.log('.....', params)
-const { data, refresh, loading, pagination } = useTable(queryContainers, {}, {})
+const { data, refresh, loading } = useTable(queryFiles, {}, {})
 
 const containerKey = ref(0)
 

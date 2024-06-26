@@ -128,10 +128,6 @@ import { reboot, shutdown } from '@/api/system'
         flex-direction: row;
         align-items: center;
         justify-content: flex-start;
-
-        .svg-icon {
-            color: #2f7bff;
-        }
     }
 }
 </style>
