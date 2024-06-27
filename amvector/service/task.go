@@ -61,9 +61,10 @@ func (a *TimedTask) Execute() {
 	go func() {
 		a.task.Docker(timestamp)
 		a.task.Image(timestamp)
+		a.task.Net(timestamp)
 	}()
 
-	go a.task.ClearOldRecord()
+	//go a.task.ClearOldRecord()
 }
 
 func (a *TimedTask) Run() {

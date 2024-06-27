@@ -9,16 +9,17 @@ import "time"
 type VersionArgs struct{}
 
 type Container struct {
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	Image         string `json:"image"`
-	IP            string `json:"ip"`
-	State         string `json:"state"`
-	Uptime        string `json:"uptime"`
-	CPUPercent    string `json:"cpu_percent"`
-	MemoryPercent string `json:"memory_percent"`
-	MemoryUsage   string `json:"memory_usage"`
-	MemoryLimit   string `json:"memory_limit"`
+	ID            string            `json:"id"`
+	Name          string            `json:"name"`
+	Image         string            `json:"image"`
+	IP            string            `json:"ip"`
+	State         string            `json:"state"`
+	Uptime        string            `json:"uptime"`
+	CPUPercent    string            `json:"cpu_percent"`
+	MemoryPercent string            `json:"memory_percent"`
+	MemoryUsage   string            `json:"memory_usage"`
+	MemoryLimit   string            `json:"memory_limit"`
+	Labels        map[string]string `json:"labels"`
 }
 
 type ContainerQueryArgs struct {
