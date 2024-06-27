@@ -84,3 +84,45 @@ type ImageDeleteArgs struct {
 
 type ImageDeleteReply struct {
 }
+
+type ImageImportArgs struct {
+	SourceFile string
+}
+
+type ImageImportReply struct{}
+
+type ImageExportArgs struct {
+	ImageIDs   []string
+	TargetFile string
+}
+
+type ImageExportReply struct{}
+
+type NetworkCreateArgs struct {
+	Name           string
+	Driver         string
+	NetworkSegment string
+	Labels         map[string]string
+}
+
+type NetworkCreateReply struct {
+	NetworkID string
+}
+
+type NetworkQueryArgs struct {
+	Page int `json:"page"`
+	Size int `json:"size"`
+}
+
+type NetworkCountArgs struct{}
+
+type NetworkCountReply struct {
+	Count int
+}
+
+type NetworkDeleteArgs struct {
+	NetworkID string
+}
+
+type NetworkDeleteReply struct {
+}
