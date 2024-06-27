@@ -85,6 +85,25 @@ type ImageQueryReply struct {
 	Size  int     `json:"size"`
 }
 
+type ImagePullArgs struct {
+	ImageName string `json:"image_name" validate:"required"`
+}
+
+type ImagePullReply struct{}
+
+type ImageImportArgs struct {
+	SourceFile string
+}
+
+type ImageImportReply struct{}
+
+type ImageExportArgs struct {
+	ImageIDs   []string
+	TargetFile string
+}
+
+type ImageExportReply struct{}
+
 type ImageRemoveArgs struct {
 	ImageID string `json:"image_id" validate:"required"`
 }
@@ -95,6 +114,38 @@ type ImageCountArgs struct{}
 
 type ImageCountReply struct {
 	Count int
+}
+
+type NetworkCreateArgs struct {
+	Name           string
+	Driver         string
+	NetworkSegment string
+	Labels         map[string]string
+}
+
+type NetworkCreateReply struct {
+	NetworkID string
+}
+
+type NetworkQueryArgs struct {
+	Page int `json:"page"`
+	Size int `json:"size"`
+}
+
+type NetworkQueryReply struct {
+}
+
+type NetworkCountArgs struct{}
+
+type NetworkCountReply struct {
+	Count int
+}
+
+type NetworkDeleteArgs struct {
+	NetworkID string
+}
+
+type NetworkDeleteReply struct {
 }
 
 type Docker struct {

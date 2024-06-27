@@ -7,7 +7,7 @@ package rpc
 import (
 	"context"
 	"fmt"
-
+	
 	"github.com/amuluze/amprobe/pkg/rpc"
 	"github.com/amuluze/amprobe/pkg/utils"
 	"github.com/amuluze/amprobe/service/model"
@@ -18,15 +18,21 @@ import (
 var ContainerServiceSet = wire.NewSet(NewContainerService, wire.Bind(new(IContainerService), new(*ContainerService)))
 
 type IContainerService interface {
+	Version(ctx context.Context) (schema.Docker, error)
 	ContainerList(ctx context.Context, args schema.ContainerQueryArgs) (schema.ContainerQueryRely, error)
 	ContainerStart(ctx context.Context, args schema.ContainerStartArgs) error
 	ContainerStop(ctx context.Context, args schema.ContainerStopArgs) error
 	ContainerRemove(ctx context.Context, args schema.ContainerRemoveArgs) error
 	ContainerRestart(ctx context.Context, args schema.ContainerRestartArgs) error
 	ImageList(ctx context.Context, args schema.ImageQueryArgs) (schema.ImageQueryReply, error)
+	ImagePull(ctx context.Context, args schema.ImagePullArgs) error
+	ImageImport(ctx context.Context) error
+	ImageExport(ctx context.Context) error
 	ImageRemove(ctx context.Context, args schema.ImageRemoveArgs) error
 	ImagesPrune(ctx context.Context) error
-	Version(ctx context.Context) (schema.Docker, error)
+	NetworkList(ctx context.Context, args schema.NetworkQueryArgs) (schema.NetworkQueryReply, error)
+	NetworkCreate(ctx context.Context, args schema.NetworkCreateArgs) (schema.NetworkCreateReply, error)
+	NetworkDelete(ctx context.Context, args schema.NetworkDeleteArgs) error
 	GetDockerRegistryMirrors(ctx context.Context, args schema.GetDockerRegistryMirrorsArgs) (schema.GetDockerRegistryMirrorsReply, error)
 	SetDockerRegistryMirrors(ctx context.Context, args schema.SetDockerRegistryMirrorsArgs) error
 }
@@ -159,6 +165,18 @@ func (c ContainerService) ImageList(ctx context.Context, args schema.ImageQueryA
 	return result, nil
 }
 
+func (c ContainerService) ImagePull(ctx context.Context, args schema.ImagePullArgs) error {
+	return nil
+}
+
+func (c ContainerService) ImageImport(ctx context.Context, args schema.ImageImportArgs) error {
+	return nil
+}
+
+func (c ContainerService) ImageExport(ctx context.Context, args schema.ImageRemoveArgs) error {
+	return nil
+}
+
 func (c ContainerService) ImageRemove(ctx context.Context, args schema.ImageRemoveArgs) error {
 	var reply schema.ImageRemoveReply
 	err := c.RPCClient.Call(ctx, "ImageDelete", args, &reply)
@@ -173,6 +191,18 @@ func (c ContainerService) ImagesPrune(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (c ContainerService) NetworkList(ctx context.Context, args schema.NetworkQueryArgs) (schema.NetworkQueryReply, error) {
+	return schema.NetworkQueryReply{}, nil
+}
+
+func (c ContainerService) NetworkCreate(ctx context.Context, args schema.NetworkCreateArgs) (schema.NetworkCreateReply, error) {
+	return schema.NetworkCreateReply{}, nil
+}
+
+func (c ContainerService) NetworkDelete(ctx context.Context, args schema.NetworkDeleteArgs) error {
 	return nil
 }
 
