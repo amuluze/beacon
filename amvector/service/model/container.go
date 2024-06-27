@@ -6,7 +6,7 @@ package model
 
 import (
 	"time"
-
+	
 	"gorm.io/gorm"
 )
 
@@ -25,7 +25,7 @@ type Container struct {
 	MemPercent  float64
 	MemUsage    float64
 	MemLimit    float64
-	Labels      map[string]string
+	Labels      string
 }
 
 func (d *Container) TableName() string {
@@ -81,7 +81,7 @@ type Network struct {
 	Internal   bool
 	SubNet     []SubNetworkConfig
 	Containers map[string]string // map[cid]ipaddr
-	Labels     map[string]string
+	Labels     string
 }
 
 func (n *Network) TableName() string { return "s_network" }

@@ -6,16 +6,17 @@ package task
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"time"
-
+	
 	"github.com/amuluze/amvector/service/model"
 )
 
 func (a *Task) Container(timestamp time.Time) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
-
+	
 	cs, err := a.manager.ListContainer(ctx)
 	if err != nil {
 		slog.Error("failed to list containers", "error", err)
@@ -23,6 +24,7 @@ func (a *Task) Container(timestamp time.Time) {
 	}
 	var containers []model.Container
 	for _, info := range cs {
+		labels, _ := json.Marshal(info.Labels)
 		var d model.Container
 		d.Timestamp = timestamp
 		d.ContainerID = info.ID[:6]
@@ -31,20 +33,20 @@ func (a *Task) Container(timestamp time.Time) {
 		d.Image = info.Image
 		d.Uptime = info.Uptime
 		d.IP = info.IP
-		d.Labels = info.Labels
-
+		d.Labels = string(labels)
+		
 		cpuPercent, err := a.manager.GetContainerCPU(ctx, info.ID[:6])
 		if err != nil {
 			slog.Error("failed to get container cpu", "error", err)
 		}
 		d.CPUPercent = cpuPercent
-
+		
 		memPercent, used, limit, err := a.manager.GetContainerMem(ctx, info.ID[:6])
 		if err != nil {
 			slog.Error("failed to get container mem", "error", err)
 		}
 		d.MemPercent = memPercent
-
+		
 		d.MemUsage = used
 		d.MemLimit = limit
 		if _, ok := a.cache.Get(info.Image); !ok {
@@ -64,7 +66,7 @@ func (a *Task) Container(timestamp time.Time) {
 func (a *Task) Docker(timestamp time.Time) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
-
+	
 	dockerVersion, err := a.manager.Version(ctx)
 	if err != nil {
 		slog.Error("failed to get docker version", "error", err)
@@ -88,7 +90,7 @@ func (a *Task) Docker(timestamp time.Time) {
 func (a *Task) Image(timestamp time.Time) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
-
+	
 	images, err := a.manager.ListImage(ctx)
 	if err != nil {
 		slog.Error("failed to get version", "error", err)
@@ -129,7 +131,7 @@ func (a *Task) Image(timestamp time.Time) {
 func (a *Task) Net(timestamp time.Time) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
-
+	
 	nets, err := a.manager.ListNetwork(ctx)
 	if err != nil {
 		slog.Error("failed to get network", "error", err)
@@ -137,6 +139,7 @@ func (a *Task) Net(timestamp time.Time) {
 	}
 	var list model.Networks
 	for _, net := range nets {
+		labels, _ := json.Marshal(net.Labels)
 		list = append(list, model.Network{
 			Timestamp: timestamp,
 			NetworkID: net.ID,
@@ -145,7 +148,7 @@ func (a *Task) Net(timestamp time.Time) {
 			Created:   net.Created,
 			Scope:     net.Scope,
 			Internal:  net.Internal,
-			Labels:    net.Labels,
+			Labels:    string(labels),
 		})
 	}
 	if err := a.db.Unscoped().Where("1 = 1").Delete(&model.Net{}).Error; err != nil {
