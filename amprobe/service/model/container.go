@@ -25,6 +25,7 @@ type Container struct {
 	MemPercent  float64
 	MemUsage    float64
 	MemLimit    float64
+	Labels      string
 }
 
 func (d *Container) TableName() string {
@@ -77,3 +78,21 @@ func (i *Image) TableName() string { return "s_image" }
 // 	tx.Unscoped().Where("timestamp < ?", time.Now().Add(-time.Minute*5)).Delete(&Image{})
 // 	return nil
 // }
+
+type Networks []Network
+
+type Network struct {
+	gorm.Model
+	Timestamp time.Time
+	NetworkID string
+	Name      string
+	Driver    string
+	Scope     string
+	Created   string
+	Internal  bool
+	Subnet    string
+	Gateway   string
+	Labels    string
+}
+
+func (n *Network) TableName() string { return "s_network" }

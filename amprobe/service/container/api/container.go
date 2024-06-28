@@ -6,9 +6,9 @@ package api
 
 import (
 	"log/slog"
-	
+
 	"github.com/amuluze/amprobe/service/container/rpc"
-	
+
 	"github.com/amuluze/amprobe/pkg/fiberx"
 	"github.com/amuluze/amprobe/pkg/validatex"
 	"github.com/amuluze/amprobe/service/schema"
@@ -40,7 +40,7 @@ func (a *ContainerAPI) ContainerCreate(ctx *fiber.Ctx) error {
 
 func (a *ContainerAPI) ContainerList(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
-	
+
 	var args schema.ContainerQueryArgs
 	if err := fiberx.ParseQuery(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, err)
@@ -49,7 +49,7 @@ func (a *ContainerAPI) ContainerList(ctx *fiber.Ctx) error {
 	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, err)
 	}
-	
+
 	container, err := a.ContainerService.ContainerList(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
@@ -76,12 +76,12 @@ func (a *ContainerAPI) ContainerStart(ctx *fiber.Ctx) error {
 
 func (a *ContainerAPI) ContainerStop(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
-	
+
 	var args schema.ContainerStopArgs
 	if err := fiberx.ParseBody(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, err)
 	}
-	
+
 	slog.Info("args", "args", args)
 	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, err)
@@ -129,7 +129,7 @@ func (a *ContainerAPI) ContainerRestart(ctx *fiber.Ctx) error {
 
 func (a *ContainerAPI) ImageList(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
-	
+
 	var args schema.ImageQueryArgs
 	if err := fiberx.ParseQuery(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, err)
@@ -145,11 +145,37 @@ func (a *ContainerAPI) ImageList(ctx *fiber.Ctx) error {
 }
 
 func (a *ContainerAPI) ImagePull(ctx *fiber.Ctx) error {
-	return nil
+	c := ctx.UserContext()
+	var args schema.ImagePullArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	slog.Info("args", "args", args)
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	err := a.ContainerService.ImagePull(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
 }
 
 func (a *ContainerAPI) ImageImport(ctx *fiber.Ctx) error {
-	return nil
+	c := ctx.UserContext()
+	var args schema.ImageImportArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	slog.Info("args", "args", args)
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	err := a.ContainerService.ImageImport(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
 }
 
 func (a *ContainerAPI) ImageExport(ctx *fiber.Ctx) error {
@@ -184,15 +210,51 @@ func (a *ContainerAPI) ImagesPrune(ctx *fiber.Ctx) error {
 }
 
 func (a *ContainerAPI) NetworkList(ctx *fiber.Ctx) error {
-	return nil
+	c := ctx.UserContext()
+	var args schema.NetworkListArgs
+	if err := fiberx.ParseQuery(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	networks, err := a.ContainerService.NetworkList(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.Success(ctx, networks)
 }
 
 func (a *ContainerAPI) NetworkDelete(ctx *fiber.Ctx) error {
-	return nil
+	c := ctx.UserContext()
+	var args schema.NetworkDeleteArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	err := a.ContainerService.NetworkDelete(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
 }
 
 func (a *ContainerAPI) NetworkCreate(ctx *fiber.Ctx) error {
-	return nil
+	c := ctx.UserContext()
+	var args schema.NetworkCreateArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	reply, err := a.ContainerService.NetworkCreate(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.Success(ctx, reply)
 }
 
 func (a *ContainerAPI) GetDockerRegistryMirrors(ctx *fiber.Ctx) error {

@@ -6,8 +6,9 @@ package rpc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	
+
 	"github.com/amuluze/amprobe/pkg/rpc"
 	"github.com/amuluze/amprobe/pkg/utils"
 	"github.com/amuluze/amprobe/service/model"
@@ -26,11 +27,11 @@ type IContainerService interface {
 	ContainerRestart(ctx context.Context, args schema.ContainerRestartArgs) error
 	ImageList(ctx context.Context, args schema.ImageQueryArgs) (schema.ImageQueryReply, error)
 	ImagePull(ctx context.Context, args schema.ImagePullArgs) error
-	ImageImport(ctx context.Context) error
-	ImageExport(ctx context.Context) error
+	ImageImport(ctx context.Context, args schema.ImageImportArgs) error
+	ImageExport(ctx context.Context, args schema.ImageExportArgs) error
 	ImageRemove(ctx context.Context, args schema.ImageRemoveArgs) error
 	ImagesPrune(ctx context.Context) error
-	NetworkList(ctx context.Context, args schema.NetworkQueryArgs) (schema.NetworkQueryReply, error)
+	NetworkList(ctx context.Context, args schema.NetworkListArgs) (schema.NetworkListReply, error)
 	NetworkCreate(ctx context.Context, args schema.NetworkCreateArgs) (schema.NetworkCreateReply, error)
 	NetworkDelete(ctx context.Context, args schema.NetworkDeleteArgs) error
 	GetDockerRegistryMirrors(ctx context.Context, args schema.GetDockerRegistryMirrorsArgs) (schema.GetDockerRegistryMirrorsReply, error)
@@ -173,7 +174,7 @@ func (c ContainerService) ImageImport(ctx context.Context, args schema.ImageImpo
 	return nil
 }
 
-func (c ContainerService) ImageExport(ctx context.Context, args schema.ImageRemoveArgs) error {
+func (c ContainerService) ImageExport(ctx context.Context, args schema.ImageExportArgs) error {
 	return nil
 }
 
@@ -194,15 +195,58 @@ func (c ContainerService) ImagesPrune(ctx context.Context) error {
 	return nil
 }
 
-func (c ContainerService) NetworkList(ctx context.Context, args schema.NetworkQueryArgs) (schema.NetworkQueryReply, error) {
-	return schema.NetworkQueryReply{}, nil
+func (c ContainerService) NetworkList(ctx context.Context, args schema.NetworkListArgs) (schema.NetworkListReply, error) {
+	var reply model.Networks
+	err := c.RPCClient.Call(ctx, "NetworkList", args, &reply)
+	if err != nil {
+		return schema.NetworkListReply{}, err
+	}
+	var result schema.NetworkListReply
+	var data []schema.Network
+	for _, v := range reply {
+		labels := make(map[string]string)
+		err := json.Unmarshal([]byte(v.Labels), &labels)
+		if err != nil {
+			return schema.NetworkListReply{}, err
+		}
+		data = append(data, schema.Network{
+			ID:      v.NetworkID[:6],
+			Name:    v.Name,
+			Driver:  v.Driver,
+			Created: v.Created,
+			Subnet:  v.Subnet,
+			Gateway: v.Gateway,
+			Labels:  labels,
+		})
+	}
+	countArgs := schema.NetworkCountArgs{}
+	var countReply schema.NetworkCountReply
+	err = c.RPCClient.Call(ctx, "NetworkCount", countArgs, &countReply)
+	if err != nil {
+		return schema.NetworkListReply{}, err
+	}
+	result.Data = data
+	result.Page = args.Page
+	result.Size = args.Size
+	result.Total = countReply.Count
+	return result, nil
 }
 
 func (c ContainerService) NetworkCreate(ctx context.Context, args schema.NetworkCreateArgs) (schema.NetworkCreateReply, error) {
-	return schema.NetworkCreateReply{}, nil
+	var reply schema.NetworkCreateReply
+	err := c.RPCClient.Call(ctx, "NetworkCreate", args, &reply)
+	if err != nil {
+		return schema.NetworkCreateReply{}, err
+	}
+	return reply, nil
 }
 
 func (c ContainerService) NetworkDelete(ctx context.Context, args schema.NetworkDeleteArgs) error {
+	var reply schema.NetworkDeleteReply
+	err := c.RPCClient.Call(ctx, "NetworkDelete", args, &reply)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

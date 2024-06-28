@@ -6,7 +6,7 @@ package model
 
 import (
 	"time"
-	
+
 	"gorm.io/gorm"
 )
 
@@ -65,23 +65,18 @@ func (i *Image) TableName() string { return "s_image" }
 
 type Networks []Network
 
-type SubNetworkConfig struct {
-	Subnet  string
-	Gateway string
-}
-
 type Network struct {
 	gorm.Model
-	Timestamp  time.Time
-	NetworkID  string
-	Name       string
-	Driver     string
-	Scope      string
-	Created    string
-	Internal   bool
-	SubNet     []SubNetworkConfig
-	Containers map[string]string // map[cid]ipaddr
-	Labels     string
+	Timestamp time.Time
+	NetworkID string
+	Name      string
+	Driver    string
+	Scope     string
+	Created   string
+	Internal  bool
+	Subnet    string
+	Gateway   string
+	Labels    string
 }
 
 func (n *Network) TableName() string { return "s_network" }

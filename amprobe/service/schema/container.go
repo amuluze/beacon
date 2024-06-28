@@ -92,7 +92,7 @@ type ImagePullArgs struct {
 type ImagePullReply struct{}
 
 type ImageImportArgs struct {
-	SourceFile string
+	ImageName string `json:"image_name" validate:"required"`
 }
 
 type ImageImportReply struct{}
@@ -127,12 +127,26 @@ type NetworkCreateReply struct {
 	NetworkID string
 }
 
-type NetworkQueryArgs struct {
+type NetworkListArgs struct {
 	Page int `json:"page"`
 	Size int `json:"size"`
 }
 
-type NetworkQueryReply struct {
+type Network struct {
+	ID      string            `json:"id"`
+	Name    string            `json:"name"`
+	Driver  string            `json:"driver"`
+	Created string            `json:"created"`
+	Subnet  string            `json:"subnet"`
+	Gateway string            `json:"gateway"`
+	Labels  map[string]string `json:"labels"`
+}
+
+type NetworkListReply struct {
+	Data  []Network `json:"data"`
+	Total int       `json:"total"`
+	Page  int       `json:"page"`
+	Size  int       `json:"size"`
 }
 
 type NetworkCountArgs struct{}
