@@ -20,6 +20,14 @@ export interface SetSystemTimeArgs {
     system_time: string
 }
 
+export interface SetSystemTimeResult {}
+
+export interface GetSystemTimezoneListArgs {}
+
+export interface GetSystemTimezoneListResult {
+    system_timezone_list: string[]
+}
+
 export interface GetSystemTimezoneResult {
     system_timezone: string
 }

@@ -7,6 +7,7 @@ import request from '@/api'
 import {
     GetDNSResult,
     GetSystemTimeResult,
+    GetSystemTimezoneListResult,
     GetSystemTimezoneResult,
     SetDNSArgs,
     SetSystemTimeArgs,
@@ -35,6 +36,10 @@ export function getSystemTime() {
 
 export function setSystemTime(params: SetSystemTimeArgs) {
     return request.post('/api/v1/host/set_system_time', params)
+}
+
+export function getSystemTimezoneList() {
+    return request.get<GetSystemTimezoneListResult>('/api/v1/host/get_system_timezone_list', {})
 }
 
 export function getSystemTimezone() {

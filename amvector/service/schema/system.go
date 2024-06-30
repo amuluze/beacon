@@ -27,14 +27,21 @@ type SetDNSReply struct{}
 type GetSystemTimeArgs struct{}
 
 type GetSystemTimeReply struct {
-	SystemTime int64
+	SystemTime string
 }
 
 type SetSystemTimeArgs struct {
-	SystemTime int64
+	SystemTime string
 }
 
 type SetSystemTimeReply struct{}
+
+type GetSystemTimeZoneListArgs struct {
+}
+
+type GetSystemTimeZoneListReply struct {
+	SystemTimeZoneList []string
+}
 
 type GetSystemTimeZoneArgs struct{}
 

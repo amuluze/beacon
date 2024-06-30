@@ -8,33 +8,71 @@
     <div class="am-host-operator">
         <el-card shadow="never">
             <el-dropdown>
-                <el-button type="info"> 新建 <svg-icon icon-class="down" /> </el-button>
+                <el-button type="primary"> 新建 <svg-icon icon-class="down" /> </el-button>
                 <template #dropdown>
                     <el-dropdown-menu>
-                        <el-dropdown-item>文件夹</el-dropdown-item>
-                        <el-dropdown-item>文件</el-dropdown-item>
+                        <el-dropdown-item>
+                            <el-button type="primary" size="small" text @click="createFolder">
+                                <svg-icon icon-class="folder" style="color: #105eeb; margin-right: 4px" />
+                                文件夹
+                            </el-button>
+                        </el-dropdown-item>
+                        <el-dropdown-item>
+                            <el-button type="primary" size="small" text @click="createFile">文件</el-button>
+                        </el-dropdown-item>
                     </el-dropdown-menu>
                 </template>
             </el-dropdown>
+            <el-button-group class="ml-4" style="margin-right: 16px">
+                <el-button type="info" style="color: #105eeb" @click="goBack">
+                    <svg-icon icon-class="back"></svg-icon>
+                </el-button>
+                <el-button type="info" style="color: #105eeb" @click="goNext">
+                    <svg-icon icon-class="next"></svg-icon>
+                </el-button>
+            </el-button-group>
             <el-button-group class="ml-4">
-                <el-button type="primary"> 上传 </el-button>
-                <el-button type="primary"> 下载 </el-button>
-                <el-button type="primary"> 删除 </el-button>
+                <el-button type="primary" @click="uploadFile"> 上传 </el-button>
+                <el-button type="primary" @click="downloadFile"> 下载 </el-button>
             </el-button-group>
         </el-card>
     </div>
     <el-card shadow="never">
         <!-- https://blog.csdn.net/qq_24950043/article/details/114292940 -->
         <div class="am-table">
-            <el-table :data="data" :key="containerKey" stripe ref="multipleTable" v-loading="loading">
+            <el-table :data="filesData" :key="containerKey" stripe ref="multipleTable" v-loading="loading">
                 <el-table-column type="selection" width="55" />
-                <el-table-column prop="name" label="名称" min-width="100" align="center" fixed sortable />
-                <el-table-column prop="size" label="大小" align="center" min-width="100" sortable />
+                <el-table-column prop="name" label="名称" min-width="150" align="center" fixed>
+                    <template #default="scope">
+                        <div style="display: flex; align-items: center">
+                            <svg-icon
+                                v-if="scope.row.is_dir == true"
+                                icon-class="folder"
+                                style="color: #105eeb; margin-right: 4px"
+                            />
+                            <span @click="queryFilesByPath(currentPath + '/' + scope.row.name, scope.row.is_dir)">{{
+                                scope.row.name
+                            }}</span>
+                        </div>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="size" label="大小" align="center" min-width="100" sortable>
+                    <template #default="scope">
+                        <span>{{ convertBytesToReadable(scope.row.size) }}</span>
+                    </template>
+                </el-table-column>
                 <el-table-column prop="mode" label="权限" align="center" min-width="100" />
-                <el-table-column prop="mod_time" label="修改时间" align="center" min-width="160" sortable />
+                <el-table-column prop="mod_time" label="修改时间" align="center" min-width="100">
+                    <template #default="scope">
+                        <span>{{ dayjs(scope.row.mod_time * 1000).format('YYYY-MM-DD HH:mm:ss') }}</span>
+                    </template>
+                </el-table-column>
                 <el-table-column label="操作" width="200" fixed="right" align="center">
                     <template #default="scope">
-                        <el-button type="primary" size="small" @click="deleteFile(scope.row.id)"> 删除 </el-button>
+                        <el-button type="danger" size="small" text @click="deleteFile(scope.row.name)">
+                            删除
+                        </el-button>
+                        <el-button type="primary" size="small" text @click="downloadFile"> 下载 </el-button>
                     </template>
                 </el-table-column>
             </el-table>
@@ -56,21 +94,84 @@
 </template>
 <script setup lang="ts">
 import { queryFiles } from '@/api/host'
-import { useTable } from '@/hooks/useTable'
+import { error, warning } from '@/components/Message/message'
+import { FileInfo, FilesSearchArgs } from '@/interface/host'
+import { convertBytesToReadable } from '@/utils/convert'
+import { dayjs } from 'element-plus'
 
+const loading = ref(false)
+
+const currentPath = ref('/')
+const nextPath = ref('')
+const filesData = ref<FileInfo[]>([])
 onMounted(() => {
-    refresh()
+    queryFilesByPath(currentPath.value, true)
 })
 
-const params = {}
+const goBack = () => {
+    if (currentPath.value == '/') {
+        return
+    }
+    nextPath.value = currentPath.value
+    let path = currentPath.value.split('/')
+    path.pop()
+    queryFilesByPath(path.join('/'), true)
+}
 
-console.log('.....', params)
-const { data, refresh, loading } = useTable(queryFiles, {}, {})
+const goNext = () => {
+    if (currentPath.value == '/') {
+        return
+    }
+    queryFilesByPath(nextPath.value, true)
+}
+
+const queryFilesByPath = async (path: string, isDir: boolean) => {
+    if (!isDir) {
+        error('该路径不是文件夹')
+        return
+    }
+    loading.value = true
+    currentPath.value = path
+    let params: FilesSearchArgs = {
+        path: path
+    }
+    const { data } = await queryFiles(params)
+    console.log(data.files)
+    filesData.value = data.files
+    // 以 is_dir 字段进行排序
+    filesData.value.sort((a, b) => {
+        if (a.is_dir && !b.is_dir) {
+            return -1
+        } else if (!a.is_dir && b.is_dir) {
+            return 1
+        } else {
+            return 0
+        }
+    })
+    loading.value = false
+}
 
 const containerKey = ref(0)
 
-const deleteFile = (id: string) => {
-    console.log(id)
+const deleteFile = (name: string) => {
+    console.log(name)
+    warning('该功能尚未实现')
+}
+
+const uploadFile = () => {
+    warning('该功能尚未实现')
+}
+
+const downloadFile = () => {
+    warning('该功能尚未实现')
+}
+
+const createFolder = () => {
+    warning('该功能尚未实现')
+}
+
+const createFile = () => {
+    warning('该功能尚未实现')
 }
 </script>
 <style scoped lang="scss">
@@ -152,7 +253,7 @@ const deleteFile = (id: string) => {
 
 @include b(table) {
     width: 100%;
-    height: calc(100vh - 230px);
+    height: calc(100vh - 188px);
     overflow-y: auto;
 }
 </style>

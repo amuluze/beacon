@@ -128,8 +128,8 @@ type NetworkCreateReply struct {
 }
 
 type NetworkListArgs struct {
-	Page int `json:"page"`
-	Size int `json:"size"`
+	Page int `json:"page" validate:"required"`
+	Size int `json:"size" validate:"gte=0"`
 }
 
 type Network struct {
@@ -181,7 +181,7 @@ type GetDockerRegistryMirrorsReply struct {
 }
 
 type SetDockerRegistryMirrorsArgs struct {
-	Mirrors []string `json:"registry_mirrors"`
+	Mirrors []string `json:"registry_mirrors" validate:"required"`
 }
 
 type SetDockerRegistryMirrorsReply struct{}

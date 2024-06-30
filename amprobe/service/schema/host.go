@@ -108,14 +108,14 @@ type NetworkUsageReply struct {
 }
 
 type FilesSearchArgs struct {
-	Path string
+	Path string `json:"path" validate:"required"`
 }
 type FileInfo struct {
-	Name    string
-	Size    int64
-	Mode    string
-	ModTime int64
-	IsDir   bool
+	Name    string `json:"name"`
+	Size    int64  `json:"size"`
+	Mode    string `json:"mode"`
+	ModTime int64  `json:"mod_time"`
+	IsDir   bool   `json:"is_dir"`
 }
 type FilesSearchReply struct {
 	Files []FileInfo `json:"files"`
@@ -146,16 +146,24 @@ type SetDNSSettingsArgs struct {
 type SetDNSSettingsReply struct{}
 
 type GetSystemTimeArgs struct {
+}
+
+type GetSystemTimeReply struct {
 	SystemTime string `json:"system_time"`
 }
 
-type GetSystemTimeReply struct{}
-
 type SetSystemTimeArgs struct {
-	SystemTime string `json:"system_time"`
+	SystemTime string `json:"system_time" validate:"required"`
 }
 
 type SetSystemTimeReply struct{}
+
+type GetSystemTimezoneListArgs struct {
+}
+
+type GetSystemTimezoneListReply struct {
+	SystemTimeZoneList []string `json:"system_timezone_list"`
+}
 
 type GetSystemTimezoneArgs struct{}
 
@@ -164,7 +172,7 @@ type GetSystemTimezoneReply struct {
 }
 
 type SetSystemTimezoneArgs struct {
-	SystemTimeZone string `json:"system_timezone"`
+	SystemTimeZone string `json:"system_timezone" validate:"required"`
 }
 
 type SetSystemTimezoneReply struct{}

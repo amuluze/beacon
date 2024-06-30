@@ -56,6 +56,23 @@ export interface ImageQueryResult {
     size: number
 }
 
+export interface Network {
+    id: string
+    name: string
+    driver: string
+    created: string
+    subnet: string
+    gateway: string
+    // labels: Map<string, string>
+}
+
+export interface NetworkQueryResult {
+    data: Network[]
+    total: number
+    page: number
+    size: number
+}
+
 export interface DockerInfo {
     docker_version: string
     api_version: string

@@ -8,8 +8,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/amuluze/amvector/pkg/utils"
 	"os"
+	"time"
+
+	"github.com/amuluze/amvector/pkg/utils"
 
 	"github.com/amuluze/amvector/pkg/timectl"
 
@@ -55,20 +57,34 @@ func (s *Service) SetDNS(ctx context.Context, args schema.SetDNSArgs, reply *sch
 
 // GetSystemTime 获取系统时间
 func (s *Service) GetSystemTime(ctx context.Context, args schema.GetSystemTimeArgs, reply *schema.GetSystemTimeReply) error {
-	time, err := timectl.GetTime(ctx)
+	systemTime, err := timectl.GetTime(ctx)
 	if err != nil {
 		return err
 	}
-	reply.SystemTime = time
+	reply.SystemTime = time.Unix(systemTime, 0).Format("2006-01-02 15:04:05")
 	return nil
 }
 
 // SetSystemTime 设置系统时间
 func (s *Service) SetSystemTime(ctx context.Context, args schema.SetSystemTimeArgs, reply *schema.SetSystemTimeReply) error {
-	err := timectl.SetTime(ctx, args.SystemTime)
+	tt, err := time.Parse(args.SystemTime, "2006-01-02 15:04:05")
 	if err != nil {
 		return err
 	}
+	err = timectl.SetTime(ctx, tt.Unix())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetSystemTimeZoneList
+func (s *Service) GetSystemTimeZoneList(ctx context.Context, args schema.GetSystemTimeZoneListArgs, reply *schema.GetSystemTimeZoneListReply) error {
+	tzList, err := timectl.GetTimeZoneList(ctx)
+	if err != nil {
+		return err
+	}
+	reply.SystemTimeZoneList = tzList
 	return nil
 }
 
@@ -103,8 +119,10 @@ func (s *Service) GetDockerRegistryMirrors(ctx context.Context, args schema.GetD
 	if err := json.Unmarshal(file, &daemonMap); err != nil {
 		return err
 	}
-	if daemonMap["registry-mirrors"] != nil {
-		reply.Mirrors = daemonMap["registry-mirrors"].([]string)
+	if _, ok := daemonMap["registry-mirrors"]; ok {
+		for _, val := range daemonMap["registry-mirrors"].([]interface{}) {
+			reply.Mirrors = append(reply.Mirrors, val.(string))
+		}
 	}
 	return nil
 }

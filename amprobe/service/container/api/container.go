@@ -215,6 +215,7 @@ func (a *ContainerAPI) NetworkList(ctx *fiber.Ctx) error {
 	if err := fiberx.ParseQuery(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, err)
 	}
+	slog.Info("network list args", "args", args)
 	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, err)
 	}
@@ -261,6 +262,7 @@ func (a *ContainerAPI) GetDockerRegistryMirrors(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	args := schema.GetDockerRegistryMirrorsArgs{}
 	res, err := a.ContainerService.GetDockerRegistryMirrors(c, args)
+	slog.Info("get docker registry mirrors", "res", res, "err", err)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
 	}
@@ -270,6 +272,12 @@ func (a *ContainerAPI) GetDockerRegistryMirrors(ctx *fiber.Ctx) error {
 func (a *ContainerAPI) SetDockerRegistryMirrors(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	args := schema.SetDockerRegistryMirrorsArgs{}
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
 	err := a.ContainerService.SetDockerRegistryMirrors(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)

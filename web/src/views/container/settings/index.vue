@@ -19,20 +19,48 @@
         <el-button type="primary" plain @click="drawer = true"><svg-icon icon-class="settings" /> 设置</el-button>
     </el-card>
     <div class="am-settings-drawer">
-        <el-drawer v-model="drawer" size="420" title="镜像加速">
+        <el-drawer v-model="drawer" size="540" title="镜像加速">
             <div class="am-settings-drawer__input">
                 <el-input v-model="textarea" :rows="6" type="textarea" />
             </div>
             <div class="am-settings-drawer__operator">
-                <el-button type="default" size="default" plain>取消</el-button>
-                <el-button type="primary" size="default" plain>确定</el-button>
+                <el-button type="default" size="default" plain @click="cancelEditDockerRegistryMirrors">取消</el-button>
+                <el-button type="primary" size="default" plain @click="confirmEditDockerRegistryMirrors">
+                    确定
+                </el-button>
             </div>
         </el-drawer>
     </div>
 </template>
 <script setup lang="ts">
+import { SetDockerRegistryMirrors, getDockerRegistryMirrors } from '@/api/container'
+import { SetDockerRegistryMirrorsArgs } from '@/interface/container'
+
 const textarea = ref('')
 const drawer = ref(false)
+
+const queryDockerRegistryMirrors = async () => {
+    const { data } = await getDockerRegistryMirrors()
+    textarea.value = data.registry_mirrors.join('\n')
+}
+
+const cancelEditDockerRegistryMirrors = () => {
+    drawer.value = false
+}
+
+const confirmEditDockerRegistryMirrors = async () => {
+    let params: SetDockerRegistryMirrorsArgs = {
+        registry_mirrors: textarea.value.split('\n').map((item) => item.trim())
+    }
+    console.log('set mirrors params: ', params)
+    await SetDockerRegistryMirrors(params)
+    queryDockerRegistryMirrors()
+    drawer.value = false
+}
+
+onMounted(() => {
+    queryDockerRegistryMirrors()
+})
 </script>
 <style scoped lang="scss">
 @include b(settings-title) {
@@ -93,7 +121,7 @@ const drawer = ref(false)
 
     @include e(input) {
         :deep(.el-textarea) {
-            width: 380px !important;
+            width: 500px !important;
         }
     }
 

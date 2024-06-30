@@ -3,6 +3,7 @@ import {
     ContainerQueryResult,
     GetDockerRegistryMirrorsResult,
     ImageQueryResult,
+    NetworkQueryResult,
     RemoveContainerArgs,
     RemoveImageArgs,
     RestartContainerArgs,
@@ -44,6 +45,10 @@ export function queryImages(params: Pagination) {
     return request.get<ImageQueryResult>('/api/v1/container/images', params)
 }
 
+export function queryNetworks(params: Pagination) {
+    return request.get<NetworkQueryResult>('/api/v1/container/networks', params)
+}
+
 export function queryDockerInfo() {
     return request.get<any>('/api/v1/container/version', {})
 }
@@ -52,6 +57,6 @@ export function getDockerRegistryMirrors() {
     return request.get<GetDockerRegistryMirrorsResult>('/api/v1/container/get_docker_registry_mirrors', {})
 }
 
-export function SetDockerRegistryirMirrors(params: SetDockerRegistryMirrorsArgs) {
+export function SetDockerRegistryMirrors(params: SetDockerRegistryMirrorsArgs) {
     return request.post('/api/v1/container/set_docker_registry_mirrors', params)
 }

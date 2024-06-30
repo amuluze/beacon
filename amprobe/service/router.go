@@ -9,9 +9,9 @@ import (
 	"github.com/amuluze/amprobe/service/middleware"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
-	
+
 	"github.com/google/wire"
-	
+
 	auditAPI "github.com/amuluze/amprobe/service/audit/api"
 	authAPI "github.com/amuluze/amprobe/service/auth/api"
 	containerAPI "github.com/amuluze/amprobe/service/container/api"
@@ -30,12 +30,12 @@ type IRouter interface {
 type Router struct {
 	config *Config
 	auth   auth.Auther
-	
+
 	containerAPI *containerAPI.ContainerAPI
 	hostAPI      *hostAPI.HostAPI
 	authAPI      *authAPI.AuthAPI
 	auditAPI     *auditAPI.AuditAPI
-	
+
 	loggerHandler *LoggerHandler
 	termHandler   *TermHandler
 }
@@ -52,7 +52,7 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 	})
 	app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))
 	app.Get("/ws/term", websocket.New(a.termHandler.Handler))
-	
+
 	if a.config.Auth.Enable {
 		app.Use(middleware.UserAuthMiddleware(
 			a.auth,
@@ -61,7 +61,7 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			middleware.AllowPathPrefixSkipper("/v1/auth/token_update"),
 		))
 	}
-	
+
 	v1 := app.Group("v1")
 	{
 		gIndex := v1.Group("index")
@@ -70,7 +70,7 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 				return c.SendString("hello world")
 			})
 		}
-		
+
 		gAuth := v1.Group("auth")
 		{
 			gAuth.Post("/login", a.authAPI.Login).Name("登录")
@@ -78,7 +78,7 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			gAuth.Post("/pass_update", a.authAPI.PassUpdate).Name("更新密码")
 			gAuth.Post("/token_update", a.authAPI.TokenUpdate).Name("更新 token")
 		}
-		
+
 		gContainer := v1.Group("container")
 		{
 			gContainer.Get("/version", a.containerAPI.Version).Name("获取 Docker 版本信息")
@@ -96,11 +96,11 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			gContainer.Post("/image_export", a.containerAPI.ImageExport).Name("导出镜像")
 			gContainer.Post("/network_create", a.containerAPI.NetworkCreate).Name("创建网络")
 			gContainer.Post("/network_delete", a.containerAPI.NetworkDelete).Name("删除网络")
-			gContainer.Post("/networks", a.containerAPI.NetworkList).Name("获取网络列表")
+			gContainer.Get("/networks", a.containerAPI.NetworkList).Name("获取网络列表")
 			gContainer.Get("/get_docker_registry_mirrors", a.containerAPI.GetDockerRegistryMirrors).Name("获取 Docker 镜像设置")
 			gContainer.Post("/set_docker_registry_mirrors", a.containerAPI.SetDockerRegistryMirrors).Name("更新 Docker 镜像设置")
 		}
-		
+
 		gHost := v1.Group("host")
 		{
 			gHost.Get("/host_info", a.hostAPI.HostInfo).Name("获取主机信息")
@@ -118,18 +118,19 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			gHost.Post("/set_dns_settings", a.hostAPI.SetDNSSettings).Name("更新 DNS 设置")
 			gHost.Get("/get_system_time", a.hostAPI.GetSystemTime).Name("获取系统时间")
 			gHost.Post("/set_system_time", a.hostAPI.SetSystemTime).Name("更新系统时间")
+			gHost.Get("/get_system_timezone_list", a.hostAPI.GetSystemTimezoneList).Name("获取系统时区列表")
 			gHost.Get("/get_system_timezone", a.hostAPI.GetSystemTimezone).Name("获取系统时区")
 			gHost.Post("/set_system_timezone", a.hostAPI.SetSystemTimezone).Name("更新系统时区")
 			gHost.Post("/reboot", a.hostAPI.Reboot).Name("重启系统")
 			gHost.Post("/shutdown", a.hostAPI.Shutdown).Name("关闭系统")
 		}
-		
+
 		gAudit := v1.Group("audit")
 		{
 			gAudit.Get("/query", a.auditAPI.AuditQuery).Name("获取审计日志")
 		}
 	}
-	
+
 }
 
 func (a *Router) Register(app *fiber.App) error {

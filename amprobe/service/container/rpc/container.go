@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 
 	"github.com/amuluze/amprobe/pkg/rpc"
 	"github.com/amuluze/amprobe/pkg/utils"
@@ -199,6 +200,7 @@ func (c ContainerService) NetworkList(ctx context.Context, args schema.NetworkLi
 	var reply model.Networks
 	err := c.RPCClient.Call(ctx, "NetworkList", args, &reply)
 	if err != nil {
+		slog.Error("NetworkList", "err", err)
 		return schema.NetworkListReply{}, err
 	}
 	var result schema.NetworkListReply
@@ -207,6 +209,7 @@ func (c ContainerService) NetworkList(ctx context.Context, args schema.NetworkLi
 		labels := make(map[string]string)
 		err := json.Unmarshal([]byte(v.Labels), &labels)
 		if err != nil {
+			slog.Error("json.Unmarshal", "err", err)
 			return schema.NetworkListReply{}, err
 		}
 		data = append(data, schema.Network{
@@ -220,7 +223,7 @@ func (c ContainerService) NetworkList(ctx context.Context, args schema.NetworkLi
 		})
 	}
 	countArgs := schema.NetworkCountArgs{}
-	var countReply schema.NetworkCountReply
+	countReply := schema.NetworkCountReply{}
 	err = c.RPCClient.Call(ctx, "NetworkCount", countArgs, &countReply)
 	if err != nil {
 		return schema.NetworkListReply{}, err

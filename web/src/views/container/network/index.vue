@@ -8,7 +8,7 @@
     <div class="am-network-operator">
         <el-card shadow="never">
             <el-button type="primary">创建网络</el-button>
-            <el-button type="warning">清理网络</el-button>
+            <!-- <el-button type="warning">清理网络</el-button> -->
         </el-card>
     </div>
     <el-card shadow="never">
@@ -16,10 +16,9 @@
             <el-table :data="data" :key="imageKey" highlight-current-row height="100%" stripe v-loading="loading">
                 <el-table-column prop="id" label="名称" align="center" width="120" fixed />
                 <el-table-column prop="name" label="模式" align="center" min-width="120" />
-                <el-table-column prop="number" label="子网" align="center" show-overflow-tooltip width="120" />
-                <el-table-column prop="tag" label="网关" align="center" show-overflow-tooltip width="120" />
-                <el-table-column prop="created" label="标签" align="center" width="200" />
-                <el-table-column prop="size" label="创建时间" align="center" width="120" />
+                <el-table-column prop="subnet" label="子网" align="center" show-overflow-tooltip width="120" />
+                <el-table-column prop="gateway" label="网关" align="center" show-overflow-tooltip width="120" />
+                <el-table-column prop="created" label="创建时间" align="center" width="200" />
                 <el-table-column label="操作" width="160" fixed="right" align="center">
                     <template #default="scope">
                         <el-button type="danger" plain size="small" @click="deleteImageByID(scope.row.id)">
@@ -46,7 +45,7 @@
     </el-card>
 </template>
 <script setup lang="ts">
-import { queryImages } from '@/api/container'
+import { queryNetworks } from '@/api/container'
 import { useTable } from '@/hooks/useTable'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
@@ -55,7 +54,7 @@ onMounted(() => {
 })
 
 const imageKey = ref(0)
-const { data, refresh, loading, pagination } = useTable(queryImages, {}, {})
+const { data, refresh, loading, pagination } = useTable(queryNetworks, {}, {})
 
 const deleteImageByID = (id: string) => {
     console.log(id)

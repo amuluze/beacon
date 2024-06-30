@@ -7,8 +7,8 @@
     </div>
     <div class="am-host-operator">
         <el-card shadow="never">
-            <el-button type="warning" @click="reboot">重启</el-button>
-            <el-button type="danger" @click="shutdown">关机</el-button>
+            <el-button type="warning" @click="rebootHost">重启</el-button>
+            <el-button type="danger" @click="shutdownHost">关机</el-button>
         </el-card>
     </div>
     <el-row :gutter="4" class="am-host-settings">
@@ -29,8 +29,10 @@
                 <el-divider />
                 <div class="am-system-settings__content">
                     <span>系统时区设置：</span>
-                    <span></span>
-                    <svg-icon icon-class="edit" />
+                    <span style="margin-right: 4px">
+                        <el-tag>{{ systemTimezone }}</el-tag>
+                    </span>
+                    <svg-icon icon-class="edit" style="cursor: pointer" @click="editSystemTimezone" />
                 </div>
             </el-card>
         </el-col>
@@ -40,15 +42,177 @@
                 <el-divider />
                 <div class="am-system-settings__content">
                     <span>系统时间设置：</span>
-                    <span></span>
-                    <svg-icon icon-class="edit" />
+                    <span style="margin-right: 4px">
+                        <el-tag>{{ systemTime }}</el-tag>
+                    </span>
+                    <svg-icon icon-class="edit" style="cursor: pointer" @click="editSystemTime" />
                 </div>
             </el-card>
         </el-col>
     </el-row>
+    <div class="am-host-edit-systemtime">
+        <el-drawer v-model="systemTimeDrawer" size="540" title="系统时间设置">
+            <div class="am-host-edit-systemtime__content">
+                <el-input v-model="systemTime" style="width: 240px" />
+                <el-button type="info" style="margin-left: 16px" @click="getClientTime">获取客户端时间</el-button>
+            </div>
+            <el-button type="default" size="default" plain @click="cancelSystemTimeEdit">取消</el-button>
+            <el-button type="primary" size="default" plain @click="confirmSystemTimeEdit">确定</el-button>
+        </el-drawer>
+    </div>
+    <div class="am-host-edit-systemtimezone">
+        <el-drawer v-model="systemTimezoneDrawer" size="540" title="系统时区设置">
+            <div class="am-host-edit-systemtimezone__content">
+                <el-select v-model="systemTimezone" style="width: 240px" filterable>
+                    <el-option
+                        v-for="item in timezoneOptions"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+                    />
+                </el-select>
+            </div>
+            <div class="am-host-edit-systemtimezone__operator">
+                <el-button type="default" size="default" plain @click="cancelSystemTimezoneEdit">取消</el-button>
+                <el-button type="primary" size="default" plain @click="confirmSystemTimezoneEdit">确定</el-button>
+            </div>
+        </el-drawer>
+    </div>
 </template>
 <script setup lang="ts">
-import { reboot, shutdown } from '@/api/system'
+import {
+    getSystemTime,
+    getSystemTimezone,
+    getSystemTimezoneList,
+    reboot,
+    setSystemTime,
+    setSystemTimezone,
+    shutdown
+} from '@/api/system'
+import { error, success } from '@/components/Message/message'
+import { SetSystemTimeArgs, SetSystemTimezoneArgs } from '@/interface/system'
+import { ComponentInternalInstance } from 'vue'
+
+const { proxy } = getCurrentInstance() as ComponentInternalInstance
+
+const rebootHost = () => {
+    reboot()
+        .then((res) => {
+            console.log(res)
+            success('重启成功')
+        })
+        .catch((err) => {
+            error('重启失败')
+            console.log(err)
+        })
+}
+
+const shutdownHost = () => {
+    shutdown()
+        .then((res) => {
+            console.log(res)
+            success('关机成功')
+        })
+        .catch((err) => {
+            console.log(err)
+            error('关机失败')
+        })
+}
+
+const systemTime = ref('')
+const systemTimezone = ref('')
+
+const querySystemTime = async () => {
+    // 获取系统时间
+    const { data } = await getSystemTime()
+    systemTime.value = data.system_time
+}
+
+const systemTimeDrawer = ref(false)
+const systemTimezoneDrawer = ref(false)
+const timezoneOptions = ref<
+    {
+        label: string
+        value: string
+    }[]
+>([])
+
+const editSystemTime = () => {
+    // 修改系统时间
+    systemTimeDrawer.value = true
+}
+
+const cancelSystemTimeEdit = () => {
+    // 取消修改系统时间
+    systemTimeDrawer.value = false
+}
+
+const getClientTime = () => {
+    // 获取客户端时间
+    console.log(new Date().toLocaleString())
+    systemTime.value = proxy?.$dayjs(new Date()).format('YYYY-MM-DD HH:mm:ss')
+}
+
+const confirmSystemTimeEdit = async () => {
+    // 确定修改系统时间
+    systemTimeDrawer.value = false
+    systemTime.value = proxy?.$dayjs(new Date()).format('YYYY-MM-DD HH:mm:ss')
+    console.log(systemTime.value)
+    let args: SetSystemTimeArgs = {
+        system_time: systemTime.value
+    }
+    const { data } = await setSystemTime(args)
+    console.log(data)
+    success('修改系统时间成功')
+}
+
+const editSystemTimezone = () => {
+    // 修改系统时区
+    systemTimezoneDrawer.value = true
+}
+
+const cancelSystemTimezoneEdit = () => {
+    // 取消修改系统时区
+    systemTimezoneDrawer.value = false
+}
+
+const confirmSystemTimezoneEdit = async () => {
+    // 确定修改系统时区
+    systemTimezoneDrawer.value = false
+    console.log(systemTimezone.value)
+    let args: SetSystemTimezoneArgs = {
+        system_timezone: systemTimezone.value
+    }
+    const { data } = await setSystemTimezone(args)
+    console.log(data)
+    success('修改系统时区成功')
+}
+
+const querySystemTimezone = async () => {
+    // 获取系统时区
+    const { data } = await getSystemTimezone()
+    systemTimezone.value = data.system_timezone
+}
+
+const querySystemTimezoneOptions = async () => {
+    // 获取系统时区选项
+    const { data } = await getSystemTimezoneList()
+    console.log(data)
+    console.log('zone list: ', data.system_timezone_list)
+    data.system_timezone_list.forEach((item) => {
+        timezoneOptions.value.push({
+            label: item,
+            value: item
+        })
+    })
+    console.log(timezoneOptions.value)
+}
+
+onMounted(() => {
+    querySystemTime()
+    querySystemTimezone()
+    querySystemTimezoneOptions()
+})
 </script>
 <style scoped lang="scss">
 @include b(host-header) {
@@ -119,11 +283,48 @@ import { reboot, shutdown } from '@/api/system'
     }
 
     border-radius: 4px;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
 }
 
-@include b(host-settings) {
+@include b(host-edit-systemtime) {
+    :deep(.el-drawer__header) {
+        margin-bottom: 0;
+    }
+
     @include e(content) {
+        margin-top: 16px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        margin-bottom: 32px;
+    }
+
+    @include e(operator) {
+        margin-top: 16px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+    }
+}
+
+@include b(host-edit-systemtimezone) {
+    :deep(.el-drawer__header) {
+        margin-bottom: 0;
+    }
+
+    @include e(content) {
+        margin-top: 16px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        margin-bottom: 32px;
+    }
+
+    @include e(operator) {
+        margin-top: 16px;
         display: flex;
         flex-direction: row;
         align-items: center;

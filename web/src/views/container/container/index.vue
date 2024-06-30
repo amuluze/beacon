@@ -8,7 +8,7 @@
     <div class="am-container-operator">
         <el-card shadow="never">
             <el-button type="primary" @click="drawer = true">创建容器</el-button>
-            <el-button type="warning">清理容器</el-button>
+            <!-- <el-button type="warning">清理容器</el-button> -->
         </el-card>
     </div>
     <!-- 表格主体 -->

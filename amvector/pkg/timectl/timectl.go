@@ -7,9 +7,10 @@ package timectl
 import (
 	"context"
 	"fmt"
-	"github.com/amuluze/amvector/pkg/utils"
 	"strconv"
 	"strings"
+
+	"github.com/amuluze/amvector/pkg/utils"
 )
 
 func GetTime(ctx context.Context) (int64, error) {
@@ -31,6 +32,14 @@ func SetTime(ctx context.Context, ts int64) error {
 		return err
 	}
 	return nil
+}
+
+func GetTimeZoneList(ctx context.Context) ([]string, error) {
+	tzList, err := utils.RunCommand(ctx, "timedatectl", "list-timezones")
+	if err != nil {
+		return []string{}, err
+	}
+	return strings.Split(strings.TrimSpace(tzList), "\n"), nil
 }
 
 func GetTimeZone(ctx context.Context) (string, error) {

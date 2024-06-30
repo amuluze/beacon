@@ -8,7 +8,7 @@
     <div class="am-host-operator">
         <el-card shadow="never">
             <span>时间密度：</span>
-            <el-select v-model="timeDensity" placeholder="Select" size="default" style="width: 240px">
+            <el-select v-model="timeDensity" placeholder="Select" size="default" style="width: 120px">
                 <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
         </el-card>
@@ -134,6 +134,7 @@ const renderCPU = async () => {
         start_time: dayjs().unix() - timeDensity.value,
         end_time: dayjs().unix()
     }
+
     console.log(param)
     const { data } = await queryCPUUsage(param)
     const cpuData = data.data
@@ -497,12 +498,12 @@ watch(
     }
 
     border-radius: 4px;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
 }
 @include b(host-content) {
     // background-color: #ffffff;
     width: 100%;
-    height: calc(100vh - 152px);
+    height: calc(100vh - 146px);
     overflow-y: auto;
 
     .el-row {

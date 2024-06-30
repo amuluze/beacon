@@ -33,6 +33,7 @@ type IHostService interface {
 	SetDNSSettings(ctx context.Context, args schema.SetDNSSettingsArgs) error
 	GetSystemTime(ctx context.Context, args schema.GetSystemTimeArgs) (schema.GetSystemTimeReply, error)
 	SetSystemTime(ctx context.Context, args schema.SetSystemTimeArgs) error
+	GetSystemTimezoneList(ctx context.Context, args schema.GetSystemTimezoneListArgs) (schema.GetSystemTimezoneListReply, error)
 	GetSystemTimezone(ctx context.Context, args schema.GetSystemTimezoneArgs) (schema.GetSystemTimezoneReply, error)
 	SetSystemTimezone(ctx context.Context, args schema.SetSystemTimezoneArgs) error
 	Reboot(ctx context.Context, args schema.RebootArgs) error
@@ -259,9 +260,19 @@ func (h HostService) SetSystemTime(ctx context.Context, args schema.SetSystemTim
 	}
 	return nil
 }
+
+func (h HostService) GetSystemTimezoneList(ctx context.Context, args schema.GetSystemTimezoneListArgs) (schema.GetSystemTimezoneListReply, error) {
+	var reply schema.GetSystemTimezoneListReply
+	err := h.RPCClient.Call(ctx, "GetSystemTimeZoneList", args, &reply)
+	if err != nil {
+		return schema.GetSystemTimezoneListReply{}, err
+	}
+	return reply, nil
+}
+
 func (h HostService) GetSystemTimezone(ctx context.Context, args schema.GetSystemTimezoneArgs) (schema.GetSystemTimezoneReply, error) {
 	var reply schema.GetSystemTimezoneReply
-	err := h.RPCClient.Call(ctx, "GetSystemTimezone", args, &reply)
+	err := h.RPCClient.Call(ctx, "GetSystemTimeZone", args, &reply)
 	if err != nil {
 		return schema.GetSystemTimezoneReply{}, err
 	}
@@ -269,7 +280,7 @@ func (h HostService) GetSystemTimezone(ctx context.Context, args schema.GetSyste
 }
 func (h HostService) SetSystemTimezone(ctx context.Context, args schema.SetSystemTimezoneArgs) error {
 	var reply schema.SetSystemTimezoneReply
-	err := h.RPCClient.Call(ctx, "SetSystemTimezone", args, &reply)
+	err := h.RPCClient.Call(ctx, "SetSystemTimeZone", args, &reply)
 	if err != nil {
 		return err
 	}

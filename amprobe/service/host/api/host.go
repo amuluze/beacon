@@ -124,7 +124,7 @@ func (a *HostAPI) NetUsage(ctx *fiber.Ctx) error {
 func (a *HostAPI) FilesSearch(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	var args schema.FilesSearchArgs
-	if err := fiberx.ParseBody(ctx, &args); err != nil {
+	if err := fiberx.ParseQuery(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.ErrBadRequest)
 	}
 	if err := validatex.ValidateStruct(args); err != nil {
@@ -199,6 +199,16 @@ func (a *HostAPI) SetSystemTime(ctx *fiber.Ctx) error {
 		return fiberx.Failure(ctx, err)
 	}
 	return fiberx.NoContent(ctx)
+}
+
+func (a *HostAPI) GetSystemTimezoneList(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	args := schema.GetSystemTimezoneListArgs{}
+	list, err := a.HostService.GetSystemTimezoneList(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.Success(ctx, list)
 }
 
 func (a *HostAPI) GetSystemTimezone(ctx *fiber.Ctx) error {

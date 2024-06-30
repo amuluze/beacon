@@ -25,7 +25,7 @@
                     <el-input type="password" v-model="password" style="width: 140px" placeholder="123456" />
                 </el-col>
                 <el-col :span="4">
-                    <el-button type="primary">连接</el-button>
+                    <el-button type="primary" @click="createConnection">连接</el-button>
                 </el-col>
             </el-row>
         </el-card>
@@ -35,10 +35,16 @@
     </el-card>
 </template>
 <script setup lang="ts">
+import { warning } from '@/components/Message/message'
+
 const host = ref('')
 const port = ref('')
 const username = ref('')
 const password = ref('')
+
+const createConnection = () => {
+    warning('该功能尚未实现')
+}
 </script>
 <style scoped lang="scss">
 @include b(host-header) {
@@ -126,7 +132,7 @@ const password = ref('')
 
 @include b(host-terminal) {
     width: 100%;
-    height: calc(100vh - 152px);
+    height: calc(100vh - 146px);
     overflow-y: auto;
 }
 </style>
