@@ -91,9 +91,7 @@ import {
 } from '@/api/system'
 import { error, success } from '@/components/Message/message'
 import { SetSystemTimeArgs, SetSystemTimezoneArgs } from '@/interface/system'
-import { ComponentInternalInstance } from 'vue'
-
-const { proxy } = getCurrentInstance() as ComponentInternalInstance
+import { dayjs } from 'element-plus'
 
 const rebootHost = () => {
     reboot()
@@ -150,13 +148,13 @@ const cancelSystemTimeEdit = () => {
 const getClientTime = () => {
     // 获取客户端时间
     console.log(new Date().toLocaleString())
-    systemTime.value = proxy?.$dayjs(new Date()).format('YYYY-MM-DD HH:mm:ss')
+    systemTime.value = dayjs(new Date()).format('YYYY-MM-DD HH:mm:ss')
 }
 
 const confirmSystemTimeEdit = async () => {
     // 确定修改系统时间
     systemTimeDrawer.value = false
-    systemTime.value = proxy?.$dayjs(new Date()).format('YYYY-MM-DD HH:mm:ss')
+    systemTime.value = dayjs(new Date()).format('YYYY-MM-DD HH:mm:ss')
     console.log(systemTime.value)
     let args: SetSystemTimeArgs = {
         system_time: systemTime.value

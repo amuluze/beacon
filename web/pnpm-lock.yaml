@@ -8,9 +8,6 @@ dependencies:
   axios:
     specifier: ^1.6.8
     version: 1.7.2
-  dayjs:
-    specifier: ^1.11.11
-    version: 1.11.11
   echarts:
     specifier: ^5.5.0
     version: 5.5.0
