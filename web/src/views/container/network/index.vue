@@ -126,11 +126,17 @@ const networkOptions = [
 
 const confirmCreateNetwork = async () => {
     drawer.value = false
+    const ls: Map<string, string> = new Map()
+    const labelsArr = networkLabels.value.split('\n')
+    labelsArr.forEach((label) => {
+        const [key, value] = label.split('=')
+        ls.set(key, value)
+    })
     let params: NetworkCreateArgs = {
         name: networkName.value,
         driver: networkMode.value,
         network_segment: networkSegment.value,
-        labels: networkLabels.value
+        labels: ls
     }
     console.log(params)
     const { data } = await createNetwork(params)

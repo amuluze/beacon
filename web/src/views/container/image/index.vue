@@ -63,7 +63,7 @@
     </el-card>
     <!-- 拉取镜像 -->
     <div class="am-image-pull">
-        <el-dialog v-model="imagePullDialog" title="拉取镜像" width="50%">
+        <el-dialog v-model="imagePullDialog" title="拉取镜像" width="50%" v-loading="imagePullLoading">
             <el-input v-model="imageNameForPull" placeholder="请输入镜像名称" />
             <el-button size="default" type="info" plain @click="confirmImagePull">确定</el-button>
         </el-dialog>
@@ -125,6 +125,7 @@ const deleteImageByID = (id: string) => {
                 message: '删除取消'
             })
         })
+    refresh()
 }
 
 const pruneImagesForce = () => {
@@ -136,14 +137,19 @@ const pruneImagesForce = () => {
     })
 }
 
+const imagePullLoading = ref(false)
 const imagePullDialog = ref(false)
 const imageNameForPull = ref('')
 const confirmImagePull = async () => {
+    imagePullLoading.value = true
     let params: PullImageArgs = {
         image_name: imageNameForPull.value
     }
-    await pullImage(params)
+    const { data } = await pullImage(params)
+    console.log(data)
+    imagePullLoading.value = false
     imagePullDialog.value = false
+    refresh()
 }
 
 const imageImportDialog = ref(false)

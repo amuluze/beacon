@@ -98,7 +98,7 @@ export interface NetworkCreateArgs {
     name: string
     driver: string
     network_segment: string
-    labels: string
+    labels: Map<string, string>
 }
 
 export interface NetworkCreateResult {

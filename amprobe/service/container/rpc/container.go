@@ -130,7 +130,7 @@ func (c ContainerService) ContainerStop(ctx context.Context, args schema.Contain
 
 func (c ContainerService) ContainerRemove(ctx context.Context, args schema.ContainerRemoveArgs) error {
 	var reply schema.ContainerRemoveReply
-	err := c.RPCClient.Call(ctx, "ContainerRemove", args, &reply)
+	err := c.RPCClient.Call(ctx, "ContainerDelete", args, &reply)
 	if err != nil {
 		return err
 	}
