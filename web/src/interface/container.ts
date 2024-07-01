@@ -16,6 +16,21 @@ export interface Container {
     memory_limit: number
 }
 
+export interface CreateContainerArgs {
+    container_name: string
+    image_name: string
+    network_id: string
+    network_mode: string
+    network_name: string
+    ports: string[]
+    volumes: string[]
+    labels: Map<string, string>
+}
+
+export interface CreateContainerResult {
+    container_id: string
+}
+
 export interface StartContainerArgs {
     container_id: string
 }
@@ -45,6 +60,12 @@ export interface Image {
     number: number
 }
 
+export interface PullImageArgs {
+    image_name: string
+}
+
+export interface PullImageResult {}
+
 export interface RemoveImageArgs {
     image_id: string
 }
@@ -72,6 +93,23 @@ export interface NetworkQueryResult {
     page: number
     size: number
 }
+
+export interface NetworkCreateArgs {
+    name: string
+    driver: string
+    network_segment: string
+    labels: string
+}
+
+export interface NetworkCreateResult {
+    network_id: string
+}
+
+export interface NetworkDeleteArgs {
+    network_id: string
+}
+
+export interface NetworkDeleteResult {}
 
 export interface DockerInfo {
     docker_version: string

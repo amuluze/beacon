@@ -25,7 +25,7 @@
                     <el-input type="password" v-model="password" style="width: 140px" placeholder="123456" />
                 </el-col>
                 <el-col :span="4">
-                    <el-button type="primary" @click="createConnection">连接</el-button>
+                    <el-button type="primary" plain @click="createConnection">连接</el-button>
                 </el-col>
             </el-row>
         </el-card>

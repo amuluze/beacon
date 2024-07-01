@@ -7,7 +7,7 @@
     </div>
     <div class="am-container-operator">
         <el-card shadow="never">
-            <el-button type="primary" @click="drawer = true">创建容器</el-button>
+            <el-button type="primary" plain @click="drawer = true">创建容器</el-button>
             <!-- <el-button type="warning">清理容器</el-button> -->
         </el-card>
     </div>
@@ -163,29 +163,108 @@
     </el-dialog>
     <!-- 创建容器 -->
     <div class="am-container-create">
-        <el-drawer v-model="drawer" size="540" title="创建容器">
+        <el-drawer v-model="drawer" size="50%" title="创建容器">
+            <el-form label-width="120px" label-position="left">
+                <el-form-item label="名称">
+                    <el-input v-model="containerName" placeholder="请输入名称" />
+                </el-form-item>
+                <el-form-item label="镜像">
+                    <el-select v-model="imageName" style="width: 240px" placeholder="请选择镜像">
+                        <el-option
+                            v-for="item in imageNameOptions"
+                            :key="item.value"
+                            :label="item.label"
+                            :value="item.value"
+                        />
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="网络">
+                    <el-select v-model="networkName" style="width: 240px" placeholder="请选择镜像">
+                        <el-option
+                            v-for="item in networkNameOptions"
+                            :key="item.value"
+                            :label="item.label"
+                            :value="item.value"
+                        />
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="端口">
+                    <span v-if="ports.length === 0">可以添加端口</span>
+                    <el-form :inline="true" :model="ports">
+                        <el-form-item v-for="(port, index) in ports" :key="index">
+                            <el-input v-mode="port.hostPort" style="width: 120px" placeholder="服务器端口" />
+                            <el-input v-mode="port.containerPort" style="width: 120px" placeholder="容器端口" />
+                            <el-button type="danger" text @click="deletePort(index)">
+                                <svg-icon icon-class="close" />
+                            </el-button>
+                        </el-form-item>
+                    </el-form>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" text @click="addPort">添加端口<svg-icon icon-class="plus" /></el-button>
+                </el-form-item>
+                <el-form-item label="目录/文件挂载">
+                    <span v-if="volumes.length === 0">可以添加目录/文件挂载</span>
+                    <el-form :inline="true" :model="volumes">
+                        <el-form-item v-for="(volume, index) in volumes" :key="index">
+                            <el-input v-mode="volume.hostPath" style="width: 260px" placeholder="服务器目录/文件" />
+                            <el-input v-mode="volume.containerPath" style="width: 200px" placeholder="容器目录/文件" />
+                            <el-button type="danger" text @click="deleteVolume(index)">
+                                <svg-icon icon-class="close" />
+                            </el-button>
+                        </el-form-item>
+                    </el-form>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" text @click="addVolume">
+                        添加目录/文件挂载<svg-icon icon-class="plus" />
+                    </el-button>
+                </el-form-item>
+                <el-form-item label="标签(可选)">
+                    <el-input
+                        v-model="containerLabels"
+                        type="textarea"
+                        :rows="4"
+                        placeholder="一行一个，例如:&#10;key1=value1&#10;key2=value2"
+                    />
+                </el-form-item>
+            </el-form>
             <div class="am-container-create__operator">
-                <el-button type="default" size="default" plain>取消</el-button>
-                <el-button type="primary" size="default" plain>确定</el-button>
+                <el-button type="default" size="default" plain @click="drawer = false">取消</el-button>
+                <el-button type="primary" size="default" plain @click="confirmCreateContainer">确定</el-button>
             </div>
         </el-drawer>
     </div>
 </template>
 
 <script setup lang="ts">
-import { queryContainers, removeContainer, restartContainer, startContainer, stopContainer } from '@/api/container'
+import {
+    createContainer,
+    queryContainers,
+    queryImages,
+    queryNetworks,
+    removeContainer,
+    restartContainer,
+    startContainer,
+    stopContainer
+} from '@/api/container'
+import { success } from '@/components/Message/message'
 import { Websocket } from '@/components/Websocket'
 import { useTable } from '@/hooks/useTable'
 import {
+    CreateContainerArgs,
     RemoveContainerArgs,
     RestartContainerArgs,
     StartContainerArgs,
     StopContainerArgs
 } from '@/interface/container.ts'
+import useStore from '@/store'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
-
+const store = useStore()
 onMounted(() => {
     refresh()
+    initNetworkOptions()
+    initImageOptions()
 })
 
 const params = {}
@@ -301,6 +380,131 @@ const downloadLog = () => {
 }
 
 const drawer = ref(false)
+const containerName = ref('')
+const imageName = ref('')
+const imageNameOptions = ref<
+    {
+        value: string
+        label: string
+    }[]
+>([])
+
+const initImageOptions = async () => {
+    const params = {
+        page: 1,
+        size: 100
+    }
+    const { data } = await queryImages(params)
+    store.app.setImages(data.data)
+    imageNameOptions.value = data.data.map((item) => {
+        return {
+            value: item.name + ':' + item.tag,
+            label: item.name + ':' + item.tag
+        }
+    })
+}
+
+const networkName = ref('')
+const networkNameOptions = ref<
+    {
+        value: string
+        label: string
+    }[]
+>([])
+const initNetworkOptions = async () => {
+    const params = {
+        page: 1,
+        size: 100
+    }
+    const { data } = await queryNetworks(params)
+    store.app.setNetworks(data.data)
+    networkNameOptions.value = data.data.map((item) => {
+        return {
+            value: item.name,
+            label: item.name
+        }
+    })
+}
+
+const ports = ref<
+    {
+        hostPort: string
+        containerPort: string
+    }[]
+>([])
+
+const addPort = () => {
+    ports.value.push({
+        hostPort: '',
+        containerPort: ''
+    })
+}
+
+const deletePort = (index: number) => {
+    ports.value.splice(index, 1)
+}
+
+const volumes = ref<
+    {
+        hostPath: string
+        containerPath: string
+    }[]
+>([])
+
+const addVolume = () => {
+    volumes.value.push({
+        hostPath: '',
+        containerPath: ''
+    })
+}
+
+const deleteVolume = (index: number) => {
+    volumes.value.splice(index, 1)
+}
+
+const containerLabels = ref('')
+
+const confirmCreateContainer = async () => {
+    let ps: string[] = []
+    let vs: string[] = []
+    let ls: Map<string, string> = new Map()
+    let network_mode = ''
+    let network_id = ''
+    for (let i = 0; i < ports.value.length; i++) {
+        ps.push(`${ports.value[i].hostPort}:${ports.value[i].containerPort}`)
+    }
+    for (let i = 0; i < volumes.value.length; i++) {
+        vs.push(`${volumes.value[i].hostPath}:${volumes.value[i].containerPath}`)
+    }
+    if (containerLabels.value) {
+        const labelArr = containerLabels.value.split('\n')
+        for (let i = 0; i < labelArr.length; i++) {
+            const label = labelArr[i].split(':')
+            ls.set(label[0], label[1])
+        }
+    }
+    store.app.networks
+        .filter((item) => item.name === networkName.value)
+        .forEach((item) => {
+            if (item.name == networkName.value) {
+                network_mode = item.driver
+                network_id = item.id
+            }
+        })
+    const params: CreateContainerArgs = {
+        container_name: containerName.value,
+        image_name: imageName.value,
+        network_name: networkName.value,
+        network_mode: network_mode,
+        network_id: network_id,
+        ports: ps,
+        volumes: vs,
+        labels: ls
+    }
+    const { data } = await createContainer(params)
+    console.log('container id: ', data.container_id)
+    success('容器创建成功')
+}
 </script>
 
 <style scoped lang="scss">
@@ -367,5 +571,13 @@ const drawer = ref(false)
     width: 100%;
     height: calc(100vh - 230px);
     overflow-y: auto;
+}
+
+@include b(container-create) {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    height: 100%;
+    width: 100%;
 }
 </style>

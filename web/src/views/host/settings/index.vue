@@ -7,8 +7,8 @@
     </div>
     <div class="am-host-operator">
         <el-card shadow="never">
-            <el-button type="warning" @click="rebootHost">重启</el-button>
-            <el-button type="danger" @click="shutdownHost">关机</el-button>
+            <el-button type="warning" plain @click="rebootHost">重启</el-button>
+            <el-button type="danger" plain @click="shutdownHost">关机</el-button>
         </el-card>
     </div>
     <el-row :gutter="4" class="am-host-settings">

@@ -8,7 +8,7 @@
     <div class="am-host-operator">
         <el-card shadow="never">
             <el-dropdown>
-                <el-button type="primary"> 新建 <svg-icon icon-class="down" /> </el-button>
+                <el-button type="primary" plain> 新建 <svg-icon icon-class="down" /> </el-button>
                 <template #dropdown>
                     <el-dropdown-menu>
                         <el-dropdown-item>
@@ -24,16 +24,16 @@
                 </template>
             </el-dropdown>
             <el-button-group class="ml-4" style="margin-right: 16px">
-                <el-button type="info" style="color: #105eeb" @click="goBack">
+                <el-button type="primary" @click="goBack">
                     <svg-icon icon-class="back"></svg-icon>
                 </el-button>
-                <el-button type="info" style="color: #105eeb" @click="goNext">
+                <el-button type="primary" @click="goNext">
                     <svg-icon icon-class="next"></svg-icon>
                 </el-button>
             </el-button-group>
             <el-button-group class="ml-4">
-                <el-button type="primary" @click="uploadFile"> 上传 </el-button>
-                <el-button type="primary" @click="downloadFile"> 下载 </el-button>
+                <el-button type="primary" plain @click="uploadFile"> 上传 </el-button>
+                <el-button type="primary" plain @click="downloadFile"> 下载 </el-button>
             </el-button-group>
         </el-card>
     </div>

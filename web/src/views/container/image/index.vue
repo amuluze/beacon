@@ -7,9 +7,9 @@
     </div>
     <div class="am-image-operator">
         <el-card shadow="never">
-            <el-button type="primary">拉取镜像</el-button>
-            <el-button type="primary">导入镜像</el-button>
-            <el-button type="warning" @click="pruneImagesForce">清理虚悬镜像</el-button>
+            <el-button type="primary" plain @click="imagePullDialog = true">拉取镜像</el-button>
+            <el-button type="primary" plain @click="imageImportDialog = true">导入镜像</el-button>
+            <el-button type="warning" plain @click="pruneImagesForce">清理虚悬镜像</el-button>
         </el-card>
     </div>
     <el-card shadow="never">
@@ -38,7 +38,7 @@
                 <el-table-column prop="size" label="镜像大小" align="center" width="120" sortable />
                 <el-table-column label="操作" width="160" fixed="right" align="center">
                     <template #default="scope">
-                        <el-button type="danger" plain size="small"> 导出 </el-button>
+                        <!-- <el-button type="danger" plain size="small"> 导出 </el-button> -->
                         <el-button type="danger" plain size="small" @click="deleteImageByID(scope.row.id)">
                             删除
                         </el-button>
@@ -61,12 +61,32 @@
             </el-config-provider>
         </div>
     </el-card>
+    <!-- 拉取镜像 -->
+    <div class="am-image-pull">
+        <el-dialog v-model="imagePullDialog" title="拉取镜像" width="50%">
+            <el-input v-model="imageNameForPull" placeholder="请输入镜像名称" />
+            <el-button size="default" type="info" plain @click="confirmImagePull">确定</el-button>
+        </el-dialog>
+    </div>
+
+    <!-- 导入镜像 -->
+    <div class="am-image-import">
+        <el-dialog v-model="imageImportDialog" title="导入镜像" width="50%">
+            <el-upload drag action="/app/api/v1/container/image_import" multiple>
+                <svg-icon icon-class="upload" />
+                <div class="el-upload__text">Drop file here or <em>click to upload</em></div>
+                <template #tip>
+                    <div class="el-upload__tip">tar/tar.gz files</div>
+                </template>
+            </el-upload>
+        </el-dialog>
+    </div>
 </template>
 
 <script setup lang="ts">
-import { pruneImages, queryImages, removeImage } from '@/api/container'
+import { pruneImages, pullImage, queryImages, removeImage } from '@/api/container'
 import { useTable } from '@/hooks/useTable'
-import { RemoveImageArgs } from '@/interface/container.ts'
+import { PullImageArgs, RemoveImageArgs } from '@/interface/container.ts'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
 onMounted(() => {
@@ -115,6 +135,18 @@ const pruneImagesForce = () => {
         })
     })
 }
+
+const imagePullDialog = ref(false)
+const imageNameForPull = ref('')
+const confirmImagePull = async () => {
+    let params: PullImageArgs = {
+        image_name: imageNameForPull.value
+    }
+    await pullImage(params)
+    imagePullDialog.value = false
+}
+
+const imageImportDialog = ref(false)
 </script>
 
 <style scoped lang="scss">
@@ -185,5 +217,41 @@ const pruneImagesForce = () => {
     width: 100%;
     height: calc(100vh - 230px);
     overflow-y: auto;
+}
+
+@include b(image-pull) {
+    :deep(.el-dialog) {
+        .el-dialog__body {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            .el-input {
+                width: 90%;
+            }
+        }
+    }
+}
+
+@include b(image-import) {
+    :deep(.el-upload) {
+        .el-upload-dragger {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            .svg-icon {
+                font-size: 67px;
+                // color: #c0c4cc;
+            }
+            .el-upload__text {
+                margin-top: 16px;
+                color: #606266;
+            }
+        }
+    }
 }
 </style>

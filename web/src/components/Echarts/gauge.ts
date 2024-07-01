@@ -15,8 +15,9 @@ export const cpuGaugeOptions: EChartsOption = {
                 roundCap: true,
                 clip: false,
                 itemStyle: {
-                    borderWidth: 1,
-                    borderColor: '#464646'
+                    color: '#FAC858'
+                    // borderWidth: 1,
+                    // borderColor: '#464646'
                 }
             },
             axisLine: {
@@ -69,8 +70,9 @@ export const memGaugeOptions: EChartsOption = {
                 roundCap: true,
                 clip: false,
                 itemStyle: {
-                    borderWidth: 1,
-                    borderColor: '#464646'
+                    color: '#92CC76'
+                    // borderWidth: 1,
+                    // borderColor: '#464646'
                 }
             },
             axisLine: {
@@ -123,8 +125,9 @@ export const diskGaugeOptions: EChartsOption = {
                 roundCap: true,
                 clip: false,
                 itemStyle: {
-                    borderWidth: 1,
-                    borderColor: '#464646'
+                    color: '#5470C6'
+                    // borderWidth: 1,
+                    // borderColor: '#464646'
                 }
             },
             axisLine: {
