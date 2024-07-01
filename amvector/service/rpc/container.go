@@ -6,10 +6,11 @@ package rpc
 
 import (
 	"context"
+
 	"github.com/amuluze/amutool/docker"
-	
+
 	"github.com/amuluze/amvector/service/model"
-	
+
 	"github.com/amuluze/amvector/service/schema"
 )
 
@@ -37,6 +38,22 @@ func (s *Service) ContainerCount(ctx context.Context, args schema.QueryCountArgs
 }
 
 func (s *Service) ContainerCreate(ctx context.Context, args schema.ContainerCreateArgs, reply *schema.ContainerCreateReply) error {
+	var containerID string
+	var err error
+	if containerID, err = s.Manager.CreateContainer(
+		ctx,
+		args.ImageName,
+		args.NetworkID,
+		args.NetworkMode,
+		args.NetworkName,
+		args.ContainerName,
+		args.Ports,
+		args.Volumes,
+		args.Labels,
+	); err != nil {
+		return err
+	}
+	reply.ContainerID = containerID
 	return nil
 }
 

@@ -33,6 +33,21 @@ type QueryCountReply struct {
 	Count int
 }
 
+type ContainerCreateArgs struct {
+	ContainerName string            `json:"container_name" validate:"required"`
+	ImageName     string            `json:"image_name" validate:"required"`
+	NetworkMode   string            `json:"network_mode" validate:"required"`
+	NetworkID     string            `json:"network_id"`
+	NetworkName   string            `json:"network_name"`
+	Ports         []string          `json:"ports"`
+	Volumes       []string          `json:"volumes"`
+	Labels        map[string]string `json:"labels"`
+}
+
+type ContainerCreateReply struct {
+	ContainerID string
+}
+
 type ContainerStartArgs struct {
 	ContainerID string `json:"container_id" validate:"required"`
 }
@@ -117,10 +132,10 @@ type ImageCountReply struct {
 }
 
 type NetworkCreateArgs struct {
-	Name           string
-	Driver         string
-	NetworkSegment string
-	Labels         map[string]string
+	Name           string            `json:"name" validate:"required"`
+	Driver         string            `json:"driver" validate:"required"`
+	NetworkSegment string            `json:"network_segment"`
+	Labels         map[string]string `json:"labels"`
 }
 
 type NetworkCreateReply struct {

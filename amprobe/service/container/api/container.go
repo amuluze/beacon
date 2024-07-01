@@ -35,7 +35,20 @@ func (a *ContainerAPI) Version(ctx *fiber.Ctx) error {
 }
 
 func (a *ContainerAPI) ContainerCreate(ctx *fiber.Ctx) error {
-	return nil
+	c := ctx.UserContext()
+	var args schema.ContainerCreateArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	slog.Info("args", "args", args)
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	container, err := a.ContainerService.ContainerCreate(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.Success(ctx, container)
 }
 
 func (a *ContainerAPI) ContainerList(ctx *fiber.Ctx) error {
@@ -161,6 +174,7 @@ func (a *ContainerAPI) ImagePull(ctx *fiber.Ctx) error {
 	return fiberx.NoContent(ctx)
 }
 
+// ImageImport 包含两部分，文件上传和加载
 func (a *ContainerAPI) ImageImport(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	var args schema.ImageImportArgs
@@ -178,6 +192,7 @@ func (a *ContainerAPI) ImageImport(ctx *fiber.Ctx) error {
 	return fiberx.NoContent(ctx)
 }
 
+// ImageExport 包含两步，将镜像导出为压缩文件，并提供下载
 func (a *ContainerAPI) ImageExport(ctx *fiber.Ctx) error {
 	return nil
 }

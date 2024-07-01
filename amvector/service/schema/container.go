@@ -19,9 +19,18 @@ type QueryCountReply struct {
 }
 
 type ContainerCreateArgs struct {
+	ContainerName string
+	ImageName     string
+	NetworkID     string
+	NetworkMode   string
+	NetworkName   string
+	Ports         []string
+	Volumes       []string
+	Labels        map[string]string
 }
 
 type ContainerCreateReply struct {
+	ContainerID string
 }
 
 type ContainerDeleteArgs struct {

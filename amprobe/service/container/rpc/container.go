@@ -22,6 +22,7 @@ var ContainerServiceSet = wire.NewSet(NewContainerService, wire.Bind(new(IContai
 type IContainerService interface {
 	Version(ctx context.Context) (schema.Docker, error)
 	ContainerList(ctx context.Context, args schema.ContainerQueryArgs) (schema.ContainerQueryRely, error)
+	ContainerCreate(ctx context.Context, args schema.ContainerCreateArgs) (schema.ContainerCreateReply, error)
 	ContainerStart(ctx context.Context, args schema.ContainerStartArgs) error
 	ContainerStop(ctx context.Context, args schema.ContainerStopArgs) error
 	ContainerRemove(ctx context.Context, args schema.ContainerRemoveArgs) error
@@ -100,6 +101,15 @@ func (c ContainerService) ContainerList(ctx context.Context, args schema.Contain
 	return result, nil
 }
 
+func (c ContainerService) ContainerCreate(ctx context.Context, args schema.ContainerCreateArgs) (schema.ContainerCreateReply, error) {
+	var reply schema.ContainerCreateReply
+	err := c.RPCClient.Call(ctx, "ContainerCreate", args, &reply)
+	if err != nil {
+		return schema.ContainerCreateReply{}, err
+	}
+	return reply, nil
+}
+
 func (c ContainerService) ContainerStart(ctx context.Context, args schema.ContainerStartArgs) error {
 	var reply schema.ContainerStartReply
 	err := c.RPCClient.Call(ctx, "ContainerStart", args, &reply)
@@ -168,6 +178,11 @@ func (c ContainerService) ImageList(ctx context.Context, args schema.ImageQueryA
 }
 
 func (c ContainerService) ImagePull(ctx context.Context, args schema.ImagePullArgs) error {
+	var reply schema.ImagePullReply
+	err := c.RPCClient.Call(ctx, "ImagePull", args, &reply)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
