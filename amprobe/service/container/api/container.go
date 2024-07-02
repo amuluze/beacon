@@ -5,6 +5,7 @@
 package api
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/amuluze/amprobe/service/container/rpc"
@@ -177,16 +178,18 @@ func (a *ContainerAPI) ImagePull(ctx *fiber.Ctx) error {
 // ImageImport 包含两部分，文件上传和加载
 func (a *ContainerAPI) ImageImport(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
-	var args schema.ImageImportArgs
-	if err := fiberx.ParseBody(ctx, &args); err != nil {
-		return fiberx.Failure(ctx, err)
-	}
-	slog.Info("args", "args", args)
-	if err := validatex.ValidateStruct(&args); err != nil {
-		return fiberx.Failure(ctx, err)
-	}
-	err := a.ContainerService.ImageImport(c, args)
+	file, err := ctx.FormFile("file")
 	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	// save file
+	if err := ctx.SaveFile(file, fmt.Sprintf("/tmp/%s", file.Filename)); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	args := schema.ImageImportArgs{
+		SourceFile: fmt.Sprintf("/tmp/%s", file.Filename),
+	}
+	if err := a.ContainerService.ImageImport(c, args); err != nil {
 		return fiberx.Failure(ctx, err)
 	}
 	return fiberx.NoContent(ctx)
@@ -194,7 +197,19 @@ func (a *ContainerAPI) ImageImport(ctx *fiber.Ctx) error {
 
 // ImageExport 包含两步，将镜像导出为压缩文件，并提供下载
 func (a *ContainerAPI) ImageExport(ctx *fiber.Ctx) error {
-	return nil
+	c := ctx.UserContext()
+	var args schema.ImageExportArgs
+	if err := fiberx.ParseQuery(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	slog.Info("args", "args", args)
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	if err := a.ContainerService.ImageExport(c, args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return ctx.Download(fmt.Sprintf("/tmp/%s.tar", args.ImageName))
 }
 
 func (a *ContainerAPI) ImageRemove(ctx *fiber.Ctx) error {

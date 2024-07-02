@@ -231,7 +231,15 @@
             </el-form>
             <div class="am-container-create__operator">
                 <el-button type="default" size="default" plain @click="drawer = false">取消</el-button>
-                <el-button type="primary" size="default" plain @click="confirmCreateContainer">确定</el-button>
+                <el-button
+                    type="primary"
+                    size="default"
+                    plain
+                    @click="confirmCreateContainer"
+                    v-loading="createContainerLoading"
+                >
+                    确定
+                </el-button>
             </div>
         </el-drawer>
     </div>
@@ -268,8 +276,6 @@ onMounted(() => {
 })
 
 const params = {}
-
-console.log('.....', params)
 const { data, refresh, loading, pagination } = useTable(queryContainers, {}, {})
 
 const dialogVisible = ref(false)
@@ -335,24 +341,32 @@ const deleteContainerByID = (container_id: string) => {
     ElMessageBox.confirm('该操作会强制删除该容器. 继续吗?', '警告', {
         confirmButtonText: 'OK',
         cancelButtonText: 'Cancel',
-        type: 'warning'
-    })
-        .then(() => {
-            const params: RemoveContainerArgs = {
-                container_id: container_id
-            }
-            removeContainer(params)
-                .then(() => {
-                    ElMessage({
-                        type: 'success',
-                        message: '删除完成'
+        type: 'warning',
+        beforeClose: (action, instance, done) => {
+            if (action === 'confirm') {
+                instance.confirmButtonLoading = true
+                const params: RemoveContainerArgs = {
+                    container_id: container_id
+                }
+                removeContainer(params)
+                    .then(() => {
+                        ElMessage({
+                            type: 'success',
+                            message: '删除完成'
+                        })
                     })
-                })
-                .finally(() => {
-                    refresh()
-                    containerKey.value += 1
-                })
-        })
+                    .finally(() => {
+                        instance.confirmButtonLoading = false
+                        done()
+                        refresh()
+                        containerKey.value += 1
+                    })
+            } else {
+                done()
+            }
+        }
+    })
+        .then(() => {})
         .catch(() => {
             ElMessage({
                 type: 'info',
@@ -464,7 +478,9 @@ const deleteVolume = (index: number) => {
 
 const containerLabels = ref('')
 
+const createContainerLoading = ref(false)
 const confirmCreateContainer = async () => {
+    createContainerLoading.value = true
     let ps: string[] = []
     let vs: string[] = []
     let ls: Map<string, string> = new Map()
@@ -504,6 +520,9 @@ const confirmCreateContainer = async () => {
     const { data } = await createContainer(params)
     console.log('container id: ', data.container_id)
     success('容器创建成功')
+    createContainerLoading.value = false
+    drawer.value = false
+    refresh()
 }
 </script>
 

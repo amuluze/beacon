@@ -149,6 +149,14 @@ func (a *HostAPI) FileDelete(ctx *fiber.Ctx) error {
 	return nil
 }
 
+func (a *HostAPI) FileCreate(ctx *fiber.Ctx) error {
+	return nil
+}
+
+func (a *HostAPI) FolderCreate(ctx *fiber.Ctx) error {
+	return nil
+}
+
 func (a *HostAPI) GetDNSSettings(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	args := schema.GetDNSSettingsArgs{}

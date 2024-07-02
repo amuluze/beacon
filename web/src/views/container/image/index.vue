@@ -63,9 +63,11 @@
     </el-card>
     <!-- 拉取镜像 -->
     <div class="am-image-pull">
-        <el-dialog v-model="imagePullDialog" title="拉取镜像" width="50%" v-loading="imagePullLoading">
+        <el-dialog v-model="imagePullDialog" title="拉取镜像" width="50%">
             <el-input v-model="imageNameForPull" placeholder="请输入镜像名称" />
-            <el-button size="default" type="info" plain @click="confirmImagePull">确定</el-button>
+            <el-button size="default" type="info" plain @click="confirmImagePull" v-loading="imagePullLoading">
+                确定
+            </el-button>
         </el-dialog>
     </div>
 
@@ -101,24 +103,32 @@ const deleteImageByID = (id: string) => {
     ElMessageBox.confirm('该操作会删除该镜像. 继续吗?', '警告', {
         confirmButtonText: 'OK',
         cancelButtonText: 'Cancel',
-        type: 'warning'
-    })
-        .then(() => {
-            const params: RemoveImageArgs = {
-                image_id: id
-            }
-            removeImage(params)
-                .then(() => {
-                    ElMessage({
-                        type: 'success',
-                        message: '删除完成'
+        type: 'warning',
+        beforeClose: (action, instance, done) => {
+            if (action === 'confirm') {
+                instance.confirmButtonLoading = true
+                const params: RemoveImageArgs = {
+                    image_id: id
+                }
+                removeImage(params)
+                    .then(() => {
+                        ElMessage({
+                            type: 'success',
+                            message: '删除完成'
+                        })
                     })
-                })
-                .finally(() => {
-                    refresh()
-                    imageKey.value += 1
-                })
-        })
+                    .finally(() => {
+                        instance.confirmButtonLoading = false
+                        done()
+                        refresh()
+                        imageKey.value += 1
+                    })
+            } else {
+                done()
+            }
+        }
+    })
+        .then(() => {})
         .catch(() => {
             ElMessage({
                 type: 'info',

@@ -75,7 +75,15 @@
             </div>
             <div class="am-network-create__operator">
                 <el-button type="default" size="default" plain @click="drawer = false">取消</el-button>
-                <el-button type="primary" size="default" plain @click="confirmCreateNetwork">确定</el-button>
+                <el-button
+                    type="primary"
+                    size="default"
+                    plain
+                    @click="confirmCreateNetwork"
+                    v-loading="createNetworkLoading"
+                >
+                    确定
+                </el-button>
             </div>
         </el-drawer>
     </div>
@@ -124,8 +132,9 @@ const networkOptions = [
     // }
 ]
 
+const createNetworkLoading = ref(false)
 const confirmCreateNetwork = async () => {
-    drawer.value = false
+    createNetworkLoading.value = true
     const ls: Map<string, string> = new Map()
     const labelsArr = networkLabels.value.split('\n')
     labelsArr.forEach((label) => {
@@ -141,6 +150,8 @@ const confirmCreateNetwork = async () => {
     console.log(params)
     const { data } = await createNetwork(params)
     console.log(data.network_id)
+    createNetworkLoading.value = false
+    drawer.value = false
     success('创建成功')
     refresh()
 }

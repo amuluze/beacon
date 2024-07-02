@@ -26,3 +26,25 @@ type DirSizeArgs struct {
 type DirSizeReply struct {
 	Size int64
 }
+
+type FileCreateArgs struct {
+	Path     string `json:"path" validate:"required"`
+	FileName string `json:"file_name" validate:"required"`
+}
+
+type FileCreateReply struct{}
+
+type FolderCreateArgs struct {
+	Path       string `json:"path" validate:"required"`
+	FolderName string `json:"folder_name" validate:"required"`
+}
+
+type FolderCreateReply struct{}
+
+type FileUploadArgs struct{}
+
+type FileUploadReply struct{}
+
+type FileDownloadArgs struct{}
+
+type FileDownloadReply struct{}

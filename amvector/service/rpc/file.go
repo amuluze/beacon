@@ -48,3 +48,32 @@ func (s *Service) DirSize(ctx context.Context, args schema.DirSizeArgs, reply *s
 	reply.Size = size
 	return nil
 }
+
+func (s *Service) FileCreate(ctx context.Context, args schema.FileCreateArgs, reply *schema.FileCreateReply) error {
+	filePath := filepath.Join(args.Path, args.FileName)
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		_, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, os.FileMode(0755))
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return nil
+}
+
+func (s *Service) FolderCreate(ctx context.Context, args schema.FolderCreateArgs, reply *schema.FolderCreateReply) error {
+	folderPath := filepath.Join(args.Path, args.FolderName)
+	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
+		return os.Mkdir(folderPath, os.FileMode(0755))
+	}
+	return nil
+}
+
+func (s *Service) FileUpload(ctx context.Context, args schema.FileUploadArgs, reply *schema.FileUploadReply) error {
+
+	return nil
+}
+
+func (s *Service) FileDownload(ctx context.Context, args schema.FileDownloadArgs, reply *schema.FileDownloadReply) error {
+	return nil
+}

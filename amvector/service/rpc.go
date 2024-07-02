@@ -5,12 +5,15 @@
 package service
 
 import (
+	"fmt"
+	"io"
+	"net"
+
 	"github.com/amuluze/amutool/database"
 	"github.com/amuluze/amutool/docker"
 	"github.com/amuluze/amvector/service/rpc"
 	"github.com/smallnest/rpcx/server"
 	"github.com/smallnest/rpcx/share"
-	"net"
 )
 
 type Server struct {
@@ -20,7 +23,7 @@ type Server struct {
 
 func NewRPCServer(config *Config, db *database.DB) (*Server, error) {
 	srv := server.NewServer()
-	p := server.NewFileTransfer("0.0.0.0:9527", uploadFileHandler, downloadFileHandler, 1000)
+	p := server.NewFileTransfer("0.0.0.0:9527", UploadFileHandler, DownloadFileHandler, 1000)
 	srv.EnableFileTransfer(share.SendFileServiceName, p)
 	manager, err := docker.NewManager()
 	if err != nil {
@@ -47,10 +50,17 @@ func (s *Server) Stop() error {
 	return s.server.Close()
 }
 
-func uploadFileHandler(conn net.Conn, args *share.FileTransferArgs) {
+func UploadFileHandler(conn net.Conn, args *share.FileTransferArgs) {
+	fmt.Printf("received file name: %s, size: %d\n", args.FileName, args.FileSize)
+	data, err := io.ReadAll(conn)
+	if err != nil {
+		fmt.Printf("error read: %v\n", err)
+		return
+	}
+	fmt.Printf("file content: %s\n", data)
 	return
 }
 
-func downloadFileHandler(conn net.Conn, args *share.DownloadFileArgs) {
+func DownloadFileHandler(conn net.Conn, args *share.DownloadFileArgs) {
 	return
 }

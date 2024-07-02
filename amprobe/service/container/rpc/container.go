@@ -187,10 +187,24 @@ func (c ContainerService) ImagePull(ctx context.Context, args schema.ImagePullAr
 }
 
 func (c ContainerService) ImageImport(ctx context.Context, args schema.ImageImportArgs) error {
+	var reply schema.ImageImportReply
+	err := c.RPCClient.Call(ctx, "ImageImport", args, &reply)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func (c ContainerService) ImageExport(ctx context.Context, args schema.ImageExportArgs) error {
+	var reply schema.ImageExportReply
+	rpcArgs := schema.ImageExportRPCArgs{
+		ImageIDs:   []string{args.ImageID},
+		TargetFile: fmt.Sprintf("/tmp/%s.tar", args.ImageName),
+	}
+	err := c.RPCClient.Call(ctx, "ImageExport", rpcArgs, &reply)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

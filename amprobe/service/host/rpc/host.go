@@ -29,6 +29,8 @@ type IHostService interface {
 	FileUpload(ctx context.Context, args schema.FileUploadArgs) error
 	FileDownload(ctx context.Context, args schema.FileDownloadArgs) (schema.FileDownloadReply, error)
 	FileDelete(ctx context.Context, args schema.FileDeleteArgs) error
+	FileCreate(ctx context.Context, args schema.FileCreateArgs) error
+	FolderCreate(ctx context.Context, args schema.FolderCreateArgs) error
 	GetDNSSettings(ctx context.Context, args schema.GetDNSSettingsArgs) (schema.GetDNSSettingsReply, error)
 	SetDNSSettings(ctx context.Context, args schema.SetDNSSettingsArgs) error
 	GetSystemTime(ctx context.Context, args schema.GetSystemTimeArgs) (schema.GetSystemTimeReply, error)
@@ -222,6 +224,14 @@ func (h HostService) FileDownload(ctx context.Context, args schema.FileDownloadA
 }
 
 func (h HostService) FileDelete(ctx context.Context, args schema.FileDeleteArgs) error {
+	return nil
+}
+
+func (h HostService) FileCreate(ctx context.Context, args schema.FileCreateArgs) error {
+	return nil
+}
+
+func (h HostService) FolderCreate(ctx context.Context, args schema.FolderCreateArgs) error {
 	return nil
 }
 

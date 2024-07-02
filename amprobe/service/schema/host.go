@@ -123,7 +123,7 @@ type FilesSearchReply struct {
 
 type FileUploadArgs struct{}
 
-type FIleUploadReply struct{}
+type FileUploadReply struct{}
 
 type FileDownloadArgs struct{}
 
@@ -132,6 +132,20 @@ type FileDownloadReply struct{}
 type FileDeleteArgs struct{}
 
 type FileDeleteReply struct{}
+
+type FileCreateArgs struct {
+	Path     string `json:"path" validate:"required"`
+	FileName string `json:"file_name" validate:"required"`
+}
+
+type FileCreateReply struct{}
+
+type FolderCreateArgs struct {
+	Path       string `json:"path" validate:"required"`
+	FolderName string `json:"folder_name" validate:"required"`
+}
+
+type FolderCreateReply struct{}
 
 type GetDNSSettingsArgs struct{}
 
