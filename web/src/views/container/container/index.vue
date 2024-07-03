@@ -164,12 +164,12 @@
     <!-- 创建容器 -->
     <div class="am-container-create">
         <el-drawer v-model="drawer" size="50%" title="创建容器">
-            <el-form label-width="120px" label-position="left">
+            <el-form ref="form" label-width="120px" :model="createForm" label-position="left">
                 <el-form-item label="名称">
-                    <el-input v-model="containerName" placeholder="请输入名称" />
+                    <el-input v-model="createForm.containerName" placeholder="请输入名称" />
                 </el-form-item>
                 <el-form-item label="镜像">
-                    <el-select v-model="imageName" style="width: 240px" placeholder="请选择镜像">
+                    <el-select v-model="createForm.imageName" style="width: 320px" placeholder="请选择镜像">
                         <el-option
                             v-for="item in imageNameOptions"
                             :key="item.value"
@@ -179,7 +179,7 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item label="网络">
-                    <el-select v-model="networkName" style="width: 240px" placeholder="请选择镜像">
+                    <el-select v-model="createForm.networkName" style="width: 320px" placeholder="请选择镜像">
                         <el-option
                             v-for="item in networkNameOptions"
                             :key="item.value"
@@ -189,31 +189,27 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item label="端口">
-                    <span v-if="ports.length === 0">可以添加端口</span>
-                    <el-form :inline="true" :model="ports">
-                        <el-form-item v-for="(port, index) in ports" :key="index">
-                            <el-input v-mode="port.hostPort" style="width: 120px" placeholder="服务器端口" />
-                            <el-input v-mode="port.containerPort" style="width: 120px" placeholder="容器端口" />
-                            <el-button type="danger" text @click="deletePort(index)">
-                                <svg-icon icon-class="close" />
-                            </el-button>
-                        </el-form-item>
-                    </el-form>
+                    <span v-if="createForm.ports.length === 0">可以添加端口绑定</span>
+                    <el-form-item v-for="(port, index) in createForm.ports" :key="index" style="margin-bottom: 4px">
+                        <el-input v-model="port.hostPort" style="width: 160px" placeholder="服务器端口" />
+                        <el-input v-model="port.containerPort" style="width: 160px" placeholder="容器端口" />
+                        <el-button type="danger" text @click="deletePort(index)">
+                            <svg-icon icon-class="close" />
+                        </el-button>
+                    </el-form-item>
                 </el-form-item>
                 <el-form-item>
                     <el-button type="primary" text @click="addPort">添加端口<svg-icon icon-class="plus" /></el-button>
                 </el-form-item>
                 <el-form-item label="目录/文件挂载">
-                    <span v-if="volumes.length === 0">可以添加目录/文件挂载</span>
-                    <el-form :inline="true" :model="volumes">
-                        <el-form-item v-for="(volume, index) in volumes" :key="index">
-                            <el-input v-mode="volume.hostPath" style="width: 260px" placeholder="服务器目录/文件" />
-                            <el-input v-mode="volume.containerPath" style="width: 200px" placeholder="容器目录/文件" />
-                            <el-button type="danger" text @click="deleteVolume(index)">
-                                <svg-icon icon-class="close" />
-                            </el-button>
-                        </el-form-item>
-                    </el-form>
+                    <span v-if="createForm.volumes.length === 0">可以添加目录/文件挂载</span>
+                    <el-form-item v-for="(volume, index) in createForm.volumes" :key="index" style="margin-bottom: 4px">
+                        <el-input v-model="volume.hostPath" style="width: 200px" placeholder="服务器目录/文件" />
+                        <el-input v-model="volume.containerPath" style="width: 200px" placeholder="容器目录/文件" />
+                        <el-button type="danger" text @click="deleteVolume(index)">
+                            <svg-icon icon-class="close" />
+                        </el-button>
+                    </el-form-item>
                 </el-form-item>
                 <el-form-item>
                     <el-button type="primary" text @click="addVolume">
@@ -222,7 +218,7 @@
                 </el-form-item>
                 <el-form-item label="标签(可选)">
                     <el-input
-                        v-model="containerLabels"
+                        v-model="createForm.labels"
                         type="textarea"
                         :rows="4"
                         placeholder="一行一个，例如:&#10;key1=value1&#10;key2=value2"
@@ -394,8 +390,26 @@ const downloadLog = () => {
 }
 
 const drawer = ref(false)
-const containerName = ref('')
-const imageName = ref('')
+
+interface Port {
+    hostPort: string
+    containerPort: string
+}
+
+interface Volume {
+    hostPath: string
+    containerPath: string
+}
+
+const createForm = reactive({
+    containerName: '',
+    imageName: '',
+    networkName: '',
+    ports: [] as Port[],
+    volumes: [] as Volume[],
+    labels: ''
+})
+
 const imageNameOptions = ref<
     {
         value: string
@@ -418,13 +432,13 @@ const initImageOptions = async () => {
     })
 }
 
-const networkName = ref('')
 const networkNameOptions = ref<
     {
         value: string
         label: string
     }[]
 >([])
+
 const initNetworkOptions = async () => {
     const params = {
         page: 1,
@@ -440,43 +454,27 @@ const initNetworkOptions = async () => {
     })
 }
 
-const ports = ref<
-    {
-        hostPort: string
-        containerPort: string
-    }[]
->([])
-
 const addPort = () => {
-    ports.value.push({
+    createForm.ports.push({
         hostPort: '',
         containerPort: ''
     })
 }
 
 const deletePort = (index: number) => {
-    ports.value.splice(index, 1)
+    createForm.ports.splice(index, 1)
 }
 
-const volumes = ref<
-    {
-        hostPath: string
-        containerPath: string
-    }[]
->([])
-
 const addVolume = () => {
-    volumes.value.push({
+    createForm.volumes.push({
         hostPath: '',
         containerPath: ''
     })
 }
 
 const deleteVolume = (index: number) => {
-    volumes.value.splice(index, 1)
+    createForm.volumes.splice(index, 1)
 }
-
-const containerLabels = ref('')
 
 const createContainerLoading = ref(false)
 const confirmCreateContainer = async () => {
@@ -486,31 +484,31 @@ const confirmCreateContainer = async () => {
     let ls: Map<string, string> = new Map()
     let network_mode = ''
     let network_id = ''
-    for (let i = 0; i < ports.value.length; i++) {
-        ps.push(`${ports.value[i].hostPort}:${ports.value[i].containerPort}`)
+    for (let i = 0; i < createForm.ports.length; i++) {
+        ps.push(`${createForm.ports[i].hostPort}:${createForm.ports[i].containerPort}`)
     }
-    for (let i = 0; i < volumes.value.length; i++) {
-        vs.push(`${volumes.value[i].hostPath}:${volumes.value[i].containerPath}`)
+    for (let i = 0; i < createForm.volumes.length; i++) {
+        vs.push(`${createForm.volumes[i].hostPath}:${createForm.volumes[i].containerPath}`)
     }
-    if (containerLabels.value) {
-        const labelArr = containerLabels.value.split('\n')
+    if (createForm.labels) {
+        const labelArr = createForm.labels.split('\n')
         for (let i = 0; i < labelArr.length; i++) {
             const label = labelArr[i].split(':')
             ls.set(label[0], label[1])
         }
     }
     store.app.networks
-        .filter((item) => item.name === networkName.value)
+        .filter((item) => item.name === createForm.networkName)
         .forEach((item) => {
-            if (item.name == networkName.value) {
+            if (item.name == createForm.networkName) {
                 network_mode = item.driver
                 network_id = item.id
             }
         })
     const params: CreateContainerArgs = {
-        container_name: containerName.value,
-        image_name: imageName.value,
-        network_name: networkName.value,
+        container_name: createForm.containerName,
+        image_name: createForm.imageName,
+        network_name: createForm.networkName,
         network_mode: network_mode,
         network_id: network_id,
         ports: ps,
