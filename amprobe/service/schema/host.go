@@ -121,15 +121,23 @@ type FilesSearchReply struct {
 	Files []FileInfo `json:"files"`
 }
 
-type FileUploadArgs struct{}
+type FileUploadArgs struct {
+	Prefix string `json:"prefix" validate:"required"`
+}
 
 type FileUploadReply struct{}
 
-type FileDownloadArgs struct{}
+type FileDownloadArgs struct {
+	Filepath string `json:"filepath" validate:"required"`
+}
 
-type FileDownloadReply struct{}
+type FileDownloadReply struct {
+	Filepath string
+}
 
-type FileDeleteArgs struct{}
+type FileDeleteArgs struct {
+	Filepath string `json:"filepath" validate:"required"`
+}
 
 type FileDeleteReply struct{}
 

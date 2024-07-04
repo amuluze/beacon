@@ -114,6 +114,7 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			gHost.Get("/file_search", a.hostAPI.FilesSearch).Name("文件搜索")
 			gHost.Post("/file_upload", a.hostAPI.FileUpload).Name("文件上传")
 			gHost.Post("/file_download", a.hostAPI.FileDownload).Name("文件下载")
+			gHost.Post("/file_delete", a.hostAPI.FileDelete).Name("删除文件")
 			gHost.Post("/file_create_file", a.hostAPI.FileCreate).Name("创建文件")
 			gHost.Post("/file_create_folder", a.hostAPI.FolderCreate).Name("创建文件夹")
 			gHost.Get("/get_dns_settings", a.hostAPI.GetDNSSettings).Name("获取 DNS 设置")

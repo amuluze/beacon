@@ -41,10 +41,8 @@ type FolderCreateArgs struct {
 
 type FolderCreateReply struct{}
 
-type FileUploadArgs struct{}
+type FileDeleteArgs struct {
+	Filepath string `json:"filepath" validate:"required"`
+}
 
-type FileUploadReply struct{}
-
-type FileDownloadArgs struct{}
-
-type FileDownloadReply struct{}
+type FileDeleteReply struct{}

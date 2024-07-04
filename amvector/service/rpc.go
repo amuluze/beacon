@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
+	"path/filepath"
 
 	"github.com/amuluze/amutool/database"
 	"github.com/amuluze/amutool/docker"
@@ -51,16 +53,38 @@ func (s *Server) Stop() error {
 }
 
 func UploadFileHandler(conn net.Conn, args *share.FileTransferArgs) {
-	fmt.Printf("received file name: %s, size: %d\n", args.FileName, args.FileSize)
+	fmt.Printf("received file name: %s, size: %d, meta: %#v\n", args.FileName, args.FileSize, args.Meta)
+	filePath := filepath.Join(args.Meta["path"], args.FileName)
+	file, err := os.Create(filePath)
+	if err != nil {
+		fmt.Printf("error create file: %v\n", err)
+		return
+	}
+	defer file.Close()
+
 	data, err := io.ReadAll(conn)
 	if err != nil {
 		fmt.Printf("error read: %v\n", err)
 		return
 	}
-	fmt.Printf("file content: %s\n", data)
-	return
+	_, err = file.Write(data)
+	if err != nil {
+		fmt.Printf("error write: %v\n", err)
+		return
+	}
 }
 
 func DownloadFileHandler(conn net.Conn, args *share.DownloadFileArgs) {
-	return
+	fmt.Printf("received file name: %s, meta: %#v\n", args.FileName, args.Meta)
+	connent, err := os.Open(args.FileName)
+	if err != nil {
+		fmt.Printf("error open file: %v\n", err)
+		return
+	}
+	defer connent.Close()
+	_, err = io.Copy(conn, connent)
+	if err != nil {
+		fmt.Printf("error write: %v\n", err)
+		return
+	}
 }

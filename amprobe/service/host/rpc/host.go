@@ -6,6 +6,7 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/amuluze/amprobe/pkg/rpc"
 	"github.com/amuluze/amprobe/service/model"
@@ -26,8 +27,8 @@ type IHostService interface {
 	DiskUsage(ctx context.Context, args schema.DiskUsageArgs) (schema.DiskUsageReply, error)
 	NetUsage(ctx context.Context, args schema.NetworkUsageArgs) (schema.NetworkUsageReply, error)
 	FilesSearch(ctx context.Context, args schema.FilesSearchArgs) (schema.FilesSearchReply, error)
-	FileUpload(ctx context.Context, args schema.FileUploadArgs) error
-	FileDownload(ctx context.Context, args schema.FileDownloadArgs) (schema.FileDownloadReply, error)
+	FileUpload(ctx context.Context, filename string, prefix string) error
+	FileDownload(ctx context.Context, downloadFilepath string, filename string) (schema.FileDownloadReply, error)
 	FileDelete(ctx context.Context, args schema.FileDeleteArgs) error
 	FileCreate(ctx context.Context, args schema.FileCreateArgs) error
 	FolderCreate(ctx context.Context, args schema.FolderCreateArgs) error
@@ -215,23 +216,46 @@ func (h HostService) FilesSearch(ctx context.Context, args schema.FilesSearchArg
 	return reply, nil
 }
 
-func (h HostService) FileUpload(ctx context.Context, args schema.FileUploadArgs) error {
+func (h HostService) FileUpload(ctx context.Context, filename string, prefix string) error {
+	err := h.RPCClient.SendFile(ctx, filename, prefix)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func (h HostService) FileDownload(ctx context.Context, args schema.FileDownloadArgs) (schema.FileDownloadReply, error) {
-	return schema.FileDownloadReply{}, nil
+func (h HostService) FileDownload(ctx context.Context, downloadFilepath string, filename string) (schema.FileDownloadReply, error) {
+	err := h.RPCClient.DownloadFile(ctx, downloadFilepath, filename)
+	if err != nil {
+		return schema.FileDownloadReply{}, err
+	}
+	return schema.FileDownloadReply{Filepath: fmt.Sprintf("/tmp/%s", filename)}, nil
 }
 
 func (h HostService) FileDelete(ctx context.Context, args schema.FileDeleteArgs) error {
+	var reply schema.FileDeleteReply
+	err := h.RPCClient.Call(ctx, "FileDelete", args, &reply)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func (h HostService) FileCreate(ctx context.Context, args schema.FileCreateArgs) error {
+	var reply schema.FileCreateReply
+	err := h.RPCClient.Call(ctx, "FileCreate", args, &reply)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func (h HostService) FolderCreate(ctx context.Context, args schema.FolderCreateArgs) error {
+	var reply schema.FolderCreateReply
+	err := h.RPCClient.Call(ctx, "FolderCreate", args, &reply)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

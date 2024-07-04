@@ -6,9 +6,11 @@ package main
 
 import (
 	"context"
-	"github.com/smallnest/rpcx/client"
 	"log"
 	"os"
+
+	"github.com/smallnest/rpcx/client"
+	"github.com/smallnest/rpcx/share"
 )
 
 func main() {
@@ -23,7 +25,8 @@ func main() {
 	//log.Println("send ok")
 
 	// 写入文件 的 io.Writer
-	xclient := client.NewOneClient(client.Failtry, client.RandomSelect, d, client.DefaultOption)
+	// xclient := client.NewOneClient(client.Failtry, client.RandomSelect, d, client.DefaultOption)
+	xclient := client.NewXClient(share.SendFileServiceName, client.Failtry, client.RandomSelect, d, client.DefaultOption)
 	defer xclient.Close()
 
 	file, _ := os.Create("/Users/amu/Desktop/github/amprobe/amvector/example/file/client/ddd.txt")

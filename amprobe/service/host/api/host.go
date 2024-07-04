@@ -5,6 +5,9 @@
 package api
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/amuluze/amprobe/pkg/fiberx"
 	"github.com/amuluze/amprobe/pkg/validatex"
 	"github.com/amuluze/amprobe/service/host/rpc"
@@ -138,23 +141,86 @@ func (a *HostAPI) FilesSearch(ctx *fiber.Ctx) error {
 }
 
 func (a *HostAPI) FileUpload(ctx *fiber.Ctx) error {
-	return nil
+	c := ctx.UserContext()
+	file, err := ctx.FormFile("file")
+	if err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	var args schema.FileUploadArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	if err := validatex.ValidateStruct(args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	if err := a.HostService.FileUpload(c, fmt.Sprintf("/tmp/%s", file.Filename), args.Prefix); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	return fiberx.NoContent(ctx)
 }
 
 func (a *HostAPI) FileDownload(ctx *fiber.Ctx) error {
-	return nil
+	c := ctx.UserContext()
+	var args schema.FileDownloadArgs
+	if err := fiberx.ParseQuery(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	if err := validatex.ValidateStruct(args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	res, err := a.HostService.FileDownload(c, args.Filepath, strings.Split(args.Filepath, "/")[len(strings.Split(args.Filepath, "/"))-1])
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return ctx.Download(res.Filepath)
 }
 
 func (a *HostAPI) FileDelete(ctx *fiber.Ctx) error {
-	return nil
+	c := ctx.UserContext()
+	var args schema.FileDeleteArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	if err := validatex.ValidateStruct(args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	err := a.HostService.FileDelete(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
 }
 
 func (a *HostAPI) FileCreate(ctx *fiber.Ctx) error {
-	return nil
+	c := ctx.UserContext()
+	var args schema.FileCreateArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	if err := validatex.ValidateStruct(args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	err := a.HostService.FileCreate(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
 }
 
 func (a *HostAPI) FolderCreate(ctx *fiber.Ctx) error {
-	return nil
+	c := ctx.UserContext()
+	var args schema.FolderCreateArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	if err := validatex.ValidateStruct(args); err != nil {
+		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	}
+	err := a.HostService.FolderCreate(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
 }
 
 func (a *HostAPI) GetDNSSettings(ctx *fiber.Ctx) error {
