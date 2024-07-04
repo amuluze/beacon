@@ -7,22 +7,6 @@
     </div>
     <div class="am-host-operator">
         <el-card shadow="never">
-            <el-dropdown>
-                <el-button type="primary" plain> 新建 <svg-icon icon-class="down" /> </el-button>
-                <template #dropdown>
-                    <el-dropdown-menu>
-                        <el-dropdown-item>
-                            <el-button type="primary" size="small" text @click="createFolder">
-                                <svg-icon icon-class="folder" style="color: #105eeb; margin-right: 4px" />
-                                文件夹
-                            </el-button>
-                        </el-dropdown-item>
-                        <el-dropdown-item>
-                            <el-button type="primary" size="small" text @click="createFile">文件</el-button>
-                        </el-dropdown-item>
-                    </el-dropdown-menu>
-                </template>
-            </el-dropdown>
             <el-button-group class="ml-4" style="margin-right: 16px">
                 <el-button type="primary" @click="goBack">
                     <svg-icon icon-class="back"></svg-icon>
@@ -31,10 +15,29 @@
                     <svg-icon icon-class="next"></svg-icon>
                 </el-button>
             </el-button-group>
-            <el-button-group class="ml-4">
+            <el-dropdown>
+                <el-button type="primary" plain> 新建 <svg-icon icon-class="down" /> </el-button>
+                <template #dropdown>
+                    <el-dropdown-menu>
+                        <el-dropdown-item>
+                            <el-button type="primary" size="small" text @click="folderCreateDialog = true">
+                                <svg-icon icon-class="folder" style="color: #105eeb; margin-right: 4px" />
+                                文件夹
+                            </el-button>
+                        </el-dropdown-item>
+                        <el-dropdown-item>
+                            <el-button type="primary" size="small" text @click="fileCreateDialog = true">
+                                文件
+                            </el-button>
+                        </el-dropdown-item>
+                    </el-dropdown-menu>
+                </template>
+            </el-dropdown>
+            <el-button type="primary" plain @click="fileUploadDialog = true"> 上传 </el-button>
+            <!-- <el-button-group class="ml-4">
                 <el-button type="primary" plain @click="uploadFile"> 上传 </el-button>
                 <el-button type="primary" plain @click="downloadFile"> 下载 </el-button>
-            </el-button-group>
+            </el-button-group> -->
         </el-card>
     </div>
     <el-card shadow="never">
@@ -50,9 +53,9 @@
                                 icon-class="folder"
                                 style="color: #105eeb; margin-right: 4px"
                             />
-                            <span @click="queryFilesByPath(currentPath + '/' + scope.row.name, scope.row.is_dir)">{{
-                                scope.row.name
-                            }}</span>
+                            <span @click="queryFilesByPath(path.join(currentPath, scope.row.name), scope.row.is_dir)">
+                                {{ scope.row.name }}
+                            </span>
                         </div>
                     </template>
                 </el-table-column>
@@ -91,6 +94,45 @@
             </el-config-provider>
         </div> -->
     </el-card>
+    <!-- 新建文件 -->
+    <div class="am-host-file-create">
+        <el-dialog v-model="fileCreateDialog" title="新建文件" width="50%">
+            <el-input v-model="createFileName" placeholder="请输入文件名" />
+            <el-button size="default" type="info" plain @click="confirmCreateFile" v-loading="fileCreateLoading">
+                确定
+            </el-button>
+        </el-dialog>
+    </div>
+    <!-- 新建文件夹 -->
+    <div class="am-host-file-create">
+        <el-dialog v-model="folderCreateDialog" title="新建文件夹" width="50%">
+            <el-input v-model="createFolderName" placeholder="请输入文件夹名称" />
+            <el-button size="default" type="info" plain @click="confirmCreateFolder" v-loading="fileCreateLoading">
+                确定
+            </el-button>
+        </el-dialog>
+    </div>
+    <!-- 上传文件 -->
+    <!-- https://blog.csdn.net/qq_24787615/article/details/131477657 -->
+    <div class="am-host-file-upload">
+        <el-dialog v-model="fileUploadDialog" title="上传文件" width="50%">
+            <el-upload
+                :on-preview="previewFile"
+                :limit="1"
+                :on-change="changeFile"
+                :auto-upload="false"
+                :data="uploadForm"
+                drag
+                multiple
+            >
+                <svg-icon icon-class="upload" />
+                <div class="el-upload__text">Drop file here or <em>click to upload</em></div>
+            </el-upload>
+            <el-button size="default" type="primary" plain @click="confirmUploadFile" v-loading="fileCreateLoading">
+                确定
+            </el-button>
+        </el-dialog>
+    </div>
 </template>
 <script setup lang="ts">
 import { queryFiles } from '@/api/host'
@@ -98,10 +140,11 @@ import { error, warning } from '@/components/Message/message'
 import { FileInfo, FilesSearchArgs } from '@/interface/host'
 import { convertBytesToReadable } from '@/utils/convert'
 import { dayjs } from 'element-plus'
+import path from 'path-browserify'
 
 const loading = ref(false)
 
-const currentPath = ref('/')
+const currentPath = ref('')
 const nextPath = ref('')
 const filesData = ref<FileInfo[]>([])
 onMounted(() => {
@@ -130,8 +173,12 @@ const queryFilesByPath = async (path: string, isDir: boolean) => {
         error('该路径不是文件夹')
         return
     }
+    if (path == '') {
+        path = '/'
+    }
     loading.value = true
     currentPath.value = path
+    console.log('current path: ', currentPath.value)
     let params: FilesSearchArgs = {
         path: path
     }
@@ -154,23 +201,34 @@ const queryFilesByPath = async (path: string, isDir: boolean) => {
 const containerKey = ref(0)
 
 const deleteFile = (name: string) => {
+    console.log(currentPath.value)
     console.log(name)
     warning('该功能尚未实现')
 }
 
-const uploadFile = () => {
+const fileUploadDialog = ref(false)
+const confirmUploadFile = () => {
+    console.log(currentPath.value)
     warning('该功能尚未实现')
 }
 
 const downloadFile = () => {
+    console.log(currentPath.value)
     warning('该功能尚未实现')
 }
 
-const createFolder = () => {
+const fileCreateLoading = ref(false)
+const folderCreateDialog = ref(false)
+const createFolderName = ref('')
+const confirmCreateFolder = () => {
+    console.log(currentPath.value, createFolderName.value)
     warning('该功能尚未实现')
 }
 
-const createFile = () => {
+const fileCreateDialog = ref(false)
+const createFileName = ref('')
+const confirmCreateFile = () => {
+    console.log(currentPath.value, createFileName.value)
     warning('该功能尚未实现')
 }
 </script>
@@ -255,5 +313,48 @@ const createFile = () => {
     width: 100%;
     height: calc(100vh - 188px);
     overflow-y: auto;
+}
+
+@include b(host-file-create) {
+    :deep(.el-dialog) {
+        .el-dialog__body {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            .el-input {
+                width: 90%;
+            }
+        }
+    }
+}
+
+@include b(host-file-upload) {
+    :deep(.el-upload) {
+        width: 100%;
+        .el-upload-dragger {
+            width: 100%;
+            .svg-icon {
+                font-size: 42px;
+                // color: #c0c4cc;
+            }
+            .el-upload__text {
+                margin-top: 16px;
+                color: #606266;
+            }
+        }
+    }
+    :deep(.el-dialog) {
+        .el-dialog__body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            div {
+                width: 100%;
+            }
+        }
+    }
 }
 </style>

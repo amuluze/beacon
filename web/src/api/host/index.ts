@@ -12,8 +12,19 @@ import {
     DiskInfoResult,
     DiskTrendingArgs,
     DiskUsageResult,
+    FileCreateArgs,
+    FileCreateResult,
+    FileDeleteArgs,
+    FileDeleteResult,
+    FileDownloadResult,
+    FileUploadArgs,
+    FileUploadResult,
     FilesSearchArgs,
     FilesSearchResult,
+    FolderCreateArgs,
+    FolderCreateResult,
+    FolderDeleteArgs,
+    FolderDeleteResult,
     HostInfo,
     MemInfo,
     MemTrending,
@@ -54,4 +65,28 @@ export function queryNetworkUsage(param: NetTrendingArgs) {
 
 export function queryFiles(params: FilesSearchArgs) {
     return request.get<FilesSearchResult>('/api/v1/host/file_search', params)
+}
+
+export function createFile(params: FileCreateArgs) {
+    return request.post<FileCreateResult>('/api/v1/host/file_create', params)
+}
+
+export function deleteFile(params: FileDeleteArgs) {
+    return request.post<FileDeleteResult>('/api/v1/host/file_delete', params)
+}
+
+export function createFolder(params: FolderCreateArgs) {
+    return request.post<FolderCreateResult>('/api/v1/host/folder_create', params)
+}
+
+export function deleteFolder(params: FolderDeleteArgs) {
+    return request.post<FolderDeleteResult>('/api/v1/host/folder_delete', params)
+}
+
+export function uploadFile(params: FileUploadArgs) {
+    return request.post<FileUploadResult>('/api/v1/host/file_upload', params)
+}
+
+export function downloadFile(params: FileDeleteArgs) {
+    return request.post<FileDownloadResult>('/api/v1/host/file_download', params)
 }
