@@ -183,7 +183,9 @@ func (a *ContainerAPI) ImageImport(ctx *fiber.Ctx) error {
 		return fiberx.Failure(ctx, err)
 	}
 	// save file
+	slog.Info("image import", "file nameage name", file.Filename)
 	if err := ctx.SaveFile(file, fmt.Sprintf("/tmp/%s", file.Filename)); err != nil {
+		slog.Error("save file error", "err", err, "filepath", fmt.Sprintf("/tmp/%s", file.Filename))
 		return fiberx.Failure(ctx, err)
 	}
 	args := schema.ImageImportArgs{

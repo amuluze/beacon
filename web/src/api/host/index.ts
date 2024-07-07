@@ -17,8 +17,6 @@ import {
     FileDeleteArgs,
     FileDeleteResult,
     FileDownloadResult,
-    FileUploadArgs,
-    FileUploadResult,
     FilesSearchArgs,
     FilesSearchResult,
     FolderCreateArgs,
@@ -81,10 +79,6 @@ export function createFolder(params: FolderCreateArgs) {
 
 export function deleteFolder(params: FolderDeleteArgs) {
     return request.post<FolderDeleteResult>('/api/v1/host/folder_delete', params)
-}
-
-export function uploadFile(params: FileUploadArgs) {
-    return request.post<FileUploadResult>('/api/v1/host/file_upload', params)
 }
 
 export function downloadFile(params: FileDeleteArgs) {

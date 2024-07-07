@@ -72,10 +72,12 @@
                 </el-table-column>
                 <el-table-column label="操作" width="200" fixed="right" align="center">
                     <template #default="scope">
-                        <el-button type="danger" size="small" text @click="deleteFile(scope.row.name)">
+                        <el-button type="danger" size="small" text @click="deleteFileByName(scope.row.name)">
                             删除
                         </el-button>
-                        <el-button type="primary" size="small" text @click="downloadFile"> 下载 </el-button>
+                        <!-- <el-button type="primary" size="small" text @click="downloadFileByName(scope.row.name)">
+                            下载
+                        </el-button> -->
                     </template>
                 </el-table-column>
             </el-table>
@@ -117,30 +119,43 @@
     <div class="am-host-file-upload">
         <el-dialog v-model="fileUploadDialog" title="上传文件" width="50%">
             <el-upload
-                :on-preview="previewFile"
-                :limit="1"
-                :on-change="changeFile"
-                :auto-upload="false"
-                :data="uploadForm"
+                ref="uploadRef"
                 drag
+                action="/app/api/v1/host/file_upload"
+                :limit="1"
+                :data="{ prefix: currentPath }"
                 multiple
+                :headers="{
+                    Authorization: `Bearer ${store.user.token}`
+                }"
+                :on-success="onSuccess"
             >
                 <svg-icon icon-class="upload" />
                 <div class="el-upload__text">Drop file here or <em>click to upload</em></div>
             </el-upload>
-            <el-button size="default" type="primary" plain @click="confirmUploadFile" v-loading="fileCreateLoading">
+            <!-- <el-button size="default" type="primary" plain @click="confirmUploadFile" v-loading="fileCreateLoading">
                 确定
-            </el-button>
+            </el-button> -->
         </el-dialog>
     </div>
 </template>
 <script setup lang="ts">
-import { queryFiles } from '@/api/host'
-import { error, warning } from '@/components/Message/message'
-import { FileInfo, FilesSearchArgs } from '@/interface/host'
+import { createFile, createFolder, deleteFile, downloadFile, queryFiles } from '@/api/host'
+import { error, success } from '@/components/Message/message'
+import {
+    FileCreateArgs,
+    FileDeleteArgs,
+    FileDownloadArgs,
+    FileInfo,
+    FilesSearchArgs,
+    FolderCreateArgs
+} from '@/interface/host'
+import useStore from '@/store'
 import { convertBytesToReadable } from '@/utils/convert'
 import { dayjs } from 'element-plus'
 import path from 'path-browserify'
+
+const store = useStore()
 
 const loading = ref(false)
 
@@ -200,36 +215,66 @@ const queryFilesByPath = async (path: string, isDir: boolean) => {
 
 const containerKey = ref(0)
 
-const deleteFile = (name: string) => {
-    console.log(currentPath.value)
-    console.log(name)
-    warning('该功能尚未实现')
+const deleteFileByName = async (name: string) => {
+    const params: FileDeleteArgs = {
+        filepath: path.join(currentPath.value, name)
+    }
+    console.log('params: ', params)
+    const { data } = await deleteFile(params)
+    console.log(data)
+    success('删除成功')
+    queryFilesByPath(currentPath.value, true)
 }
 
 const fileUploadDialog = ref(false)
-const confirmUploadFile = () => {
-    console.log(currentPath.value)
-    warning('该功能尚未实现')
+const onSuccess = () => {
+    success('上传成功')
+    fileUploadDialog.value = false
+    queryFilesByPath(currentPath.value, true)
 }
 
-const downloadFile = () => {
-    console.log(currentPath.value)
-    warning('该功能尚未实现')
+const downloadFileByName = async (name: string) => {
+    const params: FileDownloadArgs = {
+        filepath: path.join(currentPath.value, name)
+    }
+    console.log('params: ', params)
+    const { data } = await downloadFile(params)
+    console.log(data)
+
+    success('下载成功')
 }
 
 const fileCreateLoading = ref(false)
 const folderCreateDialog = ref(false)
 const createFolderName = ref('')
-const confirmCreateFolder = () => {
+const confirmCreateFolder = async () => {
     console.log(currentPath.value, createFolderName.value)
-    warning('该功能尚未实现')
+    const params: FolderCreateArgs = {
+        path: currentPath.value,
+        folder_name: createFolderName.value
+    }
+    const { data } = await createFolder(params)
+    console.log(data)
+    success('创建成功')
+    // warning('该功能尚未实现')
+    folderCreateDialog.value = false
+    queryFilesByPath(currentPath.value, true)
 }
 
 const fileCreateDialog = ref(false)
 const createFileName = ref('')
-const confirmCreateFile = () => {
+const confirmCreateFile = async () => {
     console.log(currentPath.value, createFileName.value)
-    warning('该功能尚未实现')
+    const params: FileCreateArgs = {
+        path: currentPath.value,
+        file_name: createFileName.value
+    }
+    const { data } = await createFile(params)
+    console.log(data)
+    success('创建成功')
+    // warning('该功能尚未实现')
+    fileCreateDialog.value = false
+    queryFilesByPath(currentPath.value, true)
 }
 </script>
 <style scoped lang="scss">

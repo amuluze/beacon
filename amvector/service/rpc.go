@@ -26,6 +26,7 @@ type Server struct {
 func NewRPCServer(config *Config, db *database.DB) (*Server, error) {
 	srv := server.NewServer()
 	p := server.NewFileTransfer("0.0.0.0:9527", UploadFileHandler, DownloadFileHandler, 1000)
+	p.AdvertiseAddr = "101.42.246.113:9527"
 	srv.EnableFileTransfer(share.SendFileServiceName, p)
 	manager, err := docker.NewManager()
 	if err != nil {

@@ -6,10 +6,12 @@ package middleware
 
 import (
 	"fmt"
+	"log/slog"
+	"runtime"
+
 	"github.com/amuluze/amprobe/pkg/fiberx"
 	"github.com/amuluze/amutool/errors"
 	"github.com/gofiber/fiber/v2"
-	"runtime"
 )
 
 var defaultStackTraceBufSize = 2048
@@ -22,7 +24,7 @@ func PanicMiddleware() fiber.Handler {
 
 				buf = buf[:runtime.Stack(buf, false)]
 				data := fmt.Sprintf("panic: %v\n%s\n", r, buf)
-
+				slog.Error("panic", "panic", slog.String("data", data))
 				_ = fiberx.Failure(ctx, errors.New500Error(data))
 				return
 			}

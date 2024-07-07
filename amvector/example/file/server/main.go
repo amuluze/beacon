@@ -6,17 +6,18 @@ package main
 
 import (
 	"fmt"
-	"github.com/smallnest/rpcx/server"
-	"github.com/smallnest/rpcx/share"
 	"io"
 	"net"
 	"os"
+
+	"github.com/smallnest/rpcx/server"
+	"github.com/smallnest/rpcx/share"
 )
 
 func main() {
 	os.Remove("/tmp/rpc.sock")
 	srv := server.NewServer()
-	p := server.NewFileTransfer("0.0.0.0:9527", UploadFileHandler, DownloadFileHandler, 1000)
+	p := server.NewFileTransfer("/tmp/file.sock", UploadFileHandler, DownloadFileHandler, 1000)
 	srv.EnableFileTransfer(share.SendFileServiceName, p)
 
 	err := srv.Serve("unix", "/tmp/rpc.sock")
@@ -33,7 +34,7 @@ func UploadFileHandler(conn net.Conn, args *share.FileTransferArgs) {
 		return
 	}
 	fmt.Printf("file content: %s\n", data)
-	return
+	conn.Close()
 }
 
 func DownloadFileHandler(conn net.Conn, args *share.DownloadFileArgs) {

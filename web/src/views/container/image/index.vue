@@ -74,7 +74,16 @@
     <!-- 导入镜像 -->
     <div class="am-image-import">
         <el-dialog v-model="imageImportDialog" title="导入镜像" width="50%">
-            <el-upload drag action="/app/api/v1/container/image_import" multiple>
+            <el-upload
+                drag
+                action="/app/api/v1/container/image_import"
+                :headers="{
+                    Authorization: `Bearer ${store.user.token}`
+                }"
+                :limit="1"
+                multiple
+                :on-success="onSuccess"
+            >
                 <svg-icon icon-class="upload" />
                 <div class="el-upload__text">Drop file here or <em>click to upload</em></div>
                 <template #tip>
@@ -87,10 +96,13 @@
 
 <script setup lang="ts">
 import { pruneImages, pullImage, queryImages, removeImage } from '@/api/container'
+import { success } from '@/components/Message/message'
 import { useTable } from '@/hooks/useTable'
 import { PullImageArgs, RemoveImageArgs } from '@/interface/container.ts'
+import useStore from '@/store'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
+const store = useStore()
 onMounted(() => {
     refresh()
 })
@@ -163,6 +175,11 @@ const confirmImagePull = async () => {
 }
 
 const imageImportDialog = ref(false)
+const onSuccess = () => {
+    success('导入成功')
+    imageImportDialog.value = false
+    refresh()
+}
 </script>
 
 <style scoped lang="scss">

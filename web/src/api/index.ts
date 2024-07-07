@@ -13,7 +13,7 @@ const config = {
     baseURL: '/app/',
     // baseURL: import.meta.env.VITE_API_URL,
     // 设置超时时间
-    timeout: 30000,
+    timeout: 600000,
     // 设置默认请求头
     headers: { 'Content-Type': 'application/json;charset=utf-8' },
     // 跨域时候允许携带凭证
@@ -58,6 +58,35 @@ class Request {
          */
         this.service.interceptors.response.use(
             (response: AxiosResponse) => {
+                console.log('---', response)
+                if (response.headers['content-disposition']) {
+                    let downLoadMark = response.headers['content-disposition'].split(';')
+                    console.log('response header', downLoadMark)
+                    if (downLoadMark[0] === 'attachment') {
+                        // 执行下载
+                        let fileName = downLoadMark[1].split('filename=')[1]
+                        if (fileName) {
+                            //fileName = decodeURIComponent(filename);//对filename进行转码
+                            fileName = decodeURI(fileName)
+                            console.log('file name: ', fileName)
+                            let content = response.data
+                            let url = window.URL.createObjectURL(
+                                new Blob([content], { type: 'application/octet-stream' })
+                            )
+                            let link = document.createElement('a')
+                            link.style.display = 'none'
+                            link.href = url
+                            link.download = fileName
+                            // link.setAttribute('download', fileName)
+                            document.body.appendChild(link)
+                            link.click()
+                            link.remove()
+                            window.URL.revokeObjectURL(url)
+                        } else {
+                            return response
+                        }
+                    }
+                }
                 return response
             },
             async (error: AxiosError) => {
@@ -108,7 +137,7 @@ class Request {
                     warning('您目前没有权限执行该操作，请联系管理员')
                 }
                 if (error.response?.status === 500) {
-                    console.log('500 error: ', error.response.data)
+                    console.log('500 error: ', error)
                     warning('服务器错误，请稍后再试')
                 }
                 return Promise.reject(error)

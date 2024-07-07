@@ -6,6 +6,7 @@ package api
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/amuluze/amprobe/pkg/fiberx"
@@ -142,18 +143,27 @@ func (a *HostAPI) FilesSearch(ctx *fiber.Ctx) error {
 
 func (a *HostAPI) FileUpload(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
+	slog.Info("file upload")
 	file, err := ctx.FormFile("file")
 	if err != nil {
 		return fiberx.Failure(ctx, errors.ErrBadRequest)
 	}
-	var args schema.FileUploadArgs
-	if err := fiberx.ParseBody(ctx, &args); err != nil {
-		return fiberx.Failure(ctx, errors.ErrBadRequest)
+	if err := ctx.SaveFile(file, fmt.Sprintf("/tmp/%s", file.Filename)); err != nil {
+		slog.Error("save file error", "err", err, "filepath", fmt.Sprintf("/tmp/%s", file.Filename))
+		return fiberx.Failure(ctx, err)
 	}
-	if err := validatex.ValidateStruct(args); err != nil {
-		return fiberx.Failure(ctx, errors.ErrBadRequest)
-	}
-	if err := a.HostService.FileUpload(c, fmt.Sprintf("/tmp/%s", file.Filename), args.Prefix); err != nil {
+	// var args schema.FileUploadArgs
+	prefix := ctx.FormValue("prefix", "")
+	// slog.Info("get prefix", "prefix", prefix)
+	// if err := fiberx.ParseBody(ctx, &args); err != nil {
+	// 	return fiberx.Failure(ctx, errors.ErrBadRequest)
+	// }
+	// if err := validatex.ValidateStruct(args); err != nil {
+	// 	return fiberx.Failure(ctx, errors.ErrBadRequest)
+	// }
+	slog.Info("file upload", "filepath", fmt.Sprintf("/tmp/%s", file.Filename), "prefix", prefix)
+	if err := a.HostService.FileUpload(c, fmt.Sprintf("/tmp/%s", file.Filename), prefix); err != nil {
+		slog.Error("file upload error", "err", err)
 		return fiberx.Failure(ctx, errors.ErrBadRequest)
 	}
 	return fiberx.NoContent(ctx)
@@ -162,19 +172,20 @@ func (a *HostAPI) FileUpload(ctx *fiber.Ctx) error {
 func (a *HostAPI) FileDownload(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	var args schema.FileDownloadArgs
-	if err := fiberx.ParseQuery(ctx, &args); err != nil {
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.ErrBadRequest)
 	}
 	if err := validatex.ValidateStruct(args); err != nil {
 		return fiberx.Failure(ctx, errors.ErrBadRequest)
 	}
-	res, err := a.HostService.FileDownload(c, args.Filepath, strings.Split(args.Filepath, "/")[len(strings.Split(args.Filepath, "/"))-1])
+
+	filename := strings.Split(args.Filepath, "/")[len(strings.Split(args.Filepath, "/"))-1]
+	res, err := a.HostService.FileDownload(c, args.Filepath, filename)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
 	}
 	return ctx.Download(res.Filepath)
 }
-
 func (a *HostAPI) FileDelete(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	var args schema.FileDeleteArgs
