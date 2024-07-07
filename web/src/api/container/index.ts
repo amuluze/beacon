@@ -1,10 +1,21 @@
 import request from '@/api'
 import {
     ContainerQueryResult,
+    CreateContainerArgs,
+    CreateContainerResult,
+    GetDockerRegistryMirrorsResult,
     ImageQueryResult,
+    NetworkCreateArgs,
+    NetworkCreateResult,
+    NetworkDeleteArgs,
+    NetworkDeleteResult,
+    NetworkQueryResult,
+    PullImageArgs,
+    PullImageResult,
     RemoveContainerArgs,
     RemoveImageArgs,
     RestartContainerArgs,
+    SetDockerRegistryMirrorsArgs,
     StartContainerArgs,
     StopContainerArgs
 } from '@/interface/container.ts'
@@ -12,6 +23,10 @@ import { Pagination } from '@/interface/pagination'
 
 export function queryContainers(params: Pagination) {
     return request.get<ContainerQueryResult>('/api/v1/container/containers', params)
+}
+
+export function createContainer(params: CreateContainerArgs) {
+    return request.post<CreateContainerResult>('/api/v1/container/container_create', params)
 }
 
 export function startContainer(params: StartContainerArgs) {
@@ -42,6 +57,30 @@ export function queryImages(params: Pagination) {
     return request.get<ImageQueryResult>('/api/v1/container/images', params)
 }
 
+export function pullImage(params: PullImageArgs) {
+    return request.post<PullImageResult>('/api/v1/container/image_pull', params)
+}
+
+export function queryNetworks(params: Pagination) {
+    return request.get<NetworkQueryResult>('/api/v1/container/networks', params)
+}
+
+export function createNetwork(params: NetworkCreateArgs) {
+    return request.post<NetworkCreateResult>('/api/v1/container/network_create', params)
+}
+
+export function deleteNetwork(params: NetworkDeleteArgs) {
+    return request.post<NetworkDeleteResult>('/api/v1/container/network_delete', params)
+}
+
 export function queryDockerInfo() {
     return request.get<any>('/api/v1/container/version', {})
+}
+
+export function getDockerRegistryMirrors() {
+    return request.get<GetDockerRegistryMirrorsResult>('/api/v1/container/get_docker_registry_mirrors', {})
+}
+
+export function SetDockerRegistryMirrors(params: SetDockerRegistryMirrorsArgs) {
+    return request.post('/api/v1/container/set_docker_registry_mirrors', params)
 }

@@ -29,8 +29,8 @@ const doLogout = async () => {
 
 <style scoped lang="scss">
 .el-dropdown {
-    :deep(.el-avatar:hover) {
-        border: none;
+    :deep(.el-avatar:focus) {
+        outline: none;
     }
 }
 </style>

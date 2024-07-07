@@ -1,6 +1,6 @@
-import useStore from '@/store'
 import { createRouter, createWebHistory } from 'vue-router'
 import routes from './routes'
+import useStore from '@/store'
 const router = createRouter({
     history: createWebHistory('/app'), //可传参数，配置base路径，例如'/app'
     routes
@@ -21,5 +21,6 @@ router.beforeEach(async (to, _, next) => {
     } else {
         next()
     }
+    // next()
 })
 export default router

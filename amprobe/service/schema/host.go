@@ -106,3 +106,103 @@ type NetworkUsageArgs struct {
 type NetworkUsageReply struct {
 	Usage []NetUsage `json:"usage"`
 }
+
+type FilesSearchArgs struct {
+	Path string `json:"path" validate:"required"`
+}
+type FileInfo struct {
+	Name    string `json:"name"`
+	Size    int64  `json:"size"`
+	Mode    string `json:"mode"`
+	ModTime int64  `json:"mod_time"`
+	IsDir   bool   `json:"is_dir"`
+}
+type FilesSearchReply struct {
+	Files []FileInfo `json:"files"`
+}
+
+type FileUploadArgs struct {
+	Prefix string `json:"prefix" validate:"required"`
+}
+
+type FileUploadReply struct{}
+
+type FileDownloadArgs struct {
+	Filepath string `json:"filepath" validate:"required"`
+}
+
+type FileDownloadReply struct {
+	Filepath string
+}
+
+type FileDeleteArgs struct {
+	Filepath string `json:"filepath" validate:"required"`
+}
+
+type FileDeleteReply struct{}
+
+type FileCreateArgs struct {
+	Path     string `json:"path" validate:"required"`
+	FileName string `json:"file_name" validate:"required"`
+}
+
+type FileCreateReply struct{}
+
+type FolderCreateArgs struct {
+	Path       string `json:"path" validate:"required"`
+	FolderName string `json:"folder_name" validate:"required"`
+}
+
+type FolderCreateReply struct{}
+
+type GetDNSSettingsArgs struct{}
+
+type GetDNSSettingsReply struct {
+	DNS []string `json:"dns"`
+}
+
+type SetDNSSettingsArgs struct {
+	DNS []string `json:"dns"`
+}
+
+type SetDNSSettingsReply struct{}
+
+type GetSystemTimeArgs struct {
+}
+
+type GetSystemTimeReply struct {
+	SystemTime string `json:"system_time"`
+}
+
+type SetSystemTimeArgs struct {
+	SystemTime string `json:"system_time" validate:"required"`
+}
+
+type SetSystemTimeReply struct{}
+
+type GetSystemTimezoneListArgs struct {
+}
+
+type GetSystemTimezoneListReply struct {
+	SystemTimeZoneList []string `json:"system_timezone_list"`
+}
+
+type GetSystemTimezoneArgs struct{}
+
+type GetSystemTimezoneReply struct {
+	SystemTimeZone string `json:"system_timezone"`
+}
+
+type SetSystemTimezoneArgs struct {
+	SystemTimeZone string `json:"system_timezone" validate:"required"`
+}
+
+type SetSystemTimezoneReply struct{}
+
+type RebootArgs struct{}
+
+type RebootReply struct{}
+
+type ShutdownArgs struct{}
+
+type ShutdownReply struct{}

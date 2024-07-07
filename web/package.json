@@ -1,12 +1,12 @@
 {
     "name": "amprobe-web",
     "private": true,
-    "version": "0.0.0",
+    "version": "0.0.1",
     "type": "module",
     "scripts": {
         "ts": "vue-tsc --noEmit",
         "dev": "vite",
-        "build": "vue-tsc && vite build",
+        "build": "vue-tsc --noEmit && vite build",
         "preview": "vite preview",
         "lint": "eslint . --ext .ts,.tsx,.vue,.js,.jsx --fix",
         "format": "prettier --write \"./**/*.{js,ts,json,tsx,vue,html,md}\""
@@ -16,6 +16,7 @@
         "echarts": "^5.5.0",
         "element-plus": "^2.6.2",
         "lodash-es": "^4.17.21",
+        "path-browserify": "^1.0.1",
         "pinia": "^2.1.7",
         "pinia-plugin-persistedstate": "^3.2.1",
         "vue": "^3.4.21",
@@ -26,6 +27,7 @@
         "@iconify-json/ep": "^1.1.15",
         "@types/lodash-es": "^4.17.12",
         "@types/node": "^20.11.30",
+        "@types/path-browserify": "^1.0.2",
         "@typescript-eslint/eslint-plugin": "^7.3.1",
         "@typescript-eslint/parser": "^7.3.1",
         "@vitejs/plugin-vue": "^5.0.4",
@@ -37,13 +39,13 @@
         "prettier": "^3.2.5",
         "sass": "^1.72.0",
         "terser": "^5.30.3",
-        "typescript": "^5.4.3",
+        "typescript": "^5.5.3",
         "unplugin-auto-import": "^0.17.5",
         "unplugin-icons": "^0.18.5",
         "unplugin-vue-components": "^0.26.0",
         "vite": "^5.2.6",
         "vite-plugin-eslint": "^1.8.1",
         "vite-plugin-svg-icons": "^2.0.1",
-        "vue-tsc": "^1.8.27"
+        "vue-tsc": "^2.0.26"
     }
 }

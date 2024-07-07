@@ -96,3 +96,56 @@ export interface NetTrendingArgs {
     start_time: number
     end_time: number
 }
+
+export interface FilesSearchArgs {
+    path: string
+}
+
+export interface FileInfo {
+    name: string
+    size: number
+    mode: string
+    mod_time: number
+    is_dir: boolean
+}
+
+export interface FilesSearchResult {
+    files: FileInfo[]
+}
+
+export interface FileUploadArgs {
+    prefix: string
+}
+
+export interface FileUploadResult {}
+
+export interface FileDownloadArgs {
+    filepath: string
+}
+
+export interface FileDownloadResult {}
+
+export interface FileDeleteArgs {
+    filepath: string
+}
+
+export interface FileDeleteResult {}
+
+export interface FileCreateArgs {
+    path: string
+    file_name: string
+}
+export interface FileCreateResult {}
+
+export interface FolderCreateArgs {
+    path: string
+    folder_name: string
+}
+
+export interface FolderCreateResult {}
+
+export interface FolderDeleteArgs {
+    path: string
+}
+
+export interface FolderDeleteResult {}

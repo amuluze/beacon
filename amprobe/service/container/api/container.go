@@ -5,8 +5,10 @@
 package api
 
 import (
-	"github.com/amuluze/amprobe/service/container/rpc"
+	"fmt"
 	"log/slog"
+
+	"github.com/amuluze/amprobe/service/container/rpc"
 
 	"github.com/amuluze/amprobe/pkg/fiberx"
 	"github.com/amuluze/amprobe/pkg/validatex"
@@ -22,6 +24,32 @@ func NewContainerAPI(containerService rpc.IContainerService) *ContainerAPI {
 	return &ContainerAPI{
 		ContainerService: containerService,
 	}
+}
+
+func (a *ContainerAPI) Version(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	version, err := a.ContainerService.Version(c)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.Success(ctx, version)
+}
+
+func (a *ContainerAPI) ContainerCreate(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	var args schema.ContainerCreateArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	slog.Info("args", "args", args)
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	container, err := a.ContainerService.ContainerCreate(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.Success(ctx, container)
 }
 
 func (a *ContainerAPI) ContainerList(ctx *fiber.Ctx) error {
@@ -41,32 +69,6 @@ func (a *ContainerAPI) ContainerList(ctx *fiber.Ctx) error {
 		return fiberx.Failure(ctx, err)
 	}
 	return fiberx.Success(ctx, container)
-}
-
-func (a *ContainerAPI) ImageList(ctx *fiber.Ctx) error {
-	c := ctx.UserContext()
-
-	var args schema.ImageQueryArgs
-	if err := fiberx.ParseQuery(ctx, &args); err != nil {
-		return fiberx.Failure(ctx, err)
-	}
-	if err := validatex.ValidateStruct(&args); err != nil {
-		return fiberx.Failure(ctx, err)
-	}
-	images, err := a.ContainerService.ImageList(c, args)
-	if err != nil {
-		return fiberx.Failure(ctx, err)
-	}
-	return fiberx.Success(ctx, images)
-}
-
-func (a *ContainerAPI) Version(ctx *fiber.Ctx) error {
-	c := ctx.UserContext()
-	version, err := a.ContainerService.Version(c)
-	if err != nil {
-		return fiberx.Failure(ctx, err)
-	}
-	return fiberx.Success(ctx, version)
 }
 
 func (a *ContainerAPI) ContainerStart(ctx *fiber.Ctx) error {
@@ -139,6 +141,79 @@ func (a *ContainerAPI) ContainerRestart(ctx *fiber.Ctx) error {
 	return fiberx.NoContent(ctx)
 }
 
+func (a *ContainerAPI) ImageList(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+
+	var args schema.ImageQueryArgs
+	if err := fiberx.ParseQuery(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	images, err := a.ContainerService.ImageList(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.Success(ctx, images)
+}
+
+func (a *ContainerAPI) ImagePull(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	var args schema.ImagePullArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	slog.Info("args", "args", args)
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	err := a.ContainerService.ImagePull(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
+}
+
+// ImageImport 包含两部分，文件上传和加载
+func (a *ContainerAPI) ImageImport(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	file, err := ctx.FormFile("file")
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	// save file
+	slog.Info("image import", "file nameage name", file.Filename)
+	if err := ctx.SaveFile(file, fmt.Sprintf("/tmp/%s", file.Filename)); err != nil {
+		slog.Error("save file error", "err", err, "filepath", fmt.Sprintf("/tmp/%s", file.Filename))
+		return fiberx.Failure(ctx, err)
+	}
+	args := schema.ImageImportArgs{
+		SourceFile: fmt.Sprintf("/tmp/%s", file.Filename),
+	}
+	if err := a.ContainerService.ImageImport(c, args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
+}
+
+// ImageExport 包含两步，将镜像导出为压缩文件，并提供下载
+func (a *ContainerAPI) ImageExport(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	var args schema.ImageExportArgs
+	if err := fiberx.ParseQuery(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	slog.Info("args", "args", args)
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	if err := a.ContainerService.ImageExport(c, args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return ctx.Download(fmt.Sprintf("/tmp/%s.tar", args.ImageName))
+}
+
 func (a *ContainerAPI) ImageRemove(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	var args schema.ImageRemoveArgs
@@ -160,6 +235,82 @@ func (a *ContainerAPI) ImageRemove(ctx *fiber.Ctx) error {
 func (a *ContainerAPI) ImagesPrune(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	err := a.ContainerService.ImagesPrune(c)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
+}
+
+func (a *ContainerAPI) NetworkList(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	var args schema.NetworkListArgs
+	if err := fiberx.ParseQuery(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	slog.Info("network list args", "args", args)
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	networks, err := a.ContainerService.NetworkList(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.Success(ctx, networks)
+}
+
+func (a *ContainerAPI) NetworkDelete(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	var args schema.NetworkDeleteArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	err := a.ContainerService.NetworkDelete(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.NoContent(ctx)
+}
+
+func (a *ContainerAPI) NetworkCreate(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	var args schema.NetworkCreateArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	reply, err := a.ContainerService.NetworkCreate(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.Success(ctx, reply)
+}
+
+func (a *ContainerAPI) GetDockerRegistryMirrors(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	args := schema.GetDockerRegistryMirrorsArgs{}
+	res, err := a.ContainerService.GetDockerRegistryMirrors(c, args)
+	slog.Info("get docker registry mirrors", "res", res, "err", err)
+	if err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	return fiberx.Success(ctx, res)
+}
+
+func (a *ContainerAPI) SetDockerRegistryMirrors(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+	args := schema.SetDockerRegistryMirrorsArgs{}
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, err)
+	}
+	err := a.ContainerService.SetDockerRegistryMirrors(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
 	}

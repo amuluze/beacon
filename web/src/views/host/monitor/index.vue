@@ -1,15 +1,22 @@
 <template>
-    <div class="am-host-container">
-        <div class="am-host-container__operator">
-            <el-card>
-                <el-select v-model="timeDensity" placeholder="Select" size="default" style="width: 240px">
-                    <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
-                </el-select>
-            </el-card>
-        </div>
+    <div class="am-host-header">
+        <span @click="$router.push('/host/monitor')">监控</span>
+        <span @click="$router.push('/host/file')">文件</span>
+        <span @click="$router.push('/host/terminal')">终端</span>
+        <span @click="$router.push('/host/settings')">设置</span>
+    </div>
+    <div class="am-host-operator">
+        <el-card shadow="never">
+            <span>时间密度：</span>
+            <el-select v-model="timeDensity" placeholder="Select" size="default" style="width: 120px">
+                <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+        </el-card>
+    </div>
+    <div class="am-host-content">
         <el-row :gutter="4">
             <el-col :span="12">
-                <el-card>
+                <el-card shadow="never">
                     <echarts :option="cpuOption">
                         <div class="am-host-container__image-title">CPU 总使用率</div>
                         <div class="am-host-container__image-description">百分比： {{ cpuPercent }}</div>
@@ -17,7 +24,7 @@
                 </el-card>
             </el-col>
             <el-col :span="12">
-                <el-card>
+                <el-card shadow="never">
                     <echarts :option="memOption">
                         <div class="am-host-container__image-title">内存使用率</div>
                         <div class="am-host-container__image-description">
@@ -29,7 +36,7 @@
         </el-row>
         <el-row :gutter="4">
             <el-col :span="12">
-                <el-card>
+                <el-card shadow="never">
                     <echarts :option="diskOption">
                         <div class="am-host-container__image-title">磁盘使用率</div>
                         <div
@@ -37,20 +44,17 @@
                             :key="index"
                             class="am-host-container__image-description"
                         >
-                            {{ item.device }} 总量：{{ item.total }} 使用：{{ item.used }} 百分比： {{ item.percent }}
+                            {{ item.device }} 总量：{{ item.total }} 使用：{{ item.used }} 百分比：
+                            {{ item.percent }}
                         </div>
                     </echarts>
                 </el-card>
             </el-col>
             <el-col :span="12">
-                <el-card>
+                <el-card shadow="never">
                     <echarts :option="netOption">
                         <div class="am-host-container__image-title">流量曲线图</div>
-                        <div
-                            v-for="(item, index) in netInfo"
-                            :key="index"
-                            class="am-host-container__image-description"
-                        >
+                        <div v-for="(item, index) in netInfo" :key="index" class="am-host-container__image-description">
                             {{ item.ethernet }} 接收：{{ item.read }} 发送：{{ item.write }}
                         </div>
                     </echarts>
@@ -78,8 +82,9 @@ import {
     DiskUsage,
     MemTrendingArgs,
     NetIO,
-    NetTrendingArgs, NetUsage,
-} from '@/interface/host.ts';
+    NetTrendingArgs,
+    NetUsage
+} from '@/interface/host.ts'
 import { convertBytesToReadable } from '@/utils/convert.ts'
 import { dayjs } from 'element-plus'
 import { set } from 'lodash-es'
@@ -87,6 +92,14 @@ import { set } from 'lodash-es'
 // 时间密度下拉框
 const timeDensity = ref(600)
 const options = [
+    {
+        value: 120,
+        label: '2分钟'
+    },
+    {
+        value: 300,
+        label: '5分钟'
+    },
     {
         value: 600,
         label: '10分钟'
@@ -121,6 +134,7 @@ const renderCPU = async () => {
         start_time: dayjs().unix() - timeDensity.value,
         end_time: dayjs().unix()
     }
+
     console.log(param)
     const { data } = await queryCPUUsage(param)
     const cpuData = data.data
@@ -279,16 +293,8 @@ const renderDisk = async () => {
             (item: DiskIO) => dayjs(item.timestamp * 1000).hour() + ':' + dayjs(item.timestamp * 1000).minute()
         )
     )
-    set(
-        diskOption,
-        'legend.data',
-        generateDiskLegendData(diskData.usage)
-    )
-    set(
-        diskOption,
-        'series',
-        generateDiskSeriesData(diskData.usage)
-    )
+    set(diskOption, 'legend.data', generateDiskLegendData(diskData.usage))
+    set(diskOption, 'series', generateDiskSeriesData(diskData.usage))
     console.log('disk options: ', diskOption)
 }
 
@@ -425,9 +431,81 @@ watch(
 </script>
 
 <style scoped lang="scss">
-@include b(host-container) {
-    overflow: scroll;
+@include b(host-header) {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    height: 48px;
+    width: 100%;
     background-color: #ffffff;
+    // box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+
+    border-radius: 4px;
+    margin-bottom: 8px;
+    padding: 0 16px;
+    span {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        font-size: 16px;
+        font-weight: 600;
+        margin-left: 16px;
+        margin-right: 16px;
+        color: #424244;
+        cursor: pointer;
+        &:first-child {
+            color: #2f7bff;
+            &::before {
+                content: '';
+                position: absolute;
+                left: 20px;
+                width: 4px;
+                height: 16px;
+                text-align: center;
+                background-color: #2f7bff;
+                border-radius: 2px;
+            }
+        }
+    }
+
+    .el-card {
+        height: 100%;
+        :deep(.el-card__body) {
+            height: 100% !important;
+            padding: 0 8px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+    }
+}
+@include b(host-operator) {
+    height: 48px;
+    width: 100%;
+
+    .el-card {
+        height: 100%;
+        :deep(.el-card__body) {
+            height: 100% !important;
+            padding: 0 16px 0 16px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-end;
+        }
+    }
+
+    border-radius: 4px;
+    margin-bottom: 4px;
+}
+@include b(host-content) {
+    // background-color: #ffffff;
+    width: 100%;
+    height: calc(100vh - 146px);
+    overflow-y: auto;
+
     .el-row {
         margin-bottom: 4px;
         .el-col {
@@ -441,22 +519,6 @@ watch(
         :deep(.el-card__body) {
             height: 100% !important;
             width: 100% !important;
-        }
-    }
-
-    @include e(operator) {
-        height: 48px;
-        width: 100%;
-        margin-bottom: 4px;
-        .el-card {
-            height: 100%;
-            :deep(.el-card__body) {
-                height: 100% !important;
-                padding: 0 8px 0 0;
-                display: flex;
-                align-items: center;
-                justify-content: flex-end;
-            }
         }
     }
 

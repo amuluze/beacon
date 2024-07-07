@@ -7,13 +7,15 @@ package rpc
 import (
 	"github.com/amuluze/amutool/database"
 	"github.com/amuluze/amutool/docker"
+	"github.com/patrickmn/go-cache"
 )
 
 type Service struct {
 	DB      *database.DB
 	Manager *docker.Manager
+	cache   *cache.Cache
 }
 
 func NewService(db *database.DB, manager *docker.Manager) *Service {
-	return &Service{DB: db, Manager: manager}
+	return &Service{DB: db, Manager: manager, cache: cache.New(0, 0)}
 }

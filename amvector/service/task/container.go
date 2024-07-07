@@ -6,9 +6,11 @@ package task
 
 import (
 	"context"
-	"github.com/amuluze/amvector/service/model"
+	"encoding/json"
 	"log/slog"
 	"time"
+
+	"github.com/amuluze/amvector/service/model"
 )
 
 func (a *Task) Container(timestamp time.Time) {
@@ -22,6 +24,7 @@ func (a *Task) Container(timestamp time.Time) {
 	}
 	var containers []model.Container
 	for _, info := range cs {
+		labels, _ := json.Marshal(info.Labels)
 		var d model.Container
 		d.Timestamp = timestamp
 		d.ContainerID = info.ID[:6]
@@ -30,6 +33,7 @@ func (a *Task) Container(timestamp time.Time) {
 		d.Image = info.Image
 		d.Uptime = info.Uptime
 		d.IP = info.IP
+		d.Labels = string(labels)
 
 		cpuPercent, err := a.manager.GetContainerCPU(ctx, info.ID[:6])
 		if err != nil {
@@ -122,6 +126,43 @@ func (a *Task) Image(timestamp time.Time) {
 		slog.Error("failed to delete image", "error", err)
 	}
 	a.db.Model(&model.Image{}).Create(&list)
+}
+
+func (a *Task) Net(timestamp time.Time) {
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	nets, err := a.manager.ListNetwork(ctx)
+	if err != nil {
+		slog.Error("failed to get network", "error", err)
+		return
+	}
+	var list model.Networks
+	for _, net := range nets {
+		subnet := ""
+		gateway := ""
+		labels, _ := json.Marshal(net.Labels)
+		if len(net.SubNet) > 0 {
+			subnet = net.SubNet[0].Subnet
+			gateway = net.SubNet[0].Gateway
+		}
+		list = append(list, model.Network{
+			Timestamp: timestamp,
+			NetworkID: net.ID,
+			Name:      net.Name,
+			Driver:    net.Driver,
+			Created:   net.Created,
+			Scope:     net.Scope,
+			Internal:  net.Internal,
+			Subnet:    subnet,
+			Gateway:   gateway,
+			Labels:    string(labels),
+		})
+	}
+	if err := a.db.Unscoped().Where("1 = 1").Delete(&model.Network{}).Error; err != nil {
+		slog.Error("failed to delete network", "error", err)
+	}
+	a.db.Model(&model.Network{}).Create(&list)
 }
 
 func (a *Task) ClearOldRecord() {

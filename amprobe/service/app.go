@@ -17,6 +17,7 @@ func NewFiberApp(config *Config, r IRouter) *fiber.App {
 		Prefork:      config.Fiber.Prefork,
 		AppName:      config.Fiber.AppName,
 		ServerHeader: config.Fiber.SeverHeader,
+		BodyLimit:    1000 * 1024 * 1024,
 	}
 
 	app := fiber.New(fiberConfig)

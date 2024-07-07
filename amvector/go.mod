@@ -5,6 +5,7 @@ go 1.21.9
 require (
 	github.com/amuluze/amutool/database v0.0.0-20240510090832-32eaf1044cf1
 	github.com/amuluze/amutool/timex v0.0.0-20240510090832-32eaf1044cf1
+	github.com/docker/docker v26.0.0+incompatible
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/shirou/gopsutil/v3 v3.24.5
@@ -22,15 +23,17 @@ require (
 	github.com/apache/thrift v0.20.0 // indirect
 	github.com/cenk/backoff v2.2.1+incompatible // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
+	github.com/containerd/log v0.1.0 // indirect
 	github.com/dgryski/go-jump v0.0.0-20211018200510-ba001c3ffce0 // indirect
 	github.com/distribution/reference v0.5.0 // indirect
-	github.com/docker/docker v26.0.0+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
+	github.com/docker/libcompose v0.4.0 // indirect
 	github.com/edwingeng/doublejump v1.0.1 // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
+	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
 	github.com/go-echarts/go-echarts/v2 v2.3.3 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.7.0 // indirect
@@ -91,6 +94,7 @@ require (
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/smallnest/quick v0.2.0 // indirect
 	github.com/smallnest/statsview v1.0.1 // indirect
 	github.com/soheilhy/cmux v0.1.5 // indirect
@@ -128,6 +132,7 @@ require (
 	golang.org/x/tools v0.22.0 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/clickhouse v0.5.1 // indirect
 	gorm.io/driver/mysql v1.5.2 // indirect
@@ -136,7 +141,7 @@ require (
 )
 
 require (
-	github.com/amuluze/amutool/docker v0.0.0-20240510090832-32eaf1044cf1
+	github.com/amuluze/amutool/docker v0.0.0-20240627113033-e396b412dc24
 	github.com/amuluze/amutool/logger v0.0.0-20240510090832-32eaf1044cf1
 	github.com/google/wire v0.6.0
 	github.com/spf13/viper v1.19.0

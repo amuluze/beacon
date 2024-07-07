@@ -1,32 +1,32 @@
 <template>
     <div class="am-overview-container">
+        <div class="am-overview-container__title">
+            <span>总览</span>
+        </div>
         <el-row :gutter="8">
             <el-col :span="16">
-                <el-card class="am-overview-overview">
+                <el-card class="am-overview-overview" shadow="never">
                     <h4>概览</h4>
                     <el-row :gutter="4">
                         <el-col :span="12">
-                            <el-card>
-                                <el-statistic title="容器数量" :value="containerCount" />
-                            </el-card>
+                            <el-statistic title="容器数量" :value="containerCount" />
                         </el-col>
                         <el-col :span="12">
-                            <el-card>
-                                <el-statistic title="镜像数量" :value="imageCount" />
-                            </el-card>
+                            <el-statistic title="镜像数量" :value="imageCount" />
                         </el-col>
                     </el-row>
                 </el-card>
-                <el-card>
+                <el-card class="am-overview-status" shadow="never">
                     <h4>状态</h4>
                     <el-row :gutter="4">
-                        <el-col :span="12"> <echarts :option="cpuGaugeOption" height="200px"></echarts> </el-col>
-                        <el-col :span="12"> <echarts :option="memGaugeOption" height="200px"></echarts> </el-col>
+                        <el-col :span="8"> <echarts :option="cpuGaugeOption" height="200px"></echarts> </el-col>
+                        <el-col :span="8"> <echarts :option="memGaugeOption" height="200px"></echarts> </el-col>
+                        <el-col :span="8"> <echarts :option="diskGaugeOption" height="200px"></echarts> </el-col>
                     </el-row>
                 </el-card>
             </el-col>
             <el-col :span="8">
-                <el-card class="am-overview-host">
+                <el-card class="am-overview-host" shadow="never">
                     <h4>主机信息</h4>
                     <p>
                         主机名称：<el-tag>{{ HostInfo?.hostname }}</el-tag>
@@ -43,20 +43,12 @@
                     <p>
                         系统类型：<el-tag>{{ HostInfo?.os }}/{{ HostInfo?.kernel_arch }}</el-tag>
                     </p>
-                </el-card>
-                <el-card>
-                    <h4>容器信息</h4>
+                    <h4>Docker信息</h4>
                     <p>
                         Docker 版本：<el-tag>{{ DockerInfo?.docker_version }}</el-tag>
                     </p>
                     <p>
                         API 版本： <el-tag>{{ DockerInfo?.min_api_version }}-{{ DockerInfo?.api_version }}</el-tag>
-                    </p>
-                    <p>
-                        Git Commit：<el-tag>{{ DockerInfo?.git_commit }}</el-tag>
-                    </p>
-                    <p>
-                        Go version： <el-tag>{{ DockerInfo?.go_version }}</el-tag>
                     </p>
                     <p>
                         系统类型： <el-tag>{{ DockerInfo?.os }}/{{ DockerInfo?.arch }}</el-tag>
@@ -69,13 +61,19 @@
 
 <script setup lang="ts">
 import { queryContainers, queryDockerInfo, queryImages } from '@/api/container'
-import { queryCPUInfo, queryHostInfo, queryMemInfo } from '@/api/host'
+import { queryCPUInfo, queryDiskInfo, queryHostInfo, queryMemInfo } from '@/api/host'
 import { EChartsOption } from '@/components/Echarts/echarts'
-import { cpuGaugeOptions, memGaugeOptions } from '@/components/Echarts/gauge'
+import { cpuGaugeOptions, diskGaugeOptions, memGaugeOptions } from '@/components/Echarts/gauge'
 import { set } from 'lodash-es'
 
 onMounted(() => {
-    getHostInfo(), getDockerInfo(), renderCPUGauge(), renderMemGauge(), statisticContainer(), statisticImage()
+    getHostInfo(),
+        getDockerInfo(),
+        renderCPUGauge(),
+        renderMemGauge(),
+        renderDiskGauge(),
+        statisticContainer(),
+        statisticImage()
 })
 
 const containerCount = ref(0)
@@ -147,7 +145,7 @@ const renderCPUGauge = async () => {
 const memGaugeData = [
     {
         value: 20,
-        name: 'Memory',
+        name: '内存',
         title: {
             offsetCenter: ['0%', '-15%']
         },
@@ -166,20 +164,87 @@ const renderMemGauge = async () => {
     set(memGaugeOption, 'series[0].data', memGaugeData)
     console.log('gauge', memGaugeOption)
 }
+
+const diskGaugeData = [
+    {
+        value: 20,
+        name: '磁盘',
+        title: {
+            offsetCenter: ['0%', '-15%']
+        },
+        detail: {
+            valueAnimation: true,
+            offsetCenter: ['0%', '15%']
+        }
+    }
+]
+const diskGaugeOption = reactive<EChartsOption>(diskGaugeOptions)
+const renderDiskGauge = async () => {
+    const { data } = await queryDiskInfo()
+    let total = 0
+    let used = 0
+    data.info.forEach((item: any) => {
+        total += item.total
+        used += item.used
+    })
+    // 保留小数点后两位
+    diskGaugeData[0].value = Math.round((used / total) * 10000) / 100
+    set(diskGaugeOption, 'series[0].data', diskGaugeData)
+    console.log('gauge', diskGaugeOption)
+}
 </script>
 
 <style scoped lang="scss">
 @include b(overview-container) {
     font-size: 14px;
-    .el-row {
+
+    @include e(title) {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 48px;
+        width: 100%;
+        background-color: #ffffff;
+        // box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+
+        border-radius: 4px;
         margin-bottom: 8px;
+        padding: 0 16px;
+        span {
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+            font-weight: 600;
+            color: #105eeb;
+            margin-left: 16px;
+            &::before {
+                content: ' ';
+                position: absolute;
+                left: 20px;
+                width: 4px;
+                height: 16px;
+                text-align: center;
+                background-color: #2f7bff;
+                border-radius: 2px;
+            }
+        }
     }
 }
+
 @include b(overview-overview) {
     margin-bottom: 8px;
+    height: 160px;
+    .el-row {
+        text-align: center;
+    }
+}
+
+@include b(overview-status) {
+    height: 300px;
 }
 
 @include b(overview-host) {
-    margin-bottom: 8px;
+    height: 468px;
+    overflow-y: auto;
 }
 </style>

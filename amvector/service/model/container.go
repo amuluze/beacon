@@ -25,6 +25,7 @@ type Container struct {
 	MemPercent  float64
 	MemUsage    float64
 	MemLimit    float64
+	Labels      string
 }
 
 func (d *Container) TableName() string {
@@ -61,3 +62,21 @@ type Image struct {
 }
 
 func (i *Image) TableName() string { return "s_image" }
+
+type Networks []Network
+
+type Network struct {
+	gorm.Model
+	Timestamp time.Time
+	NetworkID string
+	Name      string
+	Driver    string
+	Scope     string
+	Created   string
+	Internal  bool
+	Subnet    string
+	Gateway   string
+	Labels    string
+}
+
+func (n *Network) TableName() string { return "s_network" }
