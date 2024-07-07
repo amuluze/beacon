@@ -10,6 +10,7 @@ set -ex
 
 echo $1
 type=$1
+TAG=v1.3.4
 
 function clear() {
     rm -rf web/disk
@@ -62,14 +63,14 @@ function amvector() {
 function package() {
     FILELIST="run.sh amvector/configs amprobe/configs amprobe/nginx"
     if [ ${type} = "amd64" ]; then
-        docker save amuluze/amprobe:v1.3.4 | gzip > amprobe.tar.gz
+        docker save amuluze/amprobe:${TAG} | gzip > amprobe.tar.gz
         FILELIST="${FILELIST} amprobe.tar.gz  amvector/amvector"
-        zip -0qr amprobe.installer.zip ${FILELIST}
+        zip -0qr amprobe.${TAG}.installer.zip ${FILELIST}
         rm amprobe.tar.gz
     else
-        docker save amuluze/amprobe_arm:v1.3.4 | gzip > amprobe.arm.tar.gz
+        docker save amuluze/amprobe_arm:${TAG} | gzip > amprobe.arm.tar.gz
         FILELIST="${FILELIST} amprobe.arm.tar.gz amvector/amvector_arm"
-        zip -0qr amprobe.installer.arm.zip ${FILELIST}
+        zip -0qr amprobe.${TAG}.installer.arm.zip ${FILELIST}
         rm amprobe.arm.tar.gz
     fi
 }

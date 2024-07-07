@@ -140,16 +140,9 @@
     </div>
 </template>
 <script setup lang="ts">
-import { createFile, createFolder, deleteFile, downloadFile, queryFiles } from '@/api/host'
+import { createFile, createFolder, deleteFile, queryFiles } from '@/api/host'
 import { error, success } from '@/components/Message/message'
-import {
-    FileCreateArgs,
-    FileDeleteArgs,
-    FileDownloadArgs,
-    FileInfo,
-    FilesSearchArgs,
-    FolderCreateArgs
-} from '@/interface/host'
+import { FileCreateArgs, FileDeleteArgs, FileInfo, FilesSearchArgs, FolderCreateArgs } from '@/interface/host'
 import useStore from '@/store'
 import { convertBytesToReadable } from '@/utils/convert'
 import { dayjs } from 'element-plus'
@@ -233,16 +226,16 @@ const onSuccess = () => {
     queryFilesByPath(currentPath.value, true)
 }
 
-const downloadFileByName = async (name: string) => {
-    const params: FileDownloadArgs = {
-        filepath: path.join(currentPath.value, name)
-    }
-    console.log('params: ', params)
-    const { data } = await downloadFile(params)
-    console.log(data)
+// const downloadFileByName = async (name: string) => {
+//     const params: FileDownloadArgs = {
+//         filepath: path.join(currentPath.value, name)
+//     }
+//     console.log('params: ', params)
+//     const { data } = await downloadFile(params)
+//     console.log(data)
 
-    success('下载成功')
-}
+//     success('下载成功')
+// }
 
 const fileCreateLoading = ref(false)
 const folderCreateDialog = ref(false)
