@@ -10,39 +10,78 @@
             <el-row :gutter="1">
                 <el-col :span="4">
                     <span>主机: </span>
-                    <el-input type="text" v-model="host" style="width: 140px" placeholder="192.168.1.1" />
+                    <el-input type="text" v-model="termModel.host" style="width: 140px" placeholder="192.168.1.1" />
                 </el-col>
                 <el-col :span="4">
                     <span>端口: </span>
-                    <el-input type="number" v-model="port" style="width: 140px" placeholder="22" />
+                    <el-input type="number" v-model="termModel.port" style="width: 140px" placeholder="22" />
                 </el-col>
                 <el-col :span="4">
                     <span>用户: </span>
-                    <el-input type="text" v-model="username" style="width: 140px" placeholder="root" />
+                    <el-input type="text" v-model="termModel.username" style="width: 140px" placeholder="root" />
                 </el-col>
                 <el-col :span="4">
                     <span>密码: </span>
-                    <el-input type="password" v-model="password" style="width: 140px" placeholder="123456" />
+                    <el-input type="password" v-model="termModel.password" style="width: 140px" placeholder="123456" />
                 </el-col>
                 <el-col :span="4">
-                    <el-button type="primary" plain @click="createConnection">连接</el-button>
+                    <el-button type="primary" plain @click="createConnection">建立连接</el-button>
+                    <el-button type="primary" plain @click="closeConnection">断开连接</el-button>
                 </el-col>
             </el-row>
         </el-card>
     </div>
     <el-card shadow="never" class="am-host-terminal">
-        <el-empty description="暂无终端连接" />
+        <el-empty v-if="(termModel.connection = false)" description="暂无终端连接" />
+        <div v-else ref="terminal" style="width: 100%; height: 100%" v-loading="termModel.loading" />
     </el-card>
 </template>
 <script setup lang="ts">
 import { warning } from '@/components/Message/message'
+import { Terminal } from '@xterm/xterm'
+import { FitAddon } from '@xterm/addon-fit'
 
-const host = ref('')
-const port = ref('')
-const username = ref('')
-const password = ref('')
+const term = ref<Terminal>()
+const terminal = ref()
+const fitAddon = new FitAddon()
+
+const initTerminal = () => {
+    // 初始化 终端
+    term.value = new Terminal({
+        convertEol: true, // 启用时，光标将设置为下一行的开头
+        disableStdin: false, // 是否应禁用输入
+        cursorStyle: 'block', // 光标样式
+        cursorBlink: true, // 光标闪烁
+        theme: {
+            foreground: 'yellow', // 字体
+            background: 'black', // 背景
+            cursor: 'help' // 设置光标
+        }
+    })
+    term.value.open(terminal.value) //挂载dom窗口
+    term.value.loadAddon(fitAddon) //自适应尺寸
+    // 不能初始化的时候fit,需要等terminal准备就绪,可以设置延时操作
+    setTimeout(() => {
+        fitAddon.fit()
+    }, 5)
+}
+
+
+const termModel = reactive({
+    host: '',
+    port: '',
+    username: '',
+    password: '',
+    connection: false,
+    loading: false
+})
 
 const createConnection = () => {
+    warning('该功能尚未实现')
+    initTerminal()
+}
+
+const closeConnection = () => {
     warning('该功能尚未实现')
 }
 </script>
