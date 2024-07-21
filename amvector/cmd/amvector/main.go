@@ -7,9 +7,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/amuluze/amprobe/amvector/service"
 	"os"
 	"runtime"
+
+	"github.com/amuluze/amprobe/amvector/service"
 
 	"github.com/takama/daemon"
 )
@@ -34,7 +35,7 @@ func usage() {
 }
 
 func parseConfig() []string {
-	flag.StringVar(&configFile, "conf", "/etc/amvector/config.toml", "config file path")
+	flag.StringVar(&configFile, "conf", "/etc/amvector/config.yml", "config file path")
 	flag.StringVar(&prefix, "prefix", "/data/amprobe", "prefix of amprobe resources dir")
 	flag.Parse()
 	return flag.Args()
