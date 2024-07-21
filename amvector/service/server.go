@@ -12,7 +12,6 @@ import (
 )
 
 func Run(configFile string, prefix Prefix) (func(), error) {
-	slog.Info("config file", "info", configFile)
 	injector, clearFunc, err := BuildInjector(configFile, prefix)
 	if err != nil {
 		slog.Error("build injector failed:", "err", err)
@@ -24,12 +23,10 @@ func Run(configFile string, prefix Prefix) (func(), error) {
 
 	// 定时任务
 	timedTask := injector.Task
-	slog.Info("start timed task")
 	go timedTask.Run()
 
 	// rpc server
 	rpcServer := injector.RPCServer
-	slog.Info("start rpc server")
 	go func() {
 		err := rpcServer.Start()
 		if err != nil {
@@ -37,7 +34,6 @@ func Run(configFile string, prefix Prefix) (func(), error) {
 		}
 	}()
 
-	slog.Info("start container")
 	if err := setupService(injector.Config.ServiceProfile); err != nil {
 		slog.Error("setup service failed:", "err", err)
 	}
@@ -56,6 +52,7 @@ func setupService(serviceProfile string) error {
 	containerManager := container.NewContainerManager()
 	cfg, err := profile.ReadProfile(serviceProfile)
 	if err != nil {
+		slog.Error("read profile failed:", "err", err)
 		return err
 	}
 

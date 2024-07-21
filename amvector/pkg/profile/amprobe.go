@@ -55,8 +55,9 @@ func (a *AmprobeProfile) InitResources(prefix string) error {
 func (a *AmprobeProfile) BuildProfile(prefix string) error {
 	defaults.SetDefaults(a)
 
-	amprobeDir := filepath.Join(prefix, resources.AmprobeConfigFolder)
-	amprobeNginxConfig := filepath.Join(prefix, resources.AmprobeNginxConfig)
+	amprobeDir := filepath.Join(prefix, resources.RootPath, resources.AmprobeConfigFolder)
+	amprobeNginxConfig := filepath.Join(prefix, resources.RootPath, resources.AmprobeNginxConfig)
+	amvectorSockFile := filepath.Join(prefix, resources.RootPath, resources.AmvectorSockFile)
 	a.Volumes.Volumes = append(a.Volumes.Volumes, []*yaml.Volume{
 		{
 			Source:      amprobeDir,
@@ -67,7 +68,7 @@ func (a *AmprobeProfile) BuildProfile(prefix string) error {
 			Destination: "/etc/nginx/nginx.conf",
 		},
 		{
-			Source:      resources.AmvectorSockFile,
+			Source:      amvectorSockFile,
 			Destination: "/app/vector.sock",
 		},
 		{
