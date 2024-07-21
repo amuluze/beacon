@@ -5,9 +5,11 @@
 package service
 
 import (
+	"fmt"
+	"log/slog"
+
 	"github.com/amuluze/amprobe/amvector/pkg/profile"
 	"github.com/amuluze/amprobe/amvector/service/container"
-	"log/slog"
 )
 
 func Run(configFile string, prefix Prefix) (func(), error) {
@@ -54,6 +56,7 @@ func setupService(serviceProfile string) error {
 	if err != nil {
 		return err
 	}
+	fmt.Printf("service profile: %#v\n", cfg)
 	if err := containerManager.CreateNetwork(cfg.Services.Network); err != nil {
 		return err
 	}
