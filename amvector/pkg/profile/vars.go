@@ -7,7 +7,7 @@ package profile
 const (
 	NetworkModeHost    = "host"
 	LocalHost          = "127.0.0.1"
-	BridgeName         = "amprobe/amvector"
+	BridgeName         = "amprobe"
 	BridgeGateway      = "172.18.0.1"
 	BridgeSubnet       = "172.18.0.0/24"
 	ServiceRedisAddr   = "172.18.0.2"

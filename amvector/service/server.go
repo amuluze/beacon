@@ -5,6 +5,7 @@
 package service
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/amuluze/amprobe/amvector/pkg/profile"
@@ -34,7 +35,8 @@ func Run(configFile string, prefix Prefix) (func(), error) {
 		}
 	}()
 
-	if err := setupService(injector.Config.ServiceProfile); err != nil {
+	slog.Info("service profile", "info", fmt.Sprintf("%#v", injector.Config))
+	if err := setupService(injector.Config.Profile); err != nil {
 		slog.Error("setup service failed:", "err", err)
 	}
 

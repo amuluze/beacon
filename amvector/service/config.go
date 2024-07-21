@@ -13,19 +13,18 @@ import (
 type Prefix string
 
 type Config struct {
-	prefix           Prefix    `yaml:"-"`
-	ServiceProfile   string    `yaml:"service_profile"`
-	DB               DB        `yaml:"db"`
-	Log              Log       `yaml:"log"`
-	Task             Task      `yaml:"task"`
-	ServiceVariables Variables `yaml:"service_variables"`
+	prefix    Prefix    `yaml:"-"`
+	Log       Log       `yaml:"log"`
+	Task      Task      `yaml:"task"`
+	DB        DB        `yaml:"db"`
+	Variables Variables `yaml:"variables"`
+	Profile   string    `yaml:"profile"`
 }
 
 func NewConfig(configFile string, prefix Prefix) (*Config, error) {
 	config := &Config{}
 
 	viper.SetConfigFile(configFile)
-	slog.Info("config file", "info", configFile)
 	if err := viper.ReadInConfig(); err != nil {
 		slog.Error("read config error", "err", err)
 		return nil, err

@@ -68,8 +68,8 @@ type Config struct {
 		DBName   string `yaml:"dbname"`
 		SSLMode  string `yaml:"sslmode"`
 	} `yaml:"db"`
-	ServiceProfile   string `yaml:"service_profile"`
-	ServiceVariables struct {
+	Profile   string `yaml:"profile"`
+	Variables struct {
 		ImageTag        string `yaml:"image_tag"`
 		HostPrefix      string `yaml:"host_prefix"`
 		ContainerPrefix string `yaml:"container_prefix"`
@@ -78,16 +78,16 @@ type Config struct {
 		HostLogsDir          string `yaml:"-"`
 		ContainerResourceDir string `yaml:"-"`
 		ContainerLogsDir     string `yaml:"-"`
-	} `yaml:"service_variables"`
+	} `yaml:"variables"`
 }
 
 func (c *Config) loadDefault(prefix string) error {
-	c.ServiceVariables.ImageTag = "latest"
-	c.ServiceVariables.HostPrefix = prefix
-	c.ServiceVariables.ContainerPrefix = "/"
+	c.Variables.ImageTag = "latest"
+	c.Variables.HostPrefix = prefix
+	c.Variables.ContainerPrefix = "/"
 	c.loadVariables()
 
-	c.Log.Output = filepath.Join(c.ServiceVariables.HostLogsDir, "vector.log")
+	c.Log.Output = filepath.Join(c.Variables.HostLogsDir, "vector.log")
 	c.Log.Level = "info"
 	c.Log.Rotation = 1
 	c.Log.MaxAge = 7
@@ -97,22 +97,22 @@ func (c *Config) loadDefault(prefix string) error {
 	c.Task.Ethernet.Names = []string{"eth0"}
 
 	c.DB.DBType = "sqlite"
-	c.DB.DBName = filepath.Join(c.ServiceVariables.HostResourceDir, resources.AmvectorStorageConfigDBPath)
-	c.ServiceProfile = filepath.Join(c.ServiceVariables.HostResourceDir, resources.AmvectorServiceProfilePath)
+	c.DB.DBName = filepath.Join(c.Variables.HostResourceDir, resources.AmvectorStorageConfigDBPath)
+	c.Profile = filepath.Join(c.Variables.HostResourceDir, resources.AmvectorServiceProfilePath)
 	return nil
 }
 
 func (c *Config) loadVariables() {
-	c.ServiceVariables.HostResourceDir = filepath.Join(c.ServiceVariables.HostPrefix, resources.RootPath)
-	c.ServiceVariables.HostLogsDir = filepath.Join(c.ServiceVariables.HostPrefix, "logs")
+	c.Variables.HostResourceDir = filepath.Join(c.Variables.HostPrefix, resources.RootPath)
+	c.Variables.HostLogsDir = filepath.Join(c.Variables.HostPrefix, "logs")
 
-	_ = utils.EnsureDirExists(c.ServiceVariables.HostResourceDir)
-	_ = utils.EnsureDirExists(c.ServiceVariables.HostLogsDir)
-	_ = utils.EnsureDirExists(filepath.Join(c.ServiceVariables.HostResourceDir, resources.AmvectorSockFolder))
-	_ = utils.EnsureDirExists(filepath.Join(c.ServiceVariables.HostResourceDir, resources.AmvectorStorageFolder))
+	_ = utils.EnsureDirExists(c.Variables.HostResourceDir)
+	_ = utils.EnsureDirExists(c.Variables.HostLogsDir)
+	_ = utils.EnsureDirExists(filepath.Join(c.Variables.HostResourceDir, resources.AmvectorSockFolder))
+	_ = utils.EnsureDirExists(filepath.Join(c.Variables.HostResourceDir, resources.AmvectorStorageFolder))
 
-	c.ServiceVariables.ContainerResourceDir = filepath.Join(c.ServiceVariables.ContainerPrefix, resources.RootPath)
-	c.ServiceVariables.ContainerLogsDir = filepath.Join(c.ServiceVariables.ContainerPrefix, "logs")
+	c.Variables.ContainerResourceDir = filepath.Join(c.Variables.ContainerPrefix, resources.RootPath)
+	c.Variables.ContainerLogsDir = filepath.Join(c.Variables.ContainerPrefix, "logs")
 }
 
 func (c *Config) Save() error {

@@ -7,7 +7,7 @@ package profile
 import "github.com/mcuadros/go-defaults"
 
 type NetworkProfile struct {
-	Name   string            `yaml:"name" default:"app"`
+	Name   string            `yaml:"name" default:"amprobe"`
 	Driver string            `yaml:"driver" default:"bridge"`
 	Ipam   *IPAM             `yaml:"ipam"`
 	Labels map[string]string `yaml:"labels,omitempty"`
