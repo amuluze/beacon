@@ -108,8 +108,8 @@ func (c *Config) loadVariables() {
 
 	_ = utils.EnsureDirExists(c.ServiceVariables.HostResourceDir)
 	_ = utils.EnsureDirExists(c.ServiceVariables.HostLogsDir)
-	_ = utils.EnsureDirExists(filepath.Join(c.ServiceVariables.HostPrefix, resources.AmvectorSockFolder))
-	_ = utils.EnsureDirExists(filepath.Join(c.ServiceVariables.HostPrefix, resources.AmvectorStorageFolder))
+	_ = utils.EnsureDirExists(filepath.Join(c.ServiceVariables.HostResourceDir, resources.AmvectorSockFolder))
+	_ = utils.EnsureDirExists(filepath.Join(c.ServiceVariables.HostResourceDir, resources.AmvectorStorageFolder))
 
 	c.ServiceVariables.ContainerResourceDir = filepath.Join(c.ServiceVariables.ContainerPrefix, resources.RootPath)
 	c.ServiceVariables.ContainerLogsDir = filepath.Join(c.ServiceVariables.ContainerPrefix, "logs")
