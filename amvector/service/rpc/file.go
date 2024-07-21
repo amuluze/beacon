@@ -75,3 +75,11 @@ func (s *Service) FileDelete(ctx context.Context, args schema.FileDeleteArgs, re
 	}
 	return os.Remove(args.Filepath)
 }
+
+func (s *Service) FileUpload(ctx context.Context, args schema.FileUploadArgs, reply *schema.FileUploadReply) error {
+	return os.Rename(args.SourceFilePath, args.TargetFilePath)
+}
+
+func (s *Service) FileDownload(ctx context.Context, args schema.FileDownloadArgs, reply *schema.FileDownloadReply) error {
+	return os.Rename(args.SourceFilePath, args.TargetFilePath)
+}

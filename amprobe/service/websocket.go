@@ -11,14 +11,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/amuluze/amutool/docker"
-	"github.com/amuluze/amutool/errors"
-	"github.com/gofiber/contrib/websocket"
-	"golang.org/x/crypto/ssh"
 	"io"
 	"log/slog"
 	"sync"
 	"time"
+
+	"github.com/amuluze/amutool/errors"
+	"github.com/amuluze/docker"
+	"github.com/gofiber/contrib/websocket"
+	"golang.org/x/crypto/ssh"
 )
 
 type LoggerHandler struct {
@@ -122,6 +123,7 @@ func (th *TermHandler) Handler(conn *websocket.Conn) {
 			slog.Error("term loop read error: ", "err", err)
 		}
 	}()
+
 	go func() {
 		defer wg.Done()
 		err := term.SessionWait()
@@ -203,6 +205,8 @@ func (t *Term) LoopRead(ctx context.Context, logBuff *bytes.Buffer) error {
 		default:
 			_, wsData, err := t.Conn.ReadMessage()
 			if err != nil {
+				t.Session.Close()
+				t.Conn.Close()
 				return fmt.Errorf("reading websocket message err: %s", err)
 			}
 			body := t.decode(wsData[1:])

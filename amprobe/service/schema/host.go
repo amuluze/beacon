@@ -122,13 +122,19 @@ type FilesSearchReply struct {
 }
 
 type FileUploadArgs struct {
-	Prefix string `json:"prefix" validate:"required"`
+	SourceFilePath string `json:"source_file_path"`
+	TargetFilePath string `json:"target_file_path"`
 }
 
 type FileUploadReply struct{}
 
 type FileDownloadArgs struct {
 	Filepath string `json:"filepath" validate:"required"`
+}
+
+type FileRemoteDownloadArgs struct {
+	SourceFilePath string `json:"source_file_path"`
+	TargetFilePath string `json:"target_file_path"`
 }
 
 type FileDownloadReply struct {
