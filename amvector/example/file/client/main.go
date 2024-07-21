@@ -18,7 +18,7 @@ func main() {
 	//xclient := client.NewXClient(share.SendFileServiceName, client.Failtry, client.RandomSelect, d, client.DefaultOption)
 	//defer xclient.Close()
 
-	//err := xclient.SendFile(context.Background(), "/Users/amu/Desktop/github/amprobe/amvector/example/file/client/abc.txt", 0, map[string]string{"path": "/tmp"})
+	//err := xclient.SendFile(context.Background(), "/Users/amu/Desktop/github/amprobe/amprobe/amvector/example/file/client/abc.txt", 0, map[string]string{"path": "/tmp"})
 	//if err != nil {
 	//	panic(err)
 	//}
@@ -29,9 +29,9 @@ func main() {
 	xclient := client.NewXClient(share.SendFileServiceName, client.Failtry, client.RandomSelect, d, client.DefaultOption)
 	defer xclient.Close()
 
-	file, _ := os.Create("/Users/amu/Desktop/github/amprobe/amvector/example/file/client/ddd.txt")
+	file, _ := os.Create("/Users/amu/Desktop/github/amprobe/amprobe/amvector/example/file/client/ddd.txt")
 	defer file.Close()
-	err := xclient.DownloadFile(context.Background(), "/Users/amu/Desktop/github/amprobe/amvector/example/file/client/abc.txt", file, map[string]string{})
+	err := xclient.DownloadFile(context.Background(), "/Users/amu/Desktop/github/amprobe/amprobe/amvector/example/file/client/abc.txt", file, map[string]string{})
 	if err != nil {
 		panic(err)
 	}

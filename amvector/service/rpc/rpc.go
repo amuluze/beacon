@@ -6,7 +6,7 @@ package rpc
 
 import (
 	"github.com/amuluze/amutool/database"
-	"github.com/amuluze/amutool/docker"
+	"github.com/amuluze/docker"
 	"github.com/patrickmn/go-cache"
 )
 

@@ -4,11 +4,11 @@
 package service
 
 import (
-	"github.com/amuluze/amvector/service/model"
+	"github.com/amuluze/amprobe/amvector/service/model"
 	"github.com/google/wire"
 )
 
-func BuildInjector(configFile string) (*Injector, func(), error) {
+func BuildInjector(configFile string, prefix Prefix) (*Injector, func(), error) {
 	wire.Build(
 		NewConfig,
 		NewLogger,

@@ -4,11 +4,15 @@
 // Description:
 package service
 
-import "log/slog"
+import (
+	"github.com/amuluze/amprobe/amvector/pkg/profile"
+	"github.com/amuluze/amprobe/amvector/service/container"
+	"log/slog"
+)
 
-func Run(configFile string) (func(), error) {
+func Run(configFile string, prefix Prefix) (func(), error) {
 	slog.Info("config file", "info", configFile)
-	injector, clearFunc, err := BuildInjector(configFile)
+	injector, clearFunc, err := BuildInjector(configFile, prefix)
 	if err != nil {
 		slog.Error("build injector failed:", "err", err)
 		return nil, err
@@ -30,6 +34,10 @@ func Run(configFile string) (func(), error) {
 		}
 	}()
 
+	if err := setupService(injector.Config.ServiceProfile); err != nil {
+		slog.Error("setup service failed:", "err", err)
+	}
+
 	return func() {
 		timedTask.Stop()
 		err := rpcServer.Stop()
@@ -38,4 +46,20 @@ func Run(configFile string) (func(), error) {
 		}
 		clearFunc()
 	}, nil
+}
+
+func setupService(serviceProfile string) error {
+	containerManager := container.NewContainerManager()
+	cfg, err := profile.ReadProfile(serviceProfile)
+	if err != nil {
+		return err
+	}
+	if err := containerManager.CreateNetwork(cfg.Services.Network); err != nil {
+		return err
+	}
+
+	if err := containerManager.CreateAmprobe(cfg.Services.Amprobe); err != nil {
+		return err
+	}
+	return nil
 }

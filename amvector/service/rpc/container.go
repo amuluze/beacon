@@ -10,11 +10,11 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/amuluze/amutool/docker"
+	"github.com/amuluze/docker"
 
-	"github.com/amuluze/amvector/service/model"
+	"github.com/amuluze/amprobe/amvector/service/model"
 
-	"github.com/amuluze/amvector/service/schema"
+	"github.com/amuluze/amprobe/amvector/service/schema"
 )
 
 func (s *Service) DockerVersion(ctx context.Context, args schema.VersionArgs, reply *model.Docker) error {
@@ -45,11 +45,9 @@ func (s *Service) ContainerCreate(ctx context.Context, args schema.ContainerCrea
 	var err error
 	if containerID, err = s.Manager.CreateContainer(
 		ctx,
-		args.ImageName,
-		args.NetworkID,
-		args.NetworkMode,
-		args.NetworkName,
 		args.ContainerName,
+		args.ImageName,
+		args.NetworkName,
 		args.Ports,
 		args.Volumes,
 		args.Labels,
@@ -84,7 +82,7 @@ func (s *Service) containerTask() {
 		d.IP = info.IP
 		d.Labels = string(labels)
 
-		cpuPercent, err := s.Manager.GetContainerCPU(ctx, info.ID[:6])
+		cpuPercent, err := s.Manager.GetContainerCpu(ctx, info.ID[:6])
 		if err != nil {
 			slog.Error("failed to get container cpu", "error", err)
 		}
@@ -183,7 +181,7 @@ func (s *Service) ImageCount(ctx context.Context, args schema.ImageCountArgs, re
 }
 
 func (s *Service) ImageDelete(ctx context.Context, args schema.ImageDeleteArgs, reply *schema.ImageDeleteReply) error {
-	if err := s.Manager.RemoveImage(ctx, args.ImageID); err != nil {
+	if err := s.Manager.DeleteImage(ctx, args.ImageID); err != nil {
 		return err
 	}
 	s.imageTask()
@@ -252,7 +250,7 @@ func (s *Service) ImageExport(ctx context.Context, args schema.ImageExportArgs, 
 
 func (s *Service) NetworkCreate(ctx context.Context, args schema.NetworkCreateArgs, reply *schema.NetworkCreateReply) error {
 	args.Labels[docker.AmprobeLabel] = "true"
-	if networkID, err := s.Manager.CreateNetwork(ctx, args.Name, args.Driver, args.NetworkSegment, args.Labels); err != nil {
+	if networkID, err := s.Manager.CreateNetwork(ctx, args.Name, args.Driver, args.Subnet, args.Gateway, args.Labels); err != nil {
 		return err
 	} else {
 		s.networkTask()

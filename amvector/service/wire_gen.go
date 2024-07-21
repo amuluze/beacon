@@ -7,13 +7,13 @@
 package service
 
 import (
-	"github.com/amuluze/amvector/service/model"
+	"github.com/amuluze/amprobe/amvector/service/model"
 )
 
 // Injectors from wire.go:
 
-func BuildInjector(configFile string) (*Injector, func(), error) {
-	config, err := NewConfig(configFile)
+func BuildInjector(configFile string, prefix Prefix) (*Injector, func(), error) {
+	config, err := NewConfig(configFile, prefix)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -49,7 +49,7 @@ type Host struct {
 }
 
 func main() {
-	addr := "/data/amvector/amvector.socket"
+	addr := "/data/amprobe/amvector/amprobe/amvector.socket"
 	d, _ := client.NewPeer2PeerDiscovery("unix@"+addr, "")
 	xclient := client.NewXClient("Service", client.Failtry, client.RandomSelect, d, client.DefaultOption)
 	defer xclient.Close()

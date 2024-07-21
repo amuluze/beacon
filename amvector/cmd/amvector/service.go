@@ -10,12 +10,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/amuluze/amvector/service"
+	"github.com/amuluze/amprobe/amvector/service"
 	"github.com/takama/daemon"
 )
 
 type Service struct {
 	configFile string
+	prefix     string
 	daemon     daemon.Daemon
 }
 
@@ -28,7 +29,7 @@ func (s *Service) Start() {
 func (s *Service) Run() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
-	clearFunc, err := service.Run(s.configFile)
+	clearFunc, err := service.Run(s.configFile, s.prefix)
 	if err != nil {
 		return
 	}
@@ -59,6 +60,14 @@ func (s *Service) manager(args []string) (string, error) {
 			return s.daemon.Stop()
 		case "status":
 			return s.daemon.Status()
+		case "setup":
+			fmt.Printf("initializing configuration files...\n")
+			if err := runSetup(); err != nil {
+				fmt.Printf("error initializing configuration files: %v\n", err)
+				os.Exit(-1)
+			} else {
+				os.Exit(0)
+			}
 		default:
 			usage()
 			return "", nil

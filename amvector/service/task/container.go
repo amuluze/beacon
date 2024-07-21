@@ -10,7 +10,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/amuluze/amvector/service/model"
+	"github.com/amuluze/amprobe/amvector/service/model"
 )
 
 func (a *Task) Container(timestamp time.Time) {

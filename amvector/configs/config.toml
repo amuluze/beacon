@@ -1,5 +1,5 @@
 [Rpc]
-Address = "/data/amvector/amvector.socket"
+Address = "/data/amprobe/amvector/amprobe/amvector.socket"
 
 # 数据库文件存放位置的配置
 [Gorm]
@@ -28,7 +28,7 @@ User = ""
 # 密码
 Password = ""
 # 数据库
-DBName = "/data/amvector/vector"
+DBName = "/data/amprobe/amvector/vector"
 # SSL模式
 SSLMode = ""
 
@@ -45,7 +45,7 @@ Names = ["eth0"]
 Interval = 30 # 单位 s
 
 [Logger]
-File = "/data/amvector/vector.log"
+File = "/data/amprobe/amvector/vector.log"
 Level = "debug"
-RotationTime = 1  # 每天切分一个日志文件
-MaxAge = 7        # 最多保留 7 天的日志
+RotationTime = 1                           # 每天切分一个日志文件
+MaxAge = 7                                 # 最多保留 7 天的日志

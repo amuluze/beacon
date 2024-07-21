@@ -1,6 +1,13 @@
-VECTOR 			= amvector
-VECTOR_ARM 		= amvector_arm
+VECTOR 			= amprobe/amvector
+VECTOR_ARM 		= amprobe/amvector_arm
 VECTOR_SERVER   = ./cmd/${VECTOR}
+
+
+INSTALLER  = amvector.install
+OBJPATH    = amvector-obj
+GOBINDATA  = go-bindata
+BINDATAPKG = assets
+BINDATAPATH = $(BINDATAPKG)/bindata.go
 
 .PHONY: amd64
 # build bin
@@ -16,3 +23,18 @@ arm64:
 # generate wire
 wire:
 	wire ./service/
+
+.PHONY: assets
+assets:
+	@$(GOBINDATA) --nomemcopy -pkg $(BINDATAPKG) -o $(BINDATAPATH) assets/resources/...
+
+
+.PHONY: installer
+installer:
+	@mkdir -p $(OBJPATH)
+	@cp $(TARGET) $(OBJPATH)
+	@strip $(OBJPATH)/$(TARGET)
+	@cp ./assets/setup.sh $(OBJPATH)
+	@cp ./assets/config.yml $(OBJPATH)
+	@makeself --gzip $(OBJPATH) $(INSTALLER) "builder" ./setup.sh
+	@rm -r $(OBJPATH)

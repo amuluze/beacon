@@ -20,7 +20,10 @@ const (
 
 var dependencies = []string{""}
 
-var configFile string
+var (
+	configFile string
+	prefix     string
+)
 
 func usage() {
 	fmt.Println("Description: \n\t", description)
@@ -30,7 +33,8 @@ func usage() {
 }
 
 func parseConfig() []string {
-	flag.StringVar(&configFile, "conf", "/data/amvector/configs/config.toml", "config file path")
+	flag.StringVar(&configFile, "conf", "/etc/amvector/config.toml", "config file path")
+	flag.StringVar(&prefix, "prefix", "/data/amprobe", "prefix of amprobe resources dir")
 	flag.Parse()
 	return flag.Args()
 }
@@ -51,7 +55,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	service := &Service{daemon: src, configFile: configFile}
+	service := &Service{daemon: src, configFile: configFile, prefix: prefix}
 	status, err := service.manager(args)
 	if err != nil {
 		fmt.Println(status, "\nError: ", err)
