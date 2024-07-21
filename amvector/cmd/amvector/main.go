@@ -7,6 +7,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/amuluze/amprobe/amvector/service"
 	"os"
 	"runtime"
 
@@ -55,7 +56,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	service := &Service{daemon: src, configFile: configFile, prefix: prefix}
+	service := &Service{daemon: src, configFile: configFile, prefix: service.Prefix(prefix)}
 	status, err := service.manager(args)
 	if err != nil {
 		fmt.Println(status, "\nError: ", err)
