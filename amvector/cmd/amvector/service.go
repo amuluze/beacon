@@ -16,7 +16,7 @@ import (
 
 type Service struct {
 	configFile string
-	prefix     string
+	prefix     service.Prefix
 	daemon     daemon.Daemon
 }
 
