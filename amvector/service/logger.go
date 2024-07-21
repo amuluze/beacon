@@ -5,7 +5,6 @@
 package service
 
 import (
-	"fmt"
 	"github.com/amuluze/amutool/logger"
 )
 
@@ -16,6 +15,5 @@ func NewLogger(config *Config) *logger.Logger {
 		logger.SetLogFileRotationTime(config.Log.Rotation),
 		logger.SetLogFileMaxAge(config.Log.MaxAge),
 	)
-	fmt.Println("define logx")
 	return logx
 }
