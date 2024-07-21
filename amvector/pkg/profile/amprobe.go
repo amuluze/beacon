@@ -68,7 +68,7 @@ func (a *AmprobeProfile) BuildProfile(prefix string) error {
 		},
 		{
 			Source:      resources.AmvectorSockFile,
-			Destination: "/app/amvector/amvector.sock",
+			Destination: "/app/vector.sock",
 		},
 		{
 			Source:      "/var/run/docker.sock",

@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/amuluze/amprobe/amvector/pkg/resources"
+	"github.com/amuluze/amprobe/amvector/pkg/utils"
 
 	"gopkg.in/yaml.v3"
 )
@@ -104,6 +105,12 @@ func (c *Config) loadDefault(prefix string) error {
 func (c *Config) loadVariables() {
 	c.ServiceVariables.HostResourceDir = filepath.Join(c.ServiceVariables.HostPrefix, resources.RootPath)
 	c.ServiceVariables.HostLogsDir = filepath.Join(c.ServiceVariables.HostPrefix, "logs")
+
+	_ = utils.EnsureDirExists(c.ServiceVariables.HostResourceDir)
+	_ = utils.EnsureDirExists(c.ServiceVariables.HostLogsDir)
+	_ = utils.EnsureDirExists(filepath.Join(c.ServiceVariables.HostPrefix, resources.AmvectorSockFolder))
+	_ = utils.EnsureDirExists(filepath.Join(c.ServiceVariables.HostPrefix, resources.AmvectorStorageFolder))
+
 	c.ServiceVariables.ContainerResourceDir = filepath.Join(c.ServiceVariables.ContainerPrefix, resources.RootPath)
 	c.ServiceVariables.ContainerLogsDir = filepath.Join(c.ServiceVariables.ContainerPrefix, "logs")
 }

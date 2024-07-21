@@ -18,7 +18,7 @@ var (
 	AmvectorStorageFolder       = filepath.Join(AmvectorFolder, "storage")
 	AmvectorStorageConfigDBPath = filepath.Join(AmvectorStorageFolder, "vector")
 	AmvectorSockFolder          = filepath.Join(AmvectorFolder, "socks")
-	AmvectorSockFile            = filepath.Join(AmvectorSockFolder, ".sock")
+	AmvectorSockFile            = filepath.Join(AmvectorSockFolder, "vector.sock")
 
 	AmprobeFolder       = "amprobe"
 	AmprobeConfigFolder = filepath.Join(AmprobeFolder, "configs")
