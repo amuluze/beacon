@@ -35,7 +35,7 @@ func (a *Task) Container(timestamp time.Time) {
 		d.IP = info.IP
 		d.Labels = string(labels)
 
-		cpuPercent, err := a.manager.GetContainerCPU(ctx, info.ID[:6])
+		cpuPercent, err := a.manager.GetContainerCpu(ctx, info.ID[:6])
 		if err != nil {
 			slog.Error("failed to get container cpu", "error", err)
 		}
