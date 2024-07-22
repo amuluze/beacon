@@ -85,12 +85,26 @@ type Builder interface {
 }
 
 func ReadProfile(profilePath string) (*Profile, error) {
-	profileContent, err := os.ReadFile(profilePath)
+	fp, err := os.Open(profilePath)
+	if err != nil {
+		return nil, err
+	}
+	defer fp.Close()
+
+	data := make(map[string]interface{})
+	dec := yaml.NewDecoder(fp)
+	err = dec.Decode(&data)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("profileContent: %s\n", data)
+	bdata, err := yaml.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
 	profile := &Profile{}
-	if err := yaml.Unmarshal(profileContent, profile); err != nil {
+	if err := yaml.Unmarshal(bdata, profile); err != nil {
 		return nil, err
 	}
 	return profile, nil
