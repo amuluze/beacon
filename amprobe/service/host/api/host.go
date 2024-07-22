@@ -6,13 +6,14 @@ package api
 
 import (
 	"fmt"
+	"log/slog"
+
 	"github.com/amuluze/amprobe/pkg/fiberx"
 	"github.com/amuluze/amprobe/pkg/validatex"
 	"github.com/amuluze/amprobe/service/host/rpc"
 	"github.com/amuluze/amprobe/service/schema"
 	"github.com/amuluze/amutool/errors"
 	"github.com/gofiber/fiber/v2"
-	"log/slog"
 )
 
 type HostAPI struct {
@@ -196,6 +197,7 @@ func (a *HostAPI) FileDelete(ctx *fiber.Ctx) error {
 	if err := validatex.ValidateStruct(args); err != nil {
 		return fiberx.Failure(ctx, errors.ErrBadRequest)
 	}
+	slog.Info("file delete", "args", args)
 	err := a.HostService.FileDelete(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)

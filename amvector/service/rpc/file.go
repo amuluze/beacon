@@ -70,10 +70,13 @@ func (s *Service) FolderCreate(ctx context.Context, args schema.FolderCreateArgs
 }
 
 func (s *Service) FileDelete(ctx context.Context, args schema.FileDeleteArgs, reply *schema.FileDeleteReply) error {
-	if _, err := os.Stat(args.Filepath); os.IsNotExist(err) {
+	if info, err := os.Stat(args.Filepath); err != nil {
 		return err
+	} else if info.IsDir() {
+		return os.RemoveAll(args.Filepath)
+	} else {
+		return os.Remove(args.Filepath)
 	}
-	return os.Remove(args.Filepath)
 }
 
 func (s *Service) FileUpload(ctx context.Context, args schema.FileUploadArgs, reply *schema.FileUploadReply) error {
