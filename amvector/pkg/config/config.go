@@ -13,7 +13,7 @@ import (
 	"github.com/amuluze/amprobe/amvector/pkg/resources"
 	"github.com/amuluze/amprobe/amvector/pkg/utils"
 
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 )
 
 func Create(prefix, filename string) (*Config, error) {

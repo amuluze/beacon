@@ -12,7 +12,7 @@ import (
 	"github.com/amuluze/amprobe/amvector/pkg/utils"
 
 	"github.com/amuluze/amprobe/amvector/pkg/resources"
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 )
 
 type Profile struct {
