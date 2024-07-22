@@ -7,6 +7,29 @@
 
 set -ex
 
+
+# parse parameters
+params="$(getopt -o pi --name "$0" -- "$@")"
+eval set -- "$params"
+while true; do
+    case "$1" in
+        -p)
+            shift
+            ;;
+        -i)
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            echo "Unknown Option: $1" >&2
+            exit 1
+            ;;
+    esac
+done
+
 # directories
 mkdir -p /etc/amvector
 chmod 755 /etc/amvector
