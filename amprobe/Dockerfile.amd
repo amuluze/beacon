@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 golang:1.21 as build
+FROM --platform=linux/amd64 golang:1.21 AS builder
 COPY . /app/amprobe
 ENV GO111MODULE="on" \
     GOPROXY=https://goproxy.cn,direct
@@ -9,7 +9,7 @@ RUN cd /app/amprobe && \
 FROM --platform=linux/amd64 ubuntu:22.04
 WORKDIR /app
 
-COPY --from=build /app/amprobe/amprobe /app/
+COPY --from=builder /app/amprobe/amprobe /app/
 
 RUN apt update && \
     apt install -y nginx && \
