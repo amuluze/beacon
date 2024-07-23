@@ -5,5 +5,4 @@ probe.db
 */node_modules/*
 */deploy.sh
 */pwd
-*/dist/*
 pnpm-lock.yaml
