@@ -9,7 +9,7 @@ build:
     include:
       - amvector.install
       - setup.sh
-      - VERSION.txt
+      - VERSION.TXT
 install:
   - type: file
   - type: docker_image
