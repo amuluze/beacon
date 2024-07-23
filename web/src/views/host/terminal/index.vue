@@ -104,12 +104,12 @@ const initTerminal = () => {
         terminal.value.write('\r\nWebSSH quit!')
     }
 
-    ws = new Websocket('ws/term', onOpen, onMessage, onError, onClose)
+    ws = new Websocket('ws', onOpen, onMessage, onError, onClose)
 }
 
 const termModel = reactive({
     host: '',
-    port: '',
+    port: 0,
     username: '',
     password: '',
     connection: false,
