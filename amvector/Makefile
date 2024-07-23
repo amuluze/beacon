@@ -41,5 +41,6 @@ installer: assets
 	@strip $(OBJPATH)/$(TARGET)
 	@cp ./assets/setup.sh $(OBJPATH)
 	@cp ./assets/config.yml $(OBJPATH)
-	@makeself --gzip $(OBJPATH) $(INSTALLER) "builder" ./setup.sh
+	@makeself --gzip $(OBJPATH) $(INSTALLER) "amvector" ./setup.sh
 	@rm -r $(OBJPATH)
+	@rm $(TARGET)
