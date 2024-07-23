@@ -37,13 +37,15 @@
     </el-card>
 </template>
 <script setup lang="ts">
-import { warning } from '@/components/Message/message'
-import { Terminal } from '@xterm/xterm'
+import { Websocket } from '@/components/Websocket'
 import { FitAddon } from '@xterm/addon-fit'
+import { Terminal } from '@xterm/xterm'
 
-const term = ref<Terminal>()
+let term = ref<Terminal>()
 const terminal = ref()
 const fitAddon = new FitAddon()
+
+let ws: Websocket
 
 const initTerminal = () => {
     // 初始化 终端
@@ -64,8 +66,46 @@ const initTerminal = () => {
     setTimeout(() => {
         fitAddon.fit()
     }, 5)
-}
 
+    const onOpen = (ws: Websocket, ev: Event) => {
+        console.log(
+            '连接成功',
+            JSON.stringify({
+                host: termModel.host,
+                port: termModel.port,
+                user: termModel.username,
+                password: termModel.password
+            }),
+            ev
+        )
+        ws.send(
+            JSON.stringify({
+                host: termModel.host,
+                port: termModel.port,
+                user: termModel.username,
+                password: termModel.password
+            })
+        )
+    }
+
+    const onMessage = (ws: Websocket, message: MessageEvent) => {
+        console.log(ws)
+        terminal.value.write(message.data.toString())
+    }
+
+    const onError = (ws: Websocket, error: Event) => {
+        console.error('连接失败', error)
+        ws.close()
+    }
+
+    const onClose = (ws: Websocket, close: Event) => {
+        console.log('连接关闭', close)
+        ws.close()
+        terminal.value.write('\r\nWebSSH quit!')
+    }
+
+    ws = new Websocket('ws/term', onOpen, onMessage, onError, onClose)
+}
 
 const termModel = reactive({
     host: '',
@@ -77,12 +117,16 @@ const termModel = reactive({
 })
 
 const createConnection = () => {
-    warning('该功能尚未实现')
     initTerminal()
 }
 
 const closeConnection = () => {
-    warning('该功能尚未实现')
+    if (ws) {
+        ws.close()
+    }
+
+    termModel.connection = false
+    termModel.loading = false
 }
 </script>
 <style scoped lang="scss">

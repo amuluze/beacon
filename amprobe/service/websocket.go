@@ -83,6 +83,7 @@ func NewTermHandler() *TermHandler {
 func (th *TermHandler) Handler(conn *websocket.Conn) {
 	var config SSHConfig
 	if err := conn.ReadJSON(&config); err != nil {
+		slog.Error("read ssh config error", "err", err)
 		return
 	}
 	slog.Info("ssh config", "config", config)
