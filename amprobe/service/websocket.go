@@ -206,8 +206,6 @@ func (t *Term) LoopRead(ctx context.Context, logBuff *bytes.Buffer) error {
 		default:
 			_, wsData, err := t.Conn.ReadMessage()
 			if err != nil {
-				t.Session.Close()
-				t.Conn.Close()
 				return fmt.Errorf("reading websocket message err: %s", err)
 			}
 			body := t.decode(wsData[1:])
