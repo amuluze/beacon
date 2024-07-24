@@ -33,7 +33,7 @@
     </div>
     <el-card shadow="never" class="am-host-terminal">
         <el-empty v-if="(termModel.connection = false)" description="暂无终端连接" />
-        <div v-else ref="terminal" style="width: 100%; height: 100%" v-loading="termModel.loading" />
+        <div v-else id="terminal" style="width: 100%; height: 100%" />
     </el-card>
 </template>
 <script setup lang="ts">
@@ -41,15 +41,104 @@ import { Websocket } from '@/components/Websocket'
 import { FitAddon } from '@xterm/addon-fit'
 import { Terminal } from '@xterm/xterm'
 
-let term = ref<Terminal>()
-const terminal = ref()
+let term: Terminal
+let ws: WebSocket
 const fitAddon = new FitAddon()
 
-let ws: Websocket
+onBeforeUnmount(() => {
+    if (term) {
+        term.dispose()
+    }
+    if (ws) {
+        ws.close()
+    }
+})
+
+const initWebsocket = () => {
+    const onOpen = (ws: Websocket, ev: Event) => {
+        console.log(
+            '请求连接',
+            JSON.stringify({
+                host: termModel.host,
+                port: termModel.port as Number,
+                user: termModel.username,
+                password: termModel.password
+            }),
+            ev
+        )
+        ws.send(
+            JSON.stringify({
+                host: termModel.host,
+                port: termModel.port as Number,
+                user: termModel.username,
+                password: termModel.password
+            })
+        )
+    }
+
+    const onMessage = (ws: Websocket, message: MessageEvent) => {
+        console.log(ws, message.data)
+        console.log('接收信息：', message)
+        //将字符串转换成 Blob对象
+        const blob = new Blob([message.data], {
+            type: 'text/plain'
+        })
+        //将Blob 对象转换成字符串
+        const reader = new FileReader()
+        reader.readAsText(blob, 'utf-8')
+        reader.onload = (e) => {
+            console.log('ddd', e)
+            // 可以根据返回值判断使用何种颜色或者字体，不过返回值自带了一些字体颜色
+            writeOfColor(reader.result, '0;', '37m')
+            term.write('\r\n$ ')
+        }
+    }
+
+    const onError = (ws: Websocket, error: Event) => {
+        console.error('连接失败', error)
+        ws.close()
+    }
+
+    const onClose = (ws: Websocket, ev: Event) => {
+        console.log('连接关闭', ev)
+        ws.close()
+        termModel.connection = false
+        term.write('\r\nWebSSH quit!')
+    }
+
+    ws = new Websocket('ws', onOpen, onMessage, onError, onClose)
+}
+const writeDefaultInfo = () => {
+    let defaultInfo = [
+        '┌\x1b[1m terminals \x1b[0m─────────────────────────────────────────────────────────────────┐ ',
+        '│                         \x1b[1;34m 欢迎使用 Amprobe SSH \x1b[0m                             │ ',
+        '└────────────────────────────────────────────────────────────────────────────┘ '
+    ]
+    // 测试颜色区间
+    // let arr = Array.from({length:100},(v,i)=>v = i)
+    // console.log(arr)
+    // arr.map((item,i) => {
+    //     defaultInfo.push(`Hello from \x1B[1;3;${i}m ${i} \x1B[0m  \u2764\ufe0f   ${i}`)
+    // })
+    term.write('\r\n')
+    term.write(defaultInfo.join('\n\n\r'))
+    term.write('\r\n')
+}
+
+const writeOfColor = (txt: string | ArrayBuffer | null, fontCss = '', bgColor = '') => {
+    // 在Linux脚本中以 \x1B[ 开始，中间前部分是样式+内容，以 \x1B[0m 结尾
+    // 示例 \x1B[1;3;31m 内容 \x1B[0m
+    // fontCss
+    // 0;-4;字体样式（0;正常 1;加粗 2;变细 3;斜体 4;下划线）
+    // bgColor
+    // 30m-37m字体颜色（30m:黑色 31m:红色 32m:绿色 33m:棕色字 34m:蓝色 35m:洋红色/紫色 36m:蓝绿色/浅蓝色 37m:白色）
+    // 40m-47m背景颜色（40m:黑色 41m:红色 42m:绿色 43m:棕色字 44m:蓝色 45m:洋红色/紫色 46m:蓝绿色/浅蓝色 47m:白色）
+    term.write(`\x1B[${fontCss}${bgColor}${txt}\x1B[0m`)
+}
 
 const initTerminal = () => {
     // 初始化 终端
-    term.value = new Terminal({
+    term = new Terminal({
         convertEol: true, // 启用时，光标将设置为下一行的开头
         disableStdin: false, // 是否应禁用输入
         cursorStyle: 'block', // 光标样式
@@ -60,51 +149,26 @@ const initTerminal = () => {
             cursor: 'help' // 设置光标
         }
     })
-    term.value.open(terminal.value) //挂载dom窗口
-    term.value.loadAddon(fitAddon) //自适应尺寸
-    // 不能初始化的时候fit,需要等terminal准备就绪,可以设置延时操作
     setTimeout(() => {
         fitAddon.fit()
     }, 5)
+    term.loadAddon(fitAddon) //自适应尺寸
+    // 不能初始化的时候fit,需要等terminal准备就绪,可以设置延时操作
+    termModel.connection = true
+    term.open(document.getElementById('terminal')!)
+    term.focus()
+    writeDefaultInfo()
 
-    const onOpen = (ws: Websocket, ev: Event) => {
-        console.log(
-            '连接成功',
-            JSON.stringify({
-                host: termModel.host,
-                port: termModel.port,
-                user: termModel.username,
-                password: termModel.password
-            }),
-            ev
-        )
-        ws.send(
-            JSON.stringify({
-                host: termModel.host,
-                port: termModel.port,
-                user: termModel.username,
-                password: termModel.password
-            })
-        )
-    }
+    termData()
+}
 
-    const onMessage = (ws: Websocket, message: MessageEvent) => {
-        console.log(ws)
-        terminal.value.write(message.data.toString())
-    }
-
-    const onError = (ws: Websocket, error: Event) => {
-        console.error('连接失败', error)
-        ws.close()
-    }
-
-    const onClose = (ws: Websocket, close: Event) => {
-        console.log('连接关闭', close)
-        ws.close()
-        terminal.value.write('\r\nWebSSH quit!')
-    }
-
-    ws = new Websocket('ws', onOpen, onMessage, onError, onClose)
+const termData = () => {
+    term?.onData((data) => {
+        ws.send(data)
+    })
+    term?.onResize((size) => {
+        ws.send(JSON.stringify({ cols: size.cols, rows: size.rows }))
+    })
 }
 
 const termModel = reactive({
@@ -117,16 +181,67 @@ const termModel = reactive({
 })
 
 const createConnection = () => {
-    initTerminal()
+    ws = new WebSocket('ws://101.42.246.113:8000/ws')
+    ws.onopen = (message) => {
+        console.log('连接成功', message)
+        termModel.loading = true
+        termModel.connection = true
+        term = new Terminal({
+            convertEol: true, // 启用时，光标将设置为下一行的开头
+            disableStdin: false, // 是否应禁用输入
+            cursorStyle: 'block', // 光标样式
+            cursorBlink: true, // 光标闪烁
+            theme: {
+                foreground: 'yellow', // 字体
+                background: 'black', // 背景
+                cursor: 'help' // 设置光标
+            }
+        })
+        setTimeout(() => {
+            fitAddon.fit()
+        }, 5)
+        term.loadAddon(fitAddon) //自适应尺寸
+        // 不能初始化的时候fit,需要等terminal准备就绪,可以设置延时操作
+        term.open(document.getElementById('terminal')!)
+        term.focus()
+        writeDefaultInfo()
+        ws.send(
+            JSON.stringify({
+                host: termModel.host,
+                port: termModel.port as Number,
+                user: termModel.username,
+                password: termModel.password
+            })
+        )
+    }
+    ws.onmessage = (ev: MessageEvent) => {
+        console.log('接收信息：', ev)
+        //将字符串转换成 Blob对象
+        const blob = new Blob([ev.data], {
+            type: 'text/plain'
+        })
+        //将Blob 对象转换成字符串
+        const reader = new FileReader()
+        reader.readAsText(blob, 'utf-8')
+        reader.onload = (e) => {
+            console.log('ddd', e)
+            // 可以根据返回值判断使用何种颜色或者字体，不过返回值自带了一些字体颜色
+            writeOfColor(reader.result, '0;', '37m')
+            term.write('\r\n$ ')
+        }
+    }
+    ws.onclose = (ev: Event) => {
+        termModel.connection = false
+        console.log('关闭连接', ev, termModel.connection)
+    }
 }
 
 const closeConnection = () => {
     if (ws) {
         ws.close()
     }
-
     termModel.connection = false
-    termModel.loading = false
+    console.log('关闭', termModel.connection)
 }
 </script>
 <style scoped lang="scss">
