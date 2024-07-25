@@ -503,25 +503,25 @@ const initNetworkOptions = async () => {
 }
 
 const addPort = () => {
-    createForm.ports.push({
+    containerCreateMode.ports.push({
         hostPort: '',
         containerPort: ''
     })
 }
 
 const deletePort = (index: number) => {
-    createForm.ports.splice(index, 1)
+    containerCreateMode.ports.splice(index, 1)
 }
 
 const addVolume = () => {
-    createForm.volumes.push({
+    containerCreateMode.volumes.push({
         hostPath: '',
         containerPath: ''
     })
 }
 
 const deleteVolume = (index: number) => {
-    createForm.volumes.splice(index, 1)
+    containerCreateMode.volumes.splice(index, 1)
 }
 
 const createContainerLoading = ref(false)
