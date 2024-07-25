@@ -137,10 +137,11 @@ type ImageCountReply struct {
 }
 
 type NetworkCreateArgs struct {
-	Name           string            `json:"name" validate:"required"`
-	Driver         string            `json:"driver" validate:"required"`
-	NetworkSegment string            `json:"network_segment"`
-	Labels         map[string]string `json:"labels"`
+	Name    string            `json:"name" validate:"required"`
+	Driver  string            `json:"driver" validate:"required"`
+	Subnet  string            `json:"subnet" validate:"required"`
+	Gateway string            `json:"gateway" validate:"required"`
+	Labels  map[string]string `json:"labels"`
 }
 
 type NetworkCreateReply struct {

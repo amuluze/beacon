@@ -46,12 +46,22 @@
     <div class="am-network-create">
         <el-drawer v-model="drawer" size="540" title="创建网络">
             <div class="am-network-create__content">
-                <el-form label-width="100px" label-position="left">
-                    <el-form-item label="名称">
-                        <el-input v-model="networkName" placeholder="请输入名称" />
+                <el-form
+                    ref="networkCreateRef"
+                    :model="networkCreateMode"
+                    :rules="rules"
+                    label-width="100px"
+                    label-position="left"
+                >
+                    <el-form-item label="名称" prop="networkName">
+                        <el-input v-model="networkCreateMode.networkName" placeholder="请输入名称" />
                     </el-form-item>
-                    <el-form-item label="模式">
-                        <el-select v-model="networkMode" style="width: 240px" placeholder="请选择模式">
+                    <el-form-item label="模式" prop="networkMode">
+                        <el-select
+                            v-model="networkCreateMode.networkMode"
+                            style="width: 240px"
+                            placeholder="请选择模式"
+                        >
                             <el-option
                                 v-for="item in networkOptions"
                                 :key="item.value"
@@ -60,12 +70,15 @@
                             />
                         </el-select>
                     </el-form-item>
-                    <el-form-item label="子网">
-                        <el-input v-model="networkSegment" placeholder="172.16.10.0/24" />
+                    <el-form-item label="子网" prop="networkSubnet">
+                        <el-input v-model="networkCreateMode.networkSubnet" placeholder="172.16.10.0/24" />
                     </el-form-item>
-                    <el-form-item label="标签">
+                    <el-form-item label="网关" prop="networkGateway">
+                        <el-input v-model="networkCreateMode.networkGateway" placeholder="172.16.10.1" />
+                    </el-form-item>
+                    <el-form-item label="标签" prop="networkLabels">
                         <el-input
-                            v-model="networkLabels"
+                            v-model="networkCreateMode.networkLabels"
                             type="textarea"
                             :rows="4"
                             placeholder="一行一个，例如:&#10;key1=value1&#10;key2=value2"
@@ -79,7 +92,7 @@
                     type="primary"
                     size="default"
                     plain
-                    @click="confirmCreateNetwork"
+                    @click="confirmCreateNetwork(networkCreateRef)"
                     v-loading="createNetworkLoading"
                 >
                     确定
@@ -90,9 +103,10 @@
 </template>
 <script setup lang="ts">
 import { createNetwork, deleteNetwork, queryNetworks } from '@/api/container'
-import { success } from '@/components/Message/message'
+import { error, success } from '@/components/Message/message'
 import { useTable } from '@/hooks/useTable'
 import { NetworkCreateArgs, NetworkDeleteArgs } from '@/interface/container'
+import { FormInstance, type FormRules } from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
 onMounted(() => {
@@ -101,13 +115,29 @@ onMounted(() => {
 
 const imageKey = ref(0)
 const { data, refresh, loading, pagination } = useTable(queryNetworks, {}, {})
+interface RuleForm {
+    networkName: string
+    networkMode: string
+    networkSubnet: string
+    networkGateway: string
+    networkLabels: string
+}
+const networkCreateMode = reactive<RuleForm>({
+    networkName: '',
+    networkMode: 'bridge',
+    networkSubnet: '',
+    networkGateway: '',
+    networkLabels: ''
+})
 
 const drawer = ref(false)
-
-const networkName = ref('')
-const networkMode = ref('bridge')
-const networkSegment = ref('')
-const networkLabels = ref('')
+const networkCreateRef = ref<FormInstance>()
+const rules = reactive<FormRules<RuleForm>>({
+    networkName: [{ required: true, message: 'Please input network name', trigger: 'blur' }],
+    networkMode: [{ required: true, message: 'Please select network mode', trigger: 'blur' }],
+    networkSubnet: [{ required: true, message: 'Please input network subnet', trigger: 'blur' }],
+    networkGateway: [{ required: true, message: 'Please input network gateway', trigger: 'blur' }]
+})
 
 const networkOptions = [
     {
@@ -118,42 +148,47 @@ const networkOptions = [
         value: 'host',
         label: 'host'
     }
-    // {
-    //     value: 'overlay',
-    //     label: 'overlay'
-    // },
-    // {
-    //     value: 'macvlan',
-    //     label: 'macvlan'
-    // },
-    // {
-    //     value: 'ipvlan',
-    //     label: 'ipvlan'
-    // }
 ]
 
 const createNetworkLoading = ref(false)
-const confirmCreateNetwork = async () => {
-    createNetworkLoading.value = true
-    const ls: Map<string, string> = new Map()
-    const labelsArr = networkLabels.value.split('\n')
-    labelsArr.forEach((label) => {
-        const [key, value] = label.split('=')
-        ls.set(key, value)
+const confirmCreateNetwork = async (formEl: FormInstance | undefined) => {
+    if (!formEl) return
+    await formEl?.validate((valid, fields) => {
+        if (!valid) {
+            console.log('error fields!', fields)
+            error('请检查输入')
+            return
+        } else {
+            createNetworkLoading.value = true
+            const ls: Map<string, string> = new Map()
+            const labelsArr = networkCreateMode.networkLabels.split('\n')
+            labelsArr.forEach((label) => {
+                const [key, value] = label.split('=')
+                ls.set(key, value)
+            })
+            let params: NetworkCreateArgs = {
+                name: networkCreateMode.networkName,
+                driver: networkCreateMode.networkMode,
+                network_sebnet: networkCreateMode.networkSubnet,
+                network_gateway: networkCreateMode.networkGateway,
+                labels: ls
+            }
+            console.log(params)
+            createNetwork(params)
+                .then((res) => {
+                    const { data } = res
+                    console.log(data.network_id)
+                    createNetworkLoading.value = false
+                    drawer.value = false
+                    success('创建成功')
+                    refresh()
+                })
+                .catch((err) => {
+                    error(err)
+                    createNetworkLoading.value = false
+                })
+        }
     })
-    let params: NetworkCreateArgs = {
-        name: networkName.value,
-        driver: networkMode.value,
-        network_segment: networkSegment.value,
-        labels: ls
-    }
-    console.log(params)
-    const { data } = await createNetwork(params)
-    console.log(data.network_id)
-    createNetworkLoading.value = false
-    drawer.value = false
-    success('创建成功')
-    refresh()
 }
 
 const deleteNetworkByID = async (id: string) => {

@@ -164,12 +164,18 @@
     <!-- 创建容器 -->
     <div class="am-container-create">
         <el-drawer v-model="drawer" size="50%" title="创建容器">
-            <el-form ref="form" label-width="120px" :model="createForm" label-position="left">
-                <el-form-item label="名称">
-                    <el-input v-model="createForm.containerName" placeholder="请输入名称" />
+            <el-form
+                ref="containerCreateRef"
+                :model="containerCreateMode"
+                :rules="rules"
+                label-width="120px"
+                label-position="left"
+            >
+                <el-form-item label="名称" prop="containerName">
+                    <el-input v-model="containerCreateMode.containerName" placeholder="请输入名称" />
                 </el-form-item>
-                <el-form-item label="镜像">
-                    <el-select v-model="createForm.imageName" style="width: 320px" placeholder="请选择镜像">
+                <el-form-item label="镜像" prop="imageName">
+                    <el-select v-model="containerCreateMode.imageName" style="width: 320px" placeholder="请选择镜像">
                         <el-option
                             v-for="item in imageNameOptions"
                             :key="item.value"
@@ -178,8 +184,8 @@
                         />
                     </el-select>
                 </el-form-item>
-                <el-form-item label="网络">
-                    <el-select v-model="createForm.networkName" style="width: 320px" placeholder="请选择镜像">
+                <el-form-item label="网络" prop="networkName">
+                    <el-select v-model="containerCreateMode.networkName" style="width: 320px" placeholder="请选择镜像">
                         <el-option
                             v-for="item in networkNameOptions"
                             :key="item.value"
@@ -188,9 +194,13 @@
                         />
                     </el-select>
                 </el-form-item>
-                <el-form-item label="端口">
-                    <span v-if="createForm.ports.length === 0">可以添加端口绑定</span>
-                    <el-form-item v-for="(port, index) in createForm.ports" :key="index" style="margin-bottom: 4px">
+                <el-form-item label="端口" prop="ports">
+                    <span v-if="containerCreateMode.ports.length === 0">可以添加端口绑定</span>
+                    <el-form-item
+                        v-for="(port, index) in containerCreateMode.ports"
+                        :key="index"
+                        style="margin-bottom: 4px"
+                    >
                         <el-input v-model="port.hostPort" style="width: 160px" placeholder="服务器端口" />
                         <el-input v-model="port.containerPort" style="width: 160px" placeholder="容器端口" />
                         <el-button type="danger" text @click="deletePort(index)">
@@ -201,9 +211,13 @@
                 <el-form-item>
                     <el-button type="primary" text @click="addPort">添加端口<svg-icon icon-class="plus" /></el-button>
                 </el-form-item>
-                <el-form-item label="目录/文件挂载">
-                    <span v-if="createForm.volumes.length === 0">可以添加目录/文件挂载</span>
-                    <el-form-item v-for="(volume, index) in createForm.volumes" :key="index" style="margin-bottom: 4px">
+                <el-form-item label="目录/文件挂载" prop="volumnes">
+                    <span v-if="containerCreateMode.volumes.length === 0">可以添加目录/文件挂载</span>
+                    <el-form-item
+                        v-for="(volume, index) in containerCreateMode.volumes"
+                        :key="index"
+                        style="margin-bottom: 4px"
+                    >
                         <el-input v-model="volume.hostPath" style="width: 200px" placeholder="服务器目录/文件" />
                         <el-input v-model="volume.containerPath" style="width: 200px" placeholder="容器目录/文件" />
                         <el-button type="danger" text @click="deleteVolume(index)">
@@ -216,9 +230,9 @@
                         添加目录/文件挂载<svg-icon icon-class="plus" />
                     </el-button>
                 </el-form-item>
-                <el-form-item label="标签(可选)">
+                <el-form-item label="标签(可选)" prop="labels">
                     <el-input
-                        v-model="createForm.labels"
+                        v-model="containerCreateMode.labels"
                         type="textarea"
                         :rows="4"
                         placeholder="一行一个，例如:&#10;key1=value1&#10;key2=value2"
@@ -231,7 +245,7 @@
                     type="primary"
                     size="default"
                     plain
-                    @click="confirmCreateContainer"
+                    @click="confirmCreateContainer(containerCreateRef)"
                     v-loading="createContainerLoading"
                 >
                     确定
@@ -252,7 +266,7 @@ import {
     startContainer,
     stopContainer
 } from '@/api/container'
-import { success } from '@/components/Message/message'
+import { error, success } from '@/components/Message/message'
 import { Websocket } from '@/components/Websocket'
 import { useTable } from '@/hooks/useTable'
 import {
@@ -263,6 +277,7 @@ import {
     StopContainerArgs
 } from '@/interface/container.ts'
 import useStore from '@/store'
+import { FormInstance, FormRules } from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 const store = useStore()
 onMounted(() => {
@@ -390,6 +405,7 @@ const downloadLog = () => {
 }
 
 const drawer = ref(false)
+const containerCreateRef = ref<FormInstance>()
 
 interface Port {
     hostPort: string
@@ -401,13 +417,45 @@ interface Volume {
     containerPath: string
 }
 
-const createForm = reactive({
+interface RuleForm {
+    containerName: string
+    imageName: string
+    networkName: string
+    ports: Port[]
+    volumes: Volume[]
+    labels: string
+}
+const containerCreateMode = reactive<RuleForm>({
     containerName: '',
     imageName: '',
     networkName: '',
-    ports: [] as Port[],
-    volumes: [] as Volume[],
+    ports: [],
+    volumes: [],
     labels: ''
+})
+
+const rules = reactive<FormRules<RuleForm>>({
+    containerName: [
+        {
+            required: true,
+            message: '请输入容器名称',
+            trigger: 'blur'
+        }
+    ],
+    imageName: [
+        {
+            required: true,
+            message: '请选择镜像',
+            trigger: 'blur'
+        }
+    ],
+    networkName: [
+        {
+            required: true,
+            message: '请选择网络',
+            trigger: 'blur'
+        }
+    ]
 })
 
 const imageNameOptions = ref<
@@ -477,50 +525,66 @@ const deleteVolume = (index: number) => {
 }
 
 const createContainerLoading = ref(false)
-const confirmCreateContainer = async () => {
-    createContainerLoading.value = true
-    let ps: string[] = []
-    let vs: string[] = []
-    let ls: Map<string, string> = new Map()
-    let network_mode = ''
-    let network_id = ''
-    for (let i = 0; i < createForm.ports.length; i++) {
-        ps.push(`${createForm.ports[i].hostPort}:${createForm.ports[i].containerPort}`)
-    }
-    for (let i = 0; i < createForm.volumes.length; i++) {
-        vs.push(`${createForm.volumes[i].hostPath}:${createForm.volumes[i].containerPath}`)
-    }
-    if (createForm.labels) {
-        const labelArr = createForm.labels.split('\n')
-        for (let i = 0; i < labelArr.length; i++) {
-            const label = labelArr[i].split(':')
-            ls.set(label[0], label[1])
-        }
-    }
-    store.app.networks
-        .filter((item) => item.name === createForm.networkName)
-        .forEach((item) => {
-            if (item.name == createForm.networkName) {
-                network_mode = item.driver
-                network_id = item.id
+const confirmCreateContainer = async (formEl: FormInstance | undefined) => {
+    if (!formEl) return
+    await formEl?.validate((valid, fields) => {
+        if (!valid) {
+            console.log('error submit!', fields)
+            error('请检查表单')
+            return
+        } else {
+            createContainerLoading.value = true
+            let ps: string[] = []
+            let vs: string[] = []
+            let ls: Map<string, string> = new Map()
+            let network_mode = ''
+            let network_id = ''
+            for (let i = 0; i < containerCreateMode.ports.length; i++) {
+                ps.push(`${containerCreateMode.ports[i].hostPort}:${containerCreateMode.ports[i].containerPort}`)
             }
-        })
-    const params: CreateContainerArgs = {
-        container_name: createForm.containerName,
-        image_name: createForm.imageName,
-        network_name: createForm.networkName,
-        network_mode: network_mode,
-        network_id: network_id,
-        ports: ps,
-        volumes: vs,
-        labels: ls
-    }
-    const { data } = await createContainer(params)
-    console.log('container id: ', data.container_id)
-    success('容器创建成功')
-    createContainerLoading.value = false
-    drawer.value = false
-    refresh()
+            for (let i = 0; i < containerCreateMode.volumes.length; i++) {
+                vs.push(`${containerCreateMode.volumes[i].hostPath}:${containerCreateMode.volumes[i].containerPath}`)
+            }
+            if (containerCreateMode.labels) {
+                const labelArr = containerCreateMode.labels.split('\n')
+                for (let i = 0; i < labelArr.length; i++) {
+                    const label = labelArr[i].split(':')
+                    ls.set(label[0], label[1])
+                }
+            }
+            store.app.networks
+                .filter((item) => item.name === containerCreateMode.networkName)
+                .forEach((item) => {
+                    if (item.name == containerCreateMode.networkName) {
+                        network_mode = item.driver
+                        network_id = item.id
+                    }
+                })
+            const params: CreateContainerArgs = {
+                container_name: containerCreateMode.containerName,
+                image_name: containerCreateMode.imageName,
+                network_name: containerCreateMode.networkName,
+                network_mode: network_mode,
+                network_id: network_id,
+                ports: ps,
+                volumes: vs,
+                labels: ls
+            }
+            createContainer(params)
+                .then((res) => {
+                    const data = res.data
+                    console.log('container id: ', data.container_id)
+                    createContainerLoading.value = false
+                    drawer.value = false
+                    success('容器创建成功')
+                    refresh()
+                })
+                .catch((err) => {
+                    error(err)
+                    createContainerLoading.value = false
+                })
+        }
+    })
 }
 </script>
 
