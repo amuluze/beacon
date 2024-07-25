@@ -15,6 +15,6 @@ install:
   - type: docker_image
     tags:
       - source: amuluze/amprobe_arm:v1.3.5
-        target: amuluze/amprobe_arm:v1.3.5
+        target: amuluze/amprobe:v1.3.5
   - type: shell
     run: ./setup.sh
