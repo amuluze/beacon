@@ -8,8 +8,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/amuluze/amvector/service/model"
-	"github.com/amuluze/amvector/service/schema"
+	"github.com/amuluze/amprobe/amvector/service/model"
+	"github.com/amuluze/amprobe/amvector/service/schema"
 )
 
 func (s *Service) HostInfo(ctx context.Context, args schema.HostArgs, reply *model.Host) error {

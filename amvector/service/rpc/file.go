@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/amuluze/amvector/service/schema"
+	"github.com/amuluze/amprobe/amvector/service/schema"
 )
 
 func (s *Service) FilesSearch(ctx context.Context, args schema.FilesSearchArgs, reply *schema.FilesSearchReply) error {
@@ -70,8 +70,19 @@ func (s *Service) FolderCreate(ctx context.Context, args schema.FolderCreateArgs
 }
 
 func (s *Service) FileDelete(ctx context.Context, args schema.FileDeleteArgs, reply *schema.FileDeleteReply) error {
-	if _, err := os.Stat(args.Filepath); os.IsNotExist(err) {
+	if info, err := os.Stat(args.Filepath); err != nil {
 		return err
+	} else if info.IsDir() {
+		return os.RemoveAll(args.Filepath)
+	} else {
+		return os.Remove(args.Filepath)
 	}
-	return os.Remove(args.Filepath)
+}
+
+func (s *Service) FileUpload(ctx context.Context, args schema.FileUploadArgs, reply *schema.FileUploadReply) error {
+	return os.Rename(args.SourceFilePath, args.TargetFilePath)
+}
+
+func (s *Service) FileDownload(ctx context.Context, args schema.FileDownloadArgs, reply *schema.FileDownloadReply) error {
+	return os.Rename(args.SourceFilePath, args.TargetFilePath)
 }

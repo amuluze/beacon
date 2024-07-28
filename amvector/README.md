@@ -1,33 +1,33 @@
-# amvector
+# amprobe/amvector
 
 数据采集及同步服务
 
 安装：
 
 ```bash
-amvector install
+amprobe/amvector install
 ```
 
 启动
 
 ```bash
-amvector start
+amprobe/amvector start
 ```
 
 停止
 
 ```bash
-amvector stop
+amprobe/amvector stop
 ```
 
 移除
 
 ```bash
-amvector remove
+amprobe/amvector remove
 ```
 
 查看状态
 
 ```bash
-amvector status
+amprobe/amvector status
 ```

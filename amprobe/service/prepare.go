@@ -5,16 +5,17 @@
 package service
 
 import (
+	"log/slog"
+	"os"
+
 	"github.com/amuluze/amprobe/pkg/utils/hash"
 	"github.com/amuluze/amprobe/pkg/utils/uuid"
 	"github.com/amuluze/amprobe/service/model"
 	"github.com/amuluze/amutool/database"
 	"github.com/google/wire"
 	"gorm.io/gorm"
-	"log/slog"
-	"os"
 
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 )
 
 var PrepareSet = wire.NewSet(wire.Struct(new(Prepare), "*"))

@@ -23,6 +23,8 @@ export class Websocket {
         let location: Location = window.location
         url = location.host + '/' + url
         this.url = /https/.test(location.protocol) ? 'wss://' + url : 'ws://' + url
+        // this.url = 'ws://101.42.246.113:8000/ws'
+        console.log('----->', this.url)
         this.ws = new WebSocket(this.url)
         this.close = (): void => {
             this.ws.close()

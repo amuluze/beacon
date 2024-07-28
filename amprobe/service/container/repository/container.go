@@ -6,9 +6,10 @@ package repository
 
 import (
 	"context"
+
 	"github.com/amuluze/amprobe/service/schema"
-	"github.com/amuluze/amutool/docker"
 	"github.com/amuluze/amutool/errors"
+	"github.com/amuluze/docker"
 
 	"github.com/amuluze/amprobe/service/model"
 	"github.com/amuluze/amutool/database"
@@ -121,7 +122,7 @@ func (a *ContainerRepo) ContainerRestart(ctx context.Context, args schema.Contai
 }
 
 func (a *ContainerRepo) ImageRemove(ctx context.Context, args schema.ImageRemoveArgs) error {
-	err := a.Manager.RemoveImage(ctx, args.ImageID)
+	err := a.Manager.DeleteImage(ctx, args.ImageID)
 	if err != nil {
 		return errors.New400Error(err.Error())
 	}

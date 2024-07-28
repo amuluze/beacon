@@ -10,7 +10,7 @@ AppName = "probe"
 Prefork = false
 
 [Rpc]
-Address = "/app/amvector.socket"
+Address = "/app/vector.sock"
 
 # 数据库文件存放位置的配置
 # 需要监控的磁盘设备配置

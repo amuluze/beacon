@@ -15,8 +15,8 @@ import (
 	"github.com/amuluze/amprobe/pkg/psutil"
 	"github.com/amuluze/amprobe/service/model"
 	"github.com/amuluze/amutool/database"
-	"github.com/amuluze/amutool/docker"
 	"github.com/amuluze/amutool/timex"
+	"github.com/amuluze/docker"
 )
 
 const (
@@ -226,7 +226,7 @@ func (a *TimedTask) container(timestamp time.Time) {
 		d.Uptime = info.Uptime
 		d.IP = info.IP
 
-		cpuPercent, err := a.manager.GetContainerCPU(ctx, info.ID[:6])
+		cpuPercent, err := a.manager.GetContainerCpu(ctx, info.ID[:6])
 		if err != nil {
 			slog.Error("failed to get container cpu", "error", err)
 		}

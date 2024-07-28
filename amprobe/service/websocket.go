@@ -11,14 +11,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/amuluze/amutool/docker"
-	"github.com/amuluze/amutool/errors"
-	"github.com/gofiber/contrib/websocket"
-	"golang.org/x/crypto/ssh"
 	"io"
 	"log/slog"
 	"sync"
 	"time"
+
+	"github.com/amuluze/amutool/errors"
+	"github.com/amuluze/docker"
+	"github.com/gofiber/contrib/websocket"
+	"golang.org/x/crypto/ssh"
 )
 
 type LoggerHandler struct {
@@ -82,6 +83,7 @@ func NewTermHandler() *TermHandler {
 func (th *TermHandler) Handler(conn *websocket.Conn) {
 	var config SSHConfig
 	if err := conn.ReadJSON(&config); err != nil {
+		slog.Error("read ssh config error", "err", err)
 		return
 	}
 	slog.Info("ssh config", "config", config)
@@ -122,6 +124,7 @@ func (th *TermHandler) Handler(conn *websocket.Conn) {
 			slog.Error("term loop read error: ", "err", err)
 		}
 	}()
+
 	go func() {
 		defer wg.Done()
 		err := term.SessionWait()

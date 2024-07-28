@@ -51,7 +51,7 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 		return fiber.ErrUpgradeRequired
 	})
 	app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))
-	app.Get("/ws/term", websocket.New(a.termHandler.Handler))
+	app.Get("/ws", websocket.New(a.termHandler.Handler))
 
 	if a.config.Auth.Enable {
 		app.Use(middleware.UserAuthMiddleware(

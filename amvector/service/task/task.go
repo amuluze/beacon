@@ -5,10 +5,11 @@
 package task
 
 import (
-	"github.com/amuluze/amutool/database"
-	"github.com/amuluze/amutool/docker"
-	"github.com/patrickmn/go-cache"
 	"time"
+
+	"github.com/amuluze/amutool/database"
+	"github.com/amuluze/docker"
+	"github.com/patrickmn/go-cache"
 )
 
 const (

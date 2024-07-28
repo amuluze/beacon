@@ -87,7 +87,7 @@ func config(absDir string, isClient bool) (*TLSConfig, error) {
 	if isClient {
 		cfg.InsecureSkipVerify = false
 		cfg.RootCAs = caPool
-		cfg.ServerName = "amvector"
+		cfg.ServerName = "amprobe/amvector"
 	} else {
 		cfg.ClientAuth = tls.RequireAndVerifyClientCert
 		cfg.ClientCAs = caPool

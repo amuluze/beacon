@@ -97,7 +97,8 @@ export interface NetworkQueryResult {
 export interface NetworkCreateArgs {
     name: string
     driver: string
-    network_segment: string
+    network_sebnet: string
+    network_gateway: string
     labels: Map<string, string>
 }
 

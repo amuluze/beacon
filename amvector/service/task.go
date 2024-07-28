@@ -6,12 +6,13 @@ package service
 
 import (
 	"fmt"
-	"github.com/amuluze/amvector/service/task"
 	"time"
 
+	"github.com/amuluze/amprobe/amvector/service/task"
+
 	"github.com/amuluze/amutool/database"
-	"github.com/amuluze/amutool/docker"
 	"github.com/amuluze/amutool/timex"
+	"github.com/amuluze/docker"
 )
 
 type TimedTask struct {
@@ -29,12 +30,12 @@ func NewTimedTask(conf *Config, db *database.DB) *TimedTask {
 	}
 
 	dev := make(map[string]struct{})
-	for _, d := range conf.Disk.Devices {
+	for _, d := range conf.Task.Disk.Devices {
 		dev[d] = struct{}{}
 	}
 
 	eth := make(map[string]struct{})
-	for _, d := range conf.Ethernet.Names {
+	for _, d := range conf.Task.Ethernet.Names {
 		eth[d] = struct{}{}
 	}
 

@@ -1,0 +1,20 @@
+name: installer
+label: Installer
+build:
+  - type: docker_image
+    pull: false
+    images:
+      - amuluze/amprobe:v1.3.5
+  - type: file
+    include:
+      - amvector.install
+      - setup.sh
+      - VERSION.TXT
+install:
+  - type: file
+  - type: docker_image
+    tags:
+      - source: amuluze/amprobe:v1.3.5
+        target: amuluze/amprobe:v1.3.5
+  - type: shell
+    run: ./setup.sh

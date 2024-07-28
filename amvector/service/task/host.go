@@ -5,8 +5,8 @@
 package task
 
 import (
-	"github.com/amuluze/amvector/pkg/psutil"
-	"github.com/amuluze/amvector/service/model"
+	"github.com/amuluze/amprobe/amvector/pkg/psutil"
+	"github.com/amuluze/amprobe/amvector/service/model"
 	"log/slog"
 	"time"
 )

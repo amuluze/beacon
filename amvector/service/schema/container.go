@@ -108,10 +108,11 @@ type ImageExportArgs struct {
 type ImageExportReply struct{}
 
 type NetworkCreateArgs struct {
-	Name           string
-	Driver         string
-	NetworkSegment string
-	Labels         map[string]string
+	Name    string
+	Driver  string
+	Subnet  string
+	Gateway string
+	Labels  map[string]string
 }
 
 type NetworkCreateReply struct {

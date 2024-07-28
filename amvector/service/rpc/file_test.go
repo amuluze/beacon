@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/amuluze/amvector/service/schema"
+	"github.com/amuluze/amprobe/amvector/service/schema"
 )
 
 func DirSize(path string) (int64, error) {

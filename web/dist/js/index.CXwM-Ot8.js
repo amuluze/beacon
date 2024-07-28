@@ -1,0 +1,1 @@
+import{r as a}from"./index.D8XJyr-Y.js";const o="/app/img/amprobe.Da9pVUU8.png";function p(o){return a.post("/api/v1/auth/login",o)}function t(){return a.post("/api/v1/auth/logout",{})}export{o as _,t as a,p as l};

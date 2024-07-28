@@ -7,7 +7,6 @@ package api
 import (
 	"fmt"
 	"log/slog"
-	"strings"
 
 	"github.com/amuluze/amprobe/pkg/fiberx"
 	"github.com/amuluze/amprobe/pkg/validatex"
@@ -162,7 +161,11 @@ func (a *HostAPI) FileUpload(ctx *fiber.Ctx) error {
 	// 	return fiberx.Failure(ctx, errors.ErrBadRequest)
 	// }
 	slog.Info("file upload", "filepath", fmt.Sprintf("/tmp/%s", file.Filename), "prefix", prefix)
-	if err := a.HostService.FileUpload(c, fmt.Sprintf("/tmp/%s", file.Filename), prefix); err != nil {
+	args := schema.FileUploadArgs{
+		SourceFilePath: fmt.Sprintf("/tmp/%s", file.Filename),
+		TargetFilePath: fmt.Sprintf("%s/%s", prefix, file.Filename),
+	}
+	if err := a.HostService.FileUpload(c, args); err != nil {
 		slog.Error("file upload error", "err", err)
 		return fiberx.Failure(ctx, errors.ErrBadRequest)
 	}
@@ -179,8 +182,7 @@ func (a *HostAPI) FileDownload(ctx *fiber.Ctx) error {
 		return fiberx.Failure(ctx, errors.ErrBadRequest)
 	}
 
-	filename := strings.Split(args.Filepath, "/")[len(strings.Split(args.Filepath, "/"))-1]
-	res, err := a.HostService.FileDownload(c, args.Filepath, filename)
+	res, err := a.HostService.FileDownload(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
 	}
@@ -195,6 +197,7 @@ func (a *HostAPI) FileDelete(ctx *fiber.Ctx) error {
 	if err := validatex.ValidateStruct(args); err != nil {
 		return fiberx.Failure(ctx, errors.ErrBadRequest)
 	}
+	slog.Info("file delete", "args", args)
 	err := a.HostService.FileDelete(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)

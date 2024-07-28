@@ -10,21 +10,21 @@ import (
 	"github.com/spf13/viper"
 )
 
+type Prefix string
+
 type Config struct {
-	Rpc      Rpc
-	Gorm     Gorm
-	DB       DB
-	Disk     Disk
-	Task     Task
-	Ethernet Ethernet
-	Logger   Logger
+	prefix    Prefix    `yaml:"-"`
+	Log       Log       `yaml:"log"`
+	Task      Task      `yaml:"task"`
+	DB        DB        `yaml:"db"`
+	Variables Variables `yaml:"variables"`
+	Profile   string    `yaml:"profile"`
 }
 
-func NewConfig(configFile string) (*Config, error) {
+func NewConfig(configFile string, prefix Prefix) (*Config, error) {
 	config := &Config{}
 
 	viper.SetConfigFile(configFile)
-	slog.Info("config file", "info", configFile)
 	if err := viper.ReadInConfig(); err != nil {
 		slog.Error("read config error", "err", err)
 		return nil, err
@@ -34,49 +34,43 @@ func NewConfig(configFile string) (*Config, error) {
 		slog.Error("parse config error", "error", err)
 		return nil, err
 	}
-
+	config.prefix = prefix
 	return config, nil
 }
 
-type Rpc struct {
-	Address string
-}
-
-type Gorm struct {
-	GenDoc            bool
-	Debug             bool
-	DBType            string
-	MaxLifetime       int
-	MaxOpenConns      int
-	MaxIdleConns      int
-	TablePrefix       string
-	EnableAutoMigrate bool
-}
-
-type DB struct {
-	Host     string
-	Port     string
-	User     string
-	Password string
-	DBName   string
-	SSLMode  string
+type Task struct {
+	Interval int      `yaml:"interval"`
+	Disk     Disk     `yaml:"disk"`
+	Ethernet Ethernet `yaml:"ethernet"`
 }
 
 type Disk struct {
-	Devices []string
-}
-
-type Task struct {
-	Interval int
+	Devices []string `yaml:"devices"`
 }
 
 type Ethernet struct {
-	Names []string
+	Names []string `yaml:"names"`
 }
 
-type Logger struct {
-	File         string
-	Level        string
-	RotationTime int
-	MaxAge       int
+type Log struct {
+	Output   string `yaml:"output"`
+	Level    string `yaml:"level"`
+	Rotation int    `yaml:"rotation"`
+	MaxAge   int    `yaml:"max_age"`
+}
+
+type DB struct {
+	DBType   string `yaml:"dbtype"`
+	Host     string `yaml:"host"`
+	Port     string `yaml:"port"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+	DBName   string `yaml:"dbname"`
+	SSLMode  string `yaml:"sslmode"`
+}
+
+type Variables struct {
+	ImageTag        string `yaml:"image_tag"`
+	HostPrefix      string `yaml:"host_prefix"`
+	ContainerPrefix string `yaml:"container_prefix"`
 }

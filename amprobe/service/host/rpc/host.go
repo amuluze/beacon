@@ -7,6 +7,7 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/amuluze/amprobe/pkg/rpc"
 	"github.com/amuluze/amprobe/service/model"
@@ -27,8 +28,8 @@ type IHostService interface {
 	DiskUsage(ctx context.Context, args schema.DiskUsageArgs) (schema.DiskUsageReply, error)
 	NetUsage(ctx context.Context, args schema.NetworkUsageArgs) (schema.NetworkUsageReply, error)
 	FilesSearch(ctx context.Context, args schema.FilesSearchArgs) (schema.FilesSearchReply, error)
-	FileUpload(ctx context.Context, filename string, prefix string) error
-	FileDownload(ctx context.Context, downloadFilepath string, filename string) (schema.FileDownloadReply, error)
+	FileUpload(ctx context.Context, args schema.FileUploadArgs) error
+	FileDownload(ctx context.Context, args schema.FileDownloadArgs) (schema.FileDownloadReply, error)
 	FileDelete(ctx context.Context, args schema.FileDeleteArgs) error
 	FileCreate(ctx context.Context, args schema.FileCreateArgs) error
 	FolderCreate(ctx context.Context, args schema.FolderCreateArgs) error
@@ -216,20 +217,27 @@ func (h HostService) FilesSearch(ctx context.Context, args schema.FilesSearchArg
 	return reply, nil
 }
 
-func (h HostService) FileUpload(ctx context.Context, filename string, prefix string) error {
-	err := h.RPCClient.SendFile(ctx, filename, prefix)
+func (h HostService) FileUpload(ctx context.Context, args schema.FileUploadArgs) error {
+	var reply schema.FileUploadReply
+	err := h.RPCClient.Call(ctx, "FileUpload", args, &reply)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (h HostService) FileDownload(ctx context.Context, downloadFilepath string, filename string) (schema.FileDownloadReply, error) {
-	err := h.RPCClient.DownloadFile(ctx, downloadFilepath, filename)
+func (h HostService) FileDownload(ctx context.Context, args schema.FileDownloadArgs) (schema.FileDownloadReply, error) {
+	filename := strings.Split(args.Filepath, "/")[len(strings.Split(args.Filepath, "/"))-1]
+	remoteArgs := schema.FileRemoteDownloadArgs{
+		SourceFilePath: args.Filepath,
+		TargetFilePath: fmt.Sprintf("/tmp/%s", filename),
+	}
+	var reply schema.FileDownloadReply
+	err := h.RPCClient.Call(ctx, "FileDownload", remoteArgs, &reply)
 	if err != nil {
 		return schema.FileDownloadReply{}, err
 	}
-	return schema.FileDownloadReply{Filepath: fmt.Sprintf("/tmp/%s", filename)}, nil
+	return schema.FileDownloadReply{Filepath: remoteArgs.TargetFilePath}, nil
 }
 
 func (h HostService) FileDelete(ctx context.Context, args schema.FileDeleteArgs) error {

@@ -5,41 +5,30 @@
 package service
 
 import (
-	"strings"
-
+	"github.com/amuluze/amprobe/amvector/service/model"
 	"github.com/amuluze/amutool/database"
-	"github.com/amuluze/amvector/service/model"
 )
 
 func NewDB(config *Config, models *model.Models) (*database.DB, error) {
-	if config.Gorm.GenDoc {
-		return nil, nil
-	}
-	gormConfig := config.Gorm
 	dbConfig := config.DB
 	db, err := database.NewDB(
-		database.WithDebug(gormConfig.Debug),
-		database.WithType(gormConfig.DBType),
+		database.WithDebug(true),
+		database.WithType(dbConfig.DBType),
 		database.WithHost(dbConfig.Host),
 		database.WithPort(dbConfig.Port),
 		database.WithUsername(dbConfig.User),
 		database.WithPassword(dbConfig.Password),
 		database.WithDBName(dbConfig.DBName),
-		database.WithMaxLifetime(gormConfig.MaxLifetime),
-		database.WithMaxOpenConns(gormConfig.MaxOpenConns),
-		database.WithMaxIdleConns(gormConfig.MaxIdleConns),
+		database.WithMaxLifetime(7200),
+		database.WithMaxOpenConns(150),
+		database.WithMaxIdleConns(50),
 	)
 	if err != nil {
 		return nil, err
 	}
-	if gormConfig.EnableAutoMigrate {
-		if dbType := gormConfig.DBType; strings.ToLower(dbType) == "mysql" {
-			db.Set("gorm:table_options", "ENGINE=InnoDB")
-		}
-		err := db.AutoMigrate(models.GetAllModels()...)
-		if err != nil {
-			return nil, err
-		}
+	err = db.AutoMigrate(models.GetAllModels()...)
+	if err != nil {
+		return nil, err
 	}
 	return db, nil
 }

@@ -1,4 +1,4 @@
-FROM golang:1.21 as build
+FROM golang:1.21 AS build
 COPY . /app/amprobe
 ENV GO111MODULE="on" \
     GOPROXY=https://goproxy.cn,direct
