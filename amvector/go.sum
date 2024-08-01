@@ -122,6 +122,8 @@ github.com/amuluze/amutool/timex v0.0.0-20240510090832-32eaf1044cf1 h1:/WCpBBdx1
 github.com/amuluze/amutool/timex v0.0.0-20240510090832-32eaf1044cf1/go.mod h1:i4gYDCtrLZRCopxiYdmmwmI5Da1nr6Pl/TMTUKTuIMw=
 github.com/amuluze/docker v0.0.0-20240712060310-82e95def381e h1:pCP3Anjh8IQi1phPYSEanygOerkE0M/4GYqKRvGLvQY=
 github.com/amuluze/docker v0.0.0-20240712060310-82e95def381e/go.mod h1:QEk+9tXbBBAlcxwSxTDzBMbNvl6WvW9K9BvvexnFeoQ=
+github.com/amuluze/docker v0.0.0-20240801162537-8606fc654664 h1:qwR/e1fd0N8lv/jTo89h4yX5fOS7Fn+gohITLK6DE9s=
+github.com/amuluze/docker v0.0.0-20240801162537-8606fc654664/go.mod h1:QEk+9tXbBBAlcxwSxTDzBMbNvl6WvW9K9BvvexnFeoQ=
 github.com/andybalholm/brotli v1.0.5/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=
 github.com/andybalholm/brotli v1.0.6 h1:Yf9fFpf49Zrxb9NlQaluyE92/+X7UVHlhMNJN2sxfOI=
 github.com/andybalholm/brotli v1.0.6/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=

@@ -52,7 +52,7 @@ const onRoutes = computed(() => {
 <style scoped lang="scss">
 @include b(logo) {
     @include bfc;
-    @include flex;
+    display: flex;
     align-items: center;
     justify-content: center;
     height: 64px;

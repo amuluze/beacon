@@ -19,7 +19,7 @@ import Sidebar from '@/layout/sidebar/index.vue'
 <style scoped lang="scss">
 @include b(layout-container) {
     @include bfc;
-    @include flex;
+    display: flex;
     height: 100%;
     width: 100%;
     background-color: #f4f4f4;

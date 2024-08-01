@@ -211,7 +211,27 @@
                 <el-form-item>
                     <el-button type="primary" text @click="addPort">添加端口<svg-icon icon-class="plus" /></el-button>
                 </el-form-item>
-                <el-form-item label="目录/文件挂载" prop="volumnes">
+                <el-form-item label="环境变量" prop="environments">
+                    <span v-if="containerCreateMode.environments.length === 0">可以添加环境变量</span>
+                    <el-form-item
+                        v-for="(environment, index) in containerCreateMode.environments"
+                        :key="index"
+                        style="margin-bottom: 4px"
+                    >
+                        <el-input v-model="environment.key" style="width: 160px" placeholder="变量名" />
+                        <el-input v-model="environment.value" style="width: 160px" placeholder="变量值" />
+                        <el-button type="danger" text @click="deleteEnvironment(index)">
+                            <svg-icon icon-class="close" />
+                        </el-button>
+                    </el-form-item>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" text @click="addEnvironment">
+                        添加环境变量
+                        <svg-icon icon-class="plus" />
+                    </el-button>
+                </el-form-item>
+                <el-form-item label="目录/文件挂载" prop="volumes">
                     <span v-if="containerCreateMode.volumes.length === 0">可以添加目录/文件挂载</span>
                     <el-form-item
                         v-for="(volume, index) in containerCreateMode.volumes"
@@ -417,12 +437,18 @@ interface Volume {
     containerPath: string
 }
 
+interface Environment {
+    key: string
+    value: string
+}
+
 interface RuleForm {
     containerName: string
     imageName: string
     networkName: string
     ports: Port[]
     volumes: Volume[]
+    environments: Environment[]
     labels: string
 }
 const containerCreateMode = reactive<RuleForm>({
@@ -431,6 +457,7 @@ const containerCreateMode = reactive<RuleForm>({
     networkName: '',
     ports: [],
     volumes: [],
+    environments: [],
     labels: ''
 })
 
@@ -524,6 +551,17 @@ const deleteVolume = (index: number) => {
     containerCreateMode.volumes.splice(index, 1)
 }
 
+const addEnvironment = () => {
+    containerCreateMode.environments.push({
+        key: '',
+        value: ''
+    })
+}
+
+const deleteEnvironment = (index: number) => {
+    containerCreateMode.environments.splice(index, 1)
+}
+
 const createContainerLoading = ref(false)
 const confirmCreateContainer = async (formEl: FormInstance | undefined) => {
     if (!formEl) return
@@ -536,6 +574,7 @@ const confirmCreateContainer = async (formEl: FormInstance | undefined) => {
             createContainerLoading.value = true
             let ps: string[] = []
             let vs: string[] = []
+            let es: string[] = []
             let ls: Map<string, string> = new Map()
             let network_mode = ''
             let network_id = ''
@@ -545,6 +584,10 @@ const confirmCreateContainer = async (formEl: FormInstance | undefined) => {
             for (let i = 0; i < containerCreateMode.volumes.length; i++) {
                 vs.push(`${containerCreateMode.volumes[i].hostPath}:${containerCreateMode.volumes[i].containerPath}`)
             }
+            for (let i = 0; i < containerCreateMode.environments.length; i++) {
+                es.push(`${containerCreateMode.environments[i].key}=${containerCreateMode.environments[i].value}`)
+            }
+
             if (containerCreateMode.labels) {
                 const labelArr = containerCreateMode.labels.split('\n')
                 for (let i = 0; i < labelArr.length; i++) {
@@ -568,6 +611,7 @@ const confirmCreateContainer = async (formEl: FormInstance | undefined) => {
                 network_id: network_id,
                 ports: ps,
                 volumes: vs,
+                environments: es,
                 labels: ls
             }
             createContainer(params)

@@ -26,6 +26,7 @@ type ContainerCreateArgs struct {
 	NetworkName   string
 	Ports         []string
 	Volumes       []string
+	Environments  []string
 	Labels        map[string]string
 }
 

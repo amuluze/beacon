@@ -24,6 +24,7 @@ export interface CreateContainerArgs {
     network_name: string
     ports: string[]
     volumes: string[]
+    environments: string[]
     labels: Map<string, string>
 }
 

@@ -41,6 +41,7 @@ type ContainerCreateArgs struct {
 	NetworkName   string            `json:"network_name"`
 	Ports         []string          `json:"ports"`
 	Volumes       []string          `json:"volumes"`
+	Environments  []string          `json:"environments"`
 	Labels        map[string]string `json:"labels"`
 }
 

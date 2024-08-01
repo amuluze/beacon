@@ -50,6 +50,7 @@ func (s *Service) ContainerCreate(ctx context.Context, args schema.ContainerCrea
 		args.NetworkName,
 		args.Ports,
 		args.Volumes,
+		args.Environments,
 		args.Labels,
 	); err != nil {
 		return err
