@@ -8,10 +8,6 @@ $modifier-sel: '--' !default;
     overflow: hidden;
 }
 
-@mixin flex {
-    display: flex;
-}
-
 @mixin b($block) {
     .#{ $namespace + $block-sel + $block } {
         // 差值语法 #{}
