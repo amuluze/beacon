@@ -26,13 +26,13 @@ wire:
 .PHONY: amd64
 # docker amd64 image
 amd64:
-	# docker build -t amuluze/amprobe:v1.3.5 -f ./Dockerfile.amd .
+	# docker build -t $(IMAGE):$(TAG) -f ./Dockerfile.amd .
 	docker buildx build --platform linux/amd64 -t $(IMAGE):$(TAG) -o type=docker .
 
-.PHONY: arm64
+.PHONY: arm64ls
 # docker arm64 image
 arm64:
-	# docker build -t amuluze/amprobe_arm:v1.3.5 -f ./Dockerfile.arm .
+	# docker build -t $(IMAGE):$(TAG) -f ./Dockerfile.arm .
 	docker buildx build --platform linux/arm64 -t $(IMAGE):$(TAG) -o type=docker .
 
 .PHONY: build
