@@ -37,6 +37,7 @@ func (m *Manager) CreateAmprobe(profile *profile.AmprobeProfile) error {
 		profile.Networks.Networks[0].Name,
 		profile.Ports,
 		vols,
+		profile.Environment,
 		nil,
 	)
 	if err != nil {
