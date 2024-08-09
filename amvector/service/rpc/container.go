@@ -250,7 +250,7 @@ func (s *Service) ImageExport(ctx context.Context, args schema.ImageExportArgs, 
 }
 
 func (s *Service) NetworkCreate(ctx context.Context, args schema.NetworkCreateArgs, reply *schema.NetworkCreateReply) error {
-	args.Labels[docker.AmprobeLabel] = "true"
+	args.Labels[docker.CreatedByProbe] = "true"
 	if networkID, err := s.Manager.CreateNetwork(ctx, args.Name, args.Driver, args.Subnet, args.Gateway, args.Labels); err != nil {
 		return err
 	} else {
