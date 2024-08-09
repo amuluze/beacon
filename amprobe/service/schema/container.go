@@ -13,6 +13,8 @@ type Container struct {
 	Name          string            `json:"name"`
 	Image         string            `json:"image"`
 	IP            string            `json:"ip"`
+	Ports         string            `json:"ports"`
+	ServerType    string            `json:"server_type"`
 	State         string            `json:"state"`
 	Uptime        string            `json:"uptime"`
 	CPUPercent    string            `json:"cpu_percent"`

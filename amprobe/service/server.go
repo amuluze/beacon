@@ -67,11 +67,7 @@ func Init(ctx context.Context, opts ...Option) (func(), error) {
 
 	httpServerCleanFunc := InitHttpServer(ctx, injector.Config, injector.App)
 
-	//timedTask := injector.Task
-	//go timedTask.Run()
-
 	return func() {
-		//timedTask.Stop()
 		httpServerCleanFunc()
 		cleanFunc()
 	}, nil

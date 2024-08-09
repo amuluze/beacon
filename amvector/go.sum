@@ -120,10 +120,8 @@ github.com/amuluze/amutool/logger v0.0.0-20240510090832-32eaf1044cf1 h1:0mVQmUET
 github.com/amuluze/amutool/logger v0.0.0-20240510090832-32eaf1044cf1/go.mod h1:NuTBHy/KcmWVEeC8ioqE3MzW2Sv4kUPxznJ5w+El9n4=
 github.com/amuluze/amutool/timex v0.0.0-20240510090832-32eaf1044cf1 h1:/WCpBBdx1+KDT+88fPtzRzv3qe+Gai5wL8tvfyqkR/Q=
 github.com/amuluze/amutool/timex v0.0.0-20240510090832-32eaf1044cf1/go.mod h1:i4gYDCtrLZRCopxiYdmmwmI5Da1nr6Pl/TMTUKTuIMw=
-github.com/amuluze/docker v0.0.0-20240712060310-82e95def381e h1:pCP3Anjh8IQi1phPYSEanygOerkE0M/4GYqKRvGLvQY=
-github.com/amuluze/docker v0.0.0-20240712060310-82e95def381e/go.mod h1:QEk+9tXbBBAlcxwSxTDzBMbNvl6WvW9K9BvvexnFeoQ=
-github.com/amuluze/docker v0.0.0-20240801162537-8606fc654664 h1:qwR/e1fd0N8lv/jTo89h4yX5fOS7Fn+gohITLK6DE9s=
-github.com/amuluze/docker v0.0.0-20240801162537-8606fc654664/go.mod h1:QEk+9tXbBBAlcxwSxTDzBMbNvl6WvW9K9BvvexnFeoQ=
+github.com/amuluze/docker v0.0.0-20240809065643-4b172f98bf33 h1:JZrKKuujL/04oMtPjx8a7A3C38jK2nrksK7rD17aeBs=
+github.com/amuluze/docker v0.0.0-20240809065643-4b172f98bf33/go.mod h1:QEk+9tXbBBAlcxwSxTDzBMbNvl6WvW9K9BvvexnFeoQ=
 github.com/andybalholm/brotli v1.0.5/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=
 github.com/andybalholm/brotli v1.0.6 h1:Yf9fFpf49Zrxb9NlQaluyE92/+X7UVHlhMNJN2sxfOI=
 github.com/andybalholm/brotli v1.0.6/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=
@@ -357,8 +355,8 @@ github.com/docker/distribution v2.8.1+incompatible/go.mod h1:J2gT2udsDAN96Uj4Kfc
 github.com/docker/docker v1.4.2-0.20190924003213-a8608b5b67c7/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/docker v20.10.17+incompatible/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/docker v20.10.22+incompatible/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
-github.com/docker/docker v27.0.3+incompatible h1:aBGI9TeQ4MPlhquTQKq9XbK79rKFVwXNUAYz9aXyEBE=
-github.com/docker/docker v27.0.3+incompatible/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
+github.com/docker/docker v27.1.1+incompatible h1:hO/M4MtV36kzKldqnA37IWhebRA+LnqqcqDja6kVaKY=
+github.com/docker/docker v27.1.1+incompatible/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/docker-credential-helpers v0.6.3/go.mod h1:WRaJzqw3CTB9bk10avuGsjVBZsD05qeibJ1/TYlvc0Y=
 github.com/docker/go-connections v0.4.0/go.mod h1:Gbd7IOopHjR8Iph03tsViu4nIes5XhDvyHbTtUxmeec=
 github.com/docker/go-connections v0.5.0 h1:USnMq7hx7gwdVZq1L49hLXaFtUdTADjXGp+uj1Br63c=

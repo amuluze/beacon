@@ -33,6 +33,7 @@ func (a *Task) Container(timestamp time.Time) {
 		d.Image = info.Image
 		d.Uptime = info.Uptime
 		d.IP = info.IP
+		d.Ports = info.Ports
 		d.Labels = string(labels)
 
 		cpuPercent, err := a.manager.GetContainerCpu(ctx, info.ID[:6])
