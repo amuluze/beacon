@@ -5,6 +5,7 @@
 package model
 
 import (
+	"github.com/lib/pq"
 	"time"
 
 	"gorm.io/gorm"
@@ -19,7 +20,7 @@ type Container struct {
 	Name        string
 	Image       string
 	IP          string
-	Ports       []uint16
+	Ports       pq.Int64Array
 	State       string
 	Uptime      string
 	CPUPercent  float64

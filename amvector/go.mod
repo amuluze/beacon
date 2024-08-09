@@ -8,6 +8,7 @@ require (
 	github.com/amuluze/docker v0.0.0-20240809065643-4b172f98bf33
 	github.com/docker/docker v27.1.1+incompatible
 	github.com/docker/libcompose v0.4.0
+	github.com/lib/pq v1.0.0
 	github.com/mcuadros/go-defaults v1.2.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/shirou/gopsutil/v3 v3.24.5
