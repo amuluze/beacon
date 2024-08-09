@@ -2,6 +2,9 @@ APP 			= amprobe
 SERVER  		= ./cmd/${APP}
 RELEASE_SERVER 	= release/${APP}/${APP}
 
+IMAGE = amuluze/amprobe
+TAG = v1.3.6
+
 GO 				= go
 CONFIG_FILE := $(shell pwd)/configs/config.toml
 
@@ -24,14 +27,14 @@ wire:
 # docker amd64 image
 amd64:
 	# docker build -t amuluze/amprobe:v1.3.5 -f ./Dockerfile.amd .
-	docker buildx build --platform linux/amd64 -t amuluze/amprobe:v1.3.5 -o type=docker .
+	docker buildx build --platform linux/amd64 -t $(IMAGE):$(TAG) -o type=docker .
 
 .PHONY: arm64
 # docker arm64 image
 arm64:
 	# docker build -t amuluze/amprobe_arm:v1.3.5 -f ./Dockerfile.arm .
-	docker buildx build --platform linux/arm64 -t amuluze/amprobe_arm:v1.3.5 -o type=docker .
+	docker buildx build --platform linux/arm64 -t $(IMAGE):$(TAG) -o type=docker .
 
 .PHONY: build
 build:
-	docker buildx build --platform linux/amd64,linux/arm64 -t amuluze/amprobe:v1.3.5 . --push
+	docker buildx build --platform linux/amd64,linux/arm64 -t $(IMAGE):$(TAG) . --push
