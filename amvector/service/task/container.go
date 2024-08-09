@@ -8,6 +8,8 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/amuluze/amprobe/amvector/service/model"
@@ -24,9 +26,9 @@ func (a *Task) Container(timestamp time.Time) {
 	}
 	var containers []model.Container
 	for _, info := range cs {
-		var ports []int64
+		ports := ""
 		for _, port := range info.Ports {
-			ports = append(ports, int64(port))
+			ports += strconv.Itoa(int(port)) + ","
 		}
 		labels, _ := json.Marshal(info.Labels)
 		var d model.Container
@@ -37,7 +39,7 @@ func (a *Task) Container(timestamp time.Time) {
 		d.Image = info.Image
 		d.Uptime = info.Uptime
 		d.IP = info.IP
-		d.Ports = ports
+		d.Ports = strings.Trim(ports, ",")
 		d.Labels = string(labels)
 
 		cpuPercent, err := a.manager.GetContainerCpu(ctx, info.ID[:6])

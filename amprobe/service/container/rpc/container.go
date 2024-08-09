@@ -8,15 +8,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
+
 	"github.com/amuluze/amprobe/pkg/rpc"
 	"github.com/amuluze/amprobe/pkg/utils"
 	"github.com/amuluze/amprobe/service/model"
 	"github.com/amuluze/amprobe/service/schema"
 	"github.com/amuluze/docker"
 	"github.com/google/wire"
-	"log/slog"
-	"strconv"
-	"strings"
 )
 
 var ContainerServiceSet = wire.NewSet(NewContainerService, wire.Bind(new(IContainerService), new(*ContainerService)))
@@ -78,10 +77,6 @@ func (c ContainerService) ContainerList(ctx context.Context, args schema.Contain
 	var data []schema.Container
 
 	for _, v := range reply {
-		var ports []string
-		for _, port := range v.Ports {
-			ports = append(ports, strconv.Itoa(int(port)))
-		}
 		var labels map[string]string
 		if err := json.Unmarshal([]byte(v.Labels), &labels); err != nil {
 			return schema.ContainerQueryRely{}, err
@@ -95,7 +90,7 @@ func (c ContainerService) ContainerList(ctx context.Context, args schema.Contain
 			Name:          v.Name,
 			Image:         v.Image,
 			IP:            v.IP,
-			Ports:         strings.Join(ports, ","),
+			Ports:         v.Ports,
 			ServerType:    serverType,
 			State:         v.State,
 			Uptime:        v.Uptime,
