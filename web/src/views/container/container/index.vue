@@ -42,6 +42,7 @@
                     show-overflow-tooltip
                     sortable
                 />
+                <el-table-column prop="ports" label="容器端口" align="center" min-width="100" show-overflow-tooltip />
                 <el-table-column prop="state" label="运行状态" align="center" min-width="120" show-overflow-tooltip>
                     <template #default="scope">
                         <el-tag :type="scope.row.state === 'running' ? 'success' : 'danger'">{{
