@@ -5,9 +5,10 @@ go 1.21.9
 require (
 	github.com/amuluze/amutool/database v0.0.0-20240510090832-32eaf1044cf1
 	github.com/amuluze/amutool/timex v0.0.0-20240510090832-32eaf1044cf1
-	github.com/amuluze/docker v0.0.0-20240712060310-82e95def381e
-	github.com/docker/docker v27.0.3+incompatible
+	github.com/amuluze/docker v0.0.0-20240809065643-4b172f98bf33
+	github.com/docker/docker v27.1.1+incompatible
 	github.com/docker/libcompose v0.4.0
+	github.com/lib/pq v1.0.0
 	github.com/mcuadros/go-defaults v1.2.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/shirou/gopsutil/v3 v3.24.5

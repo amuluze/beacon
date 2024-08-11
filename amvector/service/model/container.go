@@ -19,6 +19,7 @@ type Container struct {
 	Name        string
 	Image       string
 	IP          string
+	Ports       string
 	State       string
 	Uptime      string
 	CPUPercent  float64

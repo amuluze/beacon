@@ -7,8 +7,7 @@ require (
 	github.com/amuluze/amutool/errors v0.0.0-20240425152605-07fd57342644
 	github.com/amuluze/amutool/logger v0.0.0-20240425152605-07fd57342644
 	github.com/amuluze/amutool/timex v0.0.0-20240425152605-07fd57342644
-	github.com/amuluze/docker v0.0.0-20240712060310-82e95def381e
-	github.com/fsnotify/fsnotify v1.7.0
+	github.com/amuluze/docker v0.0.0-20240809065643-4b172f98bf33
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/gofiber/contrib/websocket v1.3.1
 	github.com/gofiber/fiber/v2 v2.52.4
@@ -47,6 +46,7 @@ require (
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
+	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.7.0 // indirect
@@ -78,6 +78,7 @@ require (
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible // indirect
 	github.com/lestrrat-go/strftime v1.0.6 // indirect
+	github.com/lib/pq v1.10.9
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

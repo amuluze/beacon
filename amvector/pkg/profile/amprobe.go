@@ -7,6 +7,8 @@ package profile
 import (
 	"path/filepath"
 
+	"github.com/amuluze/docker"
+
 	"github.com/amuluze/amprobe/amvector/assets"
 	"github.com/amuluze/amprobe/amvector/pkg/resources"
 	"github.com/amuluze/amprobe/amvector/pkg/utils"
@@ -15,12 +17,13 @@ import (
 )
 
 type AmprobeProfile struct {
-	ContainerName string         `yaml:"container_name" default:"amprobe"`
-	Restart       string         `yaml:"restart" default:"always"`
-	Image         string         `yaml:"image" default:"amuluze/amprobe:v1.3.5"`
-	Ports         []string       `yaml:"ports" default:"[80:80,8000:8000]"`
-	Volumes       *yaml.Volumes  `yaml:"volumes"`
-	Networks      *yaml.Networks `yaml:"networks"`
+	ContainerName string               `yaml:"container_name" default:"amprobe"`
+	Restart       string               `yaml:"restart" default:"always"`
+	Image         string               `yaml:"image" default:"amuluze/amprobe:v1.3.6"`
+	Ports         []string             `yaml:"ports" default:"[80:80,8000:8000]"`
+	Volumes       *yaml.Volumes        `yaml:"volumes"`
+	Environment   yaml.MaporEqualSlice `yaml:"environment"`
+	Networks      *yaml.Networks       `yaml:"networks"`
 }
 
 func (a *AmprobeProfile) Entry() interface{} {
@@ -79,6 +82,9 @@ func (a *AmprobeProfile) BuildProfile(prefix string) error {
 			Source:      "/tmp",
 			Destination: "/tmp",
 		},
+	}...)
+	a.Environment = append(a.Environment, []string{
+		NewEnvEntry(docker.CreatedByProbe, "true"),
 	}...)
 	bridgeNetwork := &yaml.Network{
 		Name:        BridgeName,

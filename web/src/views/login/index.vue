@@ -19,7 +19,8 @@
             <div class="am-login-right__form">
                 <el-form :model="loginForm" :rules="loginFormRules">
                     <div class="title">
-                        <span>登录</span>
+                        <span class="login">登录</span>
+                        <el-tag> <span class="version">v1.3.6</span> </el-tag>
                     </div>
 
                     <el-form-item prop="username">
@@ -47,7 +48,7 @@
                         >
                         </el-input>
                     </el-form-item>
-                    <el-button class="btn" size="large" type="primary" @click.prevent="handleLogin"> 登录 </el-button>
+                    <el-button class="btn" size="large" type="primary" @click.prevent="handleLogin"> 登录 </el-button class="btn">
                 </el-form>
             </div>
         </div>
@@ -105,84 +106,4 @@ const handleLogin = async () => {
     }
 }
 </script>
-<style scoped lang="scss">
-@include b(login) {
-    @include flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    min-height: 100%;
-    background-color: #eee;
-    background-image: url('@/assets/images/login_bg.svg');
-    background-size: auto;
-}
-@include b(login-left) {
-    @include flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background-image: url('@/assets/images/bg-bd839ea3.svg');
-    width: 48%;
-    height: 100%;
-    min-height: 100%;
-    background-color: #22325b;
-    color: #fff;
-    padding: 20px;
-
-    @include e(title) {
-        @include flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 30px;
-    }
-
-    @include e(img) {
-        height: 36px;
-        width: 36px;
-        margin-right: 6px;
-    }
-
-    @include e(item) {
-        @include flex;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: center;
-    }
-}
-
-@include b(login-right) {
-    @include flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 60%;
-    height: 100%;
-
-    @include e(form) {
-        width: 400px;
-        padding: 50px 40px 45px;
-        background-color: var(--el-bg-color);
-        border-radius: 10px;
-        box-shadow: rgb(0 0 0 / 10%) 0 2px 10px 2px;
-
-        .title {
-            padding-bottom: 1rem;
-            margin: 0 auto;
-            text-align: center;
-
-            span {
-                font-size: 24px;
-                font-weight: bold;
-                color: #34495e;
-                white-space: nowrap;
-            }
-        }
-
-        .btn {
-            width: 100%;
-        }
-    }
-}
-</style>
+<style scoped lang="scss"></style>

@@ -14,6 +14,7 @@ import (
 	"github.com/amuluze/amprobe/pkg/utils"
 	"github.com/amuluze/amprobe/service/model"
 	"github.com/amuluze/amprobe/service/schema"
+	"github.com/amuluze/docker"
 	"github.com/google/wire"
 )
 
@@ -74,12 +75,23 @@ func (c ContainerService) ContainerList(ctx context.Context, args schema.Contain
 	}
 	var result schema.ContainerQueryRely
 	var data []schema.Container
+
 	for _, v := range reply {
+		var labels map[string]string
+		if err := json.Unmarshal([]byte(v.Labels), &labels); err != nil {
+			return schema.ContainerQueryRely{}, err
+		}
+		serverType := ""
+		if _, ok := labels[docker.ServerTypeLabel]; ok {
+			serverType = labels[docker.ServerTypeLabel]
+		}
 		data = append(data, schema.Container{
 			ID:            v.ContainerID[:6],
 			Name:          v.Name,
 			Image:         v.Image,
 			IP:            v.IP,
+			Ports:         v.Ports,
+			ServerType:    serverType,
 			State:         v.State,
 			Uptime:        v.Uptime,
 			CPUPercent:    fmt.Sprintf("%.2f", v.CPUPercent) + " %",

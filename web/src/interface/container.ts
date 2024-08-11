@@ -8,6 +8,7 @@ export interface Container {
     name: string
     image: string
     ip: string
+    ports: string
     state: string
     uptime: string
     cpu_percent: number
@@ -24,6 +25,7 @@ export interface CreateContainerArgs {
     network_name: string
     ports: string[]
     volumes: string[]
+    environments: string[]
     labels: Map<string, string>
 }
 

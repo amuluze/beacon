@@ -13,6 +13,8 @@ type Container struct {
 	Name          string            `json:"name"`
 	Image         string            `json:"image"`
 	IP            string            `json:"ip"`
+	Ports         string            `json:"ports"`
+	ServerType    string            `json:"server_type"`
 	State         string            `json:"state"`
 	Uptime        string            `json:"uptime"`
 	CPUPercent    string            `json:"cpu_percent"`
@@ -41,6 +43,7 @@ type ContainerCreateArgs struct {
 	NetworkName   string            `json:"network_name"`
 	Ports         []string          `json:"ports"`
 	Volumes       []string          `json:"volumes"`
+	Environments  []string          `json:"environments"`
 	Labels        map[string]string `json:"labels"`
 }
 
