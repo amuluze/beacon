@@ -19,7 +19,8 @@
             <div class="am-login-right__form">
                 <el-form :model="loginForm" :rules="loginFormRules">
                     <div class="title">
-                        <span>登录</span>
+                        <span class="login">登录</span>
+                        <el-tag> <span class="version">v1.3.6</span> </el-tag>
                     </div>
 
                     <el-form-item prop="username">
@@ -47,7 +48,7 @@
                         >
                         </el-input>
                     </el-form-item>
-                    <el-button class="btn" size="large" type="primary" @click.prevent="handleLogin"> 登录 </el-button>
+                    <el-button class="btn" size="large" type="primary" @click.prevent="handleLogin"> 登录 </el-button class="btn">
                 </el-form>
             </div>
         </div>

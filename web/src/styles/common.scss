@@ -62,15 +62,24 @@
         box-shadow: rgb(0 0 0 / 10%) 0 2px 10px 2px;
 
         .title {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: center;
             padding-bottom: 1rem;
             margin: 0 auto;
             text-align: center;
 
-            span {
+            .login {
                 font-size: 24px;
                 font-weight: bold;
                 color: #34495e;
                 white-space: nowrap;
+            }
+            .version {
+                font-size: 14px;
+                font-weight: bold;
+                color: #2f7bff;
             }
         }
 
