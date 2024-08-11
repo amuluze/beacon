@@ -5,8 +5,9 @@
 package profile
 
 import (
-	"github.com/amuluze/docker"
 	"path/filepath"
+
+	"github.com/amuluze/docker"
 
 	"github.com/amuluze/amprobe/amvector/assets"
 	"github.com/amuluze/amprobe/amvector/pkg/resources"
@@ -18,7 +19,7 @@ import (
 type AmprobeProfile struct {
 	ContainerName string               `yaml:"container_name" default:"amprobe"`
 	Restart       string               `yaml:"restart" default:"always"`
-	Image         string               `yaml:"image" default:"amuluze/amprobe:v1.3.5"`
+	Image         string               `yaml:"image" default:"amuluze/amprobe:v1.3.6"`
 	Ports         []string             `yaml:"ports" default:"[80:80,8000:8000]"`
 	Volumes       *yaml.Volumes        `yaml:"volumes"`
 	Environment   yaml.MaporEqualSlice `yaml:"environment"`

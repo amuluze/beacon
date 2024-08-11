@@ -8,6 +8,7 @@ export interface Container {
     name: string
     image: string
     ip: string
+    ports: string
     state: string
     uptime: string
     cpu_percent: number
