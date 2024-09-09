@@ -5,7 +5,8 @@
 package jwtauth
 
 import (
-	"github.com/amuluze/amprobe/pkg/auth"
+	"amprobe/pkg/auth"
+
 	"github.com/golang-jwt/jwt"
 )
 

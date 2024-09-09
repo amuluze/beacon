@@ -10,13 +10,13 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/patrickmn/go-cache"
+	"amprobe/pkg/psutil"
+	"amprobe/service/model"
 
-	"github.com/amuluze/amprobe/pkg/psutil"
-	"github.com/amuluze/amprobe/service/model"
 	"github.com/amuluze/amutool/database"
 	"github.com/amuluze/amutool/timex"
 	"github.com/amuluze/docker"
+	"github.com/patrickmn/go-cache"
 )
 
 const (

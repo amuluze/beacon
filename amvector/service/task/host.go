@@ -5,13 +5,14 @@
 package task
 
 import (
-	"github.com/amuluze/amprobe/amvector/pkg/psutil"
-	"github.com/amuluze/amprobe/amvector/service/model"
+	"amvector/pkg/psutil"
 	"log/slog"
 	"time"
+
+	"amvector/service/model"
 )
 
-func (a *Task) Host(timestamp time.Time) {
+func (a *Task) HostSummary(timestamp time.Time) error {
 	info, _ := psutil.GetSystemInfo()
 	if err := a.db.Unscoped().Where("1 = 1").Delete(&model.Host{}).Error; err != nil {
 		slog.Error("Error deleting host table", "error", err)
@@ -28,7 +29,7 @@ func (a *Task) Host(timestamp time.Time) {
 	})
 }
 
-func (a *Task) Cpu(timestamp time.Time) {
+func (a *Task) CPUSummary(timestamp time.Time) error {
 	cpuPercent, _ := psutil.GetCPUPercent()
 	a.db.Model(&model.CPU{}).Create(&model.CPU{
 		Timestamp:  timestamp,
@@ -36,7 +37,7 @@ func (a *Task) Cpu(timestamp time.Time) {
 	})
 }
 
-func (a *Task) Memory(timestamp time.Time) {
+func (a *Task) MemorySummary(timestamp time.Time) error {
 	memPercent, memTotal, memUsed, _ := psutil.GetMemInfo()
 	a.db.Model(&model.Memory{}).Create(&model.Memory{
 		Timestamp:  timestamp,
@@ -50,7 +51,8 @@ func (a *Task) Memory(timestamp time.Time) {
 disk 函数用于获取磁盘指标，并将其存储到数据库中。
 计算方法：两次采样间隔之间磁盘读写的平均速率
 */
-func (a *Task) Disk(timestamp time.Time) {
+
+func (a *Task) DiskSummary(timestamp time.Time) error {
 	diskInfo, _ := psutil.GetDiskInfo(a.devices)
 	diskIOMap, _ := psutil.GetDiskIO(a.devices)
 	var diskInfos []model.Disk
@@ -89,7 +91,8 @@ func (a *Task) Disk(timestamp time.Time) {
 network 函数用于获取网络指标，并将其存储到数据库中。
 计算方法：两次采样间隔之间发送、接收的平均速率
 */
-func (a *Task) Network(timestamp time.Time) {
+
+func (a *Task) NetSummary(timestamp time.Time) error {
 	netMap, _ := psutil.GetNetworkIO(a.ethernet)
 	slog.Error("net map: ", "netMap", netMap)
 	var netInfos []model.Net

@@ -1,9 +1,0 @@
-users:
-  - username: admin
-    password: 123456
-    status: 1
-    is_admin: 1
-  - username: amprobe
-    password: 123456
-    status: 1
-    is_admin: 0

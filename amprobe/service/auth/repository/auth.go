@@ -5,10 +5,13 @@
 package repository
 
 import (
+	"amprobe/pkg/utils/hash"
 	"context"
-	"github.com/amuluze/amprobe/pkg/utils/hash"
-	"github.com/amuluze/amprobe/service/model"
-	"github.com/amuluze/amprobe/service/schema"
+
+	"amprobe/service/model"
+
+	"amprobe/service/schema"
+
 	"github.com/amuluze/amutool/database"
 	"github.com/amuluze/amutool/errors"
 	"github.com/google/wire"

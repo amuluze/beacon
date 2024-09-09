@@ -1,7 +1,7 @@
 // Package config
 // Date: 2024/7/2 14:38
 // Author: Amu
-// Description: amprobe/amvector 的配置文件 config.yml 的生成
+// Description: amvector 的配置文件 config.yml 的生成
 package config
 
 import (
@@ -10,8 +10,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/amuluze/amprobe/amvector/pkg/resources"
-	"github.com/amuluze/amprobe/amvector/pkg/utils"
+	"amvector/pkg/resources"
+
+	"amvector/pkg/utils"
 
 	"gopkg.in/yaml.v2"
 )
@@ -49,7 +50,6 @@ type Config struct {
 		Rotation int    `yaml:"rotation"`
 		MaxAge   int    `yaml:"max_age"`
 	} `yaml:"log"`
-
 	Task struct {
 		Interval int `yaml:"interval"`
 		Disk     struct {
@@ -68,7 +68,6 @@ type Config struct {
 		DBName   string `yaml:"dbname"`
 		SSLMode  string `yaml:"sslmode"`
 	} `yaml:"db"`
-	Profile   string `yaml:"profile"`
 	Variables struct {
 		ImageTag        string `yaml:"image_tag"`
 		HostPrefix      string `yaml:"host_prefix"`
@@ -98,7 +97,6 @@ func (c *Config) loadDefault(prefix string) error {
 
 	c.DB.DBType = "sqlite"
 	c.DB.DBName = filepath.Join(c.Variables.HostResourceDir, resources.AmvectorStorageConfigDBPath)
-	c.Profile = filepath.Join(c.Variables.HostResourceDir, resources.AmvectorServiceProfilePath)
 	return nil
 }
 

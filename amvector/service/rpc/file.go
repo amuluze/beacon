@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/amuluze/amprobe/amvector/service/schema"
+	"amvector/service/schema"
 )
 
 func (s *Service) FilesSearch(ctx context.Context, args schema.FilesSearchArgs, reply *schema.FilesSearchReply) error {

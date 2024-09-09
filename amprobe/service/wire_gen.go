@@ -7,17 +7,17 @@
 package service
 
 import (
-	api4 "github.com/amuluze/amprobe/service/audit/api"
-	repository2 "github.com/amuluze/amprobe/service/audit/repository"
-	service2 "github.com/amuluze/amprobe/service/audit/service"
-	api3 "github.com/amuluze/amprobe/service/auth/api"
-	"github.com/amuluze/amprobe/service/auth/repository"
-	"github.com/amuluze/amprobe/service/auth/service"
-	"github.com/amuluze/amprobe/service/container/api"
-	"github.com/amuluze/amprobe/service/container/rpc"
-	api2 "github.com/amuluze/amprobe/service/host/api"
-	rpc2 "github.com/amuluze/amprobe/service/host/rpc"
-	"github.com/amuluze/amprobe/service/model"
+	api4 "amprobe/service/audit/api"
+	repository2 "amprobe/service/audit/repository"
+	service2 "amprobe/service/audit/service"
+	api3 "amprobe/service/auth/api"
+	"amprobe/service/auth/repository"
+	"amprobe/service/auth/service"
+	"amprobe/service/container/api"
+	"amprobe/service/container/rpc"
+	api2 "amprobe/service/host/api"
+	rpc2 "amprobe/service/host/rpc"
+	"amprobe/service/model"
 )
 
 // Injectors from wire.go:

@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/amuluze/amprobe/amvector/pkg/utils"
+	"amvector/pkg/utils"
 )
 
 func GetTime(ctx context.Context) (int64, error) {

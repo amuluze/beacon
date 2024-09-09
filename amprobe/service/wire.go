@@ -4,11 +4,12 @@
 package service
 
 import (
-	"github.com/amuluze/amprobe/service/audit"
-	"github.com/amuluze/amprobe/service/auth"
-	"github.com/amuluze/amprobe/service/container"
-	"github.com/amuluze/amprobe/service/host"
-	"github.com/amuluze/amprobe/service/model"
+	"amprobe/service/audit"
+	"amprobe/service/auth"
+	"amprobe/service/container"
+	"amprobe/service/host"
+	"amprobe/service/model"
+
 	"github.com/google/wire"
 )
 

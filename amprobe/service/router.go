@@ -5,17 +5,17 @@
 package service
 
 import (
-	"github.com/amuluze/amprobe/pkg/auth"
-	"github.com/amuluze/amprobe/service/middleware"
+	"amprobe/pkg/auth"
+	"amprobe/service/middleware"
+
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
-
 	"github.com/google/wire"
 
-	auditAPI "github.com/amuluze/amprobe/service/audit/api"
-	authAPI "github.com/amuluze/amprobe/service/auth/api"
-	containerAPI "github.com/amuluze/amprobe/service/container/api"
-	hostAPI "github.com/amuluze/amprobe/service/host/api"
+	auditAPI "amprobe/service/audit/api"
+	authAPI "amprobe/service/auth/api"
+	containerAPI "amprobe/service/container/api"
+	hostAPI "amprobe/service/host/api"
 )
 
 var RouterSet = wire.NewSet(wire.Struct(new(Router), "*"), wire.Bind(new(IRouter), new(*Router)))

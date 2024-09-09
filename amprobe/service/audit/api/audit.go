@@ -5,12 +5,16 @@
 package api
 
 import (
-	"github.com/amuluze/amprobe/pkg/fiberx"
-	"github.com/amuluze/amprobe/pkg/validatex"
-	"github.com/amuluze/amprobe/service/audit/service"
-	"github.com/amuluze/amprobe/service/schema"
-	"github.com/gofiber/fiber/v2"
+	"amprobe/pkg/fiberx"
 	"log/slog"
+
+	"amprobe/pkg/validatex"
+
+	"amprobe/service/audit/service"
+
+	"amprobe/service/schema"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type AuditAPI struct {

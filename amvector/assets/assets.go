@@ -5,8 +5,8 @@
 package assets
 
 import (
+	"amvector/pkg/utils"
 	"fmt"
-	"github.com/amuluze/amprobe/amvector/pkg/utils"
 	"os"
 	"path/filepath"
 )

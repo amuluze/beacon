@@ -8,14 +8,14 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/amuluze/amprobe/pkg/utils/hash"
-	"github.com/amuluze/amprobe/pkg/utils/uuid"
-	"github.com/amuluze/amprobe/service/model"
+	"amprobe/pkg/utils/hash"
+	"amprobe/pkg/utils/uuid"
+	"amprobe/service/model"
+
 	"github.com/amuluze/amutool/database"
 	"github.com/google/wire"
-	"gorm.io/gorm"
-
 	"gopkg.in/yaml.v2"
+	"gorm.io/gorm"
 )
 
 var PrepareSet = wire.NewSet(wire.Struct(new(Prepare), "*"))

@@ -10,10 +10,14 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/amuluze/amprobe/pkg/rpc"
-	"github.com/amuluze/amprobe/pkg/utils"
-	"github.com/amuluze/amprobe/service/model"
-	"github.com/amuluze/amprobe/service/schema"
+	"amprobe/pkg/rpc"
+
+	"amprobe/pkg/utils"
+
+	"amprobe/service/model"
+
+	"amprobe/service/schema"
+
 	"github.com/amuluze/docker"
 	"github.com/google/wire"
 )

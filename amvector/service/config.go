@@ -18,7 +18,6 @@ type Config struct {
 	Task      Task      `yaml:"task"`
 	DB        DB        `yaml:"db"`
 	Variables Variables `yaml:"variables"`
-	Profile   string    `yaml:"profile"`
 }
 
 func NewConfig(configFile string, prefix Prefix) (*Config, error) {

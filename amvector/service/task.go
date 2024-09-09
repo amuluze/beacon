@@ -6,9 +6,10 @@ package service
 
 import (
 	"fmt"
+	"log/slog"
 	"time"
 
-	"github.com/amuluze/amprobe/amvector/service/task"
+	"amvector/service/task"
 
 	"github.com/amuluze/amutool/database"
 	"github.com/amuluze/amutool/timex"
@@ -16,7 +17,7 @@ import (
 )
 
 type TimedTask struct {
-	task   *task.Task
+	task   task.ITask
 	ticker timex.Ticker
 	stopCh chan struct{}
 }
@@ -50,22 +51,41 @@ func NewTimedTask(conf *Config, db *database.DB) *TimedTask {
 
 func (a *TimedTask) Execute() {
 	timestamp := time.Now()
-	// 处理数组指标
-	go a.task.Host(timestamp)
-	go a.task.Cpu(timestamp)
-	go a.task.Memory(timestamp)
-	go a.task.Disk(timestamp)
-	go a.task.Network(timestamp)
-
-	// 处理 Docker 容器指标
-	go a.task.Container(timestamp)
+	// 处理宿主机指标
 	go func() {
-		a.task.Docker(timestamp)
-		a.task.Image(timestamp)
-		a.task.Net(timestamp)
+		if err := a.task.HostSummary(timestamp); err != nil {
+			slog.Error("host summary failed: ", "error", err)
+		}
+		if err := a.task.CPUSummary(timestamp); err != nil {
+			slog.Error("cpu summary failed: ", "error", err)
+		}
+		if err := a.task.MemorySummary(timestamp); err != nil {
+			slog.Error("memory summary failed: ", "error", err)
+		}
+		if err := a.task.DiskSummary(timestamp); err != nil {
+			slog.Error("disk summary failed: ", "error", err)
+		}
+		if err := a.task.NetSummary(timestamp); err != nil {
+			slog.Error("net summary failed: ", "error", err)
+		}
 	}()
 
-	//go a.task.ClearOldRecord()
+	// 处理 Docker 容器指标
+	go func() {
+		if err := a.task.DockerSummary(timestamp); err != nil {
+			slog.Error("docker summary failed", "error", err)
+		}
+		if err := a.task.ContainerSummary(timestamp); err != nil {
+			slog.Error("containers summary failed", "error", err)
+		}
+		if err := a.task.ImageSummary(timestamp); err != nil {
+			slog.Error("image summary failed", "error", err)
+		}
+		if err := a.task.NetworkSummary(timestamp); err != nil {
+			slog.Error("network summary failed", "error", err)
+		}
+	}()
+
 }
 
 func (a *TimedTask) Run() {

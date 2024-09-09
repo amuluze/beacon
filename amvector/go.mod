@@ -1,4 +1,4 @@
-module github.com/amuluze/amprobe/amvector
+module amvector
 
 go 1.21.9
 
@@ -7,14 +7,13 @@ require (
 	github.com/amuluze/amutool/timex v0.0.0-20240510090832-32eaf1044cf1
 	github.com/amuluze/docker v0.0.0-20240809065643-4b172f98bf33
 	github.com/docker/docker v27.1.1+incompatible
-	github.com/docker/libcompose v0.4.0
-	github.com/lib/pq v1.0.0
 	github.com/mcuadros/go-defaults v1.2.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/smallnest/rpcx v1.8.31
 	github.com/takama/daemon v1.0.0
 	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -29,6 +28,7 @@ require (
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
+	github.com/docker/libcompose v0.4.0 // indirect
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
@@ -123,7 +123,6 @@ require (
 	golang.org/x/tools v0.22.0 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/clickhouse v0.5.1 // indirect
 	gorm.io/driver/mysql v1.5.2 // indirect
 	gorm.io/driver/postgres v1.5.4 // indirect

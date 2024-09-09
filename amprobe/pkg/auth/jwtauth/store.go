@@ -6,9 +6,10 @@ package jwtauth
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/amuluze/amutool/errors"
 	"github.com/patrickmn/go-cache"
-	"time"
 )
 
 type Storer interface {

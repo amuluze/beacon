@@ -5,7 +5,7 @@
 package model
 
 import (
-	"github.com/amuluze/amprobe/pkg/utils/uuid"
+	"amprobe/pkg/utils/uuid"
 	"time"
 )
 

@@ -8,11 +8,14 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/amuluze/amprobe/service/container/rpc"
+	"amprobe/service/container/rpc"
 
-	"github.com/amuluze/amprobe/pkg/fiberx"
-	"github.com/amuluze/amprobe/pkg/validatex"
-	"github.com/amuluze/amprobe/service/schema"
+	"amprobe/pkg/fiberx"
+
+	"amprobe/pkg/validatex"
+
+	"amprobe/service/schema"
+
 	"github.com/gofiber/fiber/v2"
 )
 

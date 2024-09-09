@@ -7,7 +7,7 @@
 package service
 
 import (
-	"github.com/amuluze/amprobe/amvector/service/model"
+	"amvector/service/model"
 )
 
 // Injectors from wire.go:

@@ -9,10 +9,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/amuluze/amprobe/pkg/rpc"
-	"github.com/amuluze/amprobe/service/model"
+	"amprobe/pkg/rpc"
 
-	"github.com/amuluze/amprobe/service/schema"
+	"amprobe/service/model"
+
+	"amprobe/service/schema"
+
 	"github.com/google/wire"
 )
 

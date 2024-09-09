@@ -8,7 +8,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/amuluze/amprobe/service"
+	"amprobe/service"
 
 	"github.com/urfave/cli/v2"
 )

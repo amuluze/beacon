@@ -5,14 +5,17 @@
 package service
 
 import (
+	"amprobe/pkg/utils"
 	"context"
 	"fmt"
-	"github.com/amuluze/amprobe/pkg/utils"
-	"github.com/amuluze/amprobe/service/container/repository"
-	"github.com/amuluze/amprobe/service/schema"
+	"log/slog"
+
+	"amprobe/service/container/repository"
+
+	"amprobe/service/schema"
+
 	"github.com/amuluze/amutool/errors"
 	"github.com/google/wire"
-	"log/slog"
 )
 
 var ContainerServiceSet = wire.NewSet(NewContainerService, wire.Bind(new(IContainerService), new(*ContainerService)))

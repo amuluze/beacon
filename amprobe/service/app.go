@@ -5,7 +5,8 @@
 package service
 
 import (
-	"github.com/amuluze/amprobe/service/middleware"
+	"amprobe/service/middleware"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"

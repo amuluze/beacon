@@ -19,6 +19,21 @@ const (
 	LatestNetSendKey    = "latest_net_io_send_"
 )
 
+var _ ITask = (*Task)(nil)
+
+type ITask interface {
+	DockerSummary(timestamp time.Time) error
+	ContainerSummary(timestamp time.Time) error
+	ImageSummary(timestamp time.Time) error
+	NetworkSummary(timestamp time.Time) error
+
+	HostSummary(timestamp time.Time) error
+	CPUSummary(timestamp time.Time) error
+	MemorySummary(timestamp time.Time) error
+	DiskSummary(timestamp time.Time) error
+	NetSummary(timestamp time.Time) error
+}
+
 type Task struct {
 	interval int
 	db       *database.DB

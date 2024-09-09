@@ -5,12 +5,17 @@
 package api
 
 import (
+	"amprobe/pkg/contextx"
 	"fmt"
-	"github.com/amuluze/amprobe/pkg/contextx"
-	"github.com/amuluze/amprobe/pkg/fiberx"
-	"github.com/amuluze/amprobe/pkg/validatex"
-	"github.com/amuluze/amprobe/service/auth/service"
-	"github.com/amuluze/amprobe/service/schema"
+
+	"amprobe/pkg/fiberx"
+
+	"amprobe/pkg/validatex"
+
+	"amprobe/service/auth/service"
+
+	"amprobe/service/schema"
+
 	"github.com/gofiber/fiber/v2"
 )
 

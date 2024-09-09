@@ -10,7 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/amuluze/amprobe/amvector/service"
+	"amvector/service"
 	"github.com/takama/daemon"
 )
 

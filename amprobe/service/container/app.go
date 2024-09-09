@@ -7,8 +7,9 @@ package container
 import (
 	"github.com/google/wire"
 
-	"github.com/amuluze/amprobe/service/container/api"
-	"github.com/amuluze/amprobe/service/container/rpc"
+	"amprobe/service/container/api"
+
+	"amprobe/service/container/rpc"
 )
 
 var Set = wire.NewSet(

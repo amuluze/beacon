@@ -5,9 +5,11 @@
 package service
 
 import (
+	"amprobe/service/host/repository"
 	"context"
-	"github.com/amuluze/amprobe/service/host/repository"
-	"github.com/amuluze/amprobe/service/schema"
+
+	"amprobe/service/schema"
+
 	"github.com/google/wire"
 )
 

@@ -5,13 +5,16 @@
 package service
 
 import (
+	"amprobe/pkg/auth"
 	"context"
-	"github.com/amuluze/amprobe/pkg/auth"
-	"github.com/amuluze/amprobe/service/auth/repository"
-	"github.com/amuluze/amprobe/service/schema"
+	"log/slog"
+
+	"amprobe/service/auth/repository"
+
+	"amprobe/service/schema"
+
 	"github.com/amuluze/amutool/errors"
 	"github.com/google/wire"
-	"log/slog"
 )
 
 var AuthServiceSet = wire.NewSet(NewAuthService, wire.Bind(new(IAuthService), new(*AuthService)))

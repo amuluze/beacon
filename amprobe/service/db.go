@@ -7,7 +7,8 @@ package service
 import (
 	"strings"
 
-	"github.com/amuluze/amprobe/service/model"
+	"amprobe/service/model"
+
 	"github.com/amuluze/amutool/database"
 )
 

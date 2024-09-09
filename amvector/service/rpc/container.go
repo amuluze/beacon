@@ -12,9 +12,9 @@ import (
 
 	"github.com/amuluze/docker"
 
-	"github.com/amuluze/amprobe/amvector/service/model"
+	"amvector/service/model"
 
-	"github.com/amuluze/amprobe/amvector/service/schema"
+	"amvector/service/schema"
 )
 
 func (s *Service) DockerVersion(ctx context.Context, args schema.VersionArgs, reply *model.Docker) error {

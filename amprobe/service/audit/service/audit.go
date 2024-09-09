@@ -5,9 +5,11 @@
 package service
 
 import (
+	"amprobe/service/audit/repository"
 	"context"
-	"github.com/amuluze/amprobe/service/audit/repository"
-	"github.com/amuluze/amprobe/service/schema"
+
+	"amprobe/service/schema"
+
 	"github.com/amuluze/amutool/errors"
 	"github.com/google/wire"
 )

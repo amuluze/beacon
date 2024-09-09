@@ -7,10 +7,14 @@ package middleware
 import (
 	"log/slog"
 
-	"github.com/amuluze/amprobe/pkg/auth"
-	"github.com/amuluze/amprobe/pkg/contextx"
-	"github.com/amuluze/amprobe/pkg/fiberx"
-	"github.com/amuluze/amprobe/service/schema"
+	"amprobe/pkg/auth"
+
+	"amprobe/pkg/contextx"
+
+	"amprobe/pkg/fiberx"
+
+	"amprobe/service/schema"
+
 	"github.com/amuluze/amutool/errors"
 	"github.com/gofiber/fiber/v2"
 )

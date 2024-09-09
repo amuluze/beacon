@@ -11,12 +11,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/amuluze/amprobe/amvector/pkg/utils"
+	"amvector/pkg/utils"
 
-	"github.com/amuluze/amprobe/amvector/pkg/timectl"
+	"amvector/pkg/timectl"
 
-	"github.com/amuluze/amprobe/amvector/service/constants"
-	"github.com/amuluze/amprobe/amvector/service/schema"
+	"amvector/service/constants"
+
+	"amvector/service/schema"
+
 	"github.com/docker/docker/libnetwork/resolvconf"
 )
 

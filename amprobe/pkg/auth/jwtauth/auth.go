@@ -5,12 +5,14 @@
 package jwtauth
 
 import (
-	"github.com/amuluze/amprobe/pkg/auth"
-	"github.com/amuluze/amprobe/service/model"
-	"github.com/amuluze/amutool/database"
-	"github.com/golang-jwt/jwt"
 	"strings"
 	"time"
+
+	"amprobe/pkg/auth"
+	"amprobe/service/model"
+
+	"github.com/amuluze/amutool/database"
+	"github.com/golang-jwt/jwt"
 )
 
 type JWTAuth struct {

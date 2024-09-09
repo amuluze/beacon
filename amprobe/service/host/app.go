@@ -7,8 +7,9 @@ package host
 import (
 	"github.com/google/wire"
 
-	"github.com/amuluze/amprobe/service/host/api"
-	"github.com/amuluze/amprobe/service/host/rpc"
+	"amprobe/service/host/api"
+
+	"amprobe/service/host/rpc"
 )
 
 var Set = wire.NewSet(

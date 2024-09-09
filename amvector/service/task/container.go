@@ -12,17 +12,43 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amuluze/amprobe/amvector/service/model"
+	"amvector/service/model"
 )
 
-func (a *Task) Container(timestamp time.Time) {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+func (a *Task) DockerSummary(timestamp time.Time) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	dockerVersion, err := a.manager.Version(ctx)
+	if err != nil {
+		return err
+	}
+	if err := a.db.Unscoped().Where("1 = 1").Delete(&model.Docker{}).Error; err != nil {
+		return err
+	}
+	if err := a.db.Model(&model.Docker{}).Create(&model.Docker{
+		Timestamp:     timestamp,
+		DockerVersion: dockerVersion.DockerVersion,
+		APIVersion:    dockerVersion.APIVersion,
+		MinAPIVersion: dockerVersion.MinAPIVersion,
+		GitCommit:     dockerVersion.GitCommit,
+		GoVersion:     dockerVersion.GoVersion,
+		Os:            dockerVersion.OS,
+		Arch:          dockerVersion.Arch,
+	}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *Task) ContainerSummary(timestamp time.Time) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	cs, err := a.manager.ListContainer(ctx)
 	if err != nil {
 		slog.Error("failed to list containers", "error", err)
-		return
+		return err
 	}
 	var containers []model.Container
 	for _, info := range cs {
@@ -70,31 +96,7 @@ func (a *Task) Container(timestamp time.Time) {
 	a.db.Model(&model.Container{}).Create(&containers)
 }
 
-func (a *Task) Docker(timestamp time.Time) {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
-
-	dockerVersion, err := a.manager.Version(ctx)
-	if err != nil {
-		slog.Error("failed to get docker version", "error", err)
-		return
-	}
-	if err := a.db.Unscoped().Where("1 = 1").Delete(&model.Docker{}).Error; err != nil {
-		slog.Error("failed to delete docker container", "error", err)
-	}
-	a.db.Model(&model.Docker{}).Create(&model.Docker{
-		Timestamp:     timestamp,
-		DockerVersion: dockerVersion.DockerVersion,
-		APIVersion:    dockerVersion.APIVersion,
-		MinAPIVersion: dockerVersion.MinAPIVersion,
-		GitCommit:     dockerVersion.GitCommit,
-		GoVersion:     dockerVersion.GoVersion,
-		Os:            dockerVersion.OS,
-		Arch:          dockerVersion.Arch,
-	})
-}
-
-func (a *Task) Image(timestamp time.Time) {
+func (a *Task) ImageSummary(timestamp time.Time) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
@@ -135,7 +137,7 @@ func (a *Task) Image(timestamp time.Time) {
 	a.db.Model(&model.Image{}).Create(&list)
 }
 
-func (a *Task) Net(timestamp time.Time) {
+func (a *Task) NetworkSummary(timestamp time.Time) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
@@ -170,15 +172,4 @@ func (a *Task) Net(timestamp time.Time) {
 		slog.Error("failed to delete network", "error", err)
 	}
 	a.db.Model(&model.Network{}).Create(&list)
-}
-
-func (a *Task) ClearOldRecord() {
-	a.db.Where("timestamp < ?", time.Now().Add(-time.Minute*5)).Delete(&model.Host{})
-	a.db.Where("timestamp < ?", time.Now().Add(-time.Minute*5)).Delete(&model.Container{})
-	a.db.Where("timestamp < ?", time.Now().Add(-time.Minute*5)).Delete(&model.Image{})
-	a.db.Where("timestamp < ?", time.Now().Add(-time.Minute*5)).Delete(&model.Docker{})
-	a.db.Where("timestamp < ?", time.Now().Add(-time.Hour*24*2)).Delete(&model.CPU{})
-	a.db.Where("timestamp < ?", time.Now().Add(-time.Hour*24*2)).Delete(&model.Memory{})
-	a.db.Where("timestamp < ?", time.Now().Add(-time.Hour*24*2)).Delete(&model.Disk{})
-	a.db.Where("timestamp < ?", time.Now().Add(-time.Hour*24*2)).Delete(&model.Net{})
 }

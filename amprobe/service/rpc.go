@@ -5,7 +5,7 @@
 package service
 
 import (
-	"github.com/amuluze/amprobe/pkg/rpc"
+	"amprobe/pkg/rpc"
 )
 
 func NewRPCClient(config *Config) (*rpc.Client, error) {

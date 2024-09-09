@@ -9,7 +9,8 @@ import (
 	"log/slog"
 	"runtime"
 
-	"github.com/amuluze/amprobe/pkg/fiberx"
+	"amprobe/pkg/fiberx"
+
 	"github.com/amuluze/amutool/errors"
 	"github.com/gofiber/fiber/v2"
 )
