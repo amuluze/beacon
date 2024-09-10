@@ -14,7 +14,7 @@ import (
 	"amprobe/service/auth/repository"
 	"amprobe/service/auth/service"
 	"amprobe/service/container/api"
-	"amprobe/service/container/rpc"
+	"amprobe/service/container/repository"
 	api2 "amprobe/service/host/api"
 	rpc2 "amprobe/service/host/rpc"
 	"amprobe/service/model"
@@ -48,7 +48,7 @@ func BuildInjector(configFile string) (*Injector, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	containerService := rpc.NewContainerService(client)
+	containerService := repository.NewContainerService(client)
 	containerAPI := api.NewContainerAPI(containerService)
 	hostService := rpc2.NewHostService(client)
 	hostAPI := api2.NewHostAPI(hostService)

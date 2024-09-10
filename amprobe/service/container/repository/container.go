@@ -1,137 +1,266 @@
 // Package repository
-// Date: 2024/3/6 12:46
+// Date: 2024/06/11 19:38:25
 // Author: Amu
 // Description:
 package repository
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"log/slog"
 
-	"amprobe/service/schema"
-
-	"github.com/amuluze/amutool/errors"
-	"github.com/amuluze/docker"
-
+	"amprobe/pkg/rpc"
 	"amprobe/service/model"
+	rpcSchema "common/rpc/schema"
 
-	"github.com/amuluze/amutool/database"
 	"github.com/google/wire"
 )
 
-var ContainerRepoSet = wire.NewSet(NewContainerRepo, wire.Bind(new(IContainerRepo), new(*ContainerRepo)))
+var ContainerServiceSet = wire.NewSet(NewContainerRepo, wire.Bind(new(IContainerRepo), new(*ContainerRepo)))
+
+var _ IContainerRepo = (*ContainerRepo)(nil)
 
 type IContainerRepo interface {
-	ContainerList(ctx context.Context, args schema.ContainerQueryArgs) (model.Containers, error)
-	ContainerCount(ctx context.Context) (int, error)
-	ContainerStart(ctx context.Context, args schema.ContainerStartArgs) error
-	ContainerStop(ctx context.Context, args schema.ContainerStopArgs) error
-	ContainerRemove(ctx context.Context, args schema.ContainerRemoveArgs) error
-	ContainerRestart(ctx context.Context, args schema.ContainerRestartArgs) error
-	ImageList(ctx context.Context, args schema.ImageQueryArgs) (model.Images, error)
-	ImageRemove(ctx context.Context, args schema.ImageRemoveArgs) error
+	Version(ctx context.Context, args rpcSchema.DockerArgs) (rpcSchema.DockerReply, error)
+
+	ContainerList(ctx context.Context, args rpcSchema.ContainerQueryArgs) (rpcSchema.ContainerQueryReply, error)
+	ContainerCreate(ctx context.Context, args rpcSchema.ContainerCreateArgs) (rpcSchema.ContainerCreateReply, error)
+	ContainerStart(ctx context.Context, args rpcSchema.ContainerStartArgs) error
+	ContainerStop(ctx context.Context, args rpcSchema.ContainerStopArgs) error
+	ContainerRemove(ctx context.Context, args rpcSchema.ContainerDeleteArgs) error
+	ContainerRestart(ctx context.Context, args rpcSchema.ContainerRestartArgs) error
+
+	ImageList(ctx context.Context, args rpcSchema.ImageQueryArgs) (rpcSchema.ImageQueryReply, error)
+	ImagePull(ctx context.Context, args rpcSchema.ImagePullArgs) error
+	ImageImport(ctx context.Context, args rpcSchema.ImageImportArgs) error
+	ImageExport(ctx context.Context, args rpcSchema.ImageExportArgs) error
+	ImageRemove(ctx context.Context, args rpcSchema.ImageDeleteArgs) error
 	ImagesPrune(ctx context.Context) error
-	ImageCount(ctx context.Context) (int, error)
-	Version(ctx context.Context) (model.Docker, error)
+
+	NetworkList(ctx context.Context, args rpcSchema.NetworkQueryArgs) (rpcSchema.NetworkQueryReply, error)
+	NetworkCreate(ctx context.Context, args rpcSchema.NetworkCreateArgs) (rpcSchema.NetworkCreateReply, error)
+	NetworkDelete(ctx context.Context, args rpcSchema.NetworkDeleteArgs) error
+
+	GetDockerRegistryMirrors(ctx context.Context, args rpcSchema.GetDockerRegistryMirrorsArgs) (rpcSchema.GetDockerRegistryMirrorsReply, error)
+	SetDockerRegistryMirrors(ctx context.Context, args rpcSchema.SetDockerRegistryMirrorsArgs) error
 }
 
 type ContainerRepo struct {
-	DB      *database.DB
-	Manager *docker.Manager
+	RPCClient *rpc.Client
 }
 
-func NewContainerRepo(db *database.DB) *ContainerRepo {
-	manager, err := docker.NewManager()
+func NewContainerRepo(client *rpc.Client) *ContainerRepo {
+	return &ContainerRepo{RPCClient: client}
+}
+
+func (c *ContainerRepo) Version(ctx context.Context, args rpcSchema.DockerArgs) (rpcSchema.DockerReply, error) {
+	var reply rpcSchema.DockerReply
+	err := c.RPCClient.Call(ctx, "Version", args, &reply)
+	return reply, err
+}
+
+func (c *ContainerRepo) ContainerList(ctx context.Context, args rpcSchema.ContainerQueryArgs) (rpcSchema.ContainerQueryReply, error) {
+	return rpcSchema.ContainerQueryReply{}, nil
+}
+
+func (c *ContainerRepo) ContainerCreate(ctx context.Context, args rpcSchema.ContainerCreateArgs) (rpcSchema.ContainerCreateReply, error) {
+	var reply rpcSchema.ContainerCreateReply
+	err := c.RPCClient.Call(ctx, "ContainerCreate", args, &reply)
 	if err != nil {
-		panic(err)
+		return rpcSchema.ContainerCreateReply{}, err
 	}
-	return &ContainerRepo{DB: db, Manager: manager}
+	return reply, nil
 }
 
-func (a *ContainerRepo) ContainerList(ctx context.Context, args *schema.ContainerQueryArgs) (model.Containers, error) {
-	var containers model.Containers
-	if err := a.DB.Model(&model.Container{}).Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&containers).Error; err != nil {
-		return containers, err
-	}
-	return containers, nil
-}
-
-func (a *ContainerRepo) ContainerCount(ctx context.Context) (int, error) {
-	var total int64
-	if err := a.DB.Model(&model.Container{}).Order("created_at desc").Count(&total).Error; err != nil {
-		return int(total), err
-	}
-	return int(total), nil
-}
-
-func (a *ContainerRepo) ImageList(ctx context.Context, args *schema.ImageQueryArgs) (model.Images, error) {
-	var images model.Images
-	if err := a.DB.Model(&model.Image{}).Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&images).Error; err != nil {
-		return images, err
-	}
-	return images, nil
-}
-
-func (a *ContainerRepo) ImageCount(ctx context.Context) (int, error) {
-	var total int64
-	if err := a.DB.Model(&model.Images{}).Order("created_at desc").Count(&total).Error; err != nil {
-		return int(total), err
-	}
-	return int(total), nil
-}
-
-func (a *ContainerRepo) Version(ctx context.Context) (model.Docker, error) {
-	var res model.Docker
-	if err := a.DB.Model(&model.Docker{}).First(&res).Error; err != nil {
-		return res, err
-	}
-	return res, nil
-}
-
-func (a *ContainerRepo) ContainerStart(ctx context.Context, args schema.ContainerStartArgs) error {
-	err := a.Manager.StartContainer(ctx, args.ContainerID)
+func (c *ContainerRepo) ContainerStart(ctx context.Context, args rpcSchema.ContainerStartArgs) error {
+	var reply rpcSchema.ContainerStartReply
+	err := c.RPCClient.Call(ctx, "ContainerStart", args, &reply)
 	if err != nil {
-		return errors.New400Error("failed start container")
+		return err
 	}
-	a.DB.Model(&model.Container{}).Where("container_id = ?", args.ContainerID).Update("state", "running")
-	return err
+	return nil
 }
 
-func (a *ContainerRepo) ContainerStop(ctx context.Context, args schema.ContainerStopArgs) error {
-	err := a.Manager.StopContainer(ctx, args.ContainerID)
+func (c *ContainerRepo) ContainerStop(ctx context.Context, args rpcSchema.ContainerStopArgs) error {
+	var reply rpcSchema.ContainerStopReply
+	err := c.RPCClient.Call(ctx, "ContainerStop", args, &reply)
 	if err != nil {
-		return errors.New400Error("failed to stop container")
+		return err
 	}
-	a.DB.Model(&model.Container{}).Where("container_id = ?", args.ContainerID).Update("state", "exited")
-	return err
+	return nil
 }
 
-func (a *ContainerRepo) ContainerRemove(ctx context.Context, args schema.ContainerRemoveArgs) error {
-	err := a.Manager.DeleteContainer(ctx, args.ContainerID)
+func (c *ContainerRepo) ContainerRemove(ctx context.Context, args rpcSchema.ContainerDeleteArgs) error {
+	var reply rpcSchema.ContainerRemoveReply
+	err := c.RPCClient.Call(ctx, "ContainerDelete", args, &reply)
 	if err != nil {
-		return errors.New400Error("failed to remove container")
+		return err
 	}
-	a.DB.Model(&model.Container{}).Delete(&model.Container{ContainerID: args.ContainerID})
-	return err
+	return nil
 }
 
-func (a *ContainerRepo) ContainerRestart(ctx context.Context, args schema.ContainerRestartArgs) error {
-	err := a.Manager.RestartContainer(ctx, args.ContainerID)
+func (c *ContainerRepo) ContainerRestart(ctx context.Context, args rpcSchema.ContainerRestartArgs) error {
+	var reply rpcSchema.ContainerRestartReply
+	err := c.RPCClient.Call(ctx, "ContainerRestart", args, &reply)
 	if err != nil {
-		return errors.New400Error("failed to restart container")
+		return err
 	}
-	a.DB.Model(&model.Container{}).Where("container_id = ?", args.ContainerID).Update("state", "running")
-	return err
+	return nil
 }
 
-func (a *ContainerRepo) ImageRemove(ctx context.Context, args schema.ImageRemoveArgs) error {
-	err := a.Manager.DeleteImage(ctx, args.ImageID)
+func (c *ContainerRepo) ImageList(ctx context.Context, args rpcSchema.ImageQueryArgs) (rpcSchema.ImageQueryReply, error) {
+	var reply model.Images
+	err := c.RPCClient.Call(ctx, "ImageList", args, &reply)
 	if err != nil {
-		return errors.New400Error(err.Error())
+		return rpcSchema.ImageQueryReply{}, err
 	}
-	a.DB.Where("image_id = ?", args.ImageID).Delete(&model.Image{})
-	return err
+	var result rpcSchema.ImageQueryReply
+	var data []rpcSchema.Image
+	for _, v := range reply {
+		data = append(data, rpcSchema.Image{
+			ID:      v.ImageID[:6],
+			Name:    v.Name,
+			Tag:     v.Tag,
+			Created: v.Created,
+			Size:    v.Size,
+			Number:  v.Number,
+		})
+	}
+	countArgs := rpcSchema.ImageCountArgs{}
+	countReply := rpcSchema.ImageCountReply{}
+	err = c.RPCClient.Call(ctx, "ImageCount", countArgs, &countReply)
+	if err != nil {
+		return rpcSchema.ImageQueryReply{}, err
+	}
+	result.Data = data
+	result.Page = args.Page
+	result.Size = args.Size
+	result.Total = countReply.Count
+	return result, nil
 }
 
-func (a *ContainerRepo) ImagesPrune(ctx context.Context) error {
-	return a.Manager.PruneImages(ctx)
+func (c *ContainerRepo) ImagePull(ctx context.Context, args rpcSchema.ImagePullArgs) error {
+	var reply rpcSchema.ImagePullReply
+	err := c.RPCClient.Call(ctx, "ImagePull", args, &reply)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *ContainerRepo) ImageImport(ctx context.Context, args rpcSchema.ImageImportArgs) error {
+	var reply rpcSchema.ImageImportReply
+	err := c.RPCClient.Call(ctx, "ImageImport", args, &reply)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *ContainerRepo) ImageExport(ctx context.Context, args rpcSchema.ImageExportArgs) error {
+	var reply rpcSchema.ImageExportReply
+	rpcArgs := rpcSchema.ImageExportRPCArgs{
+		ImageIDs:   []string{args.ImageID},
+		TargetFile: fmt.Sprintf("/tmp/%s.tar", args.ImageName),
+	}
+	err := c.RPCClient.Call(ctx, "ImageExport", rpcArgs, &reply)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *ContainerRepo) ImageRemove(ctx context.Context, args rpcSchema.ImageDeleteArgs) error {
+	var reply rpcSchema.ImageRemoveReply
+	err := c.RPCClient.Call(ctx, "ImageDelete", args, &reply)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *ContainerRepo) ImagesPrune(ctx context.Context) error {
+	err := c.RPCClient.Call(ctx, "ImagesPrune", nil, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *ContainerRepo) NetworkList(ctx context.Context, args rpcSchema.NetworkQueryArgs) (rpcSchema.NetworkListReply, error) {
+	var reply model.Networks
+	err := c.RPCClient.Call(ctx, "NetworkList", args, &reply)
+	if err != nil {
+		slog.Error("NetworkList", "err", err)
+		return rpcSchema.NetworkListReply{}, err
+	}
+	var result rpcSchema.NetworkListReply
+	var data []rpcSchema.Network
+	for _, v := range reply {
+		labels := make(map[string]string)
+		err := json.Unmarshal([]byte(v.Labels), &labels)
+		if err != nil {
+			slog.Error("json.Unmarshal", "err", err)
+			return rpcSchema.NetworkListReply{}, err
+		}
+		data = append(data, rpcSchema.Network{
+			ID:      v.NetworkID[:6],
+			Name:    v.Name,
+			Driver:  v.Driver,
+			Created: v.Created,
+			Subnet:  v.Subnet,
+			Gateway: v.Gateway,
+			Labels:  labels,
+		})
+	}
+	countArgs := rpcSchema.NetworkCountArgs{}
+	countReply := rpcSchema.NetworkCountReply{}
+	err = c.RPCClient.Call(ctx, "NetworkCount", countArgs, &countReply)
+	if err != nil {
+		return rpcSchema.NetworkListReply{}, err
+	}
+	result.Data = data
+	result.Page = args.Page
+	result.Size = args.Size
+	result.Total = countReply.Count
+	return result, nil
+}
+
+func (c *ContainerRepo) NetworkCreate(ctx context.Context, args rpcSchema.NetworkCreateArgs) (rpcSchema.NetworkCreateReply, error) {
+	var reply rpcSchema.NetworkCreateReply
+	err := c.RPCClient.Call(ctx, "NetworkCreate", args, &reply)
+	if err != nil {
+		return rpcSchema.NetworkCreateReply{}, err
+	}
+	return reply, nil
+}
+
+func (c *ContainerRepo) NetworkDelete(ctx context.Context, args rpcSchema.NetworkDeleteArgs) error {
+	var reply rpcSchema.NetworkDeleteReply
+	err := c.RPCClient.Call(ctx, "NetworkDelete", args, &reply)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *ContainerRepo) GetDockerRegistryMirrors(ctx context.Context, args rpcSchema.GetDockerRegistryMirrorsArgs) (rpcSchema.GetDockerRegistryMirrorsReply, error) {
+	var reply rpcSchema.GetDockerRegistryMirrorsReply
+	// 调用rpc获取数据
+	err := c.RPCClient.Call(ctx, "GetDockerRegistryMirrors", args, &reply)
+	if err != nil {
+		return rpcSchema.GetDockerRegistryMirrorsReply{}, err
+	}
+	return reply, nil
+}
+
+func (c *ContainerRepo) SetDockerRegistryMirrors(ctx context.Context, args rpcSchema.SetDockerRegistryMirrorsArgs) error {
+	var reply rpcSchema.SetDockerRegistryMirrorsReply
+	// 调用rpc设置数据
+	err := c.RPCClient.Call(ctx, "SetDockerRegistryMirrors", args, &reply)
+	if err != nil {
+		return err
+	}
+	return nil
 }

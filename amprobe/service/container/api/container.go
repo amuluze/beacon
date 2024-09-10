@@ -5,25 +5,21 @@
 package api
 
 import (
+	"amprobe/service/container/service"
 	"fmt"
 	"log/slog"
 
-	"amprobe/service/container/rpc"
-
 	"amprobe/pkg/fiberx"
-
 	"amprobe/pkg/validatex"
-
 	"amprobe/service/schema"
-
 	"github.com/gofiber/fiber/v2"
 )
 
 type ContainerAPI struct {
-	ContainerService rpc.IContainerService
+	ContainerService service.IContainerService
 }
 
-func NewContainerAPI(containerService rpc.IContainerService) *ContainerAPI {
+func NewContainerAPI(containerService service.IContainerService) *ContainerAPI {
 	return &ContainerAPI{
 		ContainerService: containerService,
 	}

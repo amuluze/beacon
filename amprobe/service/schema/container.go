@@ -6,8 +6,6 @@ package schema
 
 import "time"
 
-type VersionArgs struct{}
-
 type Container struct {
 	ID            string            `json:"id"`
 	Name          string            `json:"name"`
@@ -50,6 +48,10 @@ type ContainerCreateArgs struct {
 type ContainerCreateReply struct {
 	ContainerID string `json:"container_id"`
 }
+
+type ContainerUpdateArgs struct{}
+
+type ContainerDeleteArgs struct{}
 
 type ContainerStartArgs struct {
 	ContainerID string `json:"container_id" validate:"required"`
@@ -103,6 +105,11 @@ type ImageQueryReply struct {
 	Size  int     `json:"size"`
 }
 
+type ImageTagArgs struct {
+	OldTag string `json:"old_tag"`
+	NewTag string `json:"new_tag"`
+}
+
 type ImagePullArgs struct {
 	ImageName string `json:"image_name" validate:"required"`
 }
@@ -127,11 +134,11 @@ type ImageExportRPCArgs struct {
 
 type ImageExportReply struct{}
 
-type ImageRemoveArgs struct {
+type ImageDeleteArgs struct {
 	ImageID string `json:"image_id" validate:"required"`
 }
 
-type ImageRemoveReply struct{}
+type ImageDeleteReply struct{}
 
 type ImageCountArgs struct{}
 

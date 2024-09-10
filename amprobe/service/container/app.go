@@ -8,11 +8,12 @@ import (
 	"github.com/google/wire"
 
 	"amprobe/service/container/api"
-
-	"amprobe/service/container/rpc"
+	"amprobe/service/container/repository"
+	"amprobe/service/container/service"
 )
 
 var Set = wire.NewSet(
 	api.Set,
-	rpc.Set,
+	service.Set,
+	repository.Set,
 )
