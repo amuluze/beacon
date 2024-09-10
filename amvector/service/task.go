@@ -5,13 +5,13 @@
 package service
 
 import (
+	"common/database"
 	"fmt"
 	"log/slog"
 	"time"
 
 	"amvector/service/task"
 
-	"github.com/amuluze/amutool/database"
 	"github.com/amuluze/amutool/timex"
 	"github.com/amuluze/docker"
 )
@@ -40,7 +40,7 @@ func NewTimedTask(conf *Config, db *database.DB) *TimedTask {
 		eth[d] = struct{}{}
 	}
 
-	newTask := task.NewTask(interval, db, manager, dev, eth)
+	newTask := task.NewTask(interval, conf.Task.MaxAge, db, manager, dev, eth)
 
 	return &TimedTask{
 		task:   newTask,
@@ -53,39 +53,42 @@ func (a *TimedTask) Execute() {
 	timestamp := time.Now()
 	// 处理宿主机指标
 	go func() {
-		if err := a.task.HostSummary(timestamp); err != nil {
+		if err := a.task.HostTask(timestamp); err != nil {
 			slog.Error("host summary failed: ", "error", err)
 		}
-		if err := a.task.CPUSummary(timestamp); err != nil {
+		if err := a.task.CPUTask(timestamp); err != nil {
 			slog.Error("cpu summary failed: ", "error", err)
 		}
-		if err := a.task.MemorySummary(timestamp); err != nil {
+		if err := a.task.MemoryTask(timestamp); err != nil {
 			slog.Error("memory summary failed: ", "error", err)
 		}
-		if err := a.task.DiskSummary(timestamp); err != nil {
+		if err := a.task.DiskTask(timestamp); err != nil {
 			slog.Error("disk summary failed: ", "error", err)
 		}
-		if err := a.task.NetSummary(timestamp); err != nil {
+		if err := a.task.NetTask(timestamp); err != nil {
 			slog.Error("net summary failed: ", "error", err)
 		}
 	}()
 
 	// 处理 Docker 容器指标
 	go func() {
-		if err := a.task.DockerSummary(timestamp); err != nil {
+		if err := a.task.DockerTask(timestamp); err != nil {
 			slog.Error("docker summary failed", "error", err)
 		}
-		if err := a.task.ContainerSummary(timestamp); err != nil {
+		if err := a.task.ContainerTask(timestamp); err != nil {
 			slog.Error("containers summary failed", "error", err)
 		}
-		if err := a.task.ImageSummary(timestamp); err != nil {
+		if err := a.task.ImageTask(timestamp); err != nil {
 			slog.Error("image summary failed", "error", err)
 		}
-		if err := a.task.NetworkSummary(timestamp); err != nil {
+		if err := a.task.NetworkTask(timestamp); err != nil {
 			slog.Error("network summary failed", "error", err)
 		}
 	}()
 
+	go func() {
+		a.task.CleanTask()
+	}()
 }
 
 func (a *TimedTask) Run() {

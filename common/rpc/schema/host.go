@@ -1,10 +1,15 @@
-// Package rpc
+// Package schema
 // Date: 2022/11/9 10:18
 // Author: Amu
 // Description:
 package schema
 
 import "time"
+
+type Usage struct {
+	Timestamp int64   `json:"timestamp"`
+	Value     float64 `json:"value"`
+}
 
 type Host struct {
 	Timestamp       time.Time `json:"timestamp"`
@@ -30,13 +35,24 @@ type Memory struct {
 }
 
 type Disk struct {
-	Timestamp   time.Time `json:"timestamp"`
-	Device      string    `json:"device"`
-	DiskPercent float64   `json:"disk_percent"`
-	DiskTotal   float64   `json:"disk_total"`
-	DiskUsed    float64   `json:"disk_used"`
-	DiskRead    float64   `json:"disk_read"`
-	DiskWrite   float64   `json:"disk_write"`
+	Timestamp   time.Time `json:"timestamp,omitempty"`
+	Device      string    `json:"device,omitempty"`
+	DiskPercent float64   `json:"disk_percent,omitempty"`
+	DiskTotal   float64   `json:"disk_total,omitempty"`
+	DiskUsed    float64   `json:"disk_used,omitempty"`
+	DiskRead    float64   `json:"disk_read,omitempty"`
+	DiskWrite   float64   `json:"disk_write,omitempty"`
+}
+
+type DiskIO struct {
+	Timestamp int64   `json:"timestamp"`
+	IORead    float64 `json:"io_read"`
+	IOWrite   float64 `json:"io_write"`
+}
+
+type DiskUsage struct {
+	Device string   `json:"device"`
+	Data   []DiskIO `json:"data"`
 }
 
 type Net struct {
@@ -46,46 +62,82 @@ type Net struct {
 	NetSend   float64   `json:"net_send"`
 }
 
-type HostSummaryArgs struct {
-	Timestamp time.Time `json:"timestamp"`
+type NetIO struct {
+	Timestamp int64   `json:"timestamp"`
+	BytesSent float64 `json:"bytes_sent"`
+	BytesRecv float64 `json:"bytes_recv"`
 }
 
-type HostSummaryReply struct {
-	Data Host `json:"data"`
+type NetUsage struct {
+	Ethernet string  `json:"ethernet"`
+	Data     []NetIO `json:"data"`
 }
 
-type CPUSummaryArgs struct {
-	Timestamp time.Time `json:"timestamp"`
+type HostInfoArgs struct{}
+
+type HostInfoReply struct {
+	Timestamp       int64  `json:"timestamp"`
+	Uptime          string `json:"uptime"`
+	Hostname        string `json:"hostname"`
+	OS              string `json:"os"`
+	Platform        string `json:"platform"`
+	PlatformVersion string `json:"platform_version"`
+	KernelVersion   string `json:"kernel_version"`
+	KernelArch      string `json:"kernel_arch"`
 }
 
-type CPUSummaryReply struct {
-	Data CPU `json:"data"`
+type CPUInfoArgs struct{}
+
+type CPUInfoReply struct {
+	Percent float64 `json:"percent"`
 }
 
-type MemorySummaryArgs struct {
-	Timestamp time.Time `json:"timestamp"`
+type CPUUsageArgs struct {
+	StartTime int64 `json:"start_time"`
+	EndTime   int64 `json:"end_time"`
 }
 
-type MemorySummaryReply struct {
-	Data Memory `json:"data"`
+type CPUUsageReply struct {
+	Data []Usage `json:"data"`
 }
 
-type DiskSummaryArgs struct {
-	Timestamp time.Time           `json:"timestamp"`
-	Devices   map[string]struct{} `json:"devices"`
-	Interval  int                 `json:"interval"`
+type MemoryInfoArgs struct{}
+
+type MemoryInfoReply struct {
+	Percent float64 `json:"percent"`
+	Total   float64 `json:"total"`
+	Used    float64 `json:"used"`
 }
 
-type DiskSummaryReply struct {
-	Data []Disk `json:"data"`
+type MemoryUsageArgs struct {
+	StartTime int64 `json:"start_time"`
+	EndTime   int64 `json:"end_time"`
 }
 
-type NetSummaryArgs struct {
-	Timestamp time.Time           `json:"timestamp"`
-	Ethernets map[string]struct{} `json:"ethernets"`
-	Interval  int                 `json:"interval"`
+type MemoryUsageReply struct {
+	Data []Usage `json:"data"`
 }
 
-type NetSummaryReply struct {
-	Data []Net `json:"data"`
+type DiskInfoArgs struct{}
+
+type DiskInfoReply struct {
+	Info []Disk `json:"info"`
+}
+
+type DiskUsageArgs struct {
+	StartTime int64 `json:"start_time"`
+	EndTime   int64 `json:"end_time"`
+}
+
+type DiskUsageReply struct {
+	Usage []DiskUsage `json:"usage"`
+}
+
+type NetUsageArgs struct {
+	StartTime int64 `json:"start_time"`
+	EndTime   int64 `json:"end_time"`
+}
+
+type NetUsageReply struct {
+	Usage []NetUsage `json:"usage"`
 }

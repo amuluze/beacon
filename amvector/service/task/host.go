@@ -5,19 +5,18 @@
 package task
 
 import (
-	"amvector/pkg/psutil"
-	"log/slog"
 	"time"
 
+	"amvector/pkg/psutil"
 	"amvector/service/model"
 )
 
-func (a *Task) HostSummary(timestamp time.Time) error {
+func (a *Task) HostTask(timestamp time.Time) error {
 	info, _ := psutil.GetSystemInfo()
 	if err := a.db.Unscoped().Where("1 = 1").Delete(&model.Host{}).Error; err != nil {
-		slog.Error("Error deleting host table", "error", err)
+		return err
 	}
-	a.db.Model(&model.Host{}).Create(&model.Host{
+	if err := a.db.Model(&model.Host{}).Create(&model.Host{
 		Timestamp:       timestamp,
 		Uptime:          info.Uptime,
 		Hostname:        info.Hostname,
@@ -26,25 +25,34 @@ func (a *Task) HostSummary(timestamp time.Time) error {
 		PlatformVersion: info.PlatformVersion,
 		KernelVersion:   info.KernelVersion,
 		KernelArch:      info.KernelArch,
-	})
+	}).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
-func (a *Task) CPUSummary(timestamp time.Time) error {
+func (a *Task) CPUTask(timestamp time.Time) error {
 	cpuPercent, _ := psutil.GetCPUPercent()
-	a.db.Model(&model.CPU{}).Create(&model.CPU{
+	if err := a.db.Model(&model.CPU{}).Create(&model.CPU{
 		Timestamp:  timestamp,
 		CPUPercent: cpuPercent,
-	})
+	}).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
-func (a *Task) MemorySummary(timestamp time.Time) error {
+func (a *Task) MemoryTask(timestamp time.Time) error {
 	memPercent, memTotal, memUsed, _ := psutil.GetMemInfo()
-	a.db.Model(&model.Memory{}).Create(&model.Memory{
+	if err := a.db.Model(&model.Memory{}).Create(&model.Memory{
 		Timestamp:  timestamp,
 		MemPercent: memPercent,
 		MemTotal:   float64(memTotal),
 		MemUsed:    float64(memUsed),
-	})
+	}).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 /*
@@ -52,12 +60,11 @@ disk 函数用于获取磁盘指标，并将其存储到数据库中。
 计算方法：两次采样间隔之间磁盘读写的平均速率
 */
 
-func (a *Task) DiskSummary(timestamp time.Time) error {
+func (a *Task) DiskTask(timestamp time.Time) error {
 	diskInfo, _ := psutil.GetDiskInfo(a.devices)
 	diskIOMap, _ := psutil.GetDiskIO(a.devices)
 	var diskInfos []model.Disk
-	slog.Info("disk info: ", "diskInfo", diskInfo)
-	slog.Info("disk io map: ", "diskIOMap", diskIOMap)
+
 	for device, info := range diskInfo {
 		disk := model.Disk{Timestamp: timestamp}
 		disk.Device = device
@@ -84,7 +91,10 @@ func (a *Task) DiskSummary(timestamp time.Time) error {
 		}
 		diskInfos = append(diskInfos, disk)
 	}
-	a.db.Model(&model.Disk{}).Create(diskInfos)
+	if err := a.db.Model(&model.Disk{}).Create(diskInfos).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 /*
@@ -92,9 +102,8 @@ network 函数用于获取网络指标，并将其存储到数据库中。
 计算方法：两次采样间隔之间发送、接收的平均速率
 */
 
-func (a *Task) NetSummary(timestamp time.Time) error {
+func (a *Task) NetTask(timestamp time.Time) error {
 	netMap, _ := psutil.GetNetworkIO(a.ethernet)
-	slog.Error("net map: ", "netMap", netMap)
 	var netInfos []model.Net
 	for eth, info := range netMap {
 		net := model.Net{Timestamp: timestamp}
@@ -115,5 +124,20 @@ func (a *Task) NetSummary(timestamp time.Time) error {
 		}
 		netInfos = append(netInfos, net)
 	}
-	a.db.Model(&model.Net{}).Create(netInfos)
+	if err := a.db.Model(&model.Net{}).Create(netInfos).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+/**
+ * 清理旧数据
+ */
+
+func (a *Task) CleanTask() {
+	ts := time.Now().Add(-time.Duration(a.maxAge) * 24 * time.Hour)
+	a.db.Where("timestamp < ?", ts).Delete(&model.CPU{})
+	a.db.Where("timestamp < ?", ts).Delete(&model.Memory{})
+	a.db.Where("timestamp < ?", ts).Delete(&model.Disk{})
+	a.db.Where("timestamp < ?", ts).Delete(&model.Net{})
 }

@@ -1,4 +1,4 @@
-// Package rpc
+// Package schema
 // Date: 2022/11/9 10:18
 // Author: Amu
 // Description:
@@ -7,64 +7,109 @@ package schema
 import "time"
 
 type Docker struct {
-	Timestamp     time.Time `json:"timestamp"`
-	DockerVersion string    `json:"docker_version"`
-	APIVersion    string    `json:"api_version"`
-	MinAPIVersion string    `json:"min_api_version"`
-	GitCommit     string    `json:"git_commit"`
-	GoVersion     string    `json:"go_version"`
-	Os            string    `json:"os"`
-	Arch          string    `json:"arch"`
+	Timestamp     time.Time `json:"timestamp,omitempty"`
+	DockerVersion string    `json:"docker_version,omitempty"`
+	APIVersion    string    `json:"api_version,omitempty"`
+	MinAPIVersion string    `json:"min_api_version,omitempty"`
+	GitCommit     string    `json:"git_commit,omitempty"`
+	GoVersion     string    `json:"go_version,omitempty"`
+	Os            string    `json:"os,omitempty"`
+	Arch          string    `json:"arch,omitempty"`
 }
 
 type Container struct {
-	Timestamp    time.Time `json:"timestamp"`
-	ContainerID  string    `json:"container_id"`
-	Name         string    `json:"name"`
-	Image        string    `json:"image"`
-	Network      string    `json:"network"`
-	IP           string    `json:"ip"`
-	Ports        string    `json:"ports"`
-	State        string    `json:"state"`
-	Uptime       string    `json:"uptime"`
-	Volumes      string    `json:"volumes"`
-	Environments string    `json:"environments"`
-	Commands     string    `json:"commands"`
-	Labels       string    `json:"labels"`
-	CPUPercent   float64   `json:"cpu_percent"`
-	MemPercent   float64   `json:"mem_percent"`
-	MemUsage     float64   `json:"mem_usage"`
-	MemLimit     float64   `json:"mem_limit"`
+	Timestamp    time.Time `json:"timestamp,omitempty"`
+	ContainerID  string    `json:"container_id,omitempty"`
+	Name         string    `json:"name,omitempty"`
+	Image        string    `json:"image,omitempty"`
+	Network      string    `json:"network,omitempty"`
+	IP           string    `json:"ip,omitempty"`
+	Ports        string    `json:"ports,omitempty"`
+	State        string    `json:"state,omitempty"`
+	Uptime       string    `json:"uptime,omitempty"`
+	Volumes      string    `json:"volumes,omitempty"`
+	Environments string    `json:"environments,omitempty"`
+	Commands     string    `json:"commands,omitempty"`
+	Labels       string    `json:"labels,omitempty"`
+	CPUPercent   float64   `json:"cpu_percent,omitempty"`
+	MemPercent   float64   `json:"mem_percent,omitempty"`
+	MemUsage     float64   `json:"mem_usage,omitempty"`
+	MemLimit     float64   `json:"mem_limit,omitempty"`
 }
 
 type Image struct {
-	Timestamp time.Time `json:"timestamp"`
-	ImageID   string    `json:"image_id"`
-	Name      string    `json:"name"`
-	Tag       string    `json:"tag"`
-	Created   string    `json:"created"`
-	Size      string    `json:"size"`
+	Timestamp time.Time `json:"timestamp,omitempty"`
+	ImageID   string    `json:"image_id,omitempty"`
+	Name      string    `json:"name,omitempty"`
+	Tag       string    `json:"tag,omitempty"`
+	Created   string    `json:"created,omitempty"`
+	Size      string    `json:"size,omitempty"`
 }
 
 type Network struct {
-	Timestamp time.Time `json:"timestamp"`
-	NetworkID string    `json:"network_id"`
-	Name      string    `json:"name"`
-	Driver    string    `json:"driver"`
-	Scope     string    `json:"scope"`
-	Created   string    `json:"created"`
-	Internal  bool      `json:"internal"`
-	Subnet    string    `json:"subnet"`
-	Gateway   string    `json:"gateway"`
-	Labels    string    `json:"labels"`
+	Timestamp time.Time `json:"timestamp,omitempty"`
+	NetworkID string    `json:"network_id,omitempty"`
+	Name      string    `json:"name,omitempty"`
+	Driver    string    `json:"driver,omitempty"`
+	Scope     string    `json:"scope,omitempty"`
+	Created   string    `json:"created,omitempty"`
+	Internal  bool      `json:"internal,omitempty"`
+	Subnet    string    `json:"subnet,omitempty"`
+	Gateway   string    `json:"gateway,omitempty"`
+	Labels    string    `json:"labels,omitempty"`
 }
 
-type DockerSummaryArgs struct {
+type DockerArgs struct {
 	Timestamp time.Time `json:"timestamp"`
 }
 
-type DockerSummaryReply struct {
+type DockerReply struct {
 	Data Docker `json:"data"`
+}
+
+type ContainerQueryArgs struct {
+	Page int `json:"page"`
+	Size int `json:"size"`
+}
+
+type ContainerQueryReply struct {
+	Data []Container `json:"data"`
+}
+
+type ContainerCountArgs struct{}
+
+type ContainerCountReply struct {
+	Count int `json:"count"`
+}
+
+type ImageQueryArgs struct {
+	Page int `json:"page"`
+	Size int `json:"size"`
+}
+
+type ImageQueryReply struct {
+	Data []Image `json:"data"`
+}
+
+type ImageCountArgs struct{}
+
+type ImageCountReply struct {
+	Count int `json:"count"`
+}
+
+type NetworkQueryArgs struct {
+	Page int `json:"page"`
+	Size int `json:"size"`
+}
+
+type NetworkQueryReply struct {
+	Data []Network `json:"data"`
+}
+
+type NetworkCountArgs struct{}
+
+type NetworkCountReply struct {
+	Count int `json:"count"`
 }
 
 type ContainerCreateArgs struct {
@@ -98,6 +143,12 @@ type ContainerUpdateReply struct {
 	ContainerID string `json:"container_id"`
 }
 
+type ContainerDeleteArgs struct {
+	ContainerID string `json:"container_id"`
+}
+
+type ContainerDeleteReply struct{}
+
 type ContainerStartArgs struct {
 	ContainerID string `json:"container_id"`
 }
@@ -115,20 +166,6 @@ type ContainerRestartArgs struct {
 }
 
 type ContainerRestartReply struct{}
-
-type ContainerDeleteArgs struct {
-	ContainerID string `json:"container_id"`
-}
-
-type ContainerDeleteReply struct{}
-
-type ContainerSummaryArgs struct {
-	Timestamp time.Time `json:"timestamp"`
-}
-
-type ContainerSummaryReply struct {
-	Data []Container `json:"data"`
-}
 
 type ImagePullArgs struct {
 	ImageName string `json:"image_name"`
@@ -162,14 +199,6 @@ type ImageExportArgs struct {
 
 type ImageExportReply struct{}
 
-type ImageSummaryArgs struct {
-	Timestamp time.Time `json:"timestamp"`
-}
-
-type ImageSummaryReply struct {
-	Data []Image `json:"data"`
-}
-
 type NetworkCreateArgs struct {
 	Name    string            `json:"name"`
 	Driver  string            `json:"driver"`
@@ -182,27 +211,8 @@ type NetworkCreateReply struct {
 	NetworkID string `json:"network_id"`
 }
 
-type NetworkUpdateArgs struct {
-	NetworkID string            `json:"network_id"`
-	Name      string            `json:"name"`
-	Driver    string            `json:"driver"`
-	Subnet    string            `json:"subnet"`
-	Gateway   string            `json:"gateway"`
-	Labels    map[string]string `json:"labels"`
-}
-
-type NetworkUpdateReply struct{}
-
 type NetworkDeleteArgs struct {
 	NetworkID string `json:"network_id"`
 }
 
 type NetworkDeleteReply struct{}
-
-type NetworkSummaryArgs struct {
-	Timestamp time.Time `json:"timestamp"`
-}
-
-type NetworkSummaryReply struct {
-	Data []Network `json:"data"`
-}

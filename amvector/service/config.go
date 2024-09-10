@@ -39,6 +39,7 @@ func NewConfig(configFile string, prefix Prefix) (*Config, error) {
 
 type Task struct {
 	Interval int      `yaml:"interval"`
+	MaxAge   int      `yaml:"max_age"`
 	Disk     Disk     `yaml:"disk"`
 	Ethernet Ethernet `yaml:"ethernet"`
 }

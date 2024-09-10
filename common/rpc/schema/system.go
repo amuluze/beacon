@@ -1,4 +1,4 @@
-// Package rpc
+// Package schema
 // Date: 2022/11/9 10:18
 // Author: Amu
 // Description:
@@ -36,12 +36,6 @@ type SetSystemTimeArgs struct {
 
 type SetSystemTimeReply struct{}
 
-type GetSystemTimeZoneListArgs struct{}
-
-type GetSystemTimeZoneListReply struct {
-	SystemTimeZoneList []string `json:"system_time_zone_list"`
-}
-
 type GetSystemTimeZoneArgs struct{}
 
 type GetSystemTimeZoneReply struct {
@@ -53,6 +47,12 @@ type SetSystemTimeZoneArgs struct {
 }
 
 type SetSystemTimeZoneReply struct{}
+
+type GetSystemTimeZoneListArgs struct{}
+
+type GetSystemTimeZoneListReply struct {
+	SystemTimeZoneList []string `json:"system_time_zone_list"`
+}
 
 type GetDockerRegistryMirrorsArgs struct{}
 

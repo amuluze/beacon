@@ -1,12 +1,8 @@
-// Package rpc
+// Package schema
 // Date: 2022/11/9 10:18
 // Author: Amu
 // Description:
 package schema
-
-type FilesSearchArgs struct {
-	Path string `json:"path"`
-}
 
 type FileInfo struct {
 	Name    string `json:"name"`
@@ -15,6 +11,11 @@ type FileInfo struct {
 	ModTime int64  `json:"mod_time"`
 	IsDir   bool   `json:"is_dir"`
 }
+
+type FilesSearchArgs struct {
+	Path string `json:"path"`
+}
+
 type FilesSearchReply struct {
 	Files []FileInfo `json:"files"`
 }
@@ -33,13 +34,6 @@ type FileCreateArgs struct {
 }
 
 type FileCreateReply struct{}
-
-type FolderCreateArgs struct {
-	Path       string `json:"path" validate:"required"`
-	FolderName string `json:"folder_name" validate:"required"`
-}
-
-type FolderCreateReply struct{}
 
 type FileDeleteArgs struct {
 	Filepath string `json:"filepath" validate:"required"`
@@ -62,3 +56,10 @@ type FileDownloadArgs struct {
 type FileDownloadReply struct {
 	Filepath string `json:"filepath"`
 }
+
+type FolderCreateArgs struct {
+	Path       string `json:"path" validate:"required"`
+	FolderName string `json:"folder_name" validate:"required"`
+}
+
+type FolderCreateReply struct{}

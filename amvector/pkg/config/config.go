@@ -52,6 +52,7 @@ type Config struct {
 	} `yaml:"log"`
 	Task struct {
 		Interval int `yaml:"interval"`
+		MaxAge   int `yaml:"max_age"`
 		Disk     struct {
 			Devices []string `yaml:"devices"`
 		} `yaml:"disk"`
@@ -92,6 +93,7 @@ func (c *Config) loadDefault(prefix string) error {
 	c.Log.MaxAge = 7
 
 	c.Task.Interval = 30
+	c.Task.MaxAge = 1
 	c.Task.Disk.Devices = []string{"vda2"}
 	c.Task.Ethernet.Names = []string{"eth0"}
 

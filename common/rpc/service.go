@@ -10,6 +10,22 @@ import (
 )
 
 type IService interface {
+	Version(context.Context, schema.DockerArgs, *schema.DockerReply) error
+	ContainerList(context.Context, schema.ContainerQueryArgs, *schema.ContainerQueryReply) error
+	ContainerCount(context.Context, schema.ContainerCountArgs, *schema.ContainerCountReply) error
+	ImageList(context.Context, schema.ImageQueryArgs, *schema.ImageQueryReply) error
+	ImageCount(context.Context, schema.ImageCountArgs, *schema.ImageCountReply) error
+	NetworkList(context.Context, schema.NetworkQueryArgs, *schema.NetworkQueryReply) error
+	NetworkCount(context.Context, schema.NetworkCountArgs, *schema.NetworkCountReply) error
+	HostInfo(context.Context, schema.HostInfoArgs, *schema.HostInfoReply) error
+	CPUInfo(context.Context, schema.CPUInfoArgs, *schema.CPUInfoReply) error
+	CPUUsage(context.Context, schema.CPUUsageArgs, *schema.CPUUsageReply) error
+	MemoryInfo(context.Context, schema.MemoryInfoArgs, *schema.MemoryInfoReply) error
+	MemoryUsage(context.Context, schema.MemoryUsageArgs, *schema.MemoryUsageReply) error
+	DiskInfo(context.Context, schema.DiskInfoArgs, *schema.DiskInfoReply) error
+	DiskUsage(context.Context, schema.DiskUsageArgs, *schema.DiskUsageReply) error
+	NetUsage(context.Context, schema.NetUsageArgs, *schema.NetUsageReply) error
+
 	ContainerCreate(context.Context, schema.ContainerCreateArgs, *schema.ContainerCreateReply) error
 	ContainerUpdate(context.Context, schema.ContainerUpdateArgs, *schema.ContainerUpdateReply) error
 	ContainerDelete(context.Context, schema.ContainerDeleteArgs, *schema.ContainerDeleteReply) error
@@ -40,6 +56,7 @@ type IService interface {
 	SetSystemTime(context.Context, schema.SetSystemTimeArgs, *schema.SetSystemTimeReply) error
 	GetSystemTimeZone(context.Context, schema.GetSystemTimeZoneArgs, *schema.GetSystemTimeZoneReply) error
 	SetSystemTimeZone(context.Context, schema.SetSystemTimeZoneArgs, *schema.SetSystemTimeZoneReply) error
+	GetSystemTimeZoneList(context.Context, schema.GetSystemTimeZoneListArgs, *schema.GetSystemTimeZoneListReply) error
 	GetDockerRegistryMirrors(context.Context, schema.GetDockerRegistryMirrorsArgs, *schema.GetDockerRegistryMirrorsReply) error
 	SetDockerRegistryMirrors(context.Context, schema.SetDockerRegistryMirrorsArgs, *schema.SetDockerRegistryMirrorsReply) error
 }

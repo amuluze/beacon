@@ -6,11 +6,11 @@ package service
 
 import (
 	"amvector/pkg/resources"
+	"common/database"
 	"path/filepath"
 
 	"amvector/service/rpc"
 
-	"github.com/amuluze/amutool/database"
 	"github.com/amuluze/docker"
 	"github.com/smallnest/rpcx/server"
 )
