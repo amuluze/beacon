@@ -9,11 +9,8 @@ import (
 	"log/slog"
 
 	"amprobe/pkg/fiberx"
-
 	"amprobe/pkg/validatex"
-
-	"amprobe/service/host/rpc"
-
+	"amprobe/service/host/service"
 	"amprobe/service/schema"
 
 	"github.com/amuluze/amutool/errors"
@@ -21,10 +18,10 @@ import (
 )
 
 type HostAPI struct {
-	HostService rpc.IHostService
+	HostService service.IHostService
 }
 
-func NewHostAPI(hostService rpc.IHostService) *HostAPI {
+func NewHostAPI(hostService service.IHostService) *HostAPI {
 	return &HostAPI{HostService: hostService}
 }
 
@@ -293,36 +290,36 @@ func (a *HostAPI) SetSystemTime(ctx *fiber.Ctx) error {
 	return fiberx.NoContent(ctx)
 }
 
-func (a *HostAPI) GetSystemTimezoneList(ctx *fiber.Ctx) error {
+func (a *HostAPI) GetSystemTimeZoneList(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
-	args := schema.GetSystemTimezoneListArgs{}
-	list, err := a.HostService.GetSystemTimezoneList(c, args)
+	args := schema.GetSystemTimeZoneListArgs{}
+	list, err := a.HostService.GetSystemTimeZoneList(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
 	}
 	return fiberx.Success(ctx, list)
 }
 
-func (a *HostAPI) GetSystemTimezone(ctx *fiber.Ctx) error {
+func (a *HostAPI) GetSystemTimeZone(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
-	args := schema.GetSystemTimezoneArgs{}
-	zone, err := a.HostService.GetSystemTimezone(c, args)
+	args := schema.GetSystemTimeZoneArgs{}
+	zone, err := a.HostService.GetSystemTimeZone(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
 	}
 	return fiberx.Success(ctx, zone)
 }
 
-func (a *HostAPI) SetSystemTimezone(ctx *fiber.Ctx) error {
+func (a *HostAPI) SetSystemTimeZone(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
-	args := schema.SetSystemTimezoneArgs{}
+	args := schema.SetSystemTimeZoneArgs{}
 	if err := fiberx.ParseBody(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.ErrBadRequest)
 	}
 	if err := validatex.ValidateStruct(args); err != nil {
 		return fiberx.Failure(ctx, errors.ErrBadRequest)
 	}
-	err := a.HostService.SetSystemTimezone(c, args)
+	err := a.HostService.SetSystemTimeZone(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
 	}

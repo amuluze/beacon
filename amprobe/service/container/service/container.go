@@ -10,6 +10,7 @@ import (
 	"amprobe/service/schema"
 	rpcSchema "common/rpc/schema"
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/google/wire"
@@ -24,6 +25,7 @@ type IContainerService interface {
 
 	ContainerList(ctx context.Context, args schema.ContainerQueryArgs) (schema.ContainerQueryRely, error)
 	ContainerCreate(ctx context.Context, args schema.ContainerCreateArgs) (schema.ContainerCreateReply, error)
+	ContainerUpdate(ctx context.Context, args schema.ContainerUpdateArgs) (schema.ContainerUpdateReply, error)
 	ContainerStart(ctx context.Context, args schema.ContainerStartArgs) error
 	ContainerStop(ctx context.Context, args schema.ContainerStopArgs) error
 	ContainerDelete(ctx context.Context, args schema.ContainerDeleteArgs) error
@@ -36,7 +38,7 @@ type IContainerService interface {
 	ImageDelete(ctx context.Context, args schema.ImageDeleteArgs) error
 	ImagesPrune(ctx context.Context) error
 
-	NetworkList(ctx context.Context, args schema.NetworkListArgs) (schema.NetworkListReply, error)
+	NetworkList(ctx context.Context, args schema.NetworkQueryArgs) (schema.NetworkQueryReply, error)
 	NetworkCreate(ctx context.Context, args schema.NetworkCreateArgs) (schema.NetworkCreateReply, error)
 	NetworkDelete(ctx context.Context, args schema.NetworkDeleteArgs) error
 
@@ -71,13 +73,18 @@ func (a *ContainerService) Version(ctx context.Context) (schema.Docker, error) {
 }
 
 func (a *ContainerService) ContainerList(ctx context.Context, args schema.ContainerQueryArgs) (schema.ContainerQueryRely, error) {
-	mContainers, err := a.ContainerRepo.ContainerList(ctx, args)
+	var reply schema.ContainerQueryRely
+	rpcArgs := rpcSchema.ContainerQueryArgs{
+		Page: args.Page,
+		Size: args.Size,
+	}
+	rpcReply, err := a.ContainerRepo.ContainerList(ctx, rpcArgs)
 	if err != nil {
-		return schema.ContainerQueryRely{}, err
+		return reply, err
 	}
 
 	var list []schema.Container
-	for _, item := range mContainers {
+	for _, item := range rpcReply.Data {
 		list = append(list, schema.Container{
 			ID:            item.ContainerID[:6],
 			Name:          item.Name,
@@ -91,72 +98,15 @@ func (a *ContainerService) ContainerList(ctx context.Context, args schema.Contai
 			MemoryUsage:   utils.ConvertBytesToReadable(item.MemUsage),
 		})
 	}
-	total, err := a.ContainerRepo.ContainerCount(ctx)
+	countReply, err := a.ContainerRepo.ContainerCount(ctx, rpcSchema.ContainerCountArgs{})
 	if err != nil {
-		return schema.ContainerQueryRely{}, err
+		return reply, err
 	}
-	return schema.ContainerQueryRely{Data: list, Total: total, Page: args.Page, Size: args.Size}, nil
-}
-
-func (a *ContainerService) ImageList(ctx context.Context, args schema.ImageQueryArgs) (schema.ImageQueryReply, error) {
-	images, err := a.ContainerRepo.ImageList(ctx, args)
-	if err != nil {
-		return schema.ImageQueryReply{}, err
-	}
-	var list []schema.Image
-	for _, item := range images {
-		num, err := a.ContainerRepo.ContainersByImage(ctx, fmt.Sprintf("%s:%s", item.Name, item.Tag))
-		if err != nil {
-			return schema.ImageQueryReply{}, err
-		}
-		list = append(list, schema.Image{
-			ID:      item.ImageID,
-			Name:    item.Name,
-			Tag:     item.Tag,
-			Created: item.Created,
-			Size:    item.Size,
-			Number:  num,
-		})
-	}
-	total, err := a.ContainerRepo.ImageCount(ctx)
-	if err != nil {
-		return schema.ImageQueryReply{}, err
-	}
-	return schema.ImageQueryReply{Data: list, Total: total, Page: args.Page, Size: args.Size}, nil
-}
-
-func (a *ContainerService) NetworkList(ctx context.Context, args schema.NetworkListArgs) (schema.NetworkListReply, error) {
-	result := schema.NetworkListReply{}
-	networks, err := a.ContainerRepo.NetworkList(ctx, args)
-	if err != nil {
-		return result, err
-	}
-	var list []schema.Network
-	for _, item := range networks {
-		labels := make(map[string]string)
-		err := json.Unmarshal([]byte(item.Labels), &labels)
-		if err != nil {
-			return schema.NetworkListReply{}, err
-		}
-		list = append(list, schema.Network{
-			ID:      item.NetworkID,
-			Name:    item.Name,
-			Driver:  item.Driver,
-			Created: item.Created,
-			Subnet:  item.Subnet,
-			Gateway: item.Gateway,
-			Labels:  labels,
-		})
-	}
-	total, err := a.ContainerRepo.NetworkCount(ctx)
-	if err != nil {
-		return result, err
-	}
-	result.Data = list
-	result.Total = total
-	result.Page = args.Page
-	result.Size = args.Size
-	return result, nil
+	reply.Data = list
+	reply.Total = countReply.Count
+	reply.Page = args.Page
+	reply.Size = args.Size
+	return reply, nil
 }
 
 func (a *ContainerService) ContainerCreate(ctx context.Context, args schema.ContainerCreateArgs) (schema.ContainerCreateReply, error) {
@@ -170,11 +120,16 @@ func (a *ContainerService) ContainerCreate(ctx context.Context, args schema.Cont
 		Commands:     nil,
 		Labels:       args.Labels,
 	}
-	_, err := a.ContainerRepo.ContainerCreate(ctx, rpcArgs)
-	return err
+	var reply schema.ContainerCreateReply
+	rpcReply, err := a.ContainerRepo.ContainerCreate(ctx, rpcArgs)
+	if err != nil {
+		return reply, err
+	}
+	reply.ContainerID = rpcReply.ContainerID
+	return reply, nil
 }
 
-func (a *ContainerService) ContainerUpdate(ctx context.Context, args schema.ContainerUpdateArgs) error {
+func (a *ContainerService) ContainerUpdate(ctx context.Context, args schema.ContainerUpdateArgs) (schema.ContainerUpdateReply, error) {
 	rpcArgs := rpcSchema.ContainerUpdateArgs{
 		ContainerID:  args.ContainerID,
 		Name:         args.ContainerName,
@@ -186,48 +141,84 @@ func (a *ContainerService) ContainerUpdate(ctx context.Context, args schema.Cont
 		Commands:     nil,
 		Labels:       args.Labels,
 	}
-	_, err := a.ContainerRepo.ContainerUpdate(ctx, rpcArgs)
-	return err
+	var reply schema.ContainerUpdateReply
+	rpcReply, err := a.ContainerRepo.ContainerUpdate(ctx, rpcArgs)
+	if err != nil {
+		return reply, err
+	}
+	reply.ContainerID = rpcReply.ContainerID
+	return reply, nil
 }
 
 func (a *ContainerService) ContainerDelete(ctx context.Context, args schema.ContainerDeleteArgs) error {
 	rpcArgs := rpcSchema.ContainerDeleteArgs{
 		ContainerID: args.ContainerID,
 	}
-	_, err := a.ContainerRepo.ContainerDelete(ctx, rpcArgs)
-	return err
+	return a.ContainerRepo.ContainerDelete(ctx, rpcArgs)
 }
 
 func (a *ContainerService) ContainerStart(ctx context.Context, args schema.ContainerStartArgs) error {
 	rpcArgs := rpcSchema.ContainerStartArgs{
 		ContainerID: args.ContainerID,
 	}
-	_, err := a.ContainerRepo.ContainerStart(ctx, rpcArgs)
-	return err
+	return a.ContainerRepo.ContainerStart(ctx, rpcArgs)
 }
 
 func (a *ContainerService) ContainerStop(ctx context.Context, args schema.ContainerStopArgs) error {
 	rpcArgs := rpcSchema.ContainerStopArgs{
 		ContainerID: args.ContainerID,
 	}
-	_, err := a.ContainerRepo.ContainerStop(ctx, rpcArgs)
-	return err
+	return a.ContainerRepo.ContainerStop(ctx, rpcArgs)
 }
 
 func (a *ContainerService) ContainerRestart(ctx context.Context, args schema.ContainerRestartArgs) error {
 	rpcArgs := rpcSchema.ContainerRestartArgs{
 		ContainerID: args.ContainerID,
 	}
-	_, err := a.ContainerRepo.ContainerRestart(ctx, rpcArgs)
-	return err
+	return a.ContainerRepo.ContainerRestart(ctx, rpcArgs)
+}
+
+func (a *ContainerService) ImageList(ctx context.Context, args schema.ImageQueryArgs) (schema.ImageQueryReply, error) {
+	var reply schema.ImageQueryReply
+	rpcArgs := rpcSchema.ImageQueryArgs{
+		Page: args.Page,
+		Size: args.Size,
+	}
+	listReply, err := a.ContainerRepo.ImageList(ctx, rpcArgs)
+	if err != nil {
+		return reply, err
+	}
+	var list []schema.Image
+	for _, item := range listReply.Data {
+		num, err := a.ContainerRepo.ContainersByImage(ctx, fmt.Sprintf("%s:%s", item.Name, item.Tag))
+		if err != nil {
+			return reply, err
+		}
+		list = append(list, schema.Image{
+			ID:      item.ImageID,
+			Name:    item.Name,
+			Tag:     item.Tag,
+			Created: item.Created,
+			Size:    item.Size,
+			Number:  num,
+		})
+	}
+	countReply, err := a.ContainerRepo.ImageCount(ctx, rpcSchema.ImageCountArgs{})
+	if err != nil {
+		return reply, err
+	}
+	reply.Data = list
+	reply.Total = countReply.Count
+	reply.Page = args.Page
+	reply.Size = args.Size
+	return reply, nil
 }
 
 func (a *ContainerService) ImagePull(ctx context.Context, args schema.ImagePullArgs) error {
 	rpcArgs := rpcSchema.ImagePullArgs{
 		ImageName: args.ImageName,
 	}
-	_, err := a.ContainerRepo.ImagePull(ctx, rpcArgs)
-	return err
+	return a.ContainerRepo.ImagePull(ctx, rpcArgs)
 }
 
 func (a *ContainerService) ImageTag(ctx context.Context, args schema.ImageTagArgs) error {
@@ -235,24 +226,21 @@ func (a *ContainerService) ImageTag(ctx context.Context, args schema.ImageTagArg
 		NewTag: args.NewTag,
 		OldTag: args.OldTag,
 	}
-	_, err := a.ContainerRepo.ImageTag(ctx, rpcArgs)
-	return err
+	return a.ContainerRepo.ImageTag(ctx, rpcArgs)
 }
 
 func (a *ContainerService) ImageDelete(ctx context.Context, args schema.ImageDeleteArgs) error {
 	rpcArgs := rpcSchema.ImageDeleteArgs{
 		ImageID: args.ImageID,
 	}
-	_, err := a.ContainerRepo.ImageDelete(ctx, rpcArgs)
-	return err
+	return a.ContainerRepo.ImageDelete(ctx, rpcArgs)
 }
 
 func (a *ContainerService) ImageImport(ctx context.Context, args schema.ImageImportArgs) error {
 	rpcArgs := rpcSchema.ImageImportArgs{
 		SourceFile: args.SourceFile,
 	}
-	_, err := a.ContainerRepo.ImageImport(ctx, rpcArgs)
-	return err
+	return a.ContainerRepo.ImageImport(ctx, rpcArgs)
 }
 
 func (a *ContainerService) ImageExport(ctx context.Context, args schema.ImageExportArgs) error {
@@ -260,15 +248,53 @@ func (a *ContainerService) ImageExport(ctx context.Context, args schema.ImageExp
 		ImageIDs:   []string{args.ImageID},
 		TargetFile: fmt.Sprintf("/tmp/%s.tar", args.ImageName),
 	}
-	_, err := a.ContainerRepo.ImageExport(ctx, rpcArgs)
-	return err
+	return a.ContainerRepo.ImageExport(ctx, rpcArgs)
 }
 
 func (a *ContainerService) ImagesPrune(ctx context.Context) error {
 	return a.ContainerRepo.ImagesPrune(ctx)
 }
 
+func (a *ContainerService) NetworkList(ctx context.Context, args schema.NetworkQueryArgs) (schema.NetworkQueryReply, error) {
+	reply := schema.NetworkQueryReply{}
+	rpcArgs := rpcSchema.NetworkQueryArgs{
+		Page: args.Page,
+		Size: args.Size,
+	}
+	rpcReply, err := a.ContainerRepo.NetworkList(ctx, rpcArgs)
+	if err != nil {
+		return reply, err
+	}
+	var list []schema.Network
+	for _, item := range rpcReply.Data {
+		labels := make(map[string]string)
+		err := json.Unmarshal([]byte(item.Labels), &labels)
+		if err != nil {
+			return reply, err
+		}
+		list = append(list, schema.Network{
+			ID:      item.NetworkID,
+			Name:    item.Name,
+			Driver:  item.Driver,
+			Created: item.Created,
+			Subnet:  item.Subnet,
+			Gateway: item.Gateway,
+			Labels:  labels,
+		})
+	}
+	countReply, err := a.ContainerRepo.NetworkCount(ctx, rpcSchema.NetworkCountArgs{})
+	if err != nil {
+		return reply, err
+	}
+	reply.Data = list
+	reply.Total = countReply.Count
+	reply.Page = args.Page
+	reply.Size = args.Size
+	return reply, nil
+}
+
 func (a *ContainerService) NetworkCreate(ctx context.Context, args schema.NetworkCreateArgs) (schema.NetworkCreateReply, error) {
+	var reply schema.NetworkCreateReply
 	rpcArgs := rpcSchema.NetworkCreateArgs{
 		Name:    args.Name,
 		Driver:  args.Driver,
@@ -276,16 +302,19 @@ func (a *ContainerService) NetworkCreate(ctx context.Context, args schema.Networ
 		Subnet:  args.Subnet,
 		Gateway: args.Gateway,
 	}
-	_, err := a.ContainerRepo.NetworkCreate(ctx, rpcArgs)
-	return err
+	rpcReply, err := a.ContainerRepo.NetworkCreate(ctx, rpcArgs)
+	if err != nil {
+		return reply, err
+	}
+	reply.NetworkID = rpcReply.NetworkID
+	return reply, nil
 }
 
 func (a *ContainerService) NetworkDelete(ctx context.Context, args schema.NetworkDeleteArgs) error {
 	rpcArgs := rpcSchema.NetworkDeleteArgs{
 		NetworkID: args.NetworkID,
 	}
-	_, err := a.ContainerRepo.NetworkDelete(ctx, rpcArgs)
-	return err
+	return a.ContainerRepo.NetworkDelete(ctx, rpcArgs)
 }
 
 func (a *ContainerService) GetDockerRegistryMirrors(ctx context.Context, args schema.GetDockerRegistryMirrorsArgs) (schema.GetDockerRegistryMirrorsReply, error) {
@@ -303,6 +332,5 @@ func (a *ContainerService) SetDockerRegistryMirrors(ctx context.Context, args sc
 	rpcArgs := rpcSchema.SetDockerRegistryMirrorsArgs{
 		Mirrors: args.Mirrors,
 	}
-	_, err := a.ContainerRepo.SetDockerRegistryMirrors(ctx, rpcArgs)
-	return err
+	return a.ContainerRepo.SetDockerRegistryMirrors(ctx, rpcArgs)
 }

@@ -16,7 +16,7 @@ import (
 	"amprobe/service/container/api"
 	"amprobe/service/container/repository"
 	api2 "amprobe/service/host/api"
-	rpc2 "amprobe/service/host/rpc"
+	rpc2 "amprobe/service/host/repository"
 	"amprobe/service/model"
 )
 

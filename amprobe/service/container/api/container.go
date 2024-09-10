@@ -108,7 +108,7 @@ func (a *ContainerAPI) ContainerStop(ctx *fiber.Ctx) error {
 
 func (a *ContainerAPI) ContainerRemove(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
-	var args schema.ContainerRemoveArgs
+	var args schema.ContainerDeleteArgs
 	if err := fiberx.ParseBody(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, err)
 	}
@@ -116,7 +116,7 @@ func (a *ContainerAPI) ContainerRemove(ctx *fiber.Ctx) error {
 	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, err)
 	}
-	err := a.ContainerService.ContainerRemove(c, args)
+	err := a.ContainerService.ContainerDelete(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, err)
 	}
@@ -215,7 +215,7 @@ func (a *ContainerAPI) ImageExport(ctx *fiber.Ctx) error {
 
 func (a *ContainerAPI) ImageRemove(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
-	var args schema.ImageRemoveArgs
+	var args schema.ImageDeleteArgs
 	if err := fiberx.ParseBody(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, err)
 	}
@@ -223,7 +223,7 @@ func (a *ContainerAPI) ImageRemove(ctx *fiber.Ctx) error {
 	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, err)
 	}
-	err := a.ContainerService.ImageRemove(c, args)
+	err := a.ContainerService.ImageDelete(c, args)
 	if err != nil {
 		slog.Error("api remove image error", "err", err, "args", args)
 		return fiberx.Failure(ctx, err)
@@ -242,7 +242,7 @@ func (a *ContainerAPI) ImagesPrune(ctx *fiber.Ctx) error {
 
 func (a *ContainerAPI) NetworkList(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
-	var args schema.NetworkListArgs
+	var args schema.NetworkQueryArgs
 	if err := fiberx.ParseQuery(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, err)
 	}

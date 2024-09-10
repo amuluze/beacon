@@ -121,9 +121,9 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			gHost.Post("/set_dns_settings", a.hostAPI.SetDNSSettings).Name("更新 DNS 设置")
 			gHost.Get("/get_system_time", a.hostAPI.GetSystemTime).Name("获取系统时间")
 			gHost.Post("/set_system_time", a.hostAPI.SetSystemTime).Name("更新系统时间")
-			gHost.Get("/get_system_timezone_list", a.hostAPI.GetSystemTimezoneList).Name("获取系统时区列表")
-			gHost.Get("/get_system_timezone", a.hostAPI.GetSystemTimezone).Name("获取系统时区")
-			gHost.Post("/set_system_timezone", a.hostAPI.SetSystemTimezone).Name("更新系统时区")
+			gHost.Get("/get_system_timezone_list", a.hostAPI.GetSystemTimeZoneList).Name("获取系统时区列表")
+			gHost.Get("/get_system_timezone", a.hostAPI.GetSystemTimeZone).Name("获取系统时区")
+			gHost.Post("/set_system_timezone", a.hostAPI.SetSystemTimeZone).Name("更新系统时区")
 			gHost.Post("/reboot", a.hostAPI.Reboot).Name("重启系统")
 			gHost.Post("/shutdown", a.hostAPI.Shutdown).Name("关闭系统")
 		}

@@ -59,6 +59,15 @@ func (s *Service) ContainerList(ctx context.Context, args rpcSchema.ContainerQue
 	return nil
 }
 
+func (s *Service) ContainersByImage(ctx context.Context, args rpcSchema.ContainersByImageArgs, reply *rpcSchema.ContainersByImageReply) error {
+	var count int64
+	if err := s.DB.Model(&model.Container{}).Where("image = ?", args.Image).Count(&count).Error; err != nil {
+		return err
+	}
+	reply.Num = int(count)
+	return nil
+}
+
 func (s *Service) ContainerCount(ctx context.Context, args rpcSchema.ContainerCountArgs, reply *rpcSchema.ContainerCountReply) error {
 	var count int64
 	if err := s.DB.Model(&model.Container{}).Count(&count).Error; err != nil {

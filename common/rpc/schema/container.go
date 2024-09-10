@@ -76,6 +76,14 @@ type ContainerQueryReply struct {
 	Data []Container `json:"data"`
 }
 
+type ContainersByImageArgs struct {
+	Image string `json:"image"`
+}
+
+type ContainersByImageReply struct {
+	Num int `json:"num"`
+}
+
 type ContainerCountArgs struct{}
 
 type ContainerCountReply struct {

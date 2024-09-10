@@ -49,9 +49,24 @@ type ContainerCreateReply struct {
 	ContainerID string `json:"container_id"`
 }
 
-type ContainerUpdateArgs struct{}
+type ContainerUpdateArgs struct {
+	ContainerID   string            `json:"container_id" validate:"required"`
+	ContainerName string            `json:"container_name,omitempty"`
+	ImageName     string            `json:"image_name,omitempty"`
+	NetworkName   string            `json:"network_name,omitempty"`
+	Ports         []string          `json:"ports,omitempty"`
+	Volumes       []string          `json:"volumes,omitempty"`
+	Environments  []string          `json:"environment,omitempty"`
+	Labels        map[string]string `json:"labels,omitempty"`
+}
 
-type ContainerDeleteArgs struct{}
+type ContainerUpdateReply struct {
+	ContainerID string `json:"container_id"`
+}
+
+type ContainerDeleteArgs struct {
+	ContainerID string `json:"container_id" validate:"required"`
+}
 
 type ContainerStartArgs struct {
 	ContainerID string `json:"container_id" validate:"required"`
@@ -64,12 +79,6 @@ type ContainerStopArgs struct {
 }
 
 type ContainerStopReply struct{}
-
-type ContainerRemoveArgs struct {
-	ContainerID string `json:"container_id" validate:"required"`
-}
-
-type ContainerRemoveReply struct{}
 
 type ContainerRestartArgs struct {
 	ContainerID string `json:"container_id" validate:"required"`
@@ -158,7 +167,7 @@ type NetworkCreateReply struct {
 	NetworkID string `json:"network_id"`
 }
 
-type NetworkListArgs struct {
+type NetworkQueryArgs struct {
 	Page int `json:"page" validate:"required"`
 	Size int `json:"size" validate:"gte=0"`
 }
@@ -173,7 +182,7 @@ type Network struct {
 	Labels  map[string]string `json:"labels"`
 }
 
-type NetworkListReply struct {
+type NetworkQueryReply struct {
 	Data  []Network `json:"data"`
 	Total int       `json:"total"`
 	Page  int       `json:"page"`
