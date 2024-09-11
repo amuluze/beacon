@@ -1,6 +1,6 @@
 module common
 
-go 1.21
+go 1.21.10
 
 require (
 	github.com/glebarez/sqlite v1.11.0
