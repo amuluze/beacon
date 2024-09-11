@@ -45,10 +45,10 @@ DBName = "/app/probe"
 # SSL模式
 SSLMode = ""
 
-[Logger]
+[Log]
 File = "/app/probe.log"
 Level = "debug"
-RotationTime = "1"      # 每天切分一个日志文件
+Rotation = "1"      # 每天切分一个日志文件
 MaxAge = "7"            # 最多保留 7 天的日志
 
 [Auth]
@@ -63,3 +63,12 @@ Expired = 7200
 # key 前缀
 Prefix = "auth_"
 
+[Casbin]
+# 是否启用casbin
+Enable = true
+# debug模式
+Debug = false
+# 是否启用定期自动加载策略
+AutoLoad = true
+# 定期自动加载策略时间间隔（单位秒）
+AutoLoadInternal = 60
