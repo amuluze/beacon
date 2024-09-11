@@ -3,7 +3,7 @@ SERVER  		= ./cmd/${APP}
 RELEASE_SERVER 	= release/${APP}/${APP}
 
 IMAGE = amuluze/amprobe
-TAG = v1.3.6
+TAG = v1.3.8
 
 GO 				= go
 CONFIG_FILE := $(shell pwd)/configs/config.toml
