@@ -4,6 +4,7 @@
 package service
 
 import (
+	"amprobe/service/account"
 	"amprobe/service/audit"
 	"amprobe/service/auth"
 	"amprobe/service/container"
@@ -13,7 +14,7 @@ import (
 	"github.com/google/wire"
 )
 
-func BuildInjector(configFile string) (*Injector, func(), error) {
+func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), error) {
 	wire.Build(
 		NewConfig,
 		NewLogger,
@@ -21,6 +22,8 @@ func BuildInjector(configFile string) (*Injector, func(), error) {
 		NewRPCClient,
 		InitAuthStore,
 		InitAuth,
+		InitAdapter,
+		InitCasbin,
 		container.Set,
 		host.Set,
 		model.Set,

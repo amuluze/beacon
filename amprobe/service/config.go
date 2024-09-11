@@ -9,16 +9,13 @@ import (
 )
 
 type Config struct {
-	Fiber    Fiber
-	Rpc      Rpc
-	Gorm     Gorm
-	DB       DB
-	Disk     Disk
-	Task     Task
-	Ethernet Ethernet
-	Logger   Logger
-	Auth     Auth
-	InitData InitData
+	Fiber  Fiber
+	Rpc    Rpc
+	Gorm   Gorm
+	DB     DB
+	Log    Log
+	Auth   Auth
+	Casbin Casbin
 }
 
 // NewConfig Load config file (toml/json/yaml)
@@ -82,11 +79,11 @@ type Ethernet struct {
 	Names []string
 }
 
-type Logger struct {
-	File         string
-	Level        string
-	RotationTime int
-	MaxAge       int
+type Log struct {
+	Output   string
+	Level    string
+	Rotation int
+	MaxAge   int
 }
 
 type Auth struct {
@@ -98,7 +95,9 @@ type Auth struct {
 	Prefix         string
 }
 
-type InitData struct {
-	Enable         bool
-	InitConfigFile string
+type Casbin struct {
+	Enable           bool
+	Debug            bool
+	AutoLoad         bool
+	AutoLoadInternal int
 }

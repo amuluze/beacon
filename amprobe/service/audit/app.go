@@ -6,9 +6,7 @@ package audit
 
 import (
 	"amprobe/service/audit/api"
-
 	"amprobe/service/audit/repository"
-
 	"amprobe/service/audit/service"
 
 	"github.com/google/wire"

@@ -60,15 +60,9 @@ func ReturnJson(c *fiber.Ctx, status int, v interface{}) error {
 
 // ParseQuery Parse query parameter to struct
 func ParseQuery(c *fiber.Ctx, obj interface{}) error {
-	if err := c.QueryParser(obj); err != nil {
-		return err
-	}
-	return nil
+	return c.QueryParser(obj)
 }
 
 func ParseBody(c *fiber.Ctx, obj interface{}) error {
-	if err := c.BodyParser(obj); err != nil {
-		return err
-	}
-	return nil
+	return c.BodyParser(obj)
 }

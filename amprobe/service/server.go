@@ -18,6 +18,7 @@ import (
 
 type options struct {
 	ConfigFile string
+	ModelFile  ModeConf
 }
 
 type Option func(*options)
@@ -25,6 +26,12 @@ type Option func(*options)
 func SetConfigFile(s string) Option {
 	return func(o *options) {
 		o.ConfigFile = s
+	}
+}
+
+func SetModelFile(s string) Option {
+	return func(o *options) {
+		o.ModelFile = ModeConf(s)
 	}
 }
 
@@ -53,7 +60,7 @@ func Init(ctx context.Context, opts ...Option) (func(), error) {
 	for _, opt := range opts {
 		opt(&o)
 	}
-	injector, cleanFunc, err := BuildInjector(o.ConfigFile)
+	injector, cleanFunc, err := BuildInjector(o.ConfigFile, o.ModelFile)
 	if err != nil {
 		slog.Error("build injector failed", "err", err)
 		return nil, err

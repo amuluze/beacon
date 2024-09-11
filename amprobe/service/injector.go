@@ -18,7 +18,6 @@ type Injector struct {
 	Config  *Config
 	Prepare *Prepare
 	Logger  *logger.Logger
-	//Task    *TimedTask
 }
 
 func NewInjector(app *fiber.App, router *Router, prepare *Prepare, config *Config, logx *logger.Logger) (*Injector, error) {
@@ -27,7 +26,6 @@ func NewInjector(app *fiber.App, router *Router, prepare *Prepare, config *Confi
 		Router:  router,
 		Config:  config,
 		Prepare: prepare,
-		//Task:    task,
-		Logger: logx,
+		Logger:  logx,
 	}, nil
 }

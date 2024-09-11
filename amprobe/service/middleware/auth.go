@@ -40,9 +40,8 @@ func UserAuthMiddleware(a auth.Auther, skippers ...SkipperFunc) fiber.Handler {
 		slog.Info("auth middleware", "token", fiberx.GetToken(c))
 		var userID string
 		var username string
-		var isAdmin string
 		var err error
-		userID, username, isAdmin, err = a.ParseToken(fiberx.GetToken(c), "access_token")
+		userID, username, err = a.ParseToken(fiberx.GetToken(c), "access_token")
 
 		if errors.Is(err, auth.ErrInvalidToken) {
 			slog.Error("invalid token", "err", err)
@@ -54,11 +53,11 @@ func UserAuthMiddleware(a auth.Auther, skippers ...SkipperFunc) fiber.Handler {
 
 		slog.Info("user id", "user_id", userID)
 		wrapUserAuthContext(c, userID, username)
-		if c.Method() == "POST" && isAdmin != "1" && c.Path() != "/v1/auth/logout" {
+		if c.Method() == "POST" && c.Path() != "/v1/auth/logout" {
 			return fiberx.Forbidden(c)
 		}
 		if err := c.Next(); err == nil {
-			if (c.Method() == "POST" && isAdmin == "1") || c.Path() == "/v1/auth/logout" {
+			if c.Method() == "POST" || c.Path() == "/v1/auth/logout" {
 				a.RecordAudit(username, OperateEvent[c.Path()])
 			}
 			return nil

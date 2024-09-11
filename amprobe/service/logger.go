@@ -10,10 +10,10 @@ import (
 
 func NewLogger(config *Config) *logger.Logger {
 	logx := logger.NewJsonFileLogger(
-		logger.SetLogFile(config.Logger.File),
-		logger.SetLogLevel(config.Logger.Level),
-		logger.SetLogFileRotationTime(config.Logger.RotationTime),
-		logger.SetLogFileMaxAge(config.Logger.MaxAge),
+		logger.SetLogFile(config.Log.Output),
+		logger.SetLogLevel(config.Log.Level),
+		logger.SetLogFileRotationTime(config.Log.Rotation),
+		logger.SetLogFileMaxAge(config.Log.MaxAge),
 	)
 	return logx
 }

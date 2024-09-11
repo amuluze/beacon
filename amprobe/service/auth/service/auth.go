@@ -6,95 +6,70 @@ package service
 
 import (
 	"amprobe/pkg/auth"
-	"context"
-	"log/slog"
-
-	"amprobe/service/auth/repository"
-
-	"amprobe/service/schema"
-
 	"amprobe/pkg/errors"
-
+	"amprobe/service/auth/repository"
+	"amprobe/service/schema"
+	"context"
 	"github.com/google/wire"
 )
 
 var AuthServiceSet = wire.NewSet(NewAuthService, wire.Bind(new(IAuthService), new(*AuthService)))
 
+var _ IAuthService = (*AuthService)(nil)
+
 type IAuthService interface {
-	Login(ctx context.Context, args *schema.LoginArgs) (*schema.LoginResult, error)
-	Logout(ctx context.Context, userID, token string) error
-	PassUpdate(ctx context.Context, args *schema.PasswordUpdateArgs) error
-	TokenUpdate(ctx context.Context, token string) (*schema.LoginResult, error)
+	Login(ctx context.Context, args schema.LoginArgs) (schema.LoginResult, error)
+	Logout(ctx context.Context, token string) error
+	PassUpdate(ctx context.Context, args schema.PasswordUpdateArgs) error
+	TokenUpdate(ctx context.Context, token string) (schema.LoginResult, error)
 }
 
 type AuthService struct {
 	Auth     auth.Auther
-	AuthRepo *repository.AuthRepo
+	AuthRepo repository.IAuthRepository
 }
 
-func NewAuthService(auth auth.Auther, authRepo *repository.AuthRepo) *AuthService {
+func NewAuthService(auth auth.Auther, authRepo repository.IAuthRepository) *AuthService {
 	return &AuthService{Auth: auth, AuthRepo: authRepo}
 }
 
-func (a *AuthService) Login(ctx context.Context, args *schema.LoginArgs) (*schema.LoginResult, error) {
+func (a *AuthService) Login(ctx context.Context, args schema.LoginArgs) (schema.LoginResult, error) {
+	var reply schema.LoginResult
 	u, err := a.AuthRepo.Login(ctx, args)
 	if err != nil {
-		slog.Error("auth repo login failed", "error", err)
-		return nil, errors.New400Error(err.Error())
+		return reply, err
 	}
-	tokenInfo, err := a.Auth.GenerateToken(u.ID.String(), u.Username, u.IsAdmin)
+	tokenInfo, err := a.Auth.GenerateToken(u.ID.String(), u.Username)
 	if err != nil {
-		slog.Error("generate token failed", "error", err)
-		return nil, errors.New400Error(err.Error())
+		return reply, err
 	}
-	res := &schema.LoginResult{
-		AccessToken:  tokenInfo.GetAccessToken(),
-		RefreshToken: tokenInfo.GetRefreshToken(),
-	}
-	return res, nil
+	reply.AccessToken = tokenInfo.GetAccessToken()
+	reply.RefreshToken = tokenInfo.GetRefreshToken()
+	return reply, nil
 }
 
-func (a *AuthService) Logout(ctx context.Context, userID, token string) error {
-	if userID != "" {
-		err := a.Auth.DestroyToken(token)
-		if err != nil {
-			slog.Error("destroy token failed", "error", err)
-			return errors.New400Error(err.Error())
-		}
-	}
-	return nil
+func (a *AuthService) Logout(ctx context.Context, token string) error {
+	return a.Auth.DestroyToken(token)
 }
 
-func (a *AuthService) PassUpdate(ctx context.Context, args *schema.PasswordUpdateArgs) error {
+func (a *AuthService) PassUpdate(ctx context.Context, args schema.PasswordUpdateArgs) error {
 	if args.OldPassword == args.NewPassword {
-		slog.Error("old password equal new password")
-		return errors.New400Error("equal password")
+		return errors.New("same password")
 	}
-	err := a.AuthRepo.PassUpdate(ctx, args)
-	if err != nil {
-		slog.Error("auth pass update failed", "error", err)
-		return errors.New400Error(err.Error())
-	}
-	return nil
+	return a.AuthRepo.PassUpdate(ctx, args)
 }
 
-func (a *AuthService) TokenUpdate(ctx context.Context, token string) (*schema.LoginResult, error) {
-	userID, username, isAdmin, err := a.Auth.ParseToken(token, "refresh_token")
+func (a *AuthService) TokenUpdate(ctx context.Context, token string) (schema.LoginResult, error) {
+	var reply schema.LoginResult
+	userID, username, err := a.Auth.ParseToken(token, "refresh_token")
 	if err != nil {
-		slog.Error("parse token failed", "error", err)
-		return nil, errors.New400Error(err.Error())
+		return reply, err
 	}
-	slog.Info("token update", "user_id", userID)
-	tokenInfo, err := a.Auth.GenerateToken(userID, username, isAdmin)
+	tokenInfo, err := a.Auth.GenerateToken(userID, username)
 	if err != nil {
-		slog.Error("generate new token failed", "error", err)
-		return nil, errors.New400Error(err.Error())
+		return reply, err
 	}
-
-	res := &schema.LoginResult{
-		AccessToken:  tokenInfo.GetAccessToken(),
-		RefreshToken: tokenInfo.GetRefreshToken(),
-	}
-
-	return res, nil
+	reply.AccessToken = tokenInfo.GetAccessToken()
+	reply.RefreshToken = tokenInfo.GetRefreshToken()
+	return reply, nil
 }

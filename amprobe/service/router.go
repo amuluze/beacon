@@ -7,6 +7,7 @@ package service
 import (
 	"amprobe/pkg/auth"
 	"amprobe/service/middleware"
+	"github.com/casbin/casbin/v2"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
@@ -29,8 +30,9 @@ type IRouter interface {
 }
 
 type Router struct {
-	config *Config
-	auth   auth.Auther
+	config   *Config
+	auth     auth.Auther
+	enforcer *casbin.SyncedEnforcer
 
 	containerAPI *containerAPI.ContainerAPI
 	hostAPI      *hostAPI.HostAPI
@@ -58,6 +60,15 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 	if a.config.Auth.Enable {
 		app.Use(middleware.UserAuthMiddleware(
 			a.auth,
+			middleware.AllowPathPrefixSkipper("/v1/index/index"),
+			middleware.AllowPathPrefixSkipper("/v1/auth/login"),
+			middleware.AllowPathPrefixSkipper("/v1/auth/token_update"),
+		))
+	}
+
+	if a.config.Casbin.Enable {
+		app.Use(middleware.CasbinMiddleware(
+			a.enforcer,
 			middleware.AllowPathPrefixSkipper("/v1/index/index"),
 			middleware.AllowPathPrefixSkipper("/v1/auth/login"),
 			middleware.AllowPathPrefixSkipper("/v1/auth/token_update"),
