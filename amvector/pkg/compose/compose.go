@@ -68,7 +68,6 @@ func DockerComposeConfig() DockerCompose {
 	volumes := []string{
 		"/data/amprobe/resources/amprobe/configs:/app/configs",
 		"/data/amprobe/resources/amprobe/nginx:/etc/nginx",
-		"/data/amprobe/resources/amprobe/nginx/conf.d:/etc/nginx/conf.d",
 		"/data/amprobe/resources/amvector/socks/vector.sock:/app/vector.sock",
 		"/data/amprobe/logs/amprobe:/app/logs",
 	}
