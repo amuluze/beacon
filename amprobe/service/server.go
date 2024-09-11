@@ -63,7 +63,7 @@ func Init(ctx context.Context, opts ...Option) (func(), error) {
 	slog.SetDefault(injector.Logger.Logger)
 
 	// 初始化预设数据
-	injector.Prepare.Init(injector.Config)
+	injector.Prepare.Init(injector.App)
 
 	httpServerCleanFunc := InitHttpServer(ctx, injector.Config, injector.App)
 

@@ -63,7 +63,7 @@ func UserAuthMiddleware(a auth.Auther, skippers ...SkipperFunc) fiber.Handler {
 			}
 			return nil
 		} else {
-			return fiberx.Failure(c, err)
+			return fiberx.Failure(c, errors.New400Error(err.Error()))
 		}
 	}
 }

@@ -6,9 +6,7 @@ package auth
 
 import (
 	"amprobe/service/auth/api"
-
 	"amprobe/service/auth/repository"
-
 	"amprobe/service/auth/service"
 
 	"github.com/google/wire"
