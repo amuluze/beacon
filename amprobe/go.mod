@@ -1,6 +1,8 @@
 module amprobe
 
-go 1.21
+go 1.22
+
+toolchain go1.22.3
 
 require (
 	github.com/amuluze/amutool/logger v0.0.0-20240821104128-caed9cc0d402
