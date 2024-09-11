@@ -26,6 +26,7 @@ func BuildInjector(configFile string) (*Injector, func(), error) {
 		model.Set,
 		auth.Set,
 		audit.Set,
+		account.Set,
 		NewLoggerHandler,
 		NewTermHandler,
 		RouterSet,

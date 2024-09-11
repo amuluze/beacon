@@ -8,6 +8,7 @@ require (
 	github.com/amuluze/amutool/logger v0.0.0-20240821104128-caed9cc0d402
 	github.com/amuluze/amutool/timex v0.0.0-20240821104128-caed9cc0d402
 	github.com/amuluze/docker v0.0.0-20240816152853-43a001dd2bf9
+	github.com/casbin/casbin/v2 v2.99.0
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/gofiber/contrib/websocket v1.3.2
 	github.com/gofiber/fiber/v2 v2.52.5
@@ -32,6 +33,8 @@ require (
 	github.com/akutz/memconn v0.1.0 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/apache/thrift v0.20.0 // indirect
+	github.com/bmatcuk/doublestar/v4 v4.6.1 // indirect
+	github.com/casbin/govaluate v1.2.0 // indirect
 	github.com/cenk/backoff v2.2.1+incompatible // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect

@@ -12,6 +12,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/wire"
 
+	accountAPI "amprobe/service/account/api"
 	auditAPI "amprobe/service/audit/api"
 	authAPI "amprobe/service/auth/api"
 	containerAPI "amprobe/service/container/api"
@@ -35,6 +36,7 @@ type Router struct {
 	hostAPI      *hostAPI.HostAPI
 	authAPI      *authAPI.AuthAPI
 	auditAPI     *auditAPI.AuditAPI
+	accountAPI   *accountAPI.AccountAPI
 
 	loggerHandler *LoggerHandler
 	termHandler   *TermHandler
@@ -69,6 +71,27 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			gIndex.Get("/index", func(c *fiber.Ctx) error {
 				return c.SendString("hello world")
 			})
+		}
+
+		gUser := v1.Group("user")
+		{
+			gUser.Get("/user_query", a.accountAPI.UserQuery).Name("查询用户")
+			gUser.Post("/user_create", a.accountAPI.UserCreate).Name("创建用户")
+			gUser.Post("/user_update", a.accountAPI.UserUpdate).Name("更新用户")
+			gUser.Post("/user_delete", a.accountAPI.UserDelete).Name("删除用户")
+		}
+
+		gRole := v1.Group("role")
+		{
+			gRole.Get("/role_query", a.accountAPI.RoleQuery).Name("查询角色")
+			gRole.Post("/role_create", a.accountAPI.RoleCreate).Name("创建角色")
+			gRole.Post("/role_update", a.accountAPI.RoleUpdate).Name("更新角色")
+			gRole.Post("/role_delete", a.accountAPI.RoleDelete).Name("删除角色")
+		}
+
+		gResource := v1.Group("resource")
+		{
+			gResource.Get("/resource_query", a.accountAPI.ResourceQuery).Name("查询资源")
 		}
 
 		gAuth := v1.Group("auth")
