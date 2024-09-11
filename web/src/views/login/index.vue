@@ -48,7 +48,7 @@
                         >
                         </el-input>
                     </el-form-item>
-                    <el-button class="btn" size="large" type="primary" @click.prevent="handleLogin"> 登录 </el-button class="btn">
+                    <el-button class="btn" size="large" type="primary" @click.prevent="handleLogin"> 登录 </el-button>
                 </el-form>
             </div>
         </div>
