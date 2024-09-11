@@ -5,7 +5,8 @@
 package validatex
 
 import (
-	"github.com/amuluze/amutool/errors"
+	"amprobe/pkg/errors"
+
 	"github.com/go-playground/validator/v10"
 )
 

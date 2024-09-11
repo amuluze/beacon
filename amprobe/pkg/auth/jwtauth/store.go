@@ -8,7 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/amuluze/amutool/errors"
+	"amprobe/pkg/errors"
+
 	"github.com/patrickmn/go-cache"
 )
 

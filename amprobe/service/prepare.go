@@ -12,7 +12,8 @@ import (
 	"amprobe/pkg/utils/uuid"
 	"amprobe/service/model"
 
-	"github.com/amuluze/amutool/database"
+	"common/database"
+
 	"github.com/google/wire"
 	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"

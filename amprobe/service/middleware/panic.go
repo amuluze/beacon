@@ -11,7 +11,8 @@ import (
 
 	"amprobe/pkg/fiberx"
 
-	"github.com/amuluze/amutool/errors"
+	"amprobe/pkg/errors"
+
 	"github.com/gofiber/fiber/v2"
 )
 

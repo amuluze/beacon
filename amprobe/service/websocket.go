@@ -16,7 +16,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/amuluze/amutool/errors"
+	"amprobe/pkg/errors"
+
 	"github.com/amuluze/docker"
 	"github.com/gofiber/contrib/websocket"
 	"golang.org/x/crypto/ssh"

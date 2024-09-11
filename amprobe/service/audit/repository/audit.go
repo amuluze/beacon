@@ -10,7 +10,7 @@ import (
 
 	"amprobe/service/schema"
 
-	"github.com/amuluze/amutool/database"
+	"common/database"
 	"github.com/google/wire"
 )
 

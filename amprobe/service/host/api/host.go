@@ -13,7 +13,8 @@ import (
 	"amprobe/service/host/service"
 	"amprobe/service/schema"
 
-	"github.com/amuluze/amutool/errors"
+	"amprobe/pkg/errors"
+
 	"github.com/gofiber/fiber/v2"
 )
 

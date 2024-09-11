@@ -13,7 +13,8 @@ import (
 	"amprobe/pkg/psutil"
 	"amprobe/service/model"
 
-	"github.com/amuluze/amutool/database"
+	"common/database"
+
 	"github.com/amuluze/amutool/timex"
 	"github.com/amuluze/docker"
 	"github.com/patrickmn/go-cache"

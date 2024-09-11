@@ -12,8 +12,10 @@ import (
 
 	"amprobe/service/schema"
 
-	"github.com/amuluze/amutool/database"
-	"github.com/amuluze/amutool/errors"
+	"common/database"
+
+	"amprobe/pkg/errors"
+
 	"github.com/google/wire"
 	"gorm.io/gorm"
 )

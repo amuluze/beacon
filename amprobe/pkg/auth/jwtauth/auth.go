@@ -10,8 +10,8 @@ import (
 
 	"amprobe/pkg/auth"
 	"amprobe/service/model"
+	"common/database"
 
-	"github.com/amuluze/amutool/database"
 	"github.com/golang-jwt/jwt"
 )
 

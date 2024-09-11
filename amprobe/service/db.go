@@ -9,7 +9,7 @@ import (
 
 	"amprobe/service/model"
 
-	"github.com/amuluze/amutool/database"
+	"common/database"
 )
 
 func NewDB(config *Config, models *model.Models) (*database.DB, error) {
