@@ -22,7 +22,7 @@ import (
 
 func wrapUserAuthContext(c *fiber.Ctx, userID string, username string) {
 	ctx := contextx.NewUserID(c.UserContext(), userID)
-	ctx = contextx.NewUsername(c.UserContext(), username)
+	ctx = contextx.NewUsername(ctx, username)
 	c.SetUserContext(ctx)
 }
 
@@ -37,7 +37,6 @@ func UserAuthMiddleware(a auth.Auther, skippers ...SkipperFunc) fiber.Handler {
 			return c.Next()
 		}
 
-		slog.Info("auth middleware", "token", fiberx.GetToken(c))
 		var userID string
 		var username string
 		var err error
@@ -47,22 +46,20 @@ func UserAuthMiddleware(a auth.Auther, skippers ...SkipperFunc) fiber.Handler {
 			slog.Error("invalid token", "err", err)
 			return fiberx.Unauthorized(c)
 		} else if err != nil {
-			slog.Error("logout failed", "error", err)
+			slog.Error("token parse failed", "error", err)
 			return fiberx.Unauthorized(c)
 		}
 
 		slog.Info("user id", "user_id", userID)
 		wrapUserAuthContext(c, userID, username)
-		if c.Method() == "POST" && c.Path() != "/v1/auth/logout" {
-			return fiberx.Forbidden(c)
-		}
-		if err := c.Next(); err == nil {
-			if c.Method() == "POST" || c.Path() == "/v1/auth/logout" {
+
+		err = c.Next()
+		if err == nil {
+			if c.Method() == "POST" {
 				a.RecordAudit(username, OperateEvent[c.Path()])
 			}
 			return nil
-		} else {
-			return fiberx.Failure(c, errors.New400Error(err.Error()))
 		}
+		return err
 	}
 }

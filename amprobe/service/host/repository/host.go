@@ -73,13 +73,13 @@ func (h *HostRepo) CPUUsage(ctx context.Context, args rpcSchema.CPUUsageArgs) (r
 
 func (h *HostRepo) MemInfo(ctx context.Context, args rpcSchema.MemoryInfoArgs) (rpcSchema.MemoryInfoReply, error) {
 	var reply rpcSchema.MemoryInfoReply
-	err := h.RPCClient.Call(ctx, "MemInfo", args, &reply)
+	err := h.RPCClient.Call(ctx, "MemoryInfo", args, &reply)
 	return reply, err
 }
 
 func (h *HostRepo) MemUsage(ctx context.Context, args rpcSchema.MemoryUsageArgs) (rpcSchema.MemoryUsageReply, error) {
 	var reply rpcSchema.MemoryUsageReply
-	err := h.RPCClient.Call(ctx, "MemUsage", args, &reply)
+	err := h.RPCClient.Call(ctx, "MemoryUsage", args, &reply)
 	return reply, err
 }
 

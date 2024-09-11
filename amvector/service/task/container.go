@@ -132,7 +132,7 @@ func (a *Task) NetworkTask(timestamp time.Time) error {
 		}
 		list = append(list, model.Network{
 			Timestamp: timestamp,
-			NetworkID: net.ID,
+			NetworkID: net.ID[:6],
 			Name:      net.Name,
 			Driver:    net.Driver,
 			Created:   net.Created,

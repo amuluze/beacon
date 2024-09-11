@@ -8,11 +8,13 @@ import (
 	rpcSchema "common/rpc/schema"
 	"context"
 	"encoding/json"
-	"gorm.io/gorm"
 	"log/slog"
 	"time"
 
+	"gorm.io/gorm"
+
 	"amvector/service/model"
+
 	"github.com/amuluze/docker"
 )
 
@@ -359,9 +361,26 @@ func (s *Service) networkTask() {
 }
 
 func (s *Service) NetworkList(ctx context.Context, args rpcSchema.NetworkQueryArgs, reply *rpcSchema.NetworkQueryReply) error {
-	if err := s.DB.Model(&model.Network{}).Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(reply).Error; err != nil {
+	var networks []model.Network
+	if err := s.DB.Model(&model.Network{}).Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&networks).Error; err != nil {
 		return err
 	}
+	var list []rpcSchema.Network
+	for _, n := range networks {
+		list = append(list, rpcSchema.Network{
+			Timestamp: n.Timestamp,
+			NetworkID: n.NetworkID,
+			Name:      n.Name,
+			Driver:    n.Driver,
+			Scope:     n.Scope,
+			Created:   n.Created,
+			Internal:  n.Internal,
+			Subnet:    n.Subnet,
+			Gateway:   n.Gateway,
+			Labels:    n.Labels,
+		})
+	}
+	reply.Data = list
 	return nil
 }
 
