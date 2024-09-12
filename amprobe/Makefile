@@ -13,15 +13,16 @@ CONFIG_FILE := $(shell pwd)/configs/config.toml
 dev:
 	@$(GO) run $(SERVER)/main.go run -c $(CONFIG_FILE)
 
-.PHONY: bin
-# build bin
-bin:
-	$(GO) build -o $(APP) $(SERVER)
-
 .PHONY: wire
 # generate wire
 wire:
 	wire ./service/
+
+.PHONY: bin
+# build bin
+bin: wire
+	$(GO) build -o $(APP) $(SERVER)
+
 
 .PHONY: amd64
 # docker amd64 image
