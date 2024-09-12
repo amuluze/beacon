@@ -50,7 +50,7 @@ func (a *HostAPI) CPUUsage(ctx *fiber.Ctx) error {
 	if err := fiberx.ParseQuery(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	if err := validatex.ValidateStruct(args); err != nil {
+	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	usage, err := a.HostService.CPUUsage(c, args)
@@ -75,7 +75,7 @@ func (a *HostAPI) MemUsage(ctx *fiber.Ctx) error {
 	if err := fiberx.ParseQuery(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	if err := validatex.ValidateStruct(args); err != nil {
+	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	usage, err := a.HostService.MemUsage(c, args)
@@ -100,7 +100,7 @@ func (a *HostAPI) DiskUsage(ctx *fiber.Ctx) error {
 	if err := fiberx.ParseQuery(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	if err := validatex.ValidateStruct(args); err != nil {
+	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	usage, err := a.HostService.DiskUsage(c, args)
@@ -116,7 +116,7 @@ func (a *HostAPI) NetUsage(ctx *fiber.Ctx) error {
 	if err := fiberx.ParseQuery(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	if err := validatex.ValidateStruct(args); err != nil {
+	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	usage, err := a.HostService.NetUsage(c, args)
@@ -132,7 +132,7 @@ func (a *HostAPI) FilesSearch(ctx *fiber.Ctx) error {
 	if err := fiberx.ParseQuery(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	if err := validatex.ValidateStruct(args); err != nil {
+	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	files, err := a.HostService.FilesSearch(c, args)
@@ -171,7 +171,7 @@ func (a *HostAPI) FileDownload(ctx *fiber.Ctx) error {
 	if err := fiberx.ParseBody(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	if err := validatex.ValidateStruct(args); err != nil {
+	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 
@@ -187,7 +187,7 @@ func (a *HostAPI) FileDelete(ctx *fiber.Ctx) error {
 	if err := fiberx.ParseBody(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	if err := validatex.ValidateStruct(args); err != nil {
+	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	slog.Info("file delete", "args", args)
@@ -204,7 +204,7 @@ func (a *HostAPI) FileCreate(ctx *fiber.Ctx) error {
 	if err := fiberx.ParseBody(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	if err := validatex.ValidateStruct(args); err != nil {
+	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	err := a.HostService.FileCreate(c, args)
@@ -220,7 +220,7 @@ func (a *HostAPI) FolderCreate(ctx *fiber.Ctx) error {
 	if err := fiberx.ParseBody(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	if err := validatex.ValidateStruct(args); err != nil {
+	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	err := a.HostService.FolderCreate(c, args)
@@ -246,7 +246,7 @@ func (a *HostAPI) SetDNSSettings(ctx *fiber.Ctx) error {
 	if err := fiberx.ParseBody(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	if err := validatex.ValidateStruct(args); err != nil {
+	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	err := a.HostService.SetDNSSettings(c, args)
@@ -272,7 +272,7 @@ func (a *HostAPI) SetSystemTime(ctx *fiber.Ctx) error {
 	if err := fiberx.ParseBody(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	if err := validatex.ValidateStruct(args); err != nil {
+	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	err := a.HostService.SetSystemTime(c, args)
@@ -308,7 +308,7 @@ func (a *HostAPI) SetSystemTimeZone(ctx *fiber.Ctx) error {
 	if err := fiberx.ParseBody(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	if err := validatex.ValidateStruct(args); err != nil {
+	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	err := a.HostService.SetSystemTimeZone(c, args)

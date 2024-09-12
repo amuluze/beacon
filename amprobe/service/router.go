@@ -7,8 +7,8 @@ package service
 import (
 	"amprobe/pkg/auth"
 	"amprobe/service/middleware"
-	"github.com/casbin/casbin/v2"
 
+	"github.com/casbin/casbin/v2"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/wire"

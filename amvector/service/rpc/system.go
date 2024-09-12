@@ -138,7 +138,7 @@ func (s *Service) SetDockerRegistryMirrors(ctx context.Context, args rpcSchema.S
 			"registry-mirrors": args.Mirrors,
 		}
 		// 将 daemonMap 写入 constants.DaemonJsonPath 文件
-		setting, err := json.Marshal(daemonMap)
+		setting, err := json.MarshalIndent(daemonMap, "", "    ")
 		if err != nil {
 			return err
 		}
@@ -155,7 +155,7 @@ func (s *Service) SetDockerRegistryMirrors(ctx context.Context, args rpcSchema.S
 			return err
 		}
 		daemonMap["registry-mirrors"] = args.Mirrors
-		setting, err := json.Marshal(daemonMap)
+		setting, err := json.MarshalIndent(daemonMap, "", "    ")
 		if err != nil {
 			return err
 		}
@@ -163,6 +163,14 @@ func (s *Service) SetDockerRegistryMirrors(ctx context.Context, args rpcSchema.S
 			return err
 		}
 	}
-	// TODO: 重启 Docker 服务
+	// 重启 Docker 服务
+	_, err := utils.RunCommand(ctx, "systemctl", "daemon-reload")
+	if err != nil {
+		return err
+	}
+	_, err = utils.RunCommand(ctx, "systemctl", "restart", "docker-daemon")
+	if err != nil {
+		return err
+	}
 	return nil
 }

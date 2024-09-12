@@ -11,9 +11,7 @@ import (
 	"path/filepath"
 
 	"amvector/pkg/resources"
-
 	"amvector/pkg/utils"
-
 	"gopkg.in/yaml.v2"
 )
 

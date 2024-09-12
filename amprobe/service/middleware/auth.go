@@ -30,7 +30,7 @@ func UserAuthMiddleware(a auth.Auther, skippers ...SkipperFunc) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		if SkipHandler(c, skippers...) {
 			var args schema.LoginArgs
-			_ = c.BodyParser(&args)
+			_ = fiberx.ParseBody(c, &args)
 			if c.Path() == "/v1/auth/login" {
 				a.RecordAudit(args.Username, "登录")
 			}
@@ -56,7 +56,7 @@ func UserAuthMiddleware(a auth.Auther, skippers ...SkipperFunc) fiber.Handler {
 		err = c.Next()
 		if err == nil {
 			if c.Method() == "POST" {
-				a.RecordAudit(username, OperateEvent[c.Path()])
+				a.RecordAudit(username, c.Route().Name)
 			}
 			return nil
 		}

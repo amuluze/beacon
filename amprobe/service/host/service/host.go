@@ -5,13 +5,14 @@
 package service
 
 import (
-	rpcSchema "common/rpc/schema"
 	"context"
 	"fmt"
 	"strings"
 
 	"amprobe/service/host/repository"
 	"amprobe/service/schema"
+	rpcSchema "common/rpc/schema"
+
 	"github.com/google/wire"
 )
 

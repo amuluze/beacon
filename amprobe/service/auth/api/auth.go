@@ -30,7 +30,7 @@ func (a *AuthAPI) Login(ctx *fiber.Ctx) error {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 
-	if err := validatex.ValidateStruct(args); err != nil {
+	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 
@@ -59,7 +59,7 @@ func (a *AuthAPI) PassUpdate(ctx *fiber.Ctx) error {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 
-	if err := validatex.ValidateStruct(args); err != nil {
+	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 

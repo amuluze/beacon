@@ -10,6 +10,7 @@ import (
 	"amprobe/pkg/validatex"
 	"amprobe/service/account/service"
 	"amprobe/service/schema"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -24,7 +25,7 @@ func NewAccountAPI(accountService service.IAccountService) *AccountAPI {
 func (a *AccountAPI) UserQuery(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	var args schema.UserQueryArgs
-	if err := ctx.BodyParser(&args); err != nil {
+	if err := fiberx.ParseQuery(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 
@@ -42,7 +43,7 @@ func (a *AccountAPI) UserQuery(ctx *fiber.Ctx) error {
 func (a *AccountAPI) UserCreate(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	var args schema.UserCreateArgs
-	if err := ctx.BodyParser(&args); err != nil {
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	if err := validatex.ValidateStruct(&args); err != nil {
@@ -58,7 +59,7 @@ func (a *AccountAPI) UserCreate(ctx *fiber.Ctx) error {
 func (a *AccountAPI) UserUpdate(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	var args schema.UserUpdateArgs
-	if err := ctx.BodyParser(&args); err != nil {
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	if err := validatex.ValidateStruct(&args); err != nil {
@@ -74,7 +75,7 @@ func (a *AccountAPI) UserUpdate(ctx *fiber.Ctx) error {
 func (a *AccountAPI) UserDelete(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	var args schema.UserDeleteArgs
-	if err := ctx.BodyParser(&args); err != nil {
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	if err := validatex.ValidateStruct(&args); err != nil {
@@ -90,7 +91,7 @@ func (a *AccountAPI) UserDelete(ctx *fiber.Ctx) error {
 func (a *AccountAPI) RoleQuery(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	var args schema.RoleQueryArgs
-	if err := ctx.BodyParser(&args); err != nil {
+	if err := fiberx.ParseQuery(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	if err := validatex.ValidateStruct(&args); err != nil {
@@ -106,7 +107,7 @@ func (a *AccountAPI) RoleQuery(ctx *fiber.Ctx) error {
 func (a *AccountAPI) RoleCreate(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	var args schema.RoleCreateArgs
-	if err := ctx.BodyParser(&args); err != nil {
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	if err := validatex.ValidateStruct(&args); err != nil {
@@ -122,7 +123,7 @@ func (a *AccountAPI) RoleCreate(ctx *fiber.Ctx) error {
 func (a *AccountAPI) RoleUpdate(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	var args schema.RoleUpdateArgs
-	if err := ctx.BodyParser(&args); err != nil {
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	if err := validatex.ValidateStruct(&args); err != nil {
@@ -138,7 +139,7 @@ func (a *AccountAPI) RoleUpdate(ctx *fiber.Ctx) error {
 func (a *AccountAPI) RoleDelete(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	var args schema.RoleDeleteArgs
-	if err := ctx.BodyParser(&args); err != nil {
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	if err := validatex.ValidateStruct(&args); err != nil {
@@ -154,7 +155,7 @@ func (a *AccountAPI) RoleDelete(ctx *fiber.Ctx) error {
 func (a *AccountAPI) ResourceQuery(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	var args schema.ResourceQueryArgs
-	if err := ctx.BodyParser(&args); err != nil {
+	if err := fiberx.ParseQuery(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	if err := validatex.ValidateStruct(&args); err != nil {

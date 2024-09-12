@@ -5,18 +5,18 @@
 package service
 
 import (
+	"log/slog"
+
 	"amprobe/pkg/utils/hash"
 	"amprobe/pkg/utils/uuid"
 	"amprobe/service/model"
-	"github.com/casbin/casbin/v2"
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm/clause"
-	"log/slog"
-
 	"common/database"
 
+	"github.com/casbin/casbin/v2"
+	"github.com/gofiber/fiber/v2"
 	"github.com/google/wire"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var PrepareSet = wire.NewSet(wire.Struct(new(Prepare), "*"))
