@@ -85,7 +85,7 @@ func (c *Config) loadDefault(prefix string) error {
 	c.Variables.ContainerPrefix = "/"
 	c.loadVariables()
 
-	c.Log.Output = filepath.Join(c.Variables.HostLogsDir, "vector.log")
+	c.Log.Output = filepath.Join(c.Variables.HostLogsDir, resources.AmvectorFolder, "vector.log")
 	c.Log.Level = "info"
 	c.Log.Rotation = 1
 	c.Log.MaxAge = 7
