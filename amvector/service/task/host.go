@@ -135,9 +135,9 @@ func (a *Task) NetTask(timestamp time.Time) error {
  */
 
 func (a *Task) CleanTask() {
-	ts := time.Now().Add(-time.Duration(a.maxAge) * 24 * time.Hour)
-	a.db.Where("timestamp < ?", ts).Delete(&model.CPU{})
-	a.db.Where("timestamp < ?", ts).Delete(&model.Memory{})
-	a.db.Where("timestamp < ?", ts).Delete(&model.Disk{})
-	a.db.Where("timestamp < ?", ts).Delete(&model.Net{})
+	ts := time.Now().Add(-time.Duration(a.maxAge) * 24 * time.Hour).Unix()
+	a.db.Model(&model.CPU{}).Unscoped().Where("timestamp < ?", ts).Delete(&model.CPU{})
+	a.db.Model(&model.Memory{}).Unscoped().Where("timestamp < ?", ts).Delete(&model.Memory{})
+	a.db.Model(&model.Disk{}).Unscoped().Where("timestamp < ?", ts).Delete(&model.Disk{})
+	a.db.Model(&model.Net{}).Unscoped().Where("timestamp < ?", ts).Delete(&model.Net{})
 }

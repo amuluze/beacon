@@ -207,11 +207,11 @@ func (h *HostService) NetUsage(ctx context.Context, args schema.NetworkUsageArgs
 				BytesSent: i.BytesSent,
 				BytesRecv: i.BytesRecv,
 			})
-			reply.Usage = append(reply.Usage, schema.NetUsage{
-				Ethernet: item.Ethernet,
-				Data:     data,
-			})
 		}
+		reply.Usage = append(reply.Usage, schema.NetUsage{
+			Ethernet: item.Ethernet,
+			Data:     data,
+		})
 	}
 
 	return reply, nil

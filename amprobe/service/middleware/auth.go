@@ -50,7 +50,6 @@ func UserAuthMiddleware(a auth.Auther, skippers ...SkipperFunc) fiber.Handler {
 			return fiberx.Unauthorized(c)
 		}
 
-		slog.Info("user id", "user_id", userID)
 		wrapUserAuthContext(c, userID, username)
 
 		err = c.Next()

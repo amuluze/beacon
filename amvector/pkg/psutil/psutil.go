@@ -6,7 +6,6 @@ package psutil
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"strings"
 	"time"
@@ -67,17 +66,13 @@ func GetDiskInfo(devices map[string]struct{}) (map[string]DiskInfo, error) {
 	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{})
 	diskMap := make(map[string]DiskInfo)
 	infos, _ := disk.PartitionsWithContext(ctx, false)
-	slog.Info("disk infos", "infos", infos)
-	slog.Info("devices", "devices", devices)
 	for _, info := range infos {
 		usedInfo, err := disk.UsageWithContext(ctx, info.Mountpoint)
 		if usedInfo == nil {
 			slog.Error("get disk usage err", "err", err)
 			continue
 		}
-		slog.Info("used info", "usedInfo", usedInfo)
 		dev := strings.Split(info.Device, "/")[len(strings.Split(info.Device, "/"))-1]
-		slog.Info(">>>>>>>>>>>>>>>>>>>> dev", "dev", dev)
 		if _, ok := devices[dev]; !ok {
 			continue
 		}
@@ -98,7 +93,6 @@ func GetDiskIO(devices map[string]struct{}) (map[string]DiskIO, error) {
 	for k := range devices {
 		names = append(names, k)
 	}
-	slog.Error("device names", "names", names)
 	stat, err := disk.IOCountersWithContext(ctx, names...)
 	if err != nil {
 		slog.Error("get disk io err", "err", err)
@@ -106,7 +100,6 @@ func GetDiskIO(devices map[string]struct{}) (map[string]DiskIO, error) {
 	}
 	// 将获取到的磁盘IO信息填充到map中
 	for k, v := range stat {
-		slog.Info("disk stat value", "value", v, "key", k)
 		if _, ok := devices[k]; !ok {
 			continue
 		}
@@ -127,8 +120,6 @@ func GetNetworkIO(eth map[string]struct{}) (map[string]NetIO, error) {
 		slog.Error("get network io err", "err", err)
 		return netMap, err
 	}
-	slog.Error("eth", "eth", eth)
-	slog.Error("IOCountersStat", "IOCountersStat", IOCountersStat)
 	for _, stat := range IOCountersStat {
 		if _, ok := eth[stat.Name]; !ok {
 			continue
@@ -159,21 +150,4 @@ func GetSystemInfo() (*SystemInfo, error) {
 		KernelArch:      info.KernelArch,
 	}
 	return systemInfo, nil
-}
-
-// 字节单位转换
-func fmtByte(size int64) string {
-	if size < 1024 {
-		return fmt.Sprintf("%.2fB", float64(size)/float64(1))
-	} else if size < 1024*1024 {
-		return fmt.Sprintf("%.2fKB", float64(size)/float64(1024))
-	} else if size < 1024*1024*1024 {
-		return fmt.Sprintf("%.2fMB", float64(size)/float64(1024*1024))
-	} else if size < 1024*1024*1024*1024 {
-		return fmt.Sprintf("%.2fGB", float64(size)/float64(1024*1024*1024))
-	} else if size < 1024*1024*1024*1024*1024 {
-		return fmt.Sprintf("%.2fTB", float64(size)/float64(1024*1024*1024*1024))
-	} else {
-		return fmt.Sprintf("%.2fEB", float64(size)/float64(1024*1024*1024*1024*2014))
-	}
 }

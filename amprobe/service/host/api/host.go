@@ -6,7 +6,6 @@ package api
 
 import (
 	"fmt"
-	"log/slog"
 
 	"amprobe/pkg/fiberx"
 	"amprobe/pkg/validatex"
@@ -153,13 +152,11 @@ func (a *HostAPI) FileUpload(ctx *fiber.Ctx) error {
 	}
 	// var args schema.FileUploadArgs
 	prefix := ctx.FormValue("prefix", "")
-	slog.Info("file upload", "filepath", fmt.Sprintf("/tmp/%s", file.Filename), "prefix", prefix)
 	args := schema.FileUploadArgs{
 		SourceFilePath: fmt.Sprintf("/tmp/%s", file.Filename),
 		TargetFilePath: fmt.Sprintf("%s/%s", prefix, file.Filename),
 	}
 	if err := a.HostService.FileUpload(c, args); err != nil {
-		slog.Error("file upload error", "err", err)
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	return fiberx.NoContent(ctx)
@@ -190,7 +187,6 @@ func (a *HostAPI) FileDelete(ctx *fiber.Ctx) error {
 	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	slog.Info("file delete", "args", args)
 	err := a.HostService.FileDelete(c, args)
 	if err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
