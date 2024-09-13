@@ -14,7 +14,7 @@ import (
 
 func (s *Service) HostInfo(ctx context.Context, args rpcSchema.HostInfoArgs, reply *rpcSchema.HostInfoReply) error {
 	var info model.Host
-	if err := s.DB.Order("timestamp desc").Take(&info).Error; err != nil {
+	if err := s.DB.Model(&model.Host{}).Order("timestamp desc").First(&info).Error; err != nil {
 		return err
 	}
 	reply.Timestamp = info.Timestamp.Unix()
@@ -30,7 +30,7 @@ func (s *Service) HostInfo(ctx context.Context, args rpcSchema.HostInfoArgs, rep
 
 func (s *Service) CPUInfo(ctx context.Context, args rpcSchema.CPUInfoArgs, reply *rpcSchema.CPUInfoReply) error {
 	var info model.CPU
-	if err := s.DB.Order("timestamp desc").Take(&info).Error; err != nil {
+	if err := s.DB.Model(&model.CPU{}).Order("timestamp desc").First(&info).Error; err != nil {
 		return err
 	}
 	reply.Percent = info.CPUPercent
@@ -39,7 +39,7 @@ func (s *Service) CPUInfo(ctx context.Context, args rpcSchema.CPUInfoArgs, reply
 
 func (s *Service) CPUUsage(ctx context.Context, args rpcSchema.CPUUsageArgs, reply *rpcSchema.CPUUsageReply) error {
 	var results []model.CPU
-	if err := s.DB.Model(&model.CPU{}).Where("timestamp > ? and timestamp < ?", time.Unix(args.StartTime, 0), time.Unix(args.EndTime, 0)).Order("timestamp asc").Find(&results).Error; err != nil {
+	if err := s.DB.Model(&model.CPU{}).Where("timestamp > ?", time.Unix(args.StartTime, 0)).Order("timestamp asc").Find(&results).Error; err != nil {
 		return nil
 	}
 	var list []rpcSchema.Usage
@@ -55,7 +55,7 @@ func (s *Service) CPUUsage(ctx context.Context, args rpcSchema.CPUUsageArgs, rep
 
 func (s *Service) MemoryInfo(ctx context.Context, args rpcSchema.MemoryInfoArgs, reply *rpcSchema.MemoryInfoReply) error {
 	var info model.Memory
-	if err := s.DB.Order("timestamp desc").Take(&info).Error; err != nil {
+	if err := s.DB.Model(&model.Memory{}).Order("timestamp desc").First(&info).Error; err != nil {
 		return err
 	}
 	reply.Percent = info.MemPercent

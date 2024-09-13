@@ -7,6 +7,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"amprobe/service/host/repository"
@@ -93,6 +94,7 @@ func (h *HostService) CPUUsage(ctx context.Context, args schema.CPUUsageArgs) (s
 	if err != nil {
 		return reply, err
 	}
+	slog.Info("cpu usage rpc reply", "reply", rpcReply)
 	var list []schema.Usage
 	for _, item := range rpcReply.Data {
 		list = append(list, schema.Usage{
@@ -126,6 +128,7 @@ func (h *HostService) MemUsage(ctx context.Context, args schema.MemoryUsageArgs)
 	if err != nil {
 		return reply, err
 	}
+	slog.Info("memory usage rpc reply", "reply", rpcReply)
 	var list []schema.Usage
 	for _, item := range rpcReply.Data {
 		list = append(list, schema.Usage{
@@ -166,7 +169,7 @@ func (h *HostService) DiskUsage(ctx context.Context, args schema.DiskUsageArgs) 
 	if err != nil {
 		return reply, err
 	}
-
+	slog.Info("disk usage rpc reply", "reply", rpcReply)
 	for _, item := range rpcReply.Usage {
 		var data []schema.DiskIO
 		for _, i := range item.Data {
@@ -195,7 +198,7 @@ func (h *HostService) NetUsage(ctx context.Context, args schema.NetworkUsageArgs
 	if err != nil {
 		return reply, err
 	}
-
+	slog.Info("net usage rpc reply", "reply", rpcReply)
 	for _, item := range rpcReply.Usage {
 		var data []schema.NetIO
 		for _, i := range item.Data {
