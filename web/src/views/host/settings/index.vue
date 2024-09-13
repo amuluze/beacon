@@ -16,7 +16,7 @@
             <el-card shadow="never">
                 <h4>DNS 设置</h4>
                 <el-divider />
-                <div class="am-system-settings__content">
+                <div class="am-profile-settings__content">
                     <span>DNS 设置：</span>
                     <span></span>
                     <svg-icon icon-class="edit" />
