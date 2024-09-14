@@ -190,17 +190,17 @@ type GetSystemTimeZoneListArgs struct {
 }
 
 type GetSystemTimeZoneListReply struct {
-	SystemTimeZoneList []string `json:"system_timeZone_list"`
+	SystemTimeZoneList []string `json:"system_timezone_list"`
 }
 
 type GetSystemTimeZoneArgs struct{}
 
 type GetSystemTimeZoneReply struct {
-	SystemTimeZone string `json:"system_timeZone"`
+	SystemTimeZone string `json:"system_timezone"`
 }
 
 type SetSystemTimeZoneArgs struct {
-	SystemTimeZone string `json:"system_timeZone" validate:"required"`
+	SystemTimeZone string `json:"system_timezone" validate:"required"`
 }
 
 type SetSystemTimeZoneReply struct{}

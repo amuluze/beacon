@@ -52,8 +52,6 @@ func (a *AccountRepository) UserQuery(ctx context.Context, args schema.UserQuery
 		database.WithUserName(args.Username),
 		database.WithUsernames(args.Usernames),
 		database.WithStatus(args.Status),
-		database.WithOffset((args.Page-1)*args.Size),
-		database.WithLimit(args.Size),
 		database.OrderBy("created_at DESC"),
 	)
 
@@ -157,8 +155,6 @@ func (a *AccountRepository) RoleQuery(ctx context.Context, args schema.RoleQuery
 		database.WithName(args.Name),
 		database.WithNames(args.Names),
 		database.WithStatus(args.Status),
-		database.WithOffset((args.Page-1)*args.Size),
-		database.WithLimit(args.Size),
 		database.OrderBy("created_at DESC"),
 	)
 	var roles model.Roles
@@ -250,8 +246,6 @@ func (a *AccountRepository) ResourceQuery(ctx context.Context, args schema.Resou
 	db = database.OptionDB(
 		db,
 		database.WithId(args.ID),
-		database.WithOffset((args.Page-1)*args.Size),
-		database.WithLimit(args.Size),
 	)
 	var resources model.Resources
 	if err := db.Order("created_at desc").Find(&resources).Error; err != nil {

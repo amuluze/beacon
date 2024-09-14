@@ -5,12 +5,13 @@
 package schema
 
 type User struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
-	Remark   string `json:"remark"`
-	IsAdmin  int    `json:"isAdmin"`
-	Status   int    `json:"status"`
-	Roles    []Role `json:"roles"`
+	ID        string `json:"id"`
+	Username  string `json:"username"`
+	Remark    string `json:"remark"`
+	IsAdmin   int    `json:"isAdmin"`
+	Status    int    `json:"status"`
+	Roles     []Role `json:"roles"`
+	CreatedAt string `json:"created_at"`
 }
 
 type Role struct {
@@ -19,6 +20,7 @@ type Role struct {
 	Remark    string     `json:"remark"`
 	Status    int        `json:"status"`
 	Resources []Resource `json:"resources"`
+	CreatedAt string     `json:"created_at"`
 }
 
 type Resource struct {
@@ -35,15 +37,11 @@ type UserQueryArgs struct {
 	Username  string   `json:"username,omitempty"`
 	Usernames []string `json:"usernames,omitempty"`
 	Status    int      `json:"status,omitempty"`
-	Page      int      `json:"page" validate:"required"`
-	Size      int      `json:"size" validate:"required"`
 }
 
 type UserQueryReply struct {
 	Data  []User `json:"data"`
 	Total int    `json:"total"`
-	Page  int    `json:"page"`
-	Size  int    `json:"size"`
 }
 
 type UserCreateArgs struct {
@@ -74,15 +72,11 @@ type RoleQueryArgs struct {
 	Name   string   `json:"name,omitempty"`
 	Names  []string `json:"names,omitempty"`
 	Status int      `json:"status,omitempty"`
-	Page   int      `json:"page" validate:"required"`
-	Size   int      `json:"size" validate:"required"`
 }
 
 type RoleQueryReply struct {
 	Data  []Role `json:"data"`
 	Total int    `json:"total"`
-	Page  int    `json:"page"`
-	Size  int    `json:"size"`
 }
 
 type RoleCreateArgs struct {
@@ -105,9 +99,7 @@ type RoleDeleteArgs struct {
 }
 
 type ResourceQueryArgs struct {
-	ID   string `json:"id,omitempty"`
-	Page int    `json:"page" validate:"required"`
-	Size int    `json:"size" validate:"required"`
+	ID string `json:"id,omitempty"`
 }
 
 type ResourceQueryReply struct {

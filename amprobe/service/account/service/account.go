@@ -39,7 +39,7 @@ func NewAccountService(accountRepository repository.IAccountRepository, enforcer
 }
 
 func (a *AccountService) UserQuery(ctx context.Context, args schema.UserQueryArgs) (schema.UserQueryReply, error) {
-	result := schema.UserQueryReply{Page: args.Page, Size: args.Size, Total: 0, Data: make([]schema.User, 0)}
+	result := schema.UserQueryReply{Total: 0, Data: make([]schema.User, 0)}
 	count, err := a.AccountRepository.UserCount(ctx)
 	if err != nil {
 		return result, err
@@ -60,12 +60,13 @@ func (a *AccountService) UserQuery(ctx context.Context, args schema.UserQueryArg
 			})
 		}
 		result.Data = append(result.Data, schema.User{
-			ID:       u.ID.String(),
-			Username: u.Username,
-			Remark:   u.Remark,
-			Status:   u.Status,
-			Roles:    schemaRoles,
-			IsAdmin:  u.IsAdmin,
+			ID:        u.ID.String(),
+			Username:  u.Username,
+			Remark:    u.Remark,
+			Status:    u.Status,
+			Roles:     schemaRoles,
+			IsAdmin:   u.IsAdmin,
+			CreatedAt: u.CreatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}
 	return result, nil
@@ -131,7 +132,7 @@ func (a *AccountService) UserDelete(ctx context.Context, args schema.UserDeleteA
 }
 
 func (a *AccountService) RoleQuery(ctx context.Context, args schema.RoleQueryArgs) (schema.RoleQueryReply, error) {
-	result := schema.RoleQueryReply{Page: args.Page, Size: args.Size, Total: 0, Data: make([]schema.Role, 0)}
+	result := schema.RoleQueryReply{Total: 0, Data: make([]schema.Role, 0)}
 	count, err := a.AccountRepository.RoleCount(ctx)
 	if err != nil {
 		return result, err
@@ -157,6 +158,7 @@ func (a *AccountService) RoleQuery(ctx context.Context, args schema.RoleQueryArg
 			Name:      role.Name,
 			Status:    role.Status,
 			Remark:    role.Remark,
+			CreatedAt: role.CreatedAt.Format("2006-01-02 15:04:05"),
 			Resources: schemaResources,
 		})
 	}
@@ -226,11 +228,20 @@ func (a *AccountService) RoleDelete(ctx context.Context, args schema.RoleDeleteA
 
 func (a *AccountService) ResourceQuery(ctx context.Context, args schema.ResourceQueryArgs) (schema.ResourceQueryReply, error) {
 	result := schema.ResourceQueryReply{Data: make([]schema.Resource, 0), Total: 0}
+	count, err := a.AccountRepository.ResourceCount(ctx)
+	if err != nil {
+		return result, err
+	}
+	result.Total = int(count)
 	resources, err := a.AccountRepository.ResourceQuery(ctx, args)
 	if err != nil {
 		return result, err
 	}
 	for _, resource := range resources {
+		if resource.Name == "" {
+			continue
+		}
+
 		result.Data = append(result.Data, schema.Resource{
 			ID:     resource.ID.String(),
 			Name:   resource.Name,
