@@ -4,9 +4,43 @@
         <span @click="$router.push('/account/role')">角色</span>
         <span @click="$router.push('/account/api')">接口</span>
     </div>
+
+    <!--  表格主体  -->
+    <el-card shadow="never">
+        <div class="am-table">
+            <el-table :data="data" :key="resourceKey" stripe ref="multipleTable" v-loading="loading">
+                <el-table-column prop="name" label="接口名称" min-width="100"></el-table-column>
+                <el-table-column prop="path" label="接口地址" min-width="160"></el-table-column>
+                <el-table-column prop="method" label="请求方式" min-width="100"></el-table-column>
+                <el-table-column prop="status" label="状态" wmin-idth="100"></el-table-column>
+            </el-table>
+        </div>
+        <div class="am-pagination">
+            <el-config-provider :locale="zhCn">
+                <el-pagination
+                    v-model:current-page="pagination.page"
+                    :page-size="pagination.size"
+                    :page-sizes="pagination.sizeOption"
+                    :total="pagination.total"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    @size-change="(size: number) => pagination.onPageChange(size, params)"
+                    @current-change="(page: number) => pagination.onPageChange(page, params)"
+                />
+            </el-config-provider>
+        </div>
+    </el-card>
 </template>
 <script setup lang="ts">
+import { queryResource } from '@/api/account'
+import { useTable } from '@/hooks/useTable'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
+onMounted(() => {
+    refresh()
+})
+const resourceKey = ref(0)
+const params = {}
+const { data, refresh, loading, pagination } = useTable(queryResource, {}, {})
 </script>
 
 <style scoped lang="scss">

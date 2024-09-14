@@ -62,8 +62,8 @@ import { getTimeState } from '@/utils/state.ts'
 import { Lock, User } from '@element-plus/icons-vue'
 
 const loginForm = reactive<loginFormData>({
-    username: 'amprobe',
-    password: '123456'
+    username: 'admin',
+    password: 'admin123'
 })
 
 const loginFormRules = {
