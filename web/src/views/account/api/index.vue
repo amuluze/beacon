@@ -8,32 +8,27 @@
     <!--  表格主体  -->
     <el-card shadow="never">
         <div class="am-table">
-            <el-table :data="data" :key="resourceKey" stripe ref="multipleTable" v-loading="loading">
+            <el-table :data="data" height="100%" :key="resourceKey" stripe ref="multipleTable" v-loading="loading">
                 <el-table-column prop="name" label="接口名称" min-width="100"></el-table-column>
-                <el-table-column prop="path" label="接口地址" min-width="160"></el-table-column>
-                <el-table-column prop="method" label="请求方式" min-width="100"></el-table-column>
-                <el-table-column prop="status" label="状态" wmin-idth="100"></el-table-column>
+                <el-table-column prop="path" label="URL" min-width="200">
+                    <template #default="scope">
+                        <el-tag>{{ scope.row.path }}</el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="method" label="请求方式" min-width="100" sortable></el-table-column>
+                <el-table-column prop="status" label="状态" wmin-idth="100" sortable>
+                    <template #default="scope">
+                        <el-tag v-if="scope.row.status === 1" type="success">正常</el-tag>
+                        <el-tag v-else type="danger">禁用</el-tag>
+                    </template>
+                </el-table-column>
             </el-table>
-        </div>
-        <div class="am-pagination">
-            <el-config-provider :locale="zhCn">
-                <el-pagination
-                    v-model:current-page="pagination.page"
-                    :page-size="pagination.size"
-                    :page-sizes="pagination.sizeOption"
-                    :total="pagination.total"
-                    layout="total, sizes, prev, pager, next, jumper"
-                    @size-change="(size: number) => pagination.onPageChange(size, params)"
-                    @current-change="(page: number) => pagination.onPageChange(page, params)"
-                />
-            </el-config-provider>
         </div>
     </el-card>
 </template>
 <script setup lang="ts">
 import { queryResource } from '@/api/account'
 import { useTable } from '@/hooks/useTable'
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
 onMounted(() => {
     refresh()
@@ -93,5 +88,11 @@ const { data, refresh, loading, pagination } = useTable(queryResource, {}, {})
             justify-content: flex-end;
         }
     }
+}
+
+@include b(table) {
+    width: 100%;
+    height: calc(100vh - 136px);
+    overflow-y: auto;
 }
 </style>

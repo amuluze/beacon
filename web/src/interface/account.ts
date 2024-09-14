@@ -10,6 +10,7 @@ export interface User {
     remark: string
     is_admin: number
     status: number
+    created_at: string
     roles: Role[]
 }
 
@@ -47,6 +48,7 @@ export interface Role {
     name: string
     remark: string
     status: number
+    created_at: string
     resources: Resource[]
 }
 

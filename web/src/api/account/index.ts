@@ -16,10 +16,9 @@ import {
     UserQueryResult,
     UserUpdateArgs
 } from '@/interface/account'
-import { Pagination } from '@/interface/pagination'
 
-export function queryUser(params: Pagination) {
-    return request.get<UserQueryResult>('/api/v1/user/user_query', params)
+export function queryUser() {
+    return request.get<UserQueryResult>('/api/v1/user/user_query', {})
 }
 
 export function createUser(params: UserCreateArgs) {
@@ -34,8 +33,8 @@ export function deleteUser(params: UserDeleteArgs) {
     return request.post('/api/v1/user/user_delete', params)
 }
 
-export function queryRole(params: Pagination) {
-    return request.get<RoleQueryResult>('/api/v1/role/role_query', params)
+export function queryRole() {
+    return request.get<RoleQueryResult>('/api/v1/role/role_query', {})
 }
 
 export function createRole(params: RoleCreateArgs) {
@@ -50,6 +49,6 @@ export function deleteRole(params: RoleDeleteArgs) {
     return request.post('/api/v1/role/role_delete', params)
 }
 
-export function queryResource(params: Pagination) {
-    return request.get<ResourceQueryResult>('/api/v1/resource/resource_query', params)
+export function queryResource() {
+    return request.get<ResourceQueryResult>('/api/v1/resource/resource_query', {})
 }
