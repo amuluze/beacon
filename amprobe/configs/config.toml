@@ -48,8 +48,8 @@ SSLMode = ""
 [Log]
 Output = "/app/logs/probe.log"
 Level = "debug"
-Rotation = "1"      # 每天切分一个日志文件
-MaxAge = "7"            # 最多保留 7 天的日志
+Rotation = 1                   # 每天切分一个日志文件
+MaxAge = 7                     # 最多保留 7 天的日志
 
 [Auth]
 # 是否启用

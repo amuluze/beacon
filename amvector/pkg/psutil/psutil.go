@@ -142,7 +142,7 @@ func GetSystemInfo() (*SystemInfo, error) {
 	}
 	systemInfo := &SystemInfo{
 		Uptime:          time.Unix(int64(info.BootTime), 0).Local().Format("2006-01-02 15:04:05"),
-		Hostname:        info.HostID,
+		Hostname:        info.Hostname,
 		Os:              info.OS,
 		Platform:        info.Platform,
 		PlatformVersion: info.PlatformVersion,

@@ -8,6 +8,7 @@ import (
 	"amprobe/service/account/repository"
 	"amprobe/service/schema"
 	"context"
+
 	"github.com/casbin/casbin/v2"
 	"github.com/google/wire"
 )
@@ -106,7 +107,6 @@ func (a *AccountService) UserUpdate(ctx context.Context, args schema.UserUpdateA
 
 func (a *AccountService) UserDelete(ctx context.Context, args schema.UserDeleteArgs) error {
 	queryArgs := schema.UserQueryArgs{
-		ID:  args.ID,
 		IDs: args.IDs,
 	}
 	users, err := a.AccountRepository.UserQuery(ctx, queryArgs)
@@ -203,7 +203,6 @@ func (a *AccountService) RoleUpdate(ctx context.Context, args schema.RoleUpdateA
 
 func (a *AccountService) RoleDelete(ctx context.Context, args schema.RoleDeleteArgs) error {
 	queryArgs := schema.RoleQueryArgs{
-		ID:  args.ID,
 		IDs: args.IDs,
 	}
 	roles, err := a.AccountRepository.RoleQuery(ctx, queryArgs)

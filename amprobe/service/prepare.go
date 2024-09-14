@@ -42,7 +42,7 @@ var users = []*model.User{
 		Username: "amprobe",
 		Password: hash.SHA1String("123456"),
 		Remark:   "",
-		IsAdmin:  1,
+		IsAdmin:  2,
 		Status:   1,
 		Roles: []*model.Role{
 			{
@@ -98,21 +98,40 @@ func (a *Prepare) InitAccount(app *fiber.App) {
 		}
 	}
 
+	// 情况历史数据
+	if err := a.db.Exec("delete from sys_user").Error; err != nil {
+		slog.Error("delete from user error", "error", err)
+		return
+	}
+	if err := a.db.Exec("delete from sys_user_roles").Error; err != nil {
+		slog.Error("delete from user_roles error", "error", err)
+		return
+	}
+	if err := a.db.Exec("delete from sys_role").Error; err != nil {
+		slog.Error("delete from role error", "error", err)
+		return
+	}
+	if err := a.db.Exec("delete from sys_role_resources").Error; err != nil {
+		slog.Error("delete from role_resources error", "error", err)
+		return
+	}
+	if err := a.db.Exec("delete from sys_resource").Error; err != nil {
+		slog.Error("delete from resource error", "error", err)
+		return
+	}
+
 	_ = a.db.RunInTransaction(func(tx *gorm.DB) error {
 		for _, u := range users {
-			if u.Username == "admin" {
-				u.Roles[0].Resources = postResources
-			} else {
-				u.Roles[0].Resources = getResources
+			for _, r := range u.Roles {
+				if u.IsAdmin == 1 {
+					r.Resources = postResources
+				} else {
+					r.Resources = getResources
+				}
 			}
-
-			var ou model.User
-			// 不存在则创建
-			if err := a.db.Model(&model.User{}).Where("username = ?", u.Username).Take(&ou).Error; err != nil {
-				a.db.Create(u)
-			} else {
-				// 存在则更新
-				a.db.Model(&model.User{}).Where("username = ?", u.Username).Updates(model.User{Password: u.Password, Status: u.Status, IsAdmin: u.IsAdmin, Roles: u.Roles, Remark: u.Remark})
+			if err := a.db.Create(u).Error; err != nil {
+				slog.Error("create user failed", "error", err)
+				return err
 			}
 		}
 		return nil
@@ -123,6 +142,11 @@ func (a *Prepare) InitCasbinRules() {
 	var users []*model.User
 	if err := a.db.Preload(clause.Associations).Preload("Roles").Find(&users).Error; err != nil {
 		slog.Error("get all users error", "error", err)
+		return
+	}
+
+	if err := a.db.Exec("delete from casbin_rule").Error; err != nil {
+		slog.Error("delete from casbin_rule error", "error", err)
 		return
 	}
 

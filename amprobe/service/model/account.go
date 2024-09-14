@@ -18,7 +18,7 @@ type User struct {
 	Username  string    `gorm:"size:255;uniqueIndex;not null;comment:用户名"`
 	Password  string    `gorm:"size:128;not null;comment:密码"`
 	Remark    string    `gorm:"size:200;comment:备注"`
-	IsAdmin   int       `gorm:"default:0;comment:是否是管理员(1:是 0:否)"`
+	IsAdmin   int       `gorm:"default:0;comment:是否是管理员(1:是 2:否)"`
 	Status    int       `gorm:"index;comment:状态(1:启用 2:停用)"`
 	Roles     Roles     `gorm:"many2many:sys_user_roles;"`
 }

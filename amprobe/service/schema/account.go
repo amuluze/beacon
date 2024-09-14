@@ -65,7 +65,6 @@ type UserUpdateArgs struct {
 }
 
 type UserDeleteArgs struct {
-	ID  string   `json:"id,omitempty"`
 	IDs []string `json:"ids,omitempty"`
 }
 
@@ -102,12 +101,13 @@ type RoleUpdateArgs struct {
 }
 
 type RoleDeleteArgs struct {
-	ID  string   `json:"id,omitempty"`
 	IDs []string `json:"ids,omitempty"`
 }
 
 type ResourceQueryArgs struct {
-	ID string `json:"id,omitempty"`
+	ID   string `json:"id,omitempty"`
+	Page int    `json:"page" validate:"required"`
+	Size int    `json:"size" validate:"required"`
 }
 
 type ResourceQueryReply struct {

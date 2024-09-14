@@ -11,6 +11,7 @@ import (
 	"amprobe/service/schema"
 	"common/database"
 	"context"
+
 	"github.com/google/wire"
 	"gorm.io/gorm"
 )
@@ -138,7 +139,6 @@ func (a *AccountRepository) UserDelete(ctx context.Context, args schema.UserDele
 	db := a.DB.GetModel(&model.User{})
 	db = database.OptionDB(
 		db,
-		database.WithId(args.ID),
 		database.WithIds(args.IDs),
 	)
 
@@ -237,7 +237,6 @@ func (a *AccountRepository) RoleDelete(ctx context.Context, args schema.RoleDele
 	db := a.DB.GetModel(&model.Role{})
 	db = database.OptionDB(
 		db,
-		database.WithId(args.ID),
 		database.WithIds(args.IDs),
 	)
 	if err := db.Delete(&model.User{}).Error; err != nil {
@@ -251,6 +250,8 @@ func (a *AccountRepository) ResourceQuery(ctx context.Context, args schema.Resou
 	db = database.OptionDB(
 		db,
 		database.WithId(args.ID),
+		database.WithOffset((args.Page-1)*args.Size),
+		database.WithLimit(args.Size),
 	)
 	var resources model.Resources
 	if err := db.Order("created_at desc").Find(&resources).Error; err != nil {
