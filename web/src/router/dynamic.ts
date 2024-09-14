@@ -125,7 +125,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         name: 'account',
         redirect: '/account/user',
         meta: {
-            title: '账户',
+            title: '用户',
             icon: 'user',
             show: true
         }
