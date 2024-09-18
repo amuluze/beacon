@@ -1,14 +1,5 @@
 declare namespace Form {
-    type ItemType =
-        | 'text'
-        | 'password'
-        | 'select'
-        | 'datepicker'
-        | 'datetimepicker'
-        | 'radio'
-        | 'checkbox'
-        | 'textarea'
-        | 'upload'
+    type ItemType = 'text' | 'password' | 'select' | 'datepicker' | 'datetimepicker' | 'radio' | 'checkbox' | 'textarea' | 'upload'
 
     interface FieldOptions {
         label?: string
@@ -36,23 +27,7 @@ declare namespace Form {
         multiple?: boolean
     }
 
-    type RuleType =
-        | 'string'
-        | 'number'
-        | 'boolean'
-        | 'method'
-        | 'regexp'
-        | 'integer'
-        | 'float'
-        | 'array'
-        | 'object'
-        | 'enum'
-        | 'date'
-        | 'url'
-        | 'hex'
-        | 'email'
-        | 'pattern'
-        | 'any'
+    type RuleType = 'string' | 'number' | 'boolean' | 'method' | 'regexp' | 'integer' | 'float' | 'array' | 'object' | 'enum' | 'date' | 'url' | 'hex' | 'email' | 'pattern' | 'any'
 
     interface RuleItem {
         type?: RuleType // default type is 'string'

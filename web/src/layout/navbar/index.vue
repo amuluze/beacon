@@ -2,9 +2,7 @@
     <div class="am-navbar-container">
         <collapse-icon />
         <div>
-            <a class="am-navbar-container__issue" href="https://support.qq.com/products/643578" target="_blank">
-                问题反馈
-            </a>
+            <a class="am-navbar-container__issue" href="https://support.qq.com/products/643578" target="_blank"> 问题反馈 </a>
             <avatar />
         </div>
     </div>

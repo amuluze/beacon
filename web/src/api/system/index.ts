@@ -4,15 +4,7 @@
  * @Description:
  */
 import request from '@/api'
-import {
-    GetDNSResult,
-    GetSystemTimeResult,
-    GetSystemTimezoneListResult,
-    GetSystemTimezoneResult,
-    SetDNSArgs,
-    SetSystemTimeArgs,
-    SetSystemTimezoneArgs
-} from '@/interface/system'
+import { GetDNSResult, GetSystemTimeResult, GetSystemTimezoneListResult, GetSystemTimezoneResult, SetDNSArgs, SetSystemTimeArgs, SetSystemTimezoneArgs } from '@/interface/system'
 
 export function reboot() {
     return request.post('/api/v1/host/reboot', {})

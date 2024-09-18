@@ -41,13 +41,7 @@
     <!-- 创建用户 -->
     <div class="am-user-create">
         <el-drawer v-model="newUserDraw" title="创建用户" size="50%">
-            <el-form
-                ref="userCreateRef"
-                :model="userCreateMode"
-                :rules="rules"
-                label-width="120px"
-                label-position="left"
-            >
+            <el-form ref="userCreateRef" :model="userCreateMode" :rules="rules" label-width="120px" label-position="left">
                 <el-form-item label="用户名" prop="username">
                     <el-input v-model="userCreateMode.username" placeholder="请输入用户名" />
                 </el-form-item>
@@ -58,15 +52,7 @@
 
             <div class="am-user-create__operator">
                 <el-button type="default" size="default" plain @click="newUserDraw = false">取消</el-button>
-                <el-button
-                    type="primary"
-                    size="default"
-                    plain
-                    @click="confirmUserCreate(userCreateRef)"
-                    v-loading="userCreateLoading"
-                >
-                    确定
-                </el-button>
+                <el-button type="primary" size="default" plain @click="confirmUserCreate(userCreateRef)" v-loading="userCreateLoading"> 确定 </el-button>
             </div>
         </el-drawer>
     </div>

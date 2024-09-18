@@ -64,12 +64,7 @@
         <el-drawer v-model="systemTimezoneDrawer" size="540" title="系统时区设置">
             <div class="am-host-edit-systemtimezone__content">
                 <el-select v-model="systemTimezone" style="width: 240px" filterable>
-                    <el-option
-                        v-for="item in timezoneOptions"
-                        :key="item.value"
-                        :label="item.label"
-                        :value="item.value"
-                    />
+                    <el-option v-for="item in timezoneOptions" :key="item.value" :label="item.label" :value="item.value" />
                 </el-select>
             </div>
             <div class="am-host-edit-systemtimezone__operator">
@@ -80,15 +75,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import {
-    getSystemTime,
-    getSystemTimezone,
-    getSystemTimezoneList,
-    reboot,
-    setSystemTime,
-    setSystemTimezone,
-    shutdown
-} from '@/api/system'
+import { getSystemTime, getSystemTimezone, getSystemTimezoneList, reboot, setSystemTime, setSystemTimezone, shutdown } from '@/api/system'
 import { error, success } from '@/components/Message/message'
 import { SetSystemTimeArgs, SetSystemTimezoneArgs } from '@/interface/system'
 import { dayjs } from 'element-plus'

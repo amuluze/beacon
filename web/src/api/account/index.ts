@@ -5,17 +5,7 @@
  */
 
 import request from '@/api'
-import {
-    ResourceQueryResult,
-    RoleCreateArgs,
-    RoleDeleteArgs,
-    RoleQueryResult,
-    RoleUpdateArgs,
-    UserCreateArgs,
-    UserDeleteArgs,
-    UserQueryResult,
-    UserUpdateArgs
-} from '@/interface/account'
+import { ResourceQueryResult, RoleCreateArgs, RoleDeleteArgs, RoleQueryResult, RoleUpdateArgs, UserCreateArgs, UserDeleteArgs, UserQueryResult, UserUpdateArgs } from '@/interface/account'
 
 export function queryUser() {
     return request.get<UserQueryResult>('/api/v1/user/user_query', {})

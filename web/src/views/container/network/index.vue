@@ -14,16 +14,14 @@
     <el-card shadow="never">
         <div class="am-table">
             <el-table :data="data" :key="imageKey" highlight-current-row height="100%" stripe v-loading="loading">
-                <el-table-column prop="id" label="名称" align="center" width="120" fixed />
-                <el-table-column prop="name" label="模式" align="center" min-width="120" />
+                <el-table-column prop="name" label="名称" align="center" width="120" fixed />
+                <el-table-column prop="driver" label="模式" align="center" min-width="120" />
                 <el-table-column prop="subnet" label="子网" align="center" show-overflow-tooltip width="120" />
                 <el-table-column prop="gateway" label="网关" align="center" show-overflow-tooltip width="120" />
                 <el-table-column prop="created" label="创建时间" align="center" width="200" sortable />
                 <el-table-column label="操作" width="160" fixed="right" align="center">
                     <template #default="scope">
-                        <el-button type="danger" plain size="small" @click="deleteNetworkByID(scope.row.id)">
-                            删除
-                        </el-button>
+                        <el-button type="danger" plain size="small" @click="deleteNetworkByID(scope.row.id)"> 删除 </el-button>
                     </template>
                 </el-table-column>
             </el-table>
@@ -46,28 +44,13 @@
     <div class="am-network-create">
         <el-drawer v-model="drawer" size="540" title="创建网络">
             <div class="am-network-create__content">
-                <el-form
-                    ref="networkCreateRef"
-                    :model="networkCreateMode"
-                    :rules="rules"
-                    label-width="100px"
-                    label-position="left"
-                >
+                <el-form ref="networkCreateRef" :model="networkCreateMode" :rules="rules" label-width="100px" label-position="left">
                     <el-form-item label="名称" prop="networkName">
                         <el-input v-model="networkCreateMode.networkName" placeholder="请输入名称" />
                     </el-form-item>
                     <el-form-item label="模式" prop="networkMode">
-                        <el-select
-                            v-model="networkCreateMode.networkMode"
-                            style="width: 240px"
-                            placeholder="请选择模式"
-                        >
-                            <el-option
-                                v-for="item in networkOptions"
-                                :key="item.value"
-                                :label="item.label"
-                                :value="item.value"
-                            />
+                        <el-select v-model="networkCreateMode.networkMode" style="width: 240px" placeholder="请选择模式">
+                            <el-option v-for="item in networkOptions" :key="item.value" :label="item.label" :value="item.value" />
                         </el-select>
                     </el-form-item>
                     <el-form-item label="子网" prop="networkSubnet">
@@ -77,26 +60,13 @@
                         <el-input v-model="networkCreateMode.networkGateway" placeholder="172.16.10.1" />
                     </el-form-item>
                     <el-form-item label="标签" prop="networkLabels">
-                        <el-input
-                            v-model="networkCreateMode.networkLabels"
-                            type="textarea"
-                            :rows="4"
-                            placeholder="一行一个，例如:&#10;key1=value1&#10;key2=value2"
-                        />
+                        <el-input v-model="networkCreateMode.networkLabels" type="textarea" :rows="4" placeholder="一行一个，例如:&#10;key1=value1&#10;key2=value2" />
                     </el-form-item>
                 </el-form>
             </div>
             <div class="am-network-create__operator">
                 <el-button type="default" size="default" plain @click="drawer = false">取消</el-button>
-                <el-button
-                    type="primary"
-                    size="default"
-                    plain
-                    @click="confirmCreateNetwork(networkCreateRef)"
-                    v-loading="createNetworkLoading"
-                >
-                    确定
-                </el-button>
+                <el-button type="primary" size="default" plain @click="confirmCreateNetwork(networkCreateRef)" v-loading="createNetworkLoading"> 确定 </el-button>
             </div>
         </el-drawer>
     </div>

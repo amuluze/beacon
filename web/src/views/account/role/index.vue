@@ -42,13 +42,7 @@
     <!-- 创建角色 -->
     <div class="am-user-create">
         <el-drawer v-model="newRoleDraw" title="创建用户" size="50%">
-            <el-form
-                ref="userCreateRef"
-                :model="roleCreateMode"
-                :rules="rules"
-                label-width="120px"
-                label-position="left"
-            >
+            <el-form ref="userCreateRef" :model="roleCreateMode" :rules="rules" label-width="120px" label-position="left">
                 <el-form-item label="用户名" prop="username">
                     <el-input v-model="roleCreateMode.name" placeholder="请输入用户名" />
                 </el-form-item>
@@ -56,15 +50,7 @@
 
             <div class="am-user-create__operator">
                 <el-button type="default" size="default" plain @click="newRoleDraw = false">取消</el-button>
-                <el-button
-                    type="primary"
-                    size="default"
-                    plain
-                    @click="confirmRoleCreate(roleCreateRef)"
-                    v-loading="roleCreateLoading"
-                >
-                    确定
-                </el-button>
+                <el-button type="primary" size="default" plain @click="confirmRoleCreate(roleCreateRef)" v-loading="roleCreateLoading"> 确定 </el-button>
             </div>
         </el-drawer>
     </div>

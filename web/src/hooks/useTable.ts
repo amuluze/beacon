@@ -60,10 +60,7 @@ export function useTable(
                 console.log('---------3', res['data'])
                 data.value = get(res['data'], options?.path?.data as string, [])
                 pagination.setTotal(get(res['data'], options?.path?.total as string, 0))
-                if (
-                    !has(res['data'], options?.path?.data as string) ||
-                    !has(res['data'], options?.path?.total as string)
-                ) {
+                if (!has(res['data'], options?.path?.data as string) || !has(res['data'], options?.path?.total as string)) {
                     warning('返回数据格式错误')
                 }
             })
