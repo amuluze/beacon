@@ -18,7 +18,7 @@
                 <el-table-column prop="name" label="模式" align="center" min-width="120" />
                 <el-table-column prop="subnet" label="子网" align="center" show-overflow-tooltip width="120" />
                 <el-table-column prop="gateway" label="网关" align="center" show-overflow-tooltip width="120" />
-                <el-table-column prop="created" label="创建时间" align="center" width="200" />
+                <el-table-column prop="created" label="创建时间" align="center" width="200" sortable />
                 <el-table-column label="操作" width="160" fixed="right" align="center">
                     <template #default="scope">
                         <el-button type="danger" plain size="small" @click="deleteNetworkByID(scope.row.id)">
