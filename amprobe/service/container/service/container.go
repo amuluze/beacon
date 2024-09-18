@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	"amprobe/pkg/utils"
 	"amprobe/service/container/repository"
@@ -287,6 +288,7 @@ func (a *ContainerService) NetworkList(ctx context.Context, args schema.NetworkQ
 	if err != nil {
 		return reply, err
 	}
+	sort.Slice(list, func(i, j int) bool { return list[i].Created > list[j].Created })
 	reply.Data = list
 	reply.Total = countReply.Count
 	reply.Page = args.Page
