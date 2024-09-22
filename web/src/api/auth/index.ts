@@ -4,9 +4,9 @@
  * @Description:
  */
 
-import request from '@/api'
+import request from '@/api';
 
-import { loginFormData, LoginResponseData } from '@/interface/auth.ts'
+import { loginFormData, LoginResponseData, UpdatePassword, UserInfo } from '@/interface/auth.ts';
 
 /**
  * 登录
@@ -21,4 +21,18 @@ export function login(data: loginFormData) {
  */
 export function logout() {
     return request.post<any>('/api/v1/auth/logout', {})
+}
+
+/**
+ * 更新密码
+ */
+export function updatePassword(data: UpdatePassword) {
+    return request.post<any>('/api/v1/auth/pass_update', data)
+}
+
+/**
+ * 获取用户信息
+ */
+export function getUserInfo() {
+    return request.get<UserInfo>('/api/v1/auth/user_info')
 }

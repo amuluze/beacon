@@ -17,5 +17,12 @@ export interface LoginResponseData {
 export interface UpdatePassword {
     username: string
     old_password: string
-    net_password: string
+    new_password: string
+}
+
+export interface UserInfo {
+    id: string
+    username: string
+    status: string
+    is_admin: number
 }

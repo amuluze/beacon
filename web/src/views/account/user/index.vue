@@ -30,8 +30,8 @@
                 <el-table-column prop="created_at" label="创建时间" min-width="160" align="center" sortable />
                 <el-table-column label="操作" width="200" fixed="right" align="center">
                     <template #default="scope">
-                        <el-button type="primary" size="small" text @click="eidtUser(scope.row)"> 编辑 </el-button>
-                        <el-button type="danger" size="small" text @click="deleteUser(scope.row.id)"> 删除 </el-button>
+                        <el-button type="primary" size="small" text @click="userEdit(scope.row)" :disabled=enableEdit(scope.row) > 编辑 </el-button>
+                        <el-button type="danger" size="small" text @click="userDelete(scope.row.id)" v-loading="userDeleteLoading" :disabled=enableEdit(scope.row)> 删除 </el-button>
                     </template>
                 </el-table-column>
             </el-table>
@@ -48,6 +48,24 @@
                 <el-form-item label="密码" prop="password">
                     <el-input v-model="userCreateMode.password" placeholder="请输入密码" />
                 </el-form-item>
+                <el-form-item label="角色" prop="role_ids">
+                    <el-select v-model="userCreateMode.role_ids" multiple placeholder="请选择角色">
+                        <el-option
+                            v-for="item in roleData"
+                            :key="item.id"
+                            :label="item.name"
+                            :value="item.id"
+                        />
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="备注" prop="remark">
+                    <el-input v-model="userCreateMode.remark" placeholder="请输入备注" />
+                </el-form-item>
+                <el-form-item label="状态" prop="status">
+                    <el-tooltip content="用户状态，1为正常，2为禁用" placement="top">
+                        <el-switch v-model="userCreateMode.status" active-value="1" inactive-value="2" />
+                    </el-tooltip>
+                </el-form-item>
             </el-form>
 
             <div class="am-user-create__operator">
@@ -56,15 +74,63 @@
             </div>
         </el-drawer>
     </div>
+
+    <!-- 编辑用户 -->
+    <div class="am-user-create">
+        <el-drawer v-model="userEditDraw" title="编辑用户" size="50%">
+            <el-form
+                ref="userUpdateRef"
+                :model="userUpdateMode"
+                :rules="rules"
+                label-width="120px"
+                label-position="left"
+            >
+                <el-form-item label="用户名" prop="username">
+                    <el-input v-model="userUpdateMode.username" placeholder="请输入用户名" />
+                </el-form-item>
+                <el-form-item label="角色" prop="role_ids">
+                    <el-select v-model="userUpdateMode.role_ids" multiple placeholder="请选择角色">
+                        <el-option
+                            v-for="item in roleData"
+                            :key="item.id"
+                            :label="item.name"
+                            :value="item.id"
+                        />
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="备注" prop="remark">
+                    <el-input v-model="userUpdateMode.remark" placeholder="请输入备注" />
+                </el-form-item>
+                <el-form-item label="状态" prop="status">
+                    <el-tooltip content="用户状态，1为正常，2为禁用" placement="top">
+                        <el-switch v-model="userUpdateMode.status" active-value="1" inactive-value="2" />
+                    </el-tooltip>
+                </el-form-item>
+            </el-form>
+
+            <div class="am-user-create__operator">
+                <el-button type="default" size="default" plain @click="userEditDraw = false">取消</el-button>
+                <el-button
+                    type="primary"
+                    size="default"
+                    plain
+                    @click="confirmUserUpdate(userUpdateRef)"
+                    v-loading="userUpdateLoading"
+                >
+                    确定
+                </el-button>
+            </div>
+        </el-drawer>
+    </div>
 </template>
 <script setup lang="ts">
-import { queryUser } from '@/api/account'
-import { error } from '@/components/Message/message'
-import { User } from '@/interface/account'
-import { FormInstance, FormRules } from 'element-plus'
+import { createUser, deleteUser, queryRole, queryUser, updateUser } from '@/api/account';
+import { Role, User, UserDeleteArgs } from '@/interface/account';
+import { FormInstance, FormRules } from 'element-plus';
 
 onMounted(() => {
     userQuery()
+    roleQuery()
 })
 
 // 用户列表
@@ -75,45 +141,130 @@ const userQuery = async () => {
     loading.value = true
     const { data } = await queryUser()
     userData.value = data.data
+    userKey.value += 1
     loading.value = false
 }
 
+// 用户禁止操作
+const enableEdit = (user: User) => {
+    console.log("......", user)
+    if (user.username === 'admin') {
+        return true
+    }
+    return false
+}
+
 // 用户创建
+const roleData = ref<Role[]>([])
+const roleQuery = async () => {
+    const { data } = await queryRole()
+    roleData.value = data.data
+}
 const newUserDraw = ref(false)
 const userCreateRef = ref<FormInstance>()
 interface RuleForm {
     username: string
     password: string
+    remark: string
     role_ids: string[]
-    status: number
+    status: string
 }
 
 const userCreateMode = ref<RuleForm>({
     username: '',
     password: '',
+    remark: '',
     role_ids: [],
-    status: 1
+    status: '1'
 })
 
 const rules = reactive<FormRules<RuleForm>>({
     username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-    password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+    password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+    role_ids: [{ required: true, message: '请选择角色', trigger: 'blur' }],
 })
 
 const userCreateLoading = ref(false)
 const confirmUserCreate = async (formEl: FormInstance | undefined) => {
     if (!formEl) return
-    await formEl.validate((valid, fields) => {
+    await formEl.validate((valid) => {
         if (valid) {
             userCreateLoading.value = true
-            setTimeout(() => {
+            console.log('submit!', userCreateMode.value)
+            const params = {
+                username: userCreateMode.value.username,
+                password: userCreateMode.value.password,
+                remark: userCreateMode.value.remark,
+                role_ids: userCreateMode.value.role_ids,
+                status: Number(userCreateMode.value.status)
+            }
+            createUser(params).finally(() => {
                 userCreateLoading.value = false
                 newUserDraw.value = false
-            }, 2000)
-        } else {
-            console.log('error submit!', fields)
-            error('请检查表单')
-            return
+                userQuery()
+            })
+
+        }
+    })
+}
+
+// * 用户删除
+const userDeleteLoading = ref(false)
+const userDelete = async (id: string) => {
+    userDeleteLoading.value = true
+    const params: UserDeleteArgs = {
+        ids: [id]
+    }
+    deleteUser(params).finally(() => {
+        userDeleteLoading.value = false
+        userQuery()
+    })
+}
+
+// * 用户编辑
+const userUpdateRef = ref<FormInstance>()
+const userEditDraw = ref(false)
+const userUpdateMode = ref<{
+    id: string
+    username: string
+    remark: string
+    role_ids: string[]
+    status: string
+}>({
+    id: '',
+    username: '',
+    remark: '',
+    role_ids: [],
+    status: '1'
+})
+const userEdit = (user: User) => {
+    userEditDraw.value = true
+    userUpdateMode.value = {
+        id: user.id,
+        username: user.username,
+        remark: user.remark,
+        role_ids: user.roles.map((item) => item.id),
+        status: user.status.toString()
+    }
+}
+const userUpdateLoading = ref(false)
+const confirmUserUpdate = async (formEl: FormInstance | undefined) => {
+    if (!formEl) return
+    await formEl.validate((valid) => {
+        if (valid) {
+            userUpdateLoading.value = true
+            const params = {
+                id: userUpdateMode.value.id,
+                username: userUpdateMode.value.username,
+                remark: userUpdateMode.value.remark,
+                role_ids: userUpdateMode.value.role_ids,
+                status: Number(userUpdateMode.value.status)
+            }
+            updateUser(params).finally(() => {
+                userUpdateLoading.value = false
+                userEditDraw.value = false
+                userQuery()
+            })
         }
     })
 }

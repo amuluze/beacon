@@ -18,7 +18,6 @@ export interface UserCreateArgs {
     username: string
     password: string
     remark: string
-    is_admin: number
     status: number
     role_ids: string[]
 }
@@ -27,7 +26,6 @@ export interface UserUpdateArgs {
     id: string
     username: string
     remark: string
-    is_admin: number
     status: number
     role_ids: string[]
 }

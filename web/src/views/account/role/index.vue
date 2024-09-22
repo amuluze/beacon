@@ -5,21 +5,17 @@
         <span @click="$router.push('/account/api')">接口</span>
         <div></div>
     </div>
-    <div class="am-role-operator">
-        <el-card shadow="never">
-            <el-button type="primary" plain @click="newRoleDraw = true">新增角色</el-button>
-        </el-card>
-    </div>
     <!-- 表格主体-->
     <el-card shadow="never">
         <div class="am-table">
-            <el-table :data="data" height="100%" :key="roleKey" stripe ref="multipleTable" v-loading="loading">
+            <el-table :data="roleData" height="100%" :key="roleKey" stripe ref="multipleTable" v-loading="loading">
                 <el-table-column prop="name" label="角色名" min-width="120" align="center" />
                 <el-table-column prop="resource_ids" label="权限" min-width="200" align="center" show-overflow-tooltip>
                     <template #default="scope">
-                        <el-tag v-for="(item, index) in scope.row.resources" :key="index">
+                        <el-tree :data="generageTree(scope.row.resources)" :props="defaultProps" />
+                        <!-- <el-tag v-for="(item, index) in scope.row.resources" :key="index">
                             {{ item.name }}
-                        </el-tag>
+                        </el-tag> -->
                     </template>
                 </el-table-column>
                 <el-table-column prop="status" label="状态" min-width="100" align="center" sortable>
@@ -29,81 +25,59 @@
                     </template>
                 </el-table-column>
                 <el-table-column prop="created_at" label="创建时间" min-width="160" align="center" sortable />
-                <el-table-column label="操作" width="200" fixed="right" align="center">
-                    <template #default="scope">
-                        <el-button type="primary" size="small" text @click="eidtRole(scope.row)"> 编辑 </el-button>
-                        <el-button type="danger" size="small" text @click="deleteRole(scope.row.id)"> 删除 </el-button>
-                    </template>
-                </el-table-column>
             </el-table>
         </div>
     </el-card>
-
-    <!-- 创建角色 -->
-    <div class="am-user-create">
-        <el-drawer v-model="newRoleDraw" title="创建用户" size="50%">
-            <el-form ref="userCreateRef" :model="roleCreateMode" :rules="rules" label-width="120px" label-position="left">
-                <el-form-item label="用户名" prop="username">
-                    <el-input v-model="roleCreateMode.name" placeholder="请输入用户名" />
-                </el-form-item>
-            </el-form>
-
-            <div class="am-user-create__operator">
-                <el-button type="default" size="default" plain @click="newRoleDraw = false">取消</el-button>
-                <el-button type="primary" size="default" plain @click="confirmRoleCreate(roleCreateRef)" v-loading="roleCreateLoading"> 确定 </el-button>
-            </div>
-        </el-drawer>
-    </div>
 </template>
 <script setup lang="ts">
-import { queryRole } from '@/api/account'
-import { error } from '@/components/Message/message'
-import { useTable } from '@/hooks/useTable'
-import { FormInstance } from 'element-plus'
+import { queryRole } from '@/api/account';
+import { Resource, Role } from '@/interface/account';
 
 onMounted(() => {
-    refresh()
+    roleQuery()
 })
 
 // 角色列表
 const roleKey = ref(0)
-const params = {}
-const { data, refresh, loading, pagination } = useTable(queryRole, {}, {})
-
-// 角色创建
-const newRoleDraw = ref(false)
-const roleCreateRef = ref<FormInstance>()
-const roleCreateLoading = ref(false)
-
-interface RuleForm {
-    name: string
-    resource_ids: string[]
-    status: number
+const roleData = ref<Role[]>([])
+const loading = ref<boolean>(false)
+const defaultProps = {
+    children: 'children',
+    label: 'label',
+    id: 'id'
 }
-const roleCreateMode = ref<RuleForm>({
-    name: '',
-    resource_ids: [],
-    status: 1
-})
 
-const rules = reactive({
-    name: [{ required: true, message: '请输入角色名', trigger: 'blur' }]
-})
-const confirmRoleCreate = (formEl: FormInstance | undefined) => {
-    if (!formEl) return
-    formEl.validate((valid, fields) => {
-        if (valid) {
-            roleCreateLoading.value = true
-            // TODO: 创建角色
-            roleCreateLoading.value = false
-            newRoleDraw.value = false
-        } else {
-            console.log('error submit!', fields)
-            error('请检查表单')
-            return
+interface Tree {
+    id: string
+    label: string
+    children?: Tree[]
+}
+const generageTree = (data: Resource[]) => {
+    let child: Tree[] = []
+    data.forEach((item) => {
+        const treeItem: Tree = {
+            id: item.id,
+            label: item.name,
+            children: []
         }
+        child.push(treeItem)
     })
+    const tree: Tree[] = [{
+        id: '',
+        label: '权限列表',
+        children: child
+    }]
+    console.log(">>", tree)
+    return tree
 }
+const roleQuery = async () => {
+    loading.value = true
+    const { data } = await queryRole()
+    roleData.value = data.data
+    roleKey.value += 1
+    loading.value = false
+}
+
 </script>
 
 <style scoped lang="scss">
@@ -159,25 +133,9 @@ const confirmRoleCreate = (formEl: FormInstance | undefined) => {
     }
 }
 
-@include b(role-operator) {
-    height: 48px;
-    width: 100%;
-    margin-bottom: 4px;
-    .el-card {
-        height: 100%;
-        :deep(.el-card__body) {
-            height: 100% !important;
-            padding: 0 0 0 16px;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-        }
-    }
-}
-
 @include b(table) {
     width: 100%;
-    height: calc(100vh - 188px);
+    height: calc(100vh - 136px);
     overflow-y: auto;
 }
 </style>

@@ -27,14 +27,13 @@
     </el-card>
 </template>
 <script setup lang="ts">
-import { queryResource } from '@/api/account'
-import { useTable } from '@/hooks/useTable'
+import { queryResource } from '@/api/account';
+import { useTable } from '@/hooks/useTable';
 
 onMounted(() => {
     refresh()
 })
 const resourceKey = ref(0)
-const params = {}
 const { data, refresh, loading, pagination } = useTable(queryResource, {}, {})
 </script>
 
