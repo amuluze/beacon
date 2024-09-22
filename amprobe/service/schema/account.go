@@ -49,7 +49,6 @@ type UserCreateArgs struct {
 	Password string   `json:"password" validate:"required"`
 	Remark   string   `json:"remark,omitempty"`
 	Status   int      `json:"status" validate:"required"`
-	IsAdmin  int      `json:"isAdmin" validate:"required"`
 	RoleIDs  []string `json:"role_ids" validate:"required"`
 }
 
@@ -58,7 +57,6 @@ type UserUpdateArgs struct {
 	Username string   `json:"username,omitempty"`
 	Remark   string   `json:"remark,omitempty"`
 	Status   int      `json:"status,omitempty"`
-	IsAdmin  int      `json:"isAdmin,omitempty"`
 	RoleIDs  []string `json:"role_ids,omitempty"`
 }
 

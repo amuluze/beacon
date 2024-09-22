@@ -23,6 +23,6 @@ type PasswordUpdateArgs struct {
 type UserInfo struct {
 	ID       string `json:"id" description:"用户 id"`
 	Username string `json:"username" description:"用户名"`
-	Email    string `json:"email" description:"邮箱"`
 	Status   int    `json:"status" description:"状态"`
+	IsAdmin  int    `json:"is_admin" description:"是否是管理员"`
 }

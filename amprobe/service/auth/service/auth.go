@@ -10,6 +10,7 @@ import (
 	"amprobe/service/auth/repository"
 	"amprobe/service/schema"
 	"context"
+
 	"github.com/google/wire"
 )
 
@@ -22,6 +23,7 @@ type IAuthService interface {
 	Logout(ctx context.Context, token string) error
 	PassUpdate(ctx context.Context, args schema.PasswordUpdateArgs) error
 	TokenUpdate(ctx context.Context, token string) (schema.LoginResult, error)
+	UserInfo(ctx context.Context, token string) (schema.UserInfo, error)
 }
 
 type AuthService struct {
@@ -71,5 +73,22 @@ func (a *AuthService) TokenUpdate(ctx context.Context, token string) (schema.Log
 	}
 	reply.AccessToken = tokenInfo.GetAccessToken()
 	reply.RefreshToken = tokenInfo.GetRefreshToken()
+	return reply, nil
+}
+
+func (a *AuthService) UserInfo(ctx context.Context, token string) (schema.UserInfo, error) {
+	var reply schema.UserInfo
+	userID, _, err := a.Auth.ParseToken(token, "access_token")
+	if err != nil {
+		return reply, err
+	}
+	user, err := a.AuthRepo.UserInfo(ctx, userID)
+	if err != nil {
+		return reply, err
+	}
+	reply.ID = user.ID.String()
+	reply.Username = user.Username
+	reply.Status = user.Status
+	reply.IsAdmin = user.IsAdmin
 	return reply, nil
 }

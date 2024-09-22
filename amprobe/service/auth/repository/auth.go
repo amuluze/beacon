@@ -24,6 +24,7 @@ var _ IAuthRepository = (*AuthRepo)(nil)
 type IAuthRepository interface {
 	Login(ctx context.Context, args schema.LoginArgs) (model.User, error)
 	PassUpdate(ctx context.Context, args schema.PasswordUpdateArgs) error
+	UserInfo(ctx context.Context, userID string) (model.User, error)
 }
 
 type AuthRepo struct {
@@ -37,7 +38,7 @@ func NewAuthRepo(db *database.DB) *AuthRepo {
 func (a *AuthRepo) Login(ctx context.Context, args schema.LoginArgs) (model.User, error) {
 	var user model.User
 	err := a.DB.RunInTransaction(func(tx *gorm.DB) error {
-		if err := tx.Where("username = ?", args.Username).First(&user).Error; err != nil {
+		if err := tx.Where("username = ?", args.Username).Where("status = ?", 1).First(&user).Error; err != nil {
 			return err
 		}
 		if user.Password != hash.SHA1String(args.Password) {
@@ -60,9 +61,17 @@ func (a *AuthRepo) PassUpdate(ctx context.Context, args schema.PasswordUpdateArg
 			return errors.New("invalid password")
 		}
 
-		if err := tx.Where("username = ?", args.Username).Update("password", hash.SHA1String(args.OldPassword)).Error; err != nil {
+		if err := tx.Model(&model.User{}).Where("username = ?", args.Username).Update("password", hash.SHA1String(args.NewPassword)).Error; err != nil {
 			return err
 		}
 		return nil
 	})
+}
+
+func (a *AuthRepo) UserInfo(ctx context.Context, userID string) (model.User, error) {
+	var user model.User
+	if err := a.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+		return user, err
+	}
+	return user, nil
 }

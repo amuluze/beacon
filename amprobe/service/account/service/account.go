@@ -8,6 +8,7 @@ import (
 	"amprobe/service/account/repository"
 	"amprobe/service/schema"
 	"context"
+	"log/slog"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/google/wire"
@@ -89,8 +90,10 @@ func (a *AccountService) UserCreate(ctx context.Context, args schema.UserCreateA
 func (a *AccountService) UserUpdate(ctx context.Context, args schema.UserUpdateArgs) error {
 	user, err := a.AccountRepository.UserUpdate(ctx, args)
 	if err != nil {
+		slog.Error("Error updating user", "error", err)
 		return err
 	}
+	slog.Info("User updated", "User", user)
 	for _, roleID := range args.RoleIDs {
 		_, err := a.Enforcer.RemoveNamedGroupingPolicy("g", user.ID.String(), roleID)
 		if err != nil {
@@ -145,6 +148,9 @@ func (a *AccountService) RoleQuery(ctx context.Context, args schema.RoleQueryArg
 	for _, role := range roles {
 		schemaResources := make([]schema.Resource, 0)
 		for _, resource := range role.Resources {
+			if resource.Name == "" {
+				continue
+			}
 			schemaResources = append(schemaResources, schema.Resource{
 				ID:     resource.ID.String(),
 				Name:   resource.Name,

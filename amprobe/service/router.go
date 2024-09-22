@@ -111,6 +111,7 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			gAuth.Post("/logout", a.authAPI.Logout).Name("登出")
 			gAuth.Post("/pass_update", a.authAPI.PassUpdate).Name("更新密码")
 			gAuth.Post("/token_update", a.authAPI.TokenUpdate).Name("更新 token")
+			gAuth.Get("/user_info", a.authAPI.UserInfo).Name("查询权限")
 		}
 
 		gContainer := v1.Group("container")

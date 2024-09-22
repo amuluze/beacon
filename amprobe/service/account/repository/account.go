@@ -11,6 +11,7 @@ import (
 	"amprobe/service/schema"
 	"common/database"
 	"context"
+	"log/slog"
 
 	"github.com/google/wire"
 	"gorm.io/gorm"
@@ -76,13 +77,17 @@ func (a *AccountRepository) UserCreate(ctx context.Context, args schema.UserCrea
 		Username: args.Username,
 		Password: hash.SHA1String(args.Password),
 		Status:   args.Status,
-		IsAdmin:  args.IsAdmin,
 		Remark:   args.Remark,
 	}
 	if len(args.RoleIDs) > 0 {
 		var roles model.Roles
 		if err := a.DB.Where("id IN (?)", args.RoleIDs).Find(&roles).Error; err != nil {
 			return model.User{}, err
+		}
+		for _, r := range roles {
+			if r.Name == "admin" {
+				u.IsAdmin = 1
+			}
 		}
 		u.Roles = roles
 	}
@@ -100,33 +105,41 @@ func (a *AccountRepository) UserUpdate(ctx context.Context, args schema.UserUpda
 	if args.Remark != "" {
 		params["remark"] = args.Remark
 	}
-	if args.IsAdmin != 0 {
-		params["is_admin"] = args.IsAdmin
-	}
 	if args.Username != "" {
 		params["username"] = args.Username
 	}
+	var user model.User
 	err := a.DB.RunInTransaction(func(tx *gorm.DB) error {
+		var roles model.Roles
 		if len(args.RoleIDs) > 0 {
-			var roles model.Roles
 			if err := tx.Where("id IN (?)", args.RoleIDs).Find(&roles).Error; err != nil {
 				return err
 			}
-			// 替换关联
-			err := tx.Model(&model.User{}).Association("Roles").Replace(roles)
-			if err != nil {
-				return err
+			for _, r := range roles {
+				if r.Name == "admin" {
+					params["is_admin"] = 1
+				}
 			}
 		}
 		if err := tx.Model(&model.User{}).Where("id = ?", args.ID).Updates(params).Error; err != nil {
 			return err
 		}
+		// 替换关联
+		if len(roles) == 0 {
+			if err := a.DB.Model(&model.User{}).Where("id = ?", args.ID).First(&user).Error; err != nil {
+				return err
+			}
+			if err := tx.Model(&user).Association("Roles").Replace(roles); err != nil {
+				slog.Error("Error replace roles", "error", err)
+				return err
+			}
+		}
+
 		return nil
 	})
 	if err != nil {
 		return model.User{}, err
 	}
-	var user model.User
 	if err = a.DB.Preload("Roles").Where("id = ?", args.ID).First(&user).Error; err != nil {
 		return model.User{}, err
 	}
