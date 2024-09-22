@@ -8,7 +8,7 @@
     <!--  表格主体  -->
     <el-card shadow="never">
         <div class="am-table">
-            <el-table :data="data" height="100%" :key="resourceKey" stripe ref="multipleTable" v-loading="loading">
+            <el-table :data="resourceData" height="100%" :key="resourceKey" stripe ref="multipleTable" v-loading="loading">
                 <el-table-column prop="name" label="接口名称" min-width="100"></el-table-column>
                 <el-table-column prop="path" label="URL" min-width="200">
                     <template #default="scope">
@@ -28,13 +28,23 @@
 </template>
 <script setup lang="ts">
 import { queryResource } from '@/api/account';
-import { useTable } from '@/hooks/useTable';
+import { Resource } from '@/interface/account';
+
 
 onMounted(() => {
-    refresh()
+    resourceQuery()
 })
 const resourceKey = ref(0)
-const { data, refresh, loading, pagination } = useTable(queryResource, {}, {})
+const resourceData = ref<Resource[]>([])
+const loading = ref(false)
+const resourceQuery = async () => {
+    loading.value = true
+    const { data } = await queryResource()
+    resourceData.value = data.data
+    resourceKey.value += 1
+    loading.value = false
+}
+
 </script>
 
 <style scoped lang="scss">

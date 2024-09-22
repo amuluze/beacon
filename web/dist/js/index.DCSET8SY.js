@@ -1,1 +1,0 @@
-import{r as a}from"./index.CapyIjFA.js";const o="/app/img/amprobe.Da9pVUU8.png";function t(o){return a.post("/api/v1/auth/login",o)}function p(){return a.post("/api/v1/auth/logout",{})}export{o as _,p as a,t as l};
