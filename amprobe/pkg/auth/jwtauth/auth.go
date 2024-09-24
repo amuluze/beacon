@@ -5,12 +5,14 @@
 package jwtauth
 
 import (
-	"github.com/amuluze/amprobe/pkg/auth"
-	"github.com/amuluze/amprobe/service/model"
-	"github.com/amuluze/amutool/database"
-	"github.com/golang-jwt/jwt"
 	"strings"
 	"time"
+
+	"amprobe/pkg/auth"
+	"amprobe/service/model"
+	"common/database"
+
+	"github.com/golang-jwt/jwt"
 )
 
 type JWTAuth struct {
@@ -27,7 +29,7 @@ func New(store Storer, db *database.DB, opts ...Option) *JWTAuth {
 	return &JWTAuth{opts: &o, store: store, db: db}
 }
 
-func (a *JWTAuth) generateAccessToken(userID string, username string, isAdmin string) (string, error) {
+func (a *JWTAuth) generateAccessToken(userID string, username string) (string, error) {
 	now := time.Now()
 	expiresAt := now.Add(time.Duration(a.opts.expired) * time.Second).Unix()
 
@@ -35,7 +37,7 @@ func (a *JWTAuth) generateAccessToken(userID string, username string, isAdmin st
 		IssuedAt:  now.Unix(),
 		ExpiresAt: expiresAt,
 		NotBefore: now.Unix(),
-		Subject:   userID + "." + username + "." + isAdmin,
+		Subject:   userID + "." + username,
 	})
 
 	tokenString, err := token.SignedString(a.opts.signingKey)
@@ -52,7 +54,7 @@ func (a *JWTAuth) generateAccessToken(userID string, username string, isAdmin st
 	return tokenString, nil
 }
 
-func (a *JWTAuth) generateRefreshToken(userID string, username string, isAdmin string) (string, error) {
+func (a *JWTAuth) generateRefreshToken(userID string, username string) (string, error) {
 	now := time.Now()
 	expiresAt := now.Add(time.Duration(a.opts.refreshExpired) * time.Second).Unix()
 
@@ -60,7 +62,7 @@ func (a *JWTAuth) generateRefreshToken(userID string, username string, isAdmin s
 		IssuedAt:  now.Unix(),
 		ExpiresAt: expiresAt,
 		NotBefore: now.Unix(),
-		Subject:   username + "." + userID + "." + isAdmin,
+		Subject:   username + "." + userID,
 	})
 
 	tokenString, err := token.SignedString(a.opts.signingKey)
@@ -77,12 +79,12 @@ func (a *JWTAuth) generateRefreshToken(userID string, username string, isAdmin s
 }
 
 // GenerateToken 生成令牌
-func (a *JWTAuth) GenerateToken(userID string, username string, isAdmin string) (auth.TokenInfo, error) {
-	accessToken, err := a.generateAccessToken(userID, username, isAdmin)
+func (a *JWTAuth) GenerateToken(userID string, username string) (auth.TokenInfo, error) {
+	accessToken, err := a.generateAccessToken(userID, username)
 	if err != nil {
 		return nil, err
 	}
-	refreshToken, err := a.generateRefreshToken(userID, username, isAdmin)
+	refreshToken, err := a.generateRefreshToken(userID, username)
 	if err != nil {
 		return nil, err
 	}
@@ -118,9 +120,9 @@ func (a *JWTAuth) DestroyToken(tokenString string) error {
 }
 
 // ParseToken 解析用户 ID, username
-func (a *JWTAuth) ParseToken(tokenString string, tokenType string) (string, string, string, error) {
+func (a *JWTAuth) ParseToken(tokenString string, tokenType string) (string, string, error) {
 	if tokenString == "" {
-		return "", "", "", auth.ErrInvalidToken
+		return "", "", auth.ErrInvalidToken
 	}
 
 	err := a.callStore(func(storer Storer) error {
@@ -133,21 +135,21 @@ func (a *JWTAuth) ParseToken(tokenString string, tokenType string) (string, stri
 	})
 
 	if err != nil {
-		return "", "", "", err
+		return "", "", err
 	}
 
 	claims, err := a.parseToken(tokenString)
 	if err != nil {
-		return "", "", "", err
+		return "", "", err
 	}
 
 	switch tokenType {
 	case "access_token":
-		return strings.Split(claims.Subject, ".")[0], strings.Split(claims.Subject, ".")[1], strings.Split(claims.Subject, ".")[2], nil
+		return strings.Split(claims.Subject, ".")[0], strings.Split(claims.Subject, ".")[1], nil
 	case "refresh_token":
-		return strings.Split(claims.Subject, ".")[1], strings.Split(claims.Subject, ".")[0], strings.Split(claims.Subject, ".")[2], nil
+		return strings.Split(claims.Subject, ".")[1], strings.Split(claims.Subject, ".")[0], nil
 	default:
-		return "", "", "", auth.ErrInvalidToken
+		return "", "", auth.ErrInvalidToken
 	}
 }
 

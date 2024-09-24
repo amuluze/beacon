@@ -5,3 +5,4 @@ vector.log*
 configs/config-dev.toml
 amvector
 amvector_arm
+go.work.sum

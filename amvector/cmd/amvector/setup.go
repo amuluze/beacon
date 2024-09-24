@@ -5,9 +5,13 @@
 package main
 
 import (
-	"fmt"
-	"github.com/amuluze/amprobe/amvector/pkg/config"
-	"github.com/amuluze/amprobe/amvector/pkg/profile"
+	"path/filepath"
+
+	"amvector/assets"
+	"amvector/pkg/compose"
+	"amvector/pkg/config"
+	"amvector/pkg/resources"
+	"amvector/pkg/utils"
 )
 
 func runSetup() error {
@@ -15,7 +19,11 @@ func runSetup() error {
 		return err
 	}
 
-	if err := setupServiceConfig(prefix); err != nil {
+	if err := setupResources(prefix); err != nil {
+		return err
+	}
+
+	if err := setupComposeConfig(prefix); err != nil {
 		return err
 	}
 
@@ -33,26 +41,35 @@ func setupConfig(prefix, configFile string) error {
 	return nil
 }
 
-func setupServiceConfig(prefix string) error {
-	registryServices := profile.RegistryServices.Services
+func setupResources(prefix string) error {
+	amprobeDir := filepath.Join(prefix, resources.RootPath, resources.AmprobeConfigFolder)
+	if err := utils.EnsureDirExists(amprobeDir); err != nil {
+		return err
+	}
+	if err := assets.CopyDir(
+		filepath.Join(assets.ResourcesDir, resources.AmprobeConfigFolder),
+		amprobeDir,
+	); err != nil {
+		return err
+	}
 
-	serviceBuilderMap := make(map[string]profile.ServiceBuilder)
-	for _, registryService := range registryServices {
-		serviceBuilder, err := registryService.Builder()
-		if err != nil {
-			return err
-		}
-		fmt.Printf("service name: %#v\n", registryService.Name)
-		serviceBuilderMap[registryService.Name] = serviceBuilder
-	}
-	profileBuilder := profile.NewProfileBuilder(serviceBuilderMap)
-	if err := profileBuilder.InitResources(prefix); err != nil {
+	amprobeNginxDir := filepath.Join(prefix, resources.RootPath, resources.AmprobeNginxFolder)
+	if err := utils.EnsureDirExists(amprobeNginxDir); err != nil {
 		return err
 	}
-	if err := profileBuilder.BuildProfile(prefix); err != nil {
+	if err := assets.CopyDir(
+		filepath.Join(assets.ResourcesDir, resources.AmprobeNginxFolder),
+		amprobeNginxDir,
+	); err != nil {
 		return err
 	}
-	if err := profileBuilder.Save(prefix); err != nil {
+	return nil
+}
+
+func setupComposeConfig(prefix string) error {
+	filePath := filepath.Join(prefix, "docker-compose.yml")
+	err := compose.GenerateDockerCompose(filePath)
+	if err != nil {
 		return err
 	}
 	return nil

@@ -8,7 +8,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/amuluze/amprobe/service"
+	"amprobe/service"
 
 	"github.com/urfave/cli/v2"
 )
@@ -37,11 +37,18 @@ func monitorCmd(ctx context.Context) *cli.Command {
 				Usage:    "App Configuration file(.toml)",
 				Required: false,
 			},
+			&cli.StringFlag{
+				Name:     "model",
+				Aliases:  []string{"m"},
+				Usage:    "Model file(.conf)",
+				Required: false,
+			},
 		},
 		Action: func(c *cli.Context) error {
 			return service.Run(
 				ctx,
 				service.SetConfigFile(c.String("conf")),
+				service.SetModelFile(c.String("model")),
 			)
 		},
 	}

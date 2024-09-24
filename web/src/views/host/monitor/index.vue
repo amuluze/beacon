@@ -27,9 +27,7 @@
                 <el-card shadow="never">
                     <echarts :option="memOption">
                         <div class="am-host-container__image-title">内存使用率</div>
-                        <div class="am-host-container__image-description">
-                            总量：{{ memInfo.total }} 使用：{{ memInfo.used }} 百分比： {{ memInfo.percent }}
-                        </div>
+                        <div class="am-host-container__image-description">总量：{{ memInfo.total }} 使用：{{ memInfo.used }} 百分比： {{ memInfo.percent }}</div>
                     </echarts>
                 </el-card>
             </el-col>
@@ -39,11 +37,7 @@
                 <el-card shadow="never">
                     <echarts :option="diskOption">
                         <div class="am-host-container__image-title">磁盘使用率</div>
-                        <div
-                            v-for="(item, index) in diskInfo"
-                            :key="index"
-                            class="am-host-container__image-description"
-                        >
+                        <div v-for="(item, index) in diskInfo" :key="index" class="am-host-container__image-description">
                             {{ item.device }} 总量：{{ item.total }} 使用：{{ item.used }} 百分比：
                             {{ item.percent }}
                         </div>
@@ -54,9 +48,7 @@
                 <el-card shadow="never">
                     <echarts :option="netOption">
                         <div class="am-host-container__image-title">流量曲线图</div>
-                        <div v-for="(item, index) in netInfo" :key="index" class="am-host-container__image-description">
-                            {{ item.ethernet }} 接收：{{ item.read }} 发送：{{ item.write }}
-                        </div>
+                        <div v-for="(item, index) in netInfo" :key="index" class="am-host-container__image-description">{{ item.ethernet }} 接收：{{ item.read }} 发送：{{ item.write }}</div>
                     </echarts>
                 </el-card>
             </el-col>
@@ -64,27 +56,10 @@
     </div>
 </template>
 <script setup lang="ts">
-import {
-    queryCPUInfo,
-    queryCPUUsage,
-    queryDiskInfo,
-    queryDiskUsage,
-    queryMemInfo,
-    queryMemUsage,
-    queryNetworkUsage
-} from '@/api/host'
+import { queryCPUInfo, queryCPUUsage, queryDiskInfo, queryDiskUsage, queryMemInfo, queryMemUsage, queryNetworkUsage } from '@/api/host'
 import { EChartsOption } from '@/components/Echarts/echarts.ts'
 import { cpuOptions, diskOptions, memOptions, netOptions } from '@/components/Echarts/line.ts'
-import {
-    CPUTrendingArgs,
-    DiskIO,
-    DiskTrendingArgs,
-    DiskUsage,
-    MemTrendingArgs,
-    NetIO,
-    NetTrendingArgs,
-    NetUsage
-} from '@/interface/host.ts'
+import { CPUTrendingArgs, DiskIO, DiskTrendingArgs, DiskUsage, MemTrendingArgs, NetIO, NetTrendingArgs, NetUsage } from '@/interface/host.ts'
 import { convertBytesToReadable } from '@/utils/convert.ts'
 import { dayjs } from 'element-plus'
 import { set } from 'lodash-es'
@@ -289,9 +264,7 @@ const renderDisk = async () => {
     set(
         diskOption,
         'xAxis.data',
-        diskData.usage[0].data.map(
-            (item: DiskIO) => dayjs(item.timestamp * 1000).hour() + ':' + dayjs(item.timestamp * 1000).minute()
-        )
+        diskData.usage[0].data.map((item: DiskIO) => dayjs(item.timestamp * 1000).hour() + ':' + dayjs(item.timestamp * 1000).minute())
     )
     set(diskOption, 'legend.data', generateDiskLegendData(diskData.usage))
     set(diskOption, 'series', generateDiskSeriesData(diskData.usage))
@@ -380,9 +353,7 @@ const renderNet = async () => {
     set(
         netOption,
         'xAxis.data',
-        netData.usage[0].data.map(
-            (item: NetIO) => dayjs(item.timestamp * 1000).hour() + ':' + dayjs(item.timestamp * 1000).minute()
-        )
+        netData.usage[0].data.map((item: NetIO) => dayjs(item.timestamp * 1000).hour() + ':' + dayjs(item.timestamp * 1000).minute())
     )
     set(netOption, 'legend.data', generateNetLegendData(netData.usage))
     set(netOption, 'series', generateNetSeriesData(netData.usage))

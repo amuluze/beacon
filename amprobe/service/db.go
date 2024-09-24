@@ -7,8 +7,8 @@ package service
 import (
 	"strings"
 
-	"github.com/amuluze/amprobe/service/model"
-	"github.com/amuluze/amutool/database"
+	"amprobe/service/model"
+	"common/database"
 )
 
 func NewDB(config *Config, models *model.Models) (*database.DB, error) {

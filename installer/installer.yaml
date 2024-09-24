@@ -4,7 +4,7 @@ build:
   - type: docker_image
     pull: false
     images:
-      - amuluze/amprobe:v1.3.6
+      - amuluze/amprobe:v1.3.8
   - type: file
     include:
       - amvector.install
@@ -14,7 +14,7 @@ install:
   - type: file
   - type: docker_image
     tags:
-      - source: amuluze/amprobe:v1.3.6
-        target: amuluze/amprobe:v1.3.6
+      - source: amuluze/amprobe:v1.3.8
+        target: amuluze/amprobe:latest
   - type: shell
     run: ./setup.sh

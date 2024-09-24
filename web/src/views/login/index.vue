@@ -20,35 +20,16 @@
                 <el-form :model="loginForm" :rules="loginFormRules">
                     <div class="title">
                         <span class="login">登录</span>
-                        <el-tag> <span class="version">v1.3.6</span> </el-tag>
+                        <el-tag> <span class="version">v1.3.8</span> </el-tag>
                     </div>
 
                     <el-form-item prop="username">
-                        <el-input
-                            ref="username"
-                            v-model="loginForm.username"
-                            size="large"
-                            class="username-input"
-                            :placeholder="'请输入用户名'"
-                            name="username"
-                            autocomplete="on"
-                            :prefix-icon="User"
-                        />
+                        <el-input ref="username" v-model="loginForm.username" size="large" class="username-input" :placeholder="'请输入用户名'" name="username" autocomplete="on" :prefix-icon="User" />
                     </el-form-item>
                     <el-form-item prop="password">
-                        <el-input
-                            v-model="loginForm.password"
-                            size="large"
-                            type="password"
-                            class="password-input"
-                            :placeholder="'请输入密码'"
-                            name="password"
-                            :prefix-icon="Lock"
-                            :show-password="true"
-                        >
-                        </el-input>
+                        <el-input v-model="loginForm.password" size="large" type="password" class="password-input" :placeholder="'请输入密码'" name="password" :prefix-icon="Lock" :show-password="true"> </el-input>
                     </el-form-item>
-                    <el-button class="btn" size="large" type="primary" @click.prevent="handleLogin"> 登录 </el-button class="btn">
+                    <el-button class="btn" size="large" type="primary" @click.prevent="handleLogin"> 登录 </el-button>
                 </el-form>
             </div>
         </div>

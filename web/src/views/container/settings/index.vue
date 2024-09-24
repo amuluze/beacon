@@ -8,13 +8,7 @@
     <el-card shadow="never" class="am-settings-image">
         <h4>镜像加速设置</h4>
         <el-divider />
-        <el-input
-            v-model="textarea"
-            style="width: 240px"
-            :rows="6"
-            type="textarea"
-            placeholder="https://docker.nju.edu.cn&#10;https://mirror.baidubce.com"
-        />
+        <el-input v-model="textarea" style="width: 240px" :rows="6" type="textarea" placeholder="https://docker.nju.edu.cn&#10;https://mirror.baidubce.com" />
         <p>优先使用加速 URL 执行操作，设置为空则取消镜像加速。</p>
         <el-button type="primary" plain @click="drawer = true"><svg-icon icon-class="settings" /> 设置</el-button>
     </el-card>
@@ -25,9 +19,7 @@
             </div>
             <div class="am-settings-drawer__operator">
                 <el-button type="default" size="default" plain @click="cancelEditDockerRegistryMirrors">取消</el-button>
-                <el-button type="primary" size="default" plain @click="confirmEditDockerRegistryMirrors">
-                    确定
-                </el-button>
+                <el-button type="primary" size="default" plain @click="confirmEditDockerRegistryMirrors"> 确定 </el-button>
             </div>
         </el-drawer>
     </div>

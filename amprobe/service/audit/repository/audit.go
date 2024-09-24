@@ -5,17 +5,21 @@
 package repository
 
 import (
+	"amprobe/service/model"
 	"context"
-	"github.com/amuluze/amprobe/service/model"
-	"github.com/amuluze/amprobe/service/schema"
-	"github.com/amuluze/amutool/database"
+
+	"amprobe/service/schema"
+
+	"common/database"
 	"github.com/google/wire"
 )
 
 var AuditRepoSet = wire.NewSet(NewAuditRepo, wire.Bind(new(IAuditRepo), new(*AuditRepo)))
 
+var _ IAuditRepo = (*AuditRepo)(nil)
+
 type IAuditRepo interface {
-	AuditQuery(ctx context.Context, args *schema.AuditQueryArgs) (model.Audits, error)
+	AuditQuery(ctx context.Context, args schema.AuditQueryArgs) (model.Audits, error)
 	AuditCount(ctx context.Context) (int, error)
 }
 
@@ -27,7 +31,7 @@ func NewAuditRepo(db *database.DB) *AuditRepo {
 	return &AuditRepo{DB: db}
 }
 
-func (a *AuditRepo) AuditQuery(ctx context.Context, args *schema.AuditQueryArgs) (model.Audits, error) {
+func (a *AuditRepo) AuditQuery(ctx context.Context, args schema.AuditQueryArgs) (model.Audits, error) {
 	var audits model.Audits
 	if err := a.DB.Model(&model.Audit{}).Order("created_at DESC").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&audits).Error; err != nil {
 		return audits, err

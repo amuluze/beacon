@@ -186,24 +186,24 @@ type SetSystemTimeArgs struct {
 
 type SetSystemTimeReply struct{}
 
-type GetSystemTimezoneListArgs struct {
+type GetSystemTimeZoneListArgs struct {
 }
 
-type GetSystemTimezoneListReply struct {
+type GetSystemTimeZoneListReply struct {
 	SystemTimeZoneList []string `json:"system_timezone_list"`
 }
 
-type GetSystemTimezoneArgs struct{}
+type GetSystemTimeZoneArgs struct{}
 
-type GetSystemTimezoneReply struct {
+type GetSystemTimeZoneReply struct {
 	SystemTimeZone string `json:"system_timezone"`
 }
 
-type SetSystemTimezoneArgs struct {
+type SetSystemTimeZoneArgs struct {
 	SystemTimeZone string `json:"system_timezone" validate:"required"`
 }
 
-type SetSystemTimezoneReply struct{}
+type SetSystemTimeZoneReply struct{}
 
 type RebootArgs struct{}
 

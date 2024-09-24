@@ -121,6 +121,49 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         }
     },
     {
+        path: '/account',
+        name: 'account',
+        redirect: '/account/user',
+        meta: {
+            title: '用户',
+            icon: 'user',
+            show: true
+        }
+    },
+    {
+        path: '/account/user',
+        name: 'user',
+        component: () => import('@/views/account/user/index.vue'), //路由懒加载
+        meta: {
+            title: '用户',
+            icon: 'user',
+            show: false,
+            activeMenu: '/account'
+        }
+    },
+    {
+        path: '/account/role',
+        name: 'role',
+        component: () => import('@/views/account/role/index.vue'), //路由懒加载
+        meta: {
+            title: '角色',
+            icon: 'user',
+            show: false,
+            activeMenu: '/account'
+        }
+    },
+    {
+        path: '/account/api',
+        name: 'api',
+        component: () => import('@/views/account/api/index.vue'), //路由懒加载
+        meta: {
+            title: '接口',
+            icon: 'user',
+            show: false,
+            activeMenu: '/account'
+        }
+    },
+    {
         path: '/audit',
         name: 'audit',
         component: () => import('@/views/audit/index.vue'), //路由懒加载
@@ -129,15 +172,15 @@ export const dynamicRoutes: RouteRecordRaw[] = [
             icon: 'audit',
             show: true
         }
+    },
+    {
+        path: '/profile',
+        name: 'profile',
+        component: () => import('@/views/profile/index.vue'), //路由懒加载
+        meta: {
+            title: '系统',
+            icon: 'settings',
+            show: false
+        }
     }
-    // {
-    //     path: '/system',
-    //     name: 'system',
-    //     component: () => import('@/views/system/index.vue'), //路由懒加载
-    //     meta: {
-    //         title: '系统',
-    //         icon: 'settings',
-    //         show: true
-    //     }
-    // }
 ]

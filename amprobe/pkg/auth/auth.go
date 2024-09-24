@@ -16,9 +16,9 @@ type TokenInfo interface {
 }
 
 type Auther interface {
-	GenerateToken(userID string, username string, isAdmin string) (TokenInfo, error)
+	GenerateToken(userID string, username string) (TokenInfo, error)
 	DestroyToken(token string) error
-	ParseToken(token string, tokenType string) (string, string, string, error)
+	ParseToken(token string, tokenType string) (string, string, error)
 	Release() error
 	RecordAudit(username string, operate string)
 }

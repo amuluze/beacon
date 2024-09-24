@@ -16,7 +16,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/amuluze/amutool/errors"
+	"amprobe/pkg/errors"
+
 	"github.com/amuluze/docker"
 	"github.com/gofiber/contrib/websocket"
 	"golang.org/x/crypto/ssh"
@@ -45,13 +46,12 @@ func (l *LoggerHandler) Handler(c *websocket.Conn) {
 	}
 	scanner := bufio.NewScanner(reader)
 	for {
-		mt, msg, err := c.ReadMessage()
+		mt, _, err := c.ReadMessage()
 		if err != nil {
 			slog.Error("read websocket message error", "err", err)
 			_ = c.WriteMessage(mt, []byte("bad message"))
 			break
 		}
-		slog.Info("receive websocket message", "msg", string(msg))
 		for scanner.Scan() {
 			// scanner.Bytes() 前有 8 个字节的 the HEADER part,需要忽略掉
 			// https://medium.com/@dhanushgopinath/reading-docker-container-logs-with-golang-docker-engine-api-702233fac044
@@ -86,7 +86,6 @@ func (th *TermHandler) Handler(conn *websocket.Conn) {
 		slog.Error("read ssh config error", "err", err)
 		return
 	}
-	slog.Info("ssh config", "config", config)
 	conf := &ssh.ClientConfig{
 		User: config.User,
 		Auth: []ssh.AuthMethod{
@@ -102,7 +101,6 @@ func (th *TermHandler) Handler(conn *websocket.Conn) {
 		return
 	}
 	defer client.Close()
-	slog.Info("ssh connected")
 
 	term, err := NewTerm(client, conn)
 	if err != nil {
@@ -151,7 +149,6 @@ func NewTerm(client *ssh.Client, conn *websocket.Conn) (*Term, error) {
 		return nil, err
 	}
 	defer session.Close()
-	slog.Info("ssh session created")
 	stdinPipe, err := session.StdinPipe()
 	if err != nil {
 		return nil, err

@@ -6,12 +6,14 @@ package host
 
 import (
 	"github.com/google/wire"
-
-	"github.com/amuluze/amprobe/service/host/api"
-	"github.com/amuluze/amprobe/service/host/rpc"
+	
+	"amprobe/service/host/api"
+	"amprobe/service/host/repository"
+	"amprobe/service/host/service"
 )
 
 var Set = wire.NewSet(
 	api.Set,
-	rpc.Set,
+	service.Set,
+	repository.Set,
 )

@@ -5,9 +5,10 @@
 package auth
 
 import (
-	"github.com/amuluze/amprobe/service/auth/api"
-	"github.com/amuluze/amprobe/service/auth/repository"
-	"github.com/amuluze/amprobe/service/auth/service"
+	"amprobe/service/auth/api"
+	"amprobe/service/auth/repository"
+	"amprobe/service/auth/service"
+
 	"github.com/google/wire"
 )
 

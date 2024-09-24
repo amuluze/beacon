@@ -5,9 +5,9 @@
 package task
 
 import (
+	"common/database"
 	"time"
 
-	"github.com/amuluze/amutool/database"
 	"github.com/amuluze/docker"
 	"github.com/patrickmn/go-cache"
 )
@@ -19,8 +19,25 @@ const (
 	LatestNetSendKey    = "latest_net_io_send_"
 )
 
+var _ ITask = (*Task)(nil)
+
+type ITask interface {
+	DockerTask(timestamp time.Time) error
+	ContainerTask(timestamp time.Time) error
+	ImageTask(timestamp time.Time) error
+	NetworkTask(timestamp time.Time) error
+
+	HostTask(timestamp time.Time) error
+	CPUTask(timestamp time.Time) error
+	MemoryTask(timestamp time.Time) error
+	DiskTask(timestamp time.Time) error
+	NetTask(timestamp time.Time) error
+	CleanTask()
+}
+
 type Task struct {
 	interval int
+	maxAge   int
 	db       *database.DB
 	manager  *docker.Manager
 	devices  map[string]struct{}
@@ -28,9 +45,10 @@ type Task struct {
 	cache    *cache.Cache
 }
 
-func NewTask(interval int, db *database.DB, manager *docker.Manager, dev map[string]struct{}, eth map[string]struct{}) *Task {
+func NewTask(interval int, maxAge int, db *database.DB, manager *docker.Manager, dev map[string]struct{}, eth map[string]struct{}) *Task {
 	return &Task{
 		interval: interval,
+		maxAge:   maxAge,
 		db:       db,
 		manager:  manager,
 		devices:  dev,

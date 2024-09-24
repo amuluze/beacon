@@ -26,9 +26,7 @@
                             </el-button>
                         </el-dropdown-item>
                         <el-dropdown-item>
-                            <el-button type="primary" size="small" text @click="fileCreateDialog = true">
-                                文件
-                            </el-button>
+                            <el-button type="primary" size="small" text @click="fileCreateDialog = true"> 文件 </el-button>
                         </el-dropdown-item>
                     </el-dropdown-menu>
                 </template>
@@ -48,11 +46,7 @@
                 <el-table-column prop="name" label="名称" min-width="150" align="center" fixed>
                     <template #default="scope">
                         <div style="display: flex; align-items: center">
-                            <svg-icon
-                                v-if="scope.row.is_dir == true"
-                                icon-class="folder"
-                                style="color: #105eeb; margin-right: 4px"
-                            />
+                            <svg-icon v-if="scope.row.is_dir == true" icon-class="folder" style="color: #105eeb; margin-right: 4px" />
                             <span @click="queryFilesByPath(path.join(currentPath, scope.row.name), scope.row.is_dir)">
                                 {{ scope.row.name }}
                             </span>
@@ -72,12 +66,8 @@
                 </el-table-column>
                 <el-table-column label="操作" width="200" fixed="right" align="center">
                     <template #default="scope">
-                        <el-button type="danger" size="small" text @click="deleteFileByName(scope.row.name)">
-                            删除
-                        </el-button>
-                        <el-button type="primary" size="small" text @click="downloadFileByName(scope.row.name)">
-                            下载
-                        </el-button>
+                        <el-button type="danger" size="small" text @click="deleteFileByName(scope.row.name)"> 删除 </el-button>
+                        <el-button type="primary" size="small" text @click="downloadFileByName(scope.row.name)"> 下载 </el-button>
                     </template>
                 </el-table-column>
             </el-table>
@@ -100,18 +90,14 @@
     <div class="am-host-file-create">
         <el-dialog v-model="fileCreateDialog" title="新建文件" width="50%">
             <el-input v-model="createFileName" placeholder="请输入文件名" />
-            <el-button size="default" type="info" plain @click="confirmCreateFile" v-loading="fileCreateLoading">
-                确定
-            </el-button>
+            <el-button size="default" type="info" plain @click="confirmCreateFile" v-loading="fileCreateLoading"> 确定 </el-button>
         </el-dialog>
     </div>
     <!-- 新建文件夹 -->
     <div class="am-host-file-create">
         <el-dialog v-model="folderCreateDialog" title="新建文件夹" width="50%">
             <el-input v-model="createFolderName" placeholder="请输入文件夹名称" />
-            <el-button size="default" type="info" plain @click="confirmCreateFolder" v-loading="fileCreateLoading">
-                确定
-            </el-button>
+            <el-button size="default" type="info" plain @click="confirmCreateFolder" v-loading="fileCreateLoading"> 确定 </el-button>
         </el-dialog>
     </div>
     <!-- 上传文件 -->
@@ -142,14 +128,7 @@
 <script setup lang="ts">
 import { createFile, createFolder, deleteFile, downloadFile, queryFiles } from '@/api/host'
 import { error, success } from '@/components/Message/message'
-import {
-    FileCreateArgs,
-    FileDeleteArgs,
-    FileDownloadArgs,
-    FileInfo,
-    FilesSearchArgs,
-    FolderCreateArgs
-} from '@/interface/host'
+import { FileCreateArgs, FileDeleteArgs, FileDownloadArgs, FileInfo, FilesSearchArgs, FolderCreateArgs } from '@/interface/host'
 import useStore from '@/store'
 import { convertBytesToReadable } from '@/utils/convert'
 import { dayjs } from 'element-plus'

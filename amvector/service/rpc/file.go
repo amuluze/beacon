@@ -5,22 +5,21 @@
 package rpc
 
 import (
+	rpcSchema "common/rpc/schema"
 	"context"
 	"os"
 	"path/filepath"
-
-	"github.com/amuluze/amprobe/amvector/service/schema"
 )
 
-func (s *Service) FilesSearch(ctx context.Context, args schema.FilesSearchArgs, reply *schema.FilesSearchReply) error {
+func (s *Service) FilesSearch(ctx context.Context, args rpcSchema.FilesSearchArgs, reply *rpcSchema.FilesSearchReply) error {
 	files, err := os.ReadDir(args.Path)
 	if err != nil {
 		return err
 	}
-	data := make([]schema.FileInfo, 0)
+	data := make([]rpcSchema.FileInfo, 0)
 	for _, file := range files {
 		info, _ := file.Info()
-		data = append(data, schema.FileInfo{
+		data = append(data, rpcSchema.FileInfo{
 			Name:    file.Name(),
 			IsDir:   file.IsDir(),
 			Size:    info.Size(),
@@ -32,7 +31,7 @@ func (s *Service) FilesSearch(ctx context.Context, args schema.FilesSearchArgs, 
 	return nil
 }
 
-func (s *Service) DirSize(ctx context.Context, args schema.DirSizeArgs, reply *schema.DirSizeReply) error {
+func (s *Service) DirSize(ctx context.Context, args rpcSchema.DirSizeArgs, reply *rpcSchema.DirSizeReply) error {
 	var size int64
 	if err := filepath.Walk(args.Path, func(_ string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -49,7 +48,7 @@ func (s *Service) DirSize(ctx context.Context, args schema.DirSizeArgs, reply *s
 	return nil
 }
 
-func (s *Service) FileCreate(ctx context.Context, args schema.FileCreateArgs, reply *schema.FileCreateReply) error {
+func (s *Service) FileCreate(ctx context.Context, args rpcSchema.FileCreateArgs, reply *rpcSchema.FileCreateReply) error {
 	filePath := filepath.Join(args.Path, args.FileName)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		_, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, os.FileMode(0755))
@@ -61,7 +60,7 @@ func (s *Service) FileCreate(ctx context.Context, args schema.FileCreateArgs, re
 	return nil
 }
 
-func (s *Service) FolderCreate(ctx context.Context, args schema.FolderCreateArgs, reply *schema.FolderCreateReply) error {
+func (s *Service) FolderCreate(ctx context.Context, args rpcSchema.FolderCreateArgs, reply *rpcSchema.FolderCreateReply) error {
 	folderPath := filepath.Join(args.Path, args.FolderName)
 	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
 		return os.Mkdir(folderPath, os.FileMode(0755))
@@ -69,7 +68,7 @@ func (s *Service) FolderCreate(ctx context.Context, args schema.FolderCreateArgs
 	return nil
 }
 
-func (s *Service) FileDelete(ctx context.Context, args schema.FileDeleteArgs, reply *schema.FileDeleteReply) error {
+func (s *Service) FileDelete(ctx context.Context, args rpcSchema.FileDeleteArgs, reply *rpcSchema.FileDeleteReply) error {
 	if info, err := os.Stat(args.Filepath); err != nil {
 		return err
 	} else if info.IsDir() {
@@ -79,10 +78,10 @@ func (s *Service) FileDelete(ctx context.Context, args schema.FileDeleteArgs, re
 	}
 }
 
-func (s *Service) FileUpload(ctx context.Context, args schema.FileUploadArgs, reply *schema.FileUploadReply) error {
+func (s *Service) FileUpload(ctx context.Context, args rpcSchema.FileUploadArgs, reply *rpcSchema.FileUploadReply) error {
 	return os.Rename(args.SourceFilePath, args.TargetFilePath)
 }
 
-func (s *Service) FileDownload(ctx context.Context, args schema.FileDownloadArgs, reply *schema.FileDownloadReply) error {
+func (s *Service) FileDownload(ctx context.Context, args rpcSchema.FileDownloadArgs, reply *rpcSchema.FileDownloadReply) error {
 	return os.Rename(args.SourceFilePath, args.TargetFilePath)
 }

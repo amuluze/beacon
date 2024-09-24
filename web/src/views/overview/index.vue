@@ -67,13 +67,7 @@ import { cpuGaugeOptions, diskGaugeOptions, memGaugeOptions } from '@/components
 import { set } from 'lodash-es'
 
 onMounted(() => {
-    getHostInfo(),
-        getDockerInfo(),
-        renderCPUGauge(),
-        renderMemGauge(),
-        renderDiskGauge(),
-        statisticContainer(),
-        statisticImage()
+    getHostInfo(), getDockerInfo(), renderCPUGauge(), renderMemGauge(), renderDiskGauge(), statisticContainer(), statisticImage()
 })
 
 const containerCount = ref(0)

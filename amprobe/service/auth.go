@@ -5,12 +5,15 @@
 package service
 
 import (
-	"github.com/amuluze/amprobe/pkg/auth"
-	"github.com/amuluze/amprobe/pkg/auth/jwtauth"
-	"github.com/amuluze/amutool/database"
+	"time"
+
+	"amprobe/pkg/auth"
+	"amprobe/pkg/auth/jwtauth"
+
+	"common/database"
+
 	"github.com/golang-jwt/jwt"
 	"github.com/patrickmn/go-cache"
-	"time"
 )
 
 func InitAuthStore(config *Config) (*jwtauth.Store, func(), error) {

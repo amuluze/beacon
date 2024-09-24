@@ -11,10 +11,8 @@ var (
 
 	SystemEnv           = "/etc/amvector/amvector.env"
 	SystemVersionFolder = "/etc/amvector/versions"
-	SystemVersionPath   = filepath.Join(SystemVersionFolder, ".TXT")
 
 	AmvectorFolder              = "amvector"
-	AmvectorServiceProfilePath  = filepath.Join(AmvectorFolder, "service_profile.yml")
 	AmvectorStorageFolder       = filepath.Join(AmvectorFolder, "storage")
 	AmvectorStorageConfigDBPath = filepath.Join(AmvectorStorageFolder, "vector")
 	AmvectorSockFolder          = filepath.Join(AmvectorFolder, "socks")

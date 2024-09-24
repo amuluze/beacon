@@ -5,17 +5,19 @@
 package service
 
 import (
-	"github.com/amuluze/amprobe/pkg/auth"
-	"github.com/amuluze/amprobe/service/middleware"
+	"amprobe/pkg/auth"
+	"amprobe/service/middleware"
+
+	"github.com/casbin/casbin/v2"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
-
 	"github.com/google/wire"
 
-	auditAPI "github.com/amuluze/amprobe/service/audit/api"
-	authAPI "github.com/amuluze/amprobe/service/auth/api"
-	containerAPI "github.com/amuluze/amprobe/service/container/api"
-	hostAPI "github.com/amuluze/amprobe/service/host/api"
+	accountAPI "amprobe/service/account/api"
+	auditAPI "amprobe/service/audit/api"
+	authAPI "amprobe/service/auth/api"
+	containerAPI "amprobe/service/container/api"
+	hostAPI "amprobe/service/host/api"
 )
 
 var RouterSet = wire.NewSet(wire.Struct(new(Router), "*"), wire.Bind(new(IRouter), new(*Router)))
@@ -28,13 +30,15 @@ type IRouter interface {
 }
 
 type Router struct {
-	config *Config
-	auth   auth.Auther
+	config   *Config
+	auth     auth.Auther
+	enforcer *casbin.SyncedEnforcer
 
 	containerAPI *containerAPI.ContainerAPI
 	hostAPI      *hostAPI.HostAPI
 	authAPI      *authAPI.AuthAPI
 	auditAPI     *auditAPI.AuditAPI
+	accountAPI   *accountAPI.AccountAPI
 
 	loggerHandler *LoggerHandler
 	termHandler   *TermHandler
@@ -62,6 +66,15 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 		))
 	}
 
+	if a.config.Casbin.Enable {
+		app.Use(middleware.CasbinMiddleware(
+			a.enforcer,
+			middleware.AllowPathPrefixSkipper("/v1/index/index"),
+			middleware.AllowPathPrefixSkipper("/v1/auth/login"),
+			middleware.AllowPathPrefixSkipper("/v1/auth/token_update"),
+		))
+	}
+
 	v1 := app.Group("v1")
 	{
 		gIndex := v1.Group("index")
@@ -71,12 +84,34 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			})
 		}
 
+		gUser := v1.Group("user")
+		{
+			gUser.Get("/user_query", a.accountAPI.UserQuery).Name("查询用户")
+			gUser.Post("/user_create", a.accountAPI.UserCreate).Name("创建用户")
+			gUser.Post("/user_update", a.accountAPI.UserUpdate).Name("更新用户")
+			gUser.Post("/user_delete", a.accountAPI.UserDelete).Name("删除用户")
+		}
+
+		gRole := v1.Group("role")
+		{
+			gRole.Get("/role_query", a.accountAPI.RoleQuery).Name("查询角色")
+			gRole.Post("/role_create", a.accountAPI.RoleCreate).Name("创建角色")
+			gRole.Post("/role_update", a.accountAPI.RoleUpdate).Name("更新角色")
+			gRole.Post("/role_delete", a.accountAPI.RoleDelete).Name("删除角色")
+		}
+
+		gResource := v1.Group("resource")
+		{
+			gResource.Get("/resource_query", a.accountAPI.ResourceQuery).Name("查询资源")
+		}
+
 		gAuth := v1.Group("auth")
 		{
 			gAuth.Post("/login", a.authAPI.Login).Name("登录")
 			gAuth.Post("/logout", a.authAPI.Logout).Name("登出")
 			gAuth.Post("/pass_update", a.authAPI.PassUpdate).Name("更新密码")
 			gAuth.Post("/token_update", a.authAPI.TokenUpdate).Name("更新 token")
+			gAuth.Get("/user_info", a.authAPI.UserInfo).Name("查询权限")
 		}
 
 		gContainer := v1.Group("container")
@@ -121,9 +156,9 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			gHost.Post("/set_dns_settings", a.hostAPI.SetDNSSettings).Name("更新 DNS 设置")
 			gHost.Get("/get_system_time", a.hostAPI.GetSystemTime).Name("获取系统时间")
 			gHost.Post("/set_system_time", a.hostAPI.SetSystemTime).Name("更新系统时间")
-			gHost.Get("/get_system_timezone_list", a.hostAPI.GetSystemTimezoneList).Name("获取系统时区列表")
-			gHost.Get("/get_system_timezone", a.hostAPI.GetSystemTimezone).Name("获取系统时区")
-			gHost.Post("/set_system_timezone", a.hostAPI.SetSystemTimezone).Name("更新系统时区")
+			gHost.Get("/get_system_timezone_list", a.hostAPI.GetSystemTimeZoneList).Name("获取系统时区列表")
+			gHost.Get("/get_system_timezone", a.hostAPI.GetSystemTimeZone).Name("获取系统时区")
+			gHost.Post("/set_system_timezone", a.hostAPI.SetSystemTimeZone).Name("更新系统时区")
 			gHost.Post("/reboot", a.hostAPI.Reboot).Name("重启系统")
 			gHost.Post("/shutdown", a.hostAPI.Shutdown).Name("关闭系统")
 		}

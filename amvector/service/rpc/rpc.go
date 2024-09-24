@@ -5,10 +5,13 @@
 package rpc
 
 import (
-	"github.com/amuluze/amutool/database"
+	"common/database"
+	"common/rpc"
 	"github.com/amuluze/docker"
 	"github.com/patrickmn/go-cache"
 )
+
+var _ rpc.IService = (*Service)(nil)
 
 type Service struct {
 	DB      *database.DB

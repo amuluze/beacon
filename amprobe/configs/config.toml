@@ -45,23 +45,11 @@ DBName = "/app/probe"
 # SSL模式
 SSLMode = ""
 
-[Disk]
-# 需要监控的磁盘设备，可以根据 lsblk 命令查看
-Devices = ["vda2"]
-
-[Ethernet]
-# 需要监控的网口，可以通过 ifconfig 命令查看
-Names = ["eth0"]
-
-[Task]
-# 主机监控数据的采集频率
-Interval = 30 # 单位 s
-
-[Logger]
-File = "/app/probe.log"
+[Log]
+Output = "/app/logs/probe.log"
 Level = "debug"
-RotationTime = "1"      # 每天切分一个日志文件
-MaxAge = "7"            # 最多保留 7 天的日志
+Rotation = 1                   # 每天切分一个日志文件
+MaxAge = 7                     # 最多保留 7 天的日志
 
 [Auth]
 # 是否启用
@@ -75,7 +63,12 @@ Expired = 7200
 # key 前缀
 Prefix = "auth_"
 
-
-[InitData]
+[Casbin]
+# 是否启用casbin
 Enable = true
-InitConfigFile = "/app/configs/init.yaml"
+# debug模式
+Debug = false
+# 是否启用定期自动加载策略
+AutoLoad = true
+# 定期自动加载策略时间间隔（单位秒）
+AutoLoadInternal = 60

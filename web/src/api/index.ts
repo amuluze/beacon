@@ -70,9 +70,7 @@ class Request {
                             fileName = decodeURI(fileName)
                             console.log('file name: ', fileName)
                             let content = response.data
-                            let url = window.URL.createObjectURL(
-                                new Blob([content], { type: 'application/octet-stream' })
-                            )
+                            let url = window.URL.createObjectURL(new Blob([content], { type: 'application/octet-stream' }))
                             let link = document.createElement('a')
                             link.style.display = 'none'
                             link.href = url

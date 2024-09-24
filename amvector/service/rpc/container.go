@@ -5,33 +5,71 @@
 package rpc
 
 import (
+	rpcSchema "common/rpc/schema"
 	"context"
 	"encoding/json"
 	"log/slog"
 	"time"
 
+	"gorm.io/gorm"
+
+	"amvector/service/model"
 	"github.com/amuluze/docker"
-
-	"github.com/amuluze/amprobe/amvector/service/model"
-
-	"github.com/amuluze/amprobe/amvector/service/schema"
 )
 
-func (s *Service) DockerVersion(ctx context.Context, args schema.VersionArgs, reply *model.Docker) error {
-	if err := s.DB.Model(&model.Docker{}).First(reply).Error; err != nil {
+func (s *Service) Version(ctx context.Context, args rpcSchema.DockerArgs, reply *rpcSchema.DockerReply) error {
+	var result model.Docker
+	if err := s.DB.Model(&model.Docker{}).First(&result).Error; err != nil {
 		return err
 	}
+	reply.Data.Timestamp = result.Timestamp
+	reply.Data.DockerVersion = result.DockerVersion
+	reply.Data.APIVersion = result.APIVersion
+	reply.Data.MinAPIVersion = result.MinAPIVersion
+	reply.Data.GitCommit = result.GitCommit
+	reply.Data.GoVersion = result.GoVersion
+	reply.Data.Os = result.Os
+	reply.Data.Arch = result.Arch
 	return nil
 }
 
-func (s *Service) ContainerList(ctx context.Context, args schema.ContainerQueryArgs, reply *model.Containers) error {
-	if err := s.DB.Model(&model.Container{}).Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(reply).Error; err != nil {
+func (s *Service) ContainerList(ctx context.Context, args rpcSchema.ContainerQueryArgs, reply *rpcSchema.ContainerQueryReply) error {
+	var containers []model.Container
+	if err := s.DB.Model(&model.Container{}).Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&containers).Error; err != nil {
 		return err
 	}
+	var results []rpcSchema.Container
+	for _, container := range containers {
+		results = append(results, rpcSchema.Container{
+			Timestamp:   container.Timestamp,
+			ContainerID: container.ContainerID,
+			Name:        container.Name,
+			Image:       container.Image,
+			IP:          container.IP,
+			Ports:       container.Ports,
+			State:       container.State,
+			Uptime:      container.Uptime,
+			CPUPercent:  container.CPUPercent,
+			MemPercent:  container.MemPercent,
+			MemUsage:    container.MemUsage,
+			MemLimit:    container.MemLimit,
+			Labels:      container.Labels,
+		})
+	}
+	reply.Data = results
 	return nil
 }
 
-func (s *Service) ContainerCount(ctx context.Context, args schema.QueryCountArgs, reply *schema.QueryCountReply) error {
+func (s *Service) ContainersByImage(ctx context.Context, args rpcSchema.ContainersByImageArgs, reply *rpcSchema.ContainersByImageReply) error {
+	var count int64
+	if err := s.DB.Model(&model.Container{}).Where("image = ?", args.Image).Count(&count).Error; err != nil {
+		return err
+	}
+	reply.Num = int(count)
+	return nil
+}
+
+func (s *Service) ContainerCount(ctx context.Context, args rpcSchema.ContainerCountArgs, reply *rpcSchema.ContainerCountReply) error {
 	var count int64
 	if err := s.DB.Model(&model.Container{}).Count(&count).Error; err != nil {
 		return err
@@ -40,24 +78,28 @@ func (s *Service) ContainerCount(ctx context.Context, args schema.QueryCountArgs
 	return nil
 }
 
-func (s *Service) ContainerCreate(ctx context.Context, args schema.ContainerCreateArgs, reply *schema.ContainerCreateReply) error {
+func (s *Service) ContainerCreate(ctx context.Context, args rpcSchema.ContainerCreateArgs, reply *rpcSchema.ContainerCreateReply) error {
 	var containerID string
 	var err error
 	if containerID, err = s.Manager.CreateContainer(
 		ctx,
-		args.ContainerName,
-		args.ImageName,
-		args.NetworkName,
+		args.Name,
+		args.Image,
+		args.Network,
 		args.Ports,
 		args.Volumes,
 		args.Environments,
+		nil,
 		args.Labels,
 	); err != nil {
 		return err
 	}
 	s.containerTask()
-	s.imageTask()
 	reply.ContainerID = containerID
+	return nil
+}
+
+func (s *Service) ContainerUpdate(ctx context.Context, args rpcSchema.ContainerUpdateArgs, reply *rpcSchema.ContainerUpdateReply) error {
 	return nil
 }
 
@@ -111,15 +153,22 @@ func (s *Service) containerTask() {
 	s.DB.Model(&model.Container{}).Create(&containers)
 }
 
-func (s *Service) ContainerDelete(ctx context.Context, args schema.ContainerDeleteArgs, reply *schema.ContainerDeleteReply) error {
-	if err := s.Manager.DeleteContainer(ctx, args.ContainerID); err != nil {
+func (s *Service) ContainerDelete(ctx context.Context, args rpcSchema.ContainerDeleteArgs, reply *rpcSchema.ContainerDeleteReply) error {
+	if err := s.DB.RunInTransaction(func(tx *gorm.DB) error {
+		if err := s.Manager.DeleteContainer(ctx, args.ContainerID); err != nil {
+			return err
+		}
+		if err := tx.Model(&model.Container{}).Where("container_id = ?", args.ContainerID).Delete(&model.Container{}).Error; err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
 		return err
 	}
-	s.containerTask()
 	return nil
 }
 
-func (s *Service) ContainerStart(ctx context.Context, args schema.ContainerStartArgs, reply *schema.ContainerStartReply) error {
+func (s *Service) ContainerStart(ctx context.Context, args rpcSchema.ContainerStartArgs, reply *rpcSchema.ContainerStartReply) error {
 	if err := s.Manager.StartContainer(ctx, args.ContainerID); err != nil {
 		return err
 	}
@@ -129,7 +178,7 @@ func (s *Service) ContainerStart(ctx context.Context, args schema.ContainerStart
 	return nil
 }
 
-func (s *Service) ContainerStop(ctx context.Context, args schema.ContainerStopArgs, reply *schema.ContainerStopReply) error {
+func (s *Service) ContainerStop(ctx context.Context, args rpcSchema.ContainerStopArgs, reply *rpcSchema.ContainerStopReply) error {
 	if err := s.Manager.StopContainer(ctx, args.ContainerID); err != nil {
 		return err
 	}
@@ -139,7 +188,7 @@ func (s *Service) ContainerStop(ctx context.Context, args schema.ContainerStopAr
 	return nil
 }
 
-func (s *Service) ContainerRestart(ctx context.Context, args schema.ContainerRestartArgs, reply *schema.ContainerRestartReply) error {
+func (s *Service) ContainerRestart(ctx context.Context, args rpcSchema.ContainerRestartArgs, reply *rpcSchema.ContainerRestartReply) error {
 	if err := s.Manager.RestartContainer(ctx, args.ContainerID); err != nil {
 		return err
 	}
@@ -149,14 +198,27 @@ func (s *Service) ContainerRestart(ctx context.Context, args schema.ContainerRes
 	return nil
 }
 
-func (s *Service) ImageList(ctx context.Context, args schema.ImageQueryArgs, reply *model.Images) error {
-	if err := s.DB.Model(&model.Image{}).Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(reply).Error; err != nil {
+func (s *Service) ImageList(ctx context.Context, args rpcSchema.ImageQueryArgs, reply *rpcSchema.ImageQueryReply) error {
+	var results []model.Image
+	if err := s.DB.Model(&model.Image{}).Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&results).Error; err != nil {
 		return err
 	}
+	var list []rpcSchema.Image
+	for _, result := range results {
+		list = append(list, rpcSchema.Image{
+			Timestamp: result.Timestamp,
+			ImageID:   result.ImageID,
+			Name:      result.Name,
+			Tag:       result.Tag,
+			Created:   result.Created,
+			Size:      result.Size,
+		})
+	}
+	reply.Data = list
 	return nil
 }
 
-func (s *Service) ImagePull(ctx context.Context, args schema.ImagePullArgs, reply *schema.ImagePullReply) error {
+func (s *Service) ImagePull(ctx context.Context, args rpcSchema.ImagePullArgs, reply *rpcSchema.ImagePullReply) error {
 	if err := s.Manager.PullImage(ctx, args.ImageName); err != nil {
 		return err
 	}
@@ -164,7 +226,7 @@ func (s *Service) ImagePull(ctx context.Context, args schema.ImagePullArgs, repl
 	return nil
 }
 
-func (s *Service) ImageTag(ctx context.Context, args schema.ImageTagArgs, reply *schema.ImageTagReply) error {
+func (s *Service) ImageTag(ctx context.Context, args rpcSchema.ImageTagArgs, reply *rpcSchema.ImageTagReply) error {
 	if err := s.Manager.TagImage(ctx, args.OldTag, args.NewTag); err != nil {
 		return err
 	}
@@ -172,7 +234,7 @@ func (s *Service) ImageTag(ctx context.Context, args schema.ImageTagArgs, reply 
 	return nil
 }
 
-func (s *Service) ImageCount(ctx context.Context, args schema.ImageCountArgs, reply *schema.ImageCountReply) error {
+func (s *Service) ImageCount(ctx context.Context, args rpcSchema.ImageCountArgs, reply *rpcSchema.ImageCountReply) error {
 	var total int64
 	if err := s.DB.Model(&model.Images{}).Order("created_at desc").Count(&total).Error; err != nil {
 		return err
@@ -181,7 +243,7 @@ func (s *Service) ImageCount(ctx context.Context, args schema.ImageCountArgs, re
 	return nil
 }
 
-func (s *Service) ImageDelete(ctx context.Context, args schema.ImageDeleteArgs, reply *schema.ImageDeleteReply) error {
+func (s *Service) ImageDelete(ctx context.Context, args rpcSchema.ImageDeleteArgs, reply *rpcSchema.ImageDeleteReply) error {
 	if err := s.Manager.DeleteImage(ctx, args.ImageID); err != nil {
 		return err
 	}
@@ -234,7 +296,7 @@ func (s *Service) ImagesPrune(ctx context.Context) error {
 	return s.Manager.PruneImages(ctx)
 }
 
-func (s *Service) ImageImport(ctx context.Context, args schema.ImageImportArgs, reply *schema.ImageImportReply) error {
+func (s *Service) ImageImport(ctx context.Context, args rpcSchema.ImageImportArgs, reply *rpcSchema.ImageImportReply) error {
 	if err := s.Manager.ImportImage(ctx, args.SourceFile); err != nil {
 		return err
 	}
@@ -242,14 +304,14 @@ func (s *Service) ImageImport(ctx context.Context, args schema.ImageImportArgs, 
 	return nil
 }
 
-func (s *Service) ImageExport(ctx context.Context, args schema.ImageExportArgs, reply *schema.ImageExportReply) error {
+func (s *Service) ImageExport(ctx context.Context, args rpcSchema.ImageExportArgs, reply *rpcSchema.ImageExportReply) error {
 	if err := s.Manager.ExportImage(ctx, args.ImageIDs, args.TargetFile); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *Service) NetworkCreate(ctx context.Context, args schema.NetworkCreateArgs, reply *schema.NetworkCreateReply) error {
+func (s *Service) NetworkCreate(ctx context.Context, args rpcSchema.NetworkCreateArgs, reply *rpcSchema.NetworkCreateReply) error {
 	args.Labels[docker.CreatedByProbe] = "true"
 	if networkID, err := s.Manager.CreateNetwork(ctx, args.Name, args.Driver, args.Subnet, args.Gateway, args.Labels); err != nil {
 		return err
@@ -297,14 +359,31 @@ func (s *Service) networkTask() {
 	s.DB.Model(&model.Network{}).Create(&list)
 }
 
-func (s *Service) NetworkList(ctx context.Context, args schema.NetworkQueryArgs, reply *model.Networks) error {
-	if err := s.DB.Model(&model.Network{}).Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(reply).Error; err != nil {
+func (s *Service) NetworkList(ctx context.Context, args rpcSchema.NetworkQueryArgs, reply *rpcSchema.NetworkQueryReply) error {
+	var networks []model.Network
+	if err := s.DB.Model(&model.Network{}).Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&networks).Error; err != nil {
 		return err
 	}
+	var list []rpcSchema.Network
+	for _, n := range networks {
+		list = append(list, rpcSchema.Network{
+			Timestamp: n.Timestamp,
+			NetworkID: n.NetworkID,
+			Name:      n.Name,
+			Driver:    n.Driver,
+			Scope:     n.Scope,
+			Created:   n.Created,
+			Internal:  n.Internal,
+			Subnet:    n.Subnet,
+			Gateway:   n.Gateway,
+			Labels:    n.Labels,
+		})
+	}
+	reply.Data = list
 	return nil
 }
 
-func (s *Service) NetworkCount(ctx context.Context, args schema.NetworkCountArgs, reply *schema.NetworkCountReply) error {
+func (s *Service) NetworkCount(ctx context.Context, args rpcSchema.NetworkCountArgs, reply *rpcSchema.NetworkCountReply) error {
 	var total int64
 	if err := s.DB.Model(&model.Network{}).Order("created_at desc").Count(&total).Error; err != nil {
 		return err
@@ -313,7 +392,7 @@ func (s *Service) NetworkCount(ctx context.Context, args schema.NetworkCountArgs
 	return nil
 }
 
-func (s *Service) NetworkDelete(ctx context.Context, args schema.NetworkDeleteArgs, reply *schema.NetworkDeleteReply) error {
+func (s *Service) NetworkDelete(ctx context.Context, args rpcSchema.NetworkDeleteArgs, reply *rpcSchema.NetworkDeleteReply) error {
 	if err := s.Manager.DeleteNetwork(ctx, args.NetworkID); err != nil {
 		return err
 	}

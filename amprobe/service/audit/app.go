@@ -5,9 +5,10 @@
 package audit
 
 import (
-	"github.com/amuluze/amprobe/service/audit/api"
-	"github.com/amuluze/amprobe/service/audit/repository"
-	"github.com/amuluze/amprobe/service/audit/service"
+	"amprobe/service/audit/api"
+	"amprobe/service/audit/repository"
+	"amprobe/service/audit/service"
+
 	"github.com/google/wire"
 )
 

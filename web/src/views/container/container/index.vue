@@ -16,118 +16,37 @@
         <!-- https://blog.csdn.net/qq_24950043/article/details/114292940 -->
         <div class="am-table">
             <el-table :data="data" :key="containerKey" stripe ref="multipleTable" v-loading="loading">
-                <el-table-column prop="id" label="容器 ID" min-width="100" align="center" fixed sortable />
-                <el-table-column
-                    prop="name"
-                    label="容器名称"
-                    align="center"
-                    min-width="120"
-                    show-overflow-tooltip
-                    fixed
-                    sortable
-                />
-                <el-table-column
-                    prop="image"
-                    label="镜像名称"
-                    align="center"
-                    min-width="120"
-                    show-overflow-tooltip
-                    sortable
-                />
-                <el-table-column
-                    prop="ip"
-                    label="容器 IP"
-                    align="center"
-                    min-width="100"
-                    show-overflow-tooltip
-                    sortable
-                />
+                <!-- <el-table-column prop="id" label="容器 ID" min-width="100" align="center" fixed sortable /> -->
+                <el-table-column prop="name" label="容器名称" align="center" min-width="120" show-overflow-tooltip fixed sortable />
+                <el-table-column prop="image" label="镜像名称" align="center" min-width="120" show-overflow-tooltip sortable />
+                <el-table-column prop="ip" label="容器 IP" align="center" min-width="100" show-overflow-tooltip sortable />
                 <el-table-column prop="ports" label="容器端口" align="center" min-width="100" show-overflow-tooltip />
                 <el-table-column prop="state" label="运行状态" align="center" min-width="120" show-overflow-tooltip>
                     <template #default="scope">
-                        <el-tag :type="scope.row.state === 'running' ? 'success' : 'danger'">{{
-                            scope.row.state
-                        }}</el-tag>
+                        <el-tag :type="scope.row.state === 'running' ? 'success' : 'danger'">{{ scope.row.state }}</el-tag>
                     </template>
                 </el-table-column>
-                <el-table-column
-                    prop="uptime"
-                    label="启动时间"
-                    align="center"
-                    min-width="120"
-                    show-overflow-tooltip
-                    sortable
-                />
-                <el-table-column
-                    prop="cpu_percent"
-                    label="CPU使用率"
-                    align="center"
-                    min-width="130"
-                    show-overflow-tooltip
-                    sortable
-                />
-                <el-table-column
-                    prop="memory_percent"
-                    label="内存使用率"
-                    align="center"
-                    min-width="130"
-                    show-overflow-tooltip
-                    sortable
-                />
-                <el-table-column
-                    prop="memory_usage"
-                    label="内存使用量"
-                    align="center"
-                    min-width="130"
-                    show-overflow-tooltip
-                    sortable
-                />
-                <el-table-column
-                    prop="memory_limit"
-                    label="内存限制"
-                    align="center"
-                    min-width="120"
-                    show-overflow-tooltip
-                />
+                <el-table-column prop="uptime" label="启动时间" align="center" min-width="120" show-overflow-tooltip sortable />
+                <el-table-column prop="cpu_percent" label="CPU使用率" align="center" min-width="130" show-overflow-tooltip sortable />
+                <el-table-column prop="memory_percent" label="内存使用率" align="center" min-width="130" show-overflow-tooltip sortable />
+                <el-table-column prop="memory_usage" label="内存使用量" align="center" min-width="130" show-overflow-tooltip sortable />
+                <el-table-column prop="memory_limit" label="内存限制" align="center" min-width="120" show-overflow-tooltip />
                 <el-table-column label="操作" width="200" fixed="right" align="center">
                     <template #default="scope">
                         <el-button type="primary" size="small" text @click="viewLog(scope.row.id)"> 日志 </el-button>
-                        <el-button type="primary" size="small" text @click="startContainerByID(scope.row.id)">
-                            启动
-                        </el-button>
+                        <el-button type="primary" size="small" text @click="startContainerByID(scope.row.id)"> 启动 </el-button>
                         <el-dropdown>
                             <el-button type="primary" size="small" text>更多</el-button>
                             <template #dropdown>
                                 <el-dropdown-menu>
                                     <el-dropdown-item>
-                                        <el-button
-                                            type="warning"
-                                            size="small"
-                                            text
-                                            @click="stopContainerByID(scope.row.id)"
-                                        >
-                                            停止
-                                        </el-button>
+                                        <el-button type="warning" size="small" text @click="stopContainerByID(scope.row.id)"> 停止 </el-button>
                                     </el-dropdown-item>
                                     <el-dropdown-item>
-                                        <el-button
-                                            type="warning"
-                                            size="small"
-                                            text
-                                            @click="restartContainerByID(scope.row.id)"
-                                        >
-                                            重启
-                                        </el-button>
+                                        <el-button type="warning" size="small" text @click="restartContainerByID(scope.row.id)"> 重启 </el-button>
                                     </el-dropdown-item>
                                     <el-dropdown-item>
-                                        <el-button
-                                            type="danger"
-                                            size="small"
-                                            text
-                                            @click="deleteContainerByID(scope.row.id)"
-                                        >
-                                            删除
-                                        </el-button>
+                                        <el-button type="danger" size="small" text @click="deleteContainerByID(scope.row.id)"> 删除 </el-button>
                                     </el-dropdown-item>
                                 </el-dropdown-menu>
                             </template>
@@ -165,43 +84,23 @@
     <!-- 创建容器 -->
     <div class="am-container-create">
         <el-drawer v-model="drawer" size="50%" title="创建容器">
-            <el-form
-                ref="containerCreateRef"
-                :model="containerCreateMode"
-                :rules="rules"
-                label-width="120px"
-                label-position="left"
-            >
+            <el-form ref="containerCreateRef" :model="containerCreateMode" :rules="rules" label-width="120px" label-position="left">
                 <el-form-item label="名称" prop="containerName">
                     <el-input v-model="containerCreateMode.containerName" placeholder="请输入名称" />
                 </el-form-item>
                 <el-form-item label="镜像" prop="imageName">
                     <el-select v-model="containerCreateMode.imageName" style="width: 320px" placeholder="请选择镜像">
-                        <el-option
-                            v-for="item in imageNameOptions"
-                            :key="item.value"
-                            :label="item.label"
-                            :value="item.value"
-                        />
+                        <el-option v-for="item in imageNameOptions" :key="item.value" :label="item.label" :value="item.value" />
                     </el-select>
                 </el-form-item>
                 <el-form-item label="网络" prop="networkName">
                     <el-select v-model="containerCreateMode.networkName" style="width: 320px" placeholder="请选择镜像">
-                        <el-option
-                            v-for="item in networkNameOptions"
-                            :key="item.value"
-                            :label="item.label"
-                            :value="item.value"
-                        />
+                        <el-option v-for="item in networkNameOptions" :key="item.value" :label="item.label" :value="item.value" />
                     </el-select>
                 </el-form-item>
                 <el-form-item label="端口" prop="ports">
                     <span v-if="containerCreateMode.ports.length === 0">可以添加端口绑定</span>
-                    <el-form-item
-                        v-for="(port, index) in containerCreateMode.ports"
-                        :key="index"
-                        style="margin-bottom: 4px"
-                    >
+                    <el-form-item v-for="(port, index) in containerCreateMode.ports" :key="index" style="margin-bottom: 4px">
                         <el-input v-model="port.hostPort" style="width: 160px" placeholder="服务器端口" />
                         <el-input v-model="port.containerPort" style="width: 160px" placeholder="容器端口" />
                         <el-button type="danger" text @click="deletePort(index)">
@@ -214,11 +113,7 @@
                 </el-form-item>
                 <el-form-item label="环境变量" prop="environments">
                     <span v-if="containerCreateMode.environments.length === 0">可以添加环境变量</span>
-                    <el-form-item
-                        v-for="(environment, index) in containerCreateMode.environments"
-                        :key="index"
-                        style="margin-bottom: 4px"
-                    >
+                    <el-form-item v-for="(environment, index) in containerCreateMode.environments" :key="index" style="margin-bottom: 4px">
                         <el-input v-model="environment.key" style="width: 160px" placeholder="变量名" />
                         <el-input v-model="environment.value" style="width: 160px" placeholder="变量值" />
                         <el-button type="danger" text @click="deleteEnvironment(index)">
@@ -234,11 +129,7 @@
                 </el-form-item>
                 <el-form-item label="目录/文件挂载" prop="volumes">
                     <span v-if="containerCreateMode.volumes.length === 0">可以添加目录/文件挂载</span>
-                    <el-form-item
-                        v-for="(volume, index) in containerCreateMode.volumes"
-                        :key="index"
-                        style="margin-bottom: 4px"
-                    >
+                    <el-form-item v-for="(volume, index) in containerCreateMode.volumes" :key="index" style="margin-bottom: 4px">
                         <el-input v-model="volume.hostPath" style="width: 200px" placeholder="服务器目录/文件" />
                         <el-input v-model="volume.containerPath" style="width: 200px" placeholder="容器目录/文件" />
                         <el-button type="danger" text @click="deleteVolume(index)">
@@ -247,56 +138,26 @@
                     </el-form-item>
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="primary" text @click="addVolume">
-                        添加目录/文件挂载<svg-icon icon-class="plus" />
-                    </el-button>
+                    <el-button type="primary" text @click="addVolume"> 添加目录/文件挂载<svg-icon icon-class="plus" /> </el-button>
                 </el-form-item>
                 <el-form-item label="标签(可选)" prop="labels">
-                    <el-input
-                        v-model="containerCreateMode.labels"
-                        type="textarea"
-                        :rows="4"
-                        placeholder="一行一个，例如:&#10;key1=value1&#10;key2=value2"
-                    />
+                    <el-input v-model="containerCreateMode.labels" type="textarea" :rows="4" placeholder="一行一个，例如:&#10;key1=value1&#10;key2=value2" />
                 </el-form-item>
             </el-form>
             <div class="am-container-create__operator">
                 <el-button type="default" size="default" plain @click="drawer = false">取消</el-button>
-                <el-button
-                    type="primary"
-                    size="default"
-                    plain
-                    @click="confirmCreateContainer(containerCreateRef)"
-                    v-loading="createContainerLoading"
-                >
-                    确定
-                </el-button>
+                <el-button type="primary" size="default" plain @click="confirmCreateContainer(containerCreateRef)" v-loading="createContainerLoading"> 确定 </el-button>
             </div>
         </el-drawer>
     </div>
 </template>
 
 <script setup lang="ts">
-import {
-    createContainer,
-    queryContainers,
-    queryImages,
-    queryNetworks,
-    removeContainer,
-    restartContainer,
-    startContainer,
-    stopContainer
-} from '@/api/container'
+import { createContainer, queryContainers, queryImages, queryNetworks, removeContainer, restartContainer, startContainer, stopContainer } from '@/api/container'
 import { error, success } from '@/components/Message/message'
 import { Websocket } from '@/components/Websocket'
 import { useTable } from '@/hooks/useTable'
-import {
-    CreateContainerArgs,
-    RemoveContainerArgs,
-    RestartContainerArgs,
-    StartContainerArgs,
-    StopContainerArgs
-} from '@/interface/container.ts'
+import { CreateContainerArgs, RemoveContainerArgs, RestartContainerArgs, StartContainerArgs, StopContainerArgs } from '@/interface/container.ts'
 import useStore from '@/store'
 import { FormInstance, FormRules } from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'

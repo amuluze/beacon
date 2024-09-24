@@ -5,11 +5,10 @@
 package fiberx
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
-	"github.com/amuluze/amutool/errors"
+	"amprobe/pkg/errors"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -30,37 +29,13 @@ func Success(c *fiber.Ctx, v interface{}) error {
 }
 
 type FailedResponse struct {
-	Err string `json:"err"` // 响应错误，来自 greeter_service 层的错误信息
-	Msg string `json:"msg"` // 错误消息，来自 controller 层的错误信息
+	Err string `json:"err"` // 响应错误，来自 service 层的错误信息
+	Msg string `json:"msg"` // 错误消息，来自 api 层的错误信息
 }
 
 // Failure response.status = 400
-func Failure(c *fiber.Ctx, err error) error {
-	var res *errors.Error
-	if err != nil {
-		if e, ok := err.(*errors.Error); ok {
-			res = e
-		} else {
-			res = errors.UnWrapError(errors.ErrInternalServer)
-		}
-	} else {
-		res = errors.UnWrapError(errors.ErrInternalServer)
-	}
-
-	if err := res.ERR; err != nil {
-		if res.Message == "" {
-			res.Message = err.Error()
-		}
-		// 正常来说api层返回给接口层的错误信息不用打印，在这里会进行统一打印，400-500之间会打印warn 日志
-		// 500 会打印error 日志
-		if status := res.Status; status >= 400 && status < 500 {
-			fmt.Println("4xx")
-		} else if status >= 500 {
-			fmt.Println("5xx")
-		}
-	}
-
-	return ReturnJson(c, res.Status, &FailedResponse{Err: res.Message, Msg: res.ERR.Error()})
+func Failure(c *fiber.Ctx, err errors.Error) error {
+	return ReturnJson(c, err.Status, &FailedResponse{Err: err.Err, Msg: err.Msg})
 }
 
 // Unauthorized response.status = 401 when token error or token is fail
@@ -78,16 +53,6 @@ func Forbidden(c *fiber.Ctx) error {
 	return c.SendStatus(http.StatusForbidden)
 }
 
-// NotFound response.status = 404
-func NotFound(c *fiber.Ctx) error {
-	return c.SendStatus(http.StatusNotFound)
-}
-
-// MethodNotAllowed response.status = 405
-func MethodNotAllowed(c *fiber.Ctx) error {
-	return c.SendStatus(http.StatusMethodNotAllowed)
-}
-
 func ReturnJson(c *fiber.Ctx, status int, v interface{}) error {
 	c.Status(status)
 	return c.JSON(v)
@@ -95,15 +60,9 @@ func ReturnJson(c *fiber.Ctx, status int, v interface{}) error {
 
 // ParseQuery Parse query parameter to struct
 func ParseQuery(c *fiber.Ctx, obj interface{}) error {
-	if err := c.QueryParser(obj); err != nil {
-		return errors.New400Error(err.Error())
-	}
-	return nil
+	return c.QueryParser(obj)
 }
 
 func ParseBody(c *fiber.Ctx, obj interface{}) error {
-	if err := c.BodyParser(obj); err != nil {
-		return errors.New400Error(err.Error())
-	}
-	return nil
+	return c.BodyParser(obj)
 }

@@ -7,11 +7,13 @@ package container
 import (
 	"github.com/google/wire"
 
-	"github.com/amuluze/amprobe/service/container/api"
-	"github.com/amuluze/amprobe/service/container/rpc"
+	"amprobe/service/container/api"
+	"amprobe/service/container/repository"
+	"amprobe/service/container/service"
 )
 
 var Set = wire.NewSet(
 	api.Set,
-	rpc.Set,
+	service.Set,
+	repository.Set,
 )

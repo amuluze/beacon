@@ -5,7 +5,6 @@
 package validatex
 
 import (
-	"github.com/amuluze/amutool/errors"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -15,9 +14,9 @@ func ValidateStruct(data interface{}) error {
 	err := validate.Struct(data)
 	if err != nil {
 		for _, err := range err.(validator.ValidationErrors) {
-			return errors.New400Error(err.Error())
+			return err
 		}
-		return errors.New400Error(err.Error())
+		return err
 	}
 	return nil
 }

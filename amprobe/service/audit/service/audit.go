@@ -5,17 +5,20 @@
 package service
 
 import (
+	"amprobe/service/audit/repository"
 	"context"
-	"github.com/amuluze/amprobe/service/audit/repository"
-	"github.com/amuluze/amprobe/service/schema"
-	"github.com/amuluze/amutool/errors"
+
+	"amprobe/service/schema"
+
 	"github.com/google/wire"
 )
 
 var AuditServiceSet = wire.NewSet(NewAuditService, wire.Bind(new(IAuditService), new(*AuditService)))
 
+var _ IAuditService = (*AuditService)(nil)
+
 type IAuditService interface {
-	AuditQuery(ctx context.Context, args *schema.AuditQueryArgs) (*schema.AuditQueryReply, error)
+	AuditQuery(ctx context.Context, args schema.AuditQueryArgs) (schema.AuditQueryReply, error)
 }
 
 type AuditService struct {
@@ -26,10 +29,11 @@ func NewAuditService(repo repository.IAuditRepo) *AuditService {
 	return &AuditService{AuditRepo: repo}
 }
 
-func (a AuditService) AuditQuery(ctx context.Context, args *schema.AuditQueryArgs) (*schema.AuditQueryReply, error) {
+func (a AuditService) AuditQuery(ctx context.Context, args schema.AuditQueryArgs) (schema.AuditQueryReply, error) {
+	var reply schema.AuditQueryReply
 	audits, err := a.AuditRepo.AuditQuery(ctx, args)
 	if err != nil {
-		return &schema.AuditQueryReply{}, errors.New400Error(err.Error())
+		return reply, err
 	}
 
 	var list []schema.Audit
@@ -42,5 +46,9 @@ func (a AuditService) AuditQuery(ctx context.Context, args *schema.AuditQueryArg
 		})
 	}
 	total, _ := a.AuditRepo.AuditCount(ctx)
-	return &schema.AuditQueryReply{Data: list, Total: total, Page: args.Page, Size: args.Size}, nil
+	reply.Data = list
+	reply.Total = total
+	reply.Page = args.Page
+	reply.Size = args.Size
+	return reply, nil
 }
