@@ -34,7 +34,7 @@ type DockerCompose struct {
 			} `yaml:"environment"`
 			Volumes  []string `yaml:"volumes" default:"[/var/run/docker.sock:/var/run/docker.sock,/tmp:/tmp]"`
 			Networks struct {
-				AppNet struct {
+				Amprobe struct {
 					Ipv4Address string `yaml:"ipv4_address" default:"172.18.0.2"`
 				} `yaml:"amprobe"`
 			} `yaml:"networks"`

@@ -16,6 +16,8 @@ import (
 
 var AccountServiceSet = wire.NewSet(NewAccountService, wire.Bind(new(IAccountService), new(*AccountService)))
 
+var _ IAccountService = (*AccountService)(nil)
+
 type IAccountService interface {
 	UserQuery(context.Context, schema.UserQueryArgs) (schema.UserQueryReply, error)
 	UserCreate(context.Context, schema.UserCreateArgs) error

@@ -19,6 +19,8 @@ import (
 
 var AccountRepositorySet = wire.NewSet(NewAccountRepository, wire.Bind(new(IAccountRepository), new(*AccountRepository)))
 
+var _ IAccountRepository = (*AccountRepository)(nil)
+
 type IAccountRepository interface {
 	UserQuery(context.Context, schema.UserQueryArgs) (model.Users, error)
 	UserCreate(context.Context, schema.UserCreateArgs) (model.User, error)
