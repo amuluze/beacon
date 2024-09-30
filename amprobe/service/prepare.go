@@ -21,36 +21,25 @@ import (
 
 var PrepareSet = wire.NewSet(wire.Struct(new(Prepare), "*"))
 
-var users = []*model.User{
+var user = model.User{
+	ID:       uuid.MustUUID(),
+	Username: "admin",
+	Password: hash.SHA1String("admin123"), // hash.SHA1String(args.OldPassword)
+	Remark:   "",
+	IsAdmin:  1,
+	Status:   1,
+}
+
+var roles = []model.Role{
 	{
-		ID:       uuid.MustUUID(),
-		Username: "admin",
-		Password: hash.SHA1String("admin123"), // hash.SHA1String(args.OldPassword)
-		Remark:   "",
-		IsAdmin:  1,
-		Status:   1,
-		Roles: []*model.Role{
-			{
-				ID:     uuid.MustUUID(),
-				Name:   "管理员",
-				Status: 1,
-			},
-		},
+		ID:     uuid.MustUUID(),
+		Name:   "管理员",
+		Status: 1,
 	},
 	{
-		ID:       uuid.MustUUID(),
-		Username: "amprobe",
-		Password: hash.SHA1String("123456"),
-		Remark:   "",
-		IsAdmin:  2,
-		Status:   1,
-		Roles: []*model.Role{
-			{
-				ID:     uuid.MustUUID(),
-				Name:   "普通用户",
-				Status: 1,
-			},
-		},
+		ID:     uuid.MustUUID(),
+		Name:   "普通用户",
+		Status: 1,
 	},
 }
 
@@ -99,40 +88,31 @@ func (a *Prepare) InitAccount(app *fiber.App) {
 	}
 
 	// 情况历史数据
-	if err := a.db.Exec("delete from sys_user").Error; err != nil {
-		slog.Error("delete from user error", "error", err)
-		return
-	}
-	if err := a.db.Exec("delete from sys_user_roles").Error; err != nil {
-		slog.Error("delete from user_roles error", "error", err)
-		return
-	}
-	if err := a.db.Exec("delete from sys_role").Error; err != nil {
-		slog.Error("delete from role error", "error", err)
-		return
-	}
-	if err := a.db.Exec("delete from sys_role_resources").Error; err != nil {
-		slog.Error("delete from role_resources error", "error", err)
-		return
-	}
-	if err := a.db.Exec("delete from sys_resource").Error; err != nil {
-		slog.Error("delete from resource error", "error", err)
+	var u model.User
+	if err := a.db.Model(&model.User{}).First(&u).Error; err == nil {
+		slog.Info("admin exists", "username", u.Username)
 		return
 	}
 
 	_ = a.db.RunInTransaction(func(tx *gorm.DB) error {
-		for _, u := range users {
-			for _, r := range u.Roles {
-				if u.IsAdmin == 1 {
-					r.Resources = postResources
-				} else {
-					r.Resources = getResources
-				}
+		var uRoles model.Roles
+		for _, r := range roles {
+			if r.Name == "管理员" {
+				r.Resources = postResources
+				uRoles = append(uRoles, &r)
+			} else {
+				r.Resources = getResources
 			}
-			if err := a.db.Create(u).Error; err != nil {
-				slog.Error("create user failed", "error", err)
-				return err
-			}
+		}
+		if err := a.db.Create(&roles).Error; err != nil {
+			slog.Error("create roles error", "error", err)
+			return err
+		}
+
+		user.Roles = uRoles
+		if err := a.db.Create(&user).Error; err != nil {
+			slog.Error("create user failed", "error", err)
+			return err
 		}
 		return nil
 	})
