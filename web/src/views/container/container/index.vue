@@ -34,19 +34,19 @@
                 <el-table-column label="操作" width="200" fixed="right" align="center">
                     <template #default="scope">
                         <el-button type="primary" size="small" text @click="viewLog(scope.row.id)"> 日志 </el-button>
-                        <el-button type="primary" size="small" text @click="startContainerByID(scope.row.id)"> 启动 </el-button>
+                        <el-button type="primary" size="small" text @click="startContainerByID(scope.row.id)" :disabled="enableEdit(scope.row.name)"> 启动 </el-button>
                         <el-dropdown>
                             <el-button type="primary" size="small" text>更多</el-button>
                             <template #dropdown>
                                 <el-dropdown-menu>
                                     <el-dropdown-item>
-                                        <el-button type="warning" size="small" text @click="stopContainerByID(scope.row.id)"> 停止 </el-button>
+                                        <el-button type="warning" size="small" text @click="stopContainerByID(scope.row.id)" :disabled="enableEdit(scope.row.name)"> 停止 </el-button>
                                     </el-dropdown-item>
                                     <el-dropdown-item>
-                                        <el-button type="warning" size="small" text @click="restartContainerByID(scope.row.id)"> 重启 </el-button>
+                                        <el-button type="warning" size="small" text @click="restartContainerByID(scope.row.id)" :disabled="enableEdit(scope.row.name)"> 重启 </el-button>
                                     </el-dropdown-item>
                                     <el-dropdown-item>
-                                        <el-button type="danger" size="small" text @click="deleteContainerByID(scope.row.id)"> 删除 </el-button>
+                                        <el-button type="danger" size="small" text @click="deleteContainerByID(scope.row.id)" :disabled="enableEdit(scope.row.name)"> 删除 </el-button>
                                     </el-dropdown-item>
                                 </el-dropdown-menu>
                             </template>
@@ -161,6 +161,7 @@ import { CreateContainerArgs, RemoveContainerArgs, RestartContainerArgs, StartCo
 import useStore from '@/store'
 import { FormInstance, FormRules } from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
+import { User } from '@/interface/account.ts';
 const store = useStore()
 onMounted(() => {
     refresh()
@@ -195,6 +196,11 @@ const viewLog = (container_id: string) => {
     }
 
     ws = new Websocket('ws/' + container_id, onOpen, onMessage)
+}
+
+const enableEdit = (containerName: string) => {
+    console.log('......', containerName)
+    return containerName === 'amprobe'
 }
 
 const startContainerByID = (container_id: string) => {

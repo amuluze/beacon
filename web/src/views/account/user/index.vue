@@ -30,8 +30,8 @@
                 <el-table-column prop="created_at" label="创建时间" min-width="160" align="center" sortable />
                 <el-table-column label="操作" width="200" fixed="right" align="center">
                     <template #default="scope">
-                        <el-button type="primary" size="small" text @click="userEdit(scope.row)" :disabled=enableEdit(scope.row) > 编辑 </el-button>
-                        <el-button type="danger" size="small" text @click="userDelete(scope.row.id)" v-loading="userDeleteLoading" :disabled=enableEdit(scope.row)> 删除 </el-button>
+                        <el-button type="primary" size="small" text @click="userEdit(scope.row)" :disabled="enableEdit(scope.row)"> 编辑 </el-button>
+                        <el-button type="danger" size="small" text @click="userDelete(scope.row.id)" v-loading="userDeleteLoading" :disabled="enableEdit(scope.row)"> 删除 </el-button>
                     </template>
                 </el-table-column>
             </el-table>
@@ -147,11 +147,8 @@ const userQuery = async () => {
 
 // 用户禁止操作
 const enableEdit = (user: User) => {
-    console.log("......", user)
-    if (user.username === 'admin') {
-        return true
-    }
-    return false
+    console.log('......', user)
+    return user.username === 'admin'
 }
 
 // 用户创建

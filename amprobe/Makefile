@@ -21,7 +21,7 @@ wire:
 .PHONY: bin
 # build bin
 bin: wire
-	$(GO) build -o $(APP) $(SERVER)
+	$(GO) build -ldflags "-s -w" -o $(APP) $(SERVER)
 
 
 .PHONY: amd64

@@ -3,10 +3,17 @@
  * @Date       : 2024/1/8 14:18
  * @Description:
  */
+ /**
+ * @Author     : Amu
+ * @Date       : 2024/10/12 10:10
+ * @Description:
+ */
+
 import { warning } from '@/components/Message/message.ts'
-import { ResultData } from '@/interface/result.ts'
+import type { ResultData } from '@/interface/result.ts'
 import useStore from '@/store'
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+import type { AxiosError, AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios'
+import axios from 'axios'
 
 const config = {
     // 默认地址请求地址，可在 .env.*** 文件中修改
@@ -17,18 +24,65 @@ const config = {
     // 设置默认请求头
     headers: { 'Content-Type': 'application/json;charset=utf-8' },
     // 跨域时候允许携带凭证
-    withCredentials: true
+    withCredentials: true,
 }
 
 class Request {
     service: AxiosInstance
     isRefreshing: boolean
+
     requestQueue: Function[]
+    /** 存储因 token 过期而导致发送失败的请求 */
+    private saveErrorRequest = (expiredRequest: () => any) => {
+        this.requestQueue.push(expiredRequest)
+    }
+
+    /** 清理当前存储的过期请求 */
+    private clearExpiredRequest = () => {
+        this.requestQueue = []
+    }
+
+    /** 执行当前存储的由于过期导致失败的请求 */
+    private againRequest = () => {
+        this.requestQueue.forEach((request) => {
+            request()
+        })
+        this.clearExpiredRequest()
+    }
+
+    /** 避免频繁发送更新 */
+    firstRequest: boolean
+    /** 利用 refreshToken 更新 accessToken */
+    private updateAccessTokenByRefreshToken = () => {
+        this.firstRequest = false
+        const store = useStore()
+        this.service.post('/api/v1/auth/token_update', {}, {
+            headers: { Authorization: `Bearer ${store.user.refresh}` },
+        }).then((res) => {
+            // 更新本地 token
+            store.user.setToken(res.data.access_token, res.data.refresh_token)
+            // 更新 token 后，重启发起之前失败的请求
+            this.againRequest()
+        }).catch(() => {
+            // 此时 refreshToken 也失效了，返回登录页
+            window.location.href = '/app/app/login'
+        })
+    }
+
+    private refreshToken = (expiredRequest: () => any) => {
+        this.saveErrorRequest(expiredRequest)
+        // 保证再发起更新时，已经没有过期请求要进行存储了
+
+        setTimeout(() => {
+            this.updateAccessTokenByRefreshToken()
+        }, 500)
+    }
 
     public constructor(config: AxiosRequestConfig) {
         // instantiation
         this.service = axios.create(config)
         this.isRefreshing = false
+        this.firstRequest = false
         this.requestQueue = []
 
         /**
@@ -40,7 +94,7 @@ class Request {
             async (config: InternalAxiosRequestConfig) => {
                 const store = useStore()
                 if (store.user.token !== '') {
-                    config.headers.Authorization = 'Bearer ' + store.user.token
+                    config.headers.Authorization = `Bearer ${store.user.token}`
                 }
                 if (config.url?.endsWith('login')) {
                     config.headers['Content-Type'] = 'multipart/form-data;charset=UTF-8'
@@ -50,28 +104,25 @@ class Request {
             },
             (error: AxiosError) => {
                 return Promise.reject(error)
-            }
+            },
         )
 
         /**
          * 响应拦截器
          */
         this.service.interceptors.response.use(
-            (response: AxiosResponse) => {
-                console.log('---', response)
+            (response) => {
                 if (response.headers['content-disposition']) {
-                    let downLoadMark = response.headers['content-disposition'].split(';')
-                    console.log('response header', downLoadMark)
+                    const downLoadMark = response.headers['content-disposition'].split(';')
                     if (downLoadMark[0] === 'attachment') {
                         // 执行下载
                         let fileName = downLoadMark[1].split('filename=')[1]
                         if (fileName) {
-                            //fileName = decodeURIComponent(filename);//对filename进行转码
+                            // fileName = decodeURIComponent(filename);//对filename进行转码
                             fileName = decodeURI(fileName)
-                            console.log('file name: ', fileName)
-                            let content = response.data
-                            let url = window.URL.createObjectURL(new Blob([content], { type: 'application/octet-stream' }))
-                            let link = document.createElement('a')
+                            const content = response.data
+                            const url = window.URL.createObjectURL(new Blob([content], { type: 'application/octet-stream' }))
+                            const link = document.createElement('a')
                             link.style.display = 'none'
                             link.href = url
                             link.download = fileName
@@ -80,66 +131,42 @@ class Request {
                             link.click()
                             link.remove()
                             window.URL.revokeObjectURL(url)
-                        } else {
+                        }
+                        else {
                             return response
                         }
                     }
                 }
                 return response
             },
-            async (error: AxiosError) => {
-                // https://zhuanlan.zhihu.com/p/653595209
-                const originalRequest: InternalAxiosRequestConfig<any> = error.config as InternalAxiosRequestConfig<any>
-                const store = useStore()
-                if (error.response?.status === 400) {
-                    warning('请检查您的请求参数')
-                }
-                if (error.response?.status === 401) {
-                    if (!this.isRefreshing) {
-                        this.isRefreshing = true
-
-                        // 发起刷新请求
-                        originalRequest.headers.Authorization = store.user.refresh
-                        this.service
-                            .post('/api/v1/auth/token_update', originalRequest)
-                            .then((res) => {
-                                store.user.setToken(res.data.access_token, res.data.refresh_token)
-                                // 刷新 token 完成后，重启发送之前失败的请求
-                                this.requestQueue.forEach((request) => request(store.user.token))
-
-                                originalRequest.headers.Authorization = `Bearer ${store.user.token}`
-                                return this.service(originalRequest)
-                            })
-                            .catch((err) => {
-                                console.log('update token error: ', err)
-                                // 刷新 token 失败，跳转到登录页面
-                                store.user.setToken('', '')
-                            })
-                            .finally(() => {
-                                this.isRefreshing = false
-                            })
-                        this.requestQueue = []
-                        this.isRefreshing = false
-                        window.location.href = '/login'
-                    } else {
-                        // 正在刷新 token，将当前请求加入队列，等待刷新完成后再重新发送
-                        return new Promise((resolve) => {
-                            this.requestQueue.push((token: string) => {
-                                originalRequest.headers.Authorization = `Bearer ${token}`
-                                resolve(this.service(originalRequest as InternalAxiosRequestConfig))
-                            })
+            async (error) => {
+                const { data, config, status } = error.response
+                return new Promise((resolve, reject) => {
+                    /** 判断当前请求失败的原因 */
+                    if (status === 400) {
+                        warning(data.msg)
+                    }
+                    else if (status === 403) {
+                        warning('您目前没有权限执行该操作，请联系管理员')
+                    }
+                    else if (status === 500) {
+                        warning('服务器错误，请稍后再试')
+                    }
+                    else if (status === 401 && config.url === '/api/v1/auth/token_update') {
+                        // refreshToken 也失效了，返回登录页
+                        this.clearExpiredRequest()
+                        window.location.href = '/app/app/login'
+                    }
+                    else if (status === 401 && config.url !== '/api/v1/auth/token_update') {
+                        this.refreshToken(() => {
+                            resolve(this.service(config))
                         })
                     }
-                }
-                if (error.response?.status === 403) {
-                    warning('您目前没有权限执行该操作，请联系管理员')
-                }
-                if (error.response?.status === 500) {
-                    console.log('500 error: ', error)
-                    warning('服务器错误，请稍后再试')
-                }
-                return Promise.reject(error)
-            }
+                    else {
+                        reject(error.response)
+                    }
+                })
+            },
         )
     }
 
@@ -147,7 +174,7 @@ class Request {
      * 常用请求方法封装
      */
     get<T>(url: string, params?: object): Promise<ResultData<T>> {
-        return this.service.get(url, { params: params, ...config })
+        return this.service.get(url, { params, ...config })
     }
 
     post<T>(url: string, params?: object): Promise<ResultData<T>> {
