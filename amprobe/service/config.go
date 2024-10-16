@@ -16,6 +16,7 @@ type Config struct {
 	Log    Log
 	Auth   Auth
 	Casbin Casbin
+	Task   Task
 }
 
 // NewConfig Load config file (toml/json/yaml)

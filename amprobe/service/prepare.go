@@ -21,6 +21,24 @@ import (
 
 var PrepareSet = wire.NewSet(wire.Struct(new(Prepare), "*"))
 
+var thresholds = []model.AlarmThreshold{
+	{
+		Type:      "cpu",
+		Duration:  2,
+		Threshold: 80,
+	},
+	{
+		Type:      "memory",
+		Duration:  2,
+		Threshold: 80,
+	},
+	{
+		Type:      "disk",
+		Duration:  2,
+		Threshold: 85,
+	},
+}
+
 var user = model.User{
 	ID:       uuid.MustUUID(),
 	Username: "admin",
@@ -62,6 +80,9 @@ type GroupPolicy struct {
 func (a *Prepare) Init(app *fiber.App) {
 	// init account
 	a.InitAccount(app)
+
+	// init alarm threshold
+	a.InitAlarmThreshold()
 
 	// init casbin rules
 	a.InitCasbinRules()
@@ -116,6 +137,15 @@ func (a *Prepare) InitAccount(app *fiber.App) {
 		}
 		return nil
 	})
+}
+
+func (a *Prepare) InitAlarmThreshold() {
+	var u model.AlarmThreshold
+	if err := a.db.Model(&model.AlarmThreshold{}).Where("type = ?", "cpu").First(&u).Error; err == nil {
+		slog.Error("alarm threshold exist", "error", err)
+		return
+	}
+	a.db.Model(&model.AlarmThreshold{}).Create(&thresholds)
 }
 
 func (a *Prepare) InitCasbinRules() {

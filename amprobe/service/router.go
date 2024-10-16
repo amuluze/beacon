@@ -14,10 +14,12 @@ import (
 	"github.com/google/wire"
 
 	accountAPI "amprobe/service/account/api"
+	alarmAPI "amprobe/service/alarm/api"
 	auditAPI "amprobe/service/audit/api"
 	authAPI "amprobe/service/auth/api"
 	containerAPI "amprobe/service/container/api"
 	hostAPI "amprobe/service/host/api"
+	mailAPI "amprobe/service/mail/api"
 )
 
 var RouterSet = wire.NewSet(wire.Struct(new(Router), "*"), wire.Bind(new(IRouter), new(*Router)))
@@ -39,6 +41,8 @@ type Router struct {
 	authAPI      *authAPI.AuthAPI
 	auditAPI     *auditAPI.AuditAPI
 	accountAPI   *accountAPI.AccountAPI
+	mailAPI      *mailAPI.MailAPI
+	alarmAPI     *alarmAPI.AlarmAPI
 
 	loggerHandler *LoggerHandler
 	termHandler   *TermHandler
@@ -167,8 +171,22 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 		{
 			gAudit.Get("/query", a.auditAPI.AuditQuery).Name("获取审计日志")
 		}
-	}
 
+		gMail := v1.Group("mail")
+		{
+			gMail.Post("/mail_create", a.mailAPI.MailCreate).Name("创建邮件告警配置")
+			gMail.Post("/mail_delete", a.mailAPI.MailDelete).Name("删除邮件告警配置")
+			gMail.Post("/mail_update", a.mailAPI.MailUpdate).Name("更新邮件告警配置")
+			gMail.Get("/mail_query", a.mailAPI.MailQuery).Name("查询邮件告警配置")
+			gMail.Post("/mail_test", a.mailAPI.MailTest).Name("测试邮件告警")
+		}
+
+		gAlarm := v1.Group("alarm")
+		{
+			gAlarm.Post("/alarm_update", a.alarmAPI.AlarmUpdate).Name("更新告警阈值")
+			gAlarm.Get("/alarm_query", a.alarmAPI.AlarmQuery).Name("查询告警阈值")
+		}
+	}
 }
 
 func (a *Router) Register(app *fiber.App) error {

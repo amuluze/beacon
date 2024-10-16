@@ -40,7 +40,7 @@ func (s *Service) CPUInfo(ctx context.Context, args rpcSchema.CPUInfoArgs, reply
 func (s *Service) CPUUsage(ctx context.Context, args rpcSchema.CPUUsageArgs, reply *rpcSchema.CPUUsageReply) error {
 	var results []model.CPU
 	if err := s.DB.Model(&model.CPU{}).Where("timestamp > ?", time.Unix(args.StartTime, 0)).Order("timestamp asc").Find(&results).Error; err != nil {
-		return nil
+		return err
 	}
 	var list []rpcSchema.Usage
 	for _, item := range results {
@@ -67,7 +67,7 @@ func (s *Service) MemoryInfo(ctx context.Context, args rpcSchema.MemoryInfoArgs,
 func (s *Service) MemoryUsage(ctx context.Context, args rpcSchema.MemoryUsageArgs, reply *rpcSchema.MemoryUsageReply) error {
 	var results []model.Memory
 	if err := s.DB.Model(&model.Memory{}).Where("timestamp > ?", time.Unix(args.StartTime, 0)).Order("timestamp asc").Find(&results).Error; err != nil {
-		return nil
+		return err
 	}
 	var list []rpcSchema.Usage
 	for _, item := range results {
@@ -101,7 +101,7 @@ func (s *Service) DiskInfo(ctx context.Context, args rpcSchema.DiskInfoArgs, rep
 func (s *Service) DiskUsage(ctx context.Context, args rpcSchema.DiskUsageArgs, reply *rpcSchema.DiskUsageReply) error {
 	var results []model.Disk
 	if err := s.DB.Model(&model.Disk{}).Where("timestamp > ?", time.Unix(args.StartTime, 0)).Order("timestamp asc").Find(&results).Error; err != nil {
-		return nil
+		return err
 	}
 	var data []rpcSchema.DiskUsage
 	list := make(map[string][]rpcSchema.DiskIO)

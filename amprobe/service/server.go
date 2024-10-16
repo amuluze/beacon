@@ -72,9 +72,14 @@ func Init(ctx context.Context, opts ...Option) (func(), error) {
 	// 初始化预设数据
 	injector.Prepare.Init(injector.App)
 
+	// 定时任务
+	timedTask := injector.Task
+	go timedTask.Run()
+
 	httpServerCleanFunc := InitHttpServer(ctx, injector.Config, injector.App)
 
 	return func() {
+		timedTask.Stop()
 		httpServerCleanFunc()
 		cleanFunc()
 	}, nil

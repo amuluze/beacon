@@ -60,4 +60,9 @@ type IService interface {
 	GetSystemTimeZoneList(context.Context, schema.GetSystemTimeZoneListArgs, *schema.GetSystemTimeZoneListReply) error
 	GetDockerRegistryMirrors(context.Context, schema.GetDockerRegistryMirrorsArgs, *schema.GetDockerRegistryMirrorsReply) error
 	SetDockerRegistryMirrors(context.Context, schema.SetDockerRegistryMirrorsArgs, *schema.SetDockerRegistryMirrorsReply) error
+
+	CPUAlarmQuery(context.Context, schema.CPUAlarmQueryArgs, *schema.CPUAlarmQueryReply) error
+	MemoryAlarmQuery(context.Context, schema.MemoryAlarmQueryArgs, *schema.MemoryAlarmQueryReply) error
+	DiskAlarmQuery(context.Context, schema.DiskAlarmQueryArgs, *schema.DiskAlarmQueryReply) error
+	ServiceAlarmQuery(context.Context, schema.ServiceAlarmQueryArgs, *schema.ServiceAlarmQueryReply) error
 }
