@@ -10,11 +10,11 @@ type Mails []Mail
 
 type Mail struct {
 	gorm.Model
-	Server   string `gorm:"type:varchar(255)comment:邮箱服务器"`
+	Server   string `gorm:"type:varchar(255);comment:邮箱服务器"`
 	Port     int    `gorm:"comment:端口"`
 	Sender   string `gorm:"type:varchar(255);comment:发信账号"`
 	Password string `gorm:"type:varchar(255);comment:密码"`
-	Receiver string `gorm:"type:varchar(255)comment:邮箱服务器"`
+	Receiver string `gorm:"type:varchar(255);comment:邮箱服务器"`
 }
 
 func (d *Mails) TableName() string {

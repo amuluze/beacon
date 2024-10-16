@@ -98,7 +98,7 @@ func assetsResourcesAmprobeConfigsConfigToml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "assets/resources/amprobe/configs/config.toml", size: 1439, mode: os.FileMode(420), modTime: time.Unix(1726286919, 0)}
+	info := bindataFileInfo{name: "assets/resources/amprobe/configs/config.toml", size: 1439, mode: os.FileMode(420), modTime: time.Unix(1729096020, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -118,7 +118,7 @@ func assetsResourcesAmprobeConfigsModelConf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "assets/resources/amprobe/configs/model.conf", size: 224, mode: os.FileMode(420), modTime: time.Unix(1726240182, 0)}
+	info := bindataFileInfo{name: "assets/resources/amprobe/configs/model.conf", size: 224, mode: os.FileMode(420), modTime: time.Unix(1729096020, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -138,7 +138,7 @@ func assetsResourcesAmprobeNginxCertFullchainPem() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "assets/resources/amprobe/nginx/cert/fullchain.pem", size: 0, mode: os.FileMode(420), modTime: time.Unix(1726240182, 0)}
+	info := bindataFileInfo{name: "assets/resources/amprobe/nginx/cert/fullchain.pem", size: 0, mode: os.FileMode(420), modTime: time.Unix(1729096020, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -158,7 +158,7 @@ func assetsResourcesAmprobeNginxCertPrivkeyPem() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "assets/resources/amprobe/nginx/cert/privkey.pem", size: 0, mode: os.FileMode(420), modTime: time.Unix(1726240182, 0)}
+	info := bindataFileInfo{name: "assets/resources/amprobe/nginx/cert/privkey.pem", size: 0, mode: os.FileMode(420), modTime: time.Unix(1729096020, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -178,7 +178,7 @@ func assetsResourcesAmprobeNginxConfDAmprobeConf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "assets/resources/amprobe/nginx/conf.d/amprobe.conf", size: 804, mode: os.FileMode(420), modTime: time.Unix(1726240182, 0)}
+	info := bindataFileInfo{name: "assets/resources/amprobe/nginx/conf.d/amprobe.conf", size: 804, mode: os.FileMode(420), modTime: time.Unix(1729096020, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -198,7 +198,7 @@ func assetsResourcesAmprobeNginxMimeTypes() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "assets/resources/amprobe/nginx/mime.types", size: 3956, mode: os.FileMode(420), modTime: time.Unix(1726240182, 0)}
+	info := bindataFileInfo{name: "assets/resources/amprobe/nginx/mime.types", size: 3956, mode: os.FileMode(420), modTime: time.Unix(1729096020, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -218,7 +218,7 @@ func assetsResourcesAmprobeNginxNginxConf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "assets/resources/amprobe/nginx/nginx.conf", size: 701, mode: os.FileMode(420), modTime: time.Unix(1726240182, 0)}
+	info := bindataFileInfo{name: "assets/resources/amprobe/nginx/nginx.conf", size: 701, mode: os.FileMode(420), modTime: time.Unix(1729096020, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

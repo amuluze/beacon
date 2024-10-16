@@ -8,7 +8,7 @@ import "gorm.io/gorm"
 
 type AlarmThreshold struct {
 	gorm.Model
-	Type      string `gorm:"type:varchar(255)comment:告警类型"`
+	Type      string `gorm:"type:varchar(255);comment:告警类型"`
 	Duration  int    `gorm:"comment:取值间隔"`
 	Threshold int    `gorm:"comment:阈值"`
 }
