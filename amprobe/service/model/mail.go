@@ -17,6 +17,6 @@ type Mail struct {
 	Receiver string `gorm:"type:varchar(255);comment:邮箱服务器"`
 }
 
-func (d *Mails) TableName() string {
+func (d *Mail) TableName() string {
 	return "s_mail"
 }

@@ -12,11 +12,12 @@ import (
 	rpcSchema "common/rpc/schema"
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/patrickmn/go-cache"
 	"gopkg.in/gomail.v2"
 	"gorm.io/gorm"
-	"strings"
-	"time"
 )
 
 var _ ITask = (*Task)(nil)
@@ -54,8 +55,8 @@ func (t *Task) CPUAlarmTask(ctx context.Context) error {
 		return err
 	}
 	args := rpcSchema.CPUAlarmQueryArgs{
-		StartTime: time.Now().Add(-(time.Duration(threshold.Duration)) * time.Minute).Unix(),
-		EndTime:   time.Now().Unix(),
+		StartTime: time.Now().Add(-(time.Duration(threshold.Duration)) * time.Minute).UnixMicro(),
+		EndTime:   time.Now().UnixMicro(),
 	}
 	var reply rpcSchema.CPUAlarmQueryReply
 	err = t.rpcClient.Call(ctx, "CPUAlarmQuery", args, &reply)
@@ -105,8 +106,8 @@ func (t *Task) MemoryAlarmTask(ctx context.Context) error {
 		return err
 	}
 	args := rpcSchema.MemoryAlarmQueryArgs{
-		StartTime: time.Now().Add(-(time.Duration(threshold.Duration)) * time.Minute).Unix(),
-		EndTime:   time.Now().Unix(),
+		StartTime: time.Now().Add(-(time.Duration(threshold.Duration)) * time.Minute).UnixMicro(),
+		EndTime:   time.Now().UnixMicro(),
 	}
 	var reply rpcSchema.MemoryAlarmQueryReply
 	err = t.rpcClient.Call(ctx, "MemoryAlarmQuery", args, &reply)
@@ -151,8 +152,8 @@ func (t *Task) DiskAlarmTask(ctx context.Context) error {
 		return err
 	}
 	args := rpcSchema.DiskAlarmQueryArgs{
-		StartTime: time.Now().Add(-(time.Duration(threshold.Duration)) * time.Minute).Unix(),
-		EndTime:   time.Now().Unix(),
+		StartTime: time.Now().Add(-(time.Duration(threshold.Duration)) * time.Minute).UnixMicro(),
+		EndTime:   time.Now().UnixMicro(),
 	}
 	var reply rpcSchema.DiskAlarmQueryReply
 	err = t.rpcClient.Call(ctx, "DiskAlarmQuery", args, &reply)

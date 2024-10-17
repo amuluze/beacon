@@ -5,6 +5,7 @@
 package rpc
 
 import (
+	"amvector/pkg/utils"
 	rpcSchema "common/rpc/schema"
 	"context"
 	"os"
@@ -83,5 +84,7 @@ func (s *Service) FileUpload(ctx context.Context, args rpcSchema.FileUploadArgs,
 }
 
 func (s *Service) FileDownload(ctx context.Context, args rpcSchema.FileDownloadArgs, reply *rpcSchema.FileDownloadReply) error {
-	return os.Rename(args.SourceFilePath, args.TargetFilePath)
+	_, err := utils.CopyFile(args.SourceFilePath, args.TargetFilePath)
+	reply.Filepath = args.TargetFilePath
+	return err
 }

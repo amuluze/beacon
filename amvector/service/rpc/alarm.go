@@ -29,7 +29,7 @@ func (s *Service) CPUAlarmQuery(ctx context.Context, args rpcSchema.CPUAlarmQuer
 
 func (s *Service) MemoryAlarmQuery(ctx context.Context, args rpcSchema.MemoryAlarmQueryArgs, reply *rpcSchema.MemoryAlarmQueryReply) error {
 	var result []model.Memory
-	if err := s.DB.Model(&model.Memory{}).Where("timestamp > ?", time.Unix(args.StartTime, 0)).Where("timestamp <= ?", time.Unix(args.EndTime, 0)).Or("timestamp desc").Find(&result).Error; err != nil {
+	if err := s.DB.Model(&model.Memory{}).Where("timestamp > ?", time.Unix(args.StartTime, 0)).Where("timestamp <= ?", time.Unix(args.EndTime, 0)).Order("timestamp desc").Find(&result).Error; err != nil {
 		return err
 	}
 	var list []rpcSchema.Usage
@@ -45,7 +45,7 @@ func (s *Service) MemoryAlarmQuery(ctx context.Context, args rpcSchema.MemoryAla
 
 func (s *Service) DiskAlarmQuery(ctx context.Context, args rpcSchema.DiskAlarmQueryArgs, reply *rpcSchema.DiskAlarmQueryReply) error {
 	var results []model.Disk
-	if err := s.DB.Model(&model.Disk{}).Where("timestamp > ?", time.Unix(args.StartTime, 0)).Where("timestamp <= ?", time.Unix(args.EndTime, 0)).Order("timestamp asc").Find(&results).Error; err != nil {
+	if err := s.DB.Model(&model.Disk{}).Where("timestamp > ?", time.Unix(args.StartTime, 0)).Where("timestamp <= ?", time.Unix(args.EndTime, 0)).Order("timestamp desc").Find(&results).Error; err != nil {
 		return err
 	}
 	var list []rpcSchema.Disk

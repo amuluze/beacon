@@ -20,6 +20,7 @@ func (a *Models) GetAllModels() []interface{} {
 		new(Role),
 		new(Resource),
 		new(Audit),
+		new(AlarmThreshold),
 		new(Mail),
 	}
 }

@@ -218,7 +218,9 @@ func (h *HostService) NetUsage(ctx context.Context, args schema.NetworkUsageArgs
 }
 
 func (h *HostService) FilesSearch(ctx context.Context, args schema.FilesSearchArgs) (schema.FilesSearchReply, error) {
-	var reply schema.FilesSearchReply
+	reply := schema.FilesSearchReply{
+		Files: []schema.FileInfo{},
+	}
 	rpcArgs := rpcSchema.FilesSearchArgs{
 		Path: args.Path,
 	}
