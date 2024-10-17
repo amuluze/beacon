@@ -12,8 +12,8 @@
     </el-dropdown>
 </template>
 <script setup lang="ts">
-import { logout } from '@/api/auth'
-import useStore from '@/store'
+import { logout } from '@/api/auth';
+import useStore from '@/store';
 
 const store = useStore()
 const router = useRouter()
@@ -24,7 +24,7 @@ const doLogout = async () => {
     store.user.setToken('', '')
     store.app.isCollapse = false
     // 3.重定向到登录页
-    await router.replace('/login')
+    await router.replace('/app/app/login')
 }
 const toProfile = () => {
     router.push('/profile')

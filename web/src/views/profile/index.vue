@@ -10,15 +10,11 @@
         </el-card>
     </div>
     <el-card shadow="never">
-        <p>
-            用户名：<el-tag>{{ profile?.username }}</el-tag>
-        </p>
-        <p>
-            状态：<el-tag>{{ profile?.status == '1' ? '启用' : '禁用'}}</el-tag>
-        </p>
-        <p>
-            角色：<el-tag>{{ profile?.is_admin == 1 ? '管理员' : '普通用户'}}</el-tag>
-        </p>
+        <el-descriptions title="当前用户" :column=1>
+            <el-descriptions-item label="用户名"><el-tag>{{ profile?.username }}</el-tag></el-descriptions-item>
+            <el-descriptions-item label="状态"><el-tag>{{ profile?.status == '1' ? '启用' : '禁用'}}</el-tag></el-descriptions-item>
+            <el-descriptions-item label="角色"><el-tag>{{ profile?.is_admin == 1 ? '管理员' : '普通用户'}}</el-tag></el-descriptions-item>
+        </el-descriptions>
     </el-card>
     <el-drawer v-model="passwordUpdateDraw" title="更新密码" size="30%">
         <el-form

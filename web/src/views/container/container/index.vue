@@ -161,7 +161,6 @@ import { CreateContainerArgs, RemoveContainerArgs, RestartContainerArgs, StartCo
 import useStore from '@/store'
 import { FormInstance, FormRules } from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
-import { User } from '@/interface/account.ts';
 const store = useStore()
 onMounted(() => {
     refresh()

@@ -20,7 +20,7 @@
                 <el-form :model="loginForm" :rules="loginFormRules">
                     <div class="title">
                         <span class="login">登录</span>
-                        <el-tag> <span class="version">v1.3.8</span> </el-tag>
+                        <el-tag> <span class="version">v1.3.9</span> </el-tag>
                     </div>
 
                     <el-form-item prop="username">

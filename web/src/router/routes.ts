@@ -3,7 +3,7 @@ import { RouteRecordRaw } from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
     {
-        path: '/app/login',
+        path: '/app/app/login',
         name: 'login',
         component: () => import('@/views/login/index.vue'), //路由懒加载
         meta: {

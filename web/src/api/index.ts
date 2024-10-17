@@ -163,6 +163,7 @@ class Request {
                         })
                     }
                     else {
+                        window.location.href = '/app/app/login'
                         reject(error.response)
                     }
                 })

@@ -8,10 +8,10 @@
     <div class="am-host-operator">
         <el-card shadow="never">
             <el-button-group class="ml-4" style="margin-right: 16px">
-                <el-button type="primary" @click="goBack">
+                <el-button type="primary" plain @click="goBack">
                     <svg-icon icon-class="back"></svg-icon>
                 </el-button>
-                <el-button type="primary" @click="goNext">
+                <el-button type="primary" plain @click="goNext">
                     <svg-icon icon-class="next"></svg-icon>
                 </el-button>
             </el-button-group>
@@ -21,12 +21,15 @@
                     <el-dropdown-menu>
                         <el-dropdown-item>
                             <el-button type="primary" size="small" text @click="folderCreateDialog = true">
-                                <svg-icon icon-class="folder" style="color: #105eeb; margin-right: 4px" />
+                                <svg-icon icon-class="folder" style="margin-right: 4px" />
                                 文件夹
                             </el-button>
                         </el-dropdown-item>
                         <el-dropdown-item>
-                            <el-button type="primary" size="small" text @click="fileCreateDialog = true"> 文件 </el-button>
+                            <el-button type="primary" size="small" text @click="fileCreateDialog = true">
+                                <svg-icon icon-class="file" style="margin-right: 4px" />
+                                文件
+                            </el-button>
                         </el-dropdown-item>
                     </el-dropdown-menu>
                 </template>
@@ -47,6 +50,7 @@
                     <template #default="scope">
                         <div style="display: flex; align-items: center">
                             <svg-icon v-if="scope.row.is_dir == true" icon-class="folder" style="color: #105eeb; margin-right: 4px" />
+                            <svg-icon v-if="scope.row.is_dir == false" icon-class="file" style="color: #105eeb; margin-right: 4px" />
                             <span @click="queryFilesByPath(path.join(currentPath, scope.row.name), scope.row.is_dir)">
                                 {{ scope.row.name }}
                             </span>

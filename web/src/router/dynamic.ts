@@ -71,7 +71,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         redirect: '/docker/container',
         meta: {
             title: '容器',
-            icon: 'setting',
+            icon: 'container',
             show: true,
             activeMenu: '/container'
         }
@@ -82,7 +82,6 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/container/container/index.vue'), //路由懒加载
         meta: {
             title: '容器',
-            icon: 'setting',
             show: false,
             activeMenu: '/docker'
         }
@@ -93,7 +92,6 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/container/image/index.vue'), //路由懒加载
         meta: {
             title: '镜像',
-            icon: 'lab',
             show: false,
             activeMenu: '/docker'
         }
@@ -104,7 +102,6 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/container/network/index.vue'), //路由懒加载
         meta: {
             title: '网络',
-            icon: 'lab',
             show: false,
             activeMenu: '/docker'
         }
@@ -115,9 +112,39 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/container/settings/index.vue'), //路由懒加载
         meta: {
             title: '设置',
-            icon: 'lab',
             show: false,
             activeMenu: '/docker'
+        }
+    },
+    {
+        path: '/alarm',
+        name: 'alarm',
+        redirect: '/alarm/mail',
+        meta: {
+            title: '告警',
+            icon: 'alarm',
+            show: true,
+            activeMenu: '/mail'
+        }
+    },
+    {
+        path: '/alarm/mail',
+        name: 'mail',
+        component: () => import('@/views/alarm/mail/index.vue'),
+        meta: {
+            title: '告警配置',
+            show: false,
+            activeMenu: '/alarm'
+        }
+    },
+    {
+        path: '/alarm/threshold',
+        name: 'threshold',
+        component: () => import('@/views/alarm/threshold/index.vue'),
+        meta: {
+            title: '告警阈值',
+            show: false,
+            activeMenu: '/alarm'
         }
     },
     {
@@ -166,11 +193,29 @@ export const dynamicRoutes: RouteRecordRaw[] = [
     {
         path: '/audit',
         name: 'audit',
-        component: () => import('@/views/audit/index.vue'), //路由懒加载
+        redirect: '/audit/operator',
         meta: {
-            title: '审计',
+            title: '日志',
             icon: 'audit',
             show: true
+        }
+    },
+    {
+        path: '/audit/operator',
+        name: 'operator',
+        component: () => import('@/views/audit/operator/index.vue'), //路由懒加载
+        meta: {
+            title: '操作日志',
+            show: false
+        }
+    },
+    {
+        path: '/audit/system',
+        name: 'system',
+        component: () => import('@/views/audit/system/index.vue'), //路由懒加载
+        meta: {
+            title: '系统日志',
+            show: false
         }
     },
     {
@@ -178,7 +223,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         name: 'profile',
         component: () => import('@/views/profile/index.vue'), //路由懒加载
         meta: {
-            title: '系统',
+            title: '个人中心',
             icon: 'settings',
             show: false
         }

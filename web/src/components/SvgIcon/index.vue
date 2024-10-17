@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from 'vue';
 
 const props = defineProps({
     prefix: {
@@ -23,7 +23,7 @@ const props = defineProps({
     },
     size: {
         type: String,
-        default: '1em'
+        default: '1.3em'
     }
 })
 
