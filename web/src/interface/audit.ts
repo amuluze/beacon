@@ -17,3 +17,9 @@ export interface AuditQueryResult {
     page: number
     size: number
 }
+
+export interface SystemAuditQueryParams {
+    type: string
+    page: number
+    size: number
+}

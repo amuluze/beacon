@@ -29,14 +29,14 @@
 </template>
 
 <script setup lang="ts">
-import { queryAudit } from '@/api/audit';
+import { querySystemAudit } from '@/api/audit';
 import { useTable } from '@/hooks/useTable.ts';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
 
 onMounted(() => {
     refresh()
 })
-const { data, refresh, loading, pagination } = useTable(queryAudit, {}, {})
+const { data, refresh, loading, pagination } = useTable(querySystemAudit, {type: "system"}, {})
 </script>
 
 <style scoped lang="scss">
