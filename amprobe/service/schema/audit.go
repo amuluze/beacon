@@ -12,8 +12,9 @@ type Audit struct {
 }
 
 type AuditQueryArgs struct {
-	Page int `json:"page" validate:"required"`
-	Size int `json:"size" validate:"required,gt=0"`
+	Type string `json:"type,omitempty"`
+	Page int    `json:"page" validate:"required"`
+	Size int    `json:"size" validate:"required,gt=0"`
 }
 
 type AuditQueryReply struct {

@@ -11,6 +11,7 @@ import (
 	"amprobe/service/schema"
 
 	"common/database"
+
 	"github.com/google/wire"
 )
 
@@ -33,8 +34,16 @@ func NewAuditRepo(db *database.DB) *AuditRepo {
 
 func (a *AuditRepo) AuditQuery(ctx context.Context, args schema.AuditQueryArgs) (model.Audits, error) {
 	var audits model.Audits
-	if err := a.DB.Model(&model.Audit{}).Order("created_at DESC").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&audits).Error; err != nil {
-		return audits, err
+	if args.Type == "system" {
+		err := a.DB.Model(&model.Audit{}).Where("username = ?", args.Type).Order("created_at DESC").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&audits).Error
+		if err != nil {
+			return audits, nil
+		}
+	} else {
+		err := a.DB.Model(&model.Audit{}).Where("username != ?", "system").Order("created_at DESC").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&audits).Error
+		if err != nil {
+			return audits, nil
+		}
 	}
 	return audits, nil
 }

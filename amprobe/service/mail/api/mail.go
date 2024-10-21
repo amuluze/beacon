@@ -10,6 +10,7 @@ import (
 	"amprobe/pkg/validatex"
 	"amprobe/service/mail/service"
 	"amprobe/service/schema"
+
 	"github.com/gofiber/fiber/v2"
 )
 

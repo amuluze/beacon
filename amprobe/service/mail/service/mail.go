@@ -8,7 +8,9 @@ import (
 	"amprobe/service/mail/repository"
 	"amprobe/service/schema"
 	"context"
+
 	"github.com/google/wire"
+	"gorm.io/gorm"
 )
 
 var MailServiceSet = wire.NewSet(NewMailService, wire.Bind(new(IMailService), new(*MailService)))
@@ -34,6 +36,9 @@ func NewMailService(mailRepository repository.IMailRepository) *MailService {
 func (m *MailService) MailQuery(ctx context.Context) (schema.Mail, error) {
 	result := schema.Mail{}
 	reply, err := m.MailRepository.MailQuery(ctx)
+	if err == gorm.ErrRecordNotFound {
+		return result, nil
+	}
 	if err != nil {
 		return result, err
 	}

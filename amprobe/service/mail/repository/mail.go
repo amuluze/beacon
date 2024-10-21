@@ -9,6 +9,8 @@ import (
 	"amprobe/service/schema"
 	"common/database"
 	"context"
+	"crypto/tls"
+
 	"github.com/google/wire"
 	"gopkg.in/gomail.v2"
 )
@@ -89,6 +91,7 @@ func (m *MailRepository) MailTest(ctx context.Context, args schema.MailTestArgs)
 	message.SetBody("text/plain", content) //发送的文本消息
 
 	dialer := gomail.NewDialer(mail.Server, mail.Port, mail.Sender, mail.Password)
+	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 
 	return dialer.DialAndSend(message)
 }

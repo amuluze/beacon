@@ -9,6 +9,7 @@ import (
 	"amprobe/service/schema"
 	"common/database"
 	"context"
+
 	"github.com/google/wire"
 )
 
@@ -17,7 +18,7 @@ var AlarmRepositorySet = wire.NewSet(NewAlarmRepository, wire.Bind(new(IAlarmRep
 var _ IAlarmRepository = (*AlarmRepository)(nil)
 
 type IAlarmRepository interface {
-	AlarmQuery(ctx context.Context) (model.AlarmThreshold, error)
+	AlarmQuery(ctx context.Context) ([]model.AlarmThreshold, error)
 	AlarmUpdate(ctx context.Context, args schema.AlarmThresholdUpdateArgs) error
 }
 
@@ -29,9 +30,9 @@ func NewAlarmRepository(db *database.DB) *AlarmRepository {
 	return &AlarmRepository{DB: db}
 }
 
-func (a AlarmRepository) AlarmQuery(ctx context.Context) (model.AlarmThreshold, error) {
-	var reply model.AlarmThreshold
-	err := a.DB.Model(&model.AlarmThreshold{}).First(&reply).Error
+func (a AlarmRepository) AlarmQuery(ctx context.Context) ([]model.AlarmThreshold, error) {
+	var reply []model.AlarmThreshold
+	err := a.DB.Model(&model.AlarmThreshold{}).Find(&reply).Error
 	return reply, err
 }
 

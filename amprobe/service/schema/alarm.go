@@ -11,8 +11,12 @@ type AlarmThreshold struct {
 	Threshold int    `json:"threshold"`
 }
 
+type AlarmThresholdQueryReply struct {
+	Data []AlarmThreshold `json:"data"`
+}
+
 type AlarmThresholdUpdateArgs struct {
-	ID        uint   `json:"id"`
+	ID        uint   `json:"id" validate:"required"`
 	Type      string `json:"type"`
 	Duration  int    `json:"duration"`
 	Threshold int    `json:"threshold"`
