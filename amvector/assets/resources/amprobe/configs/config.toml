@@ -72,3 +72,6 @@ Debug = false
 AutoLoad = true
 # 定期自动加载策略时间间隔（单位秒）
 AutoLoadInternal = 60
+
+[Task]
+Interval = 15
