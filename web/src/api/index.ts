@@ -63,9 +63,6 @@ class Request {
             store.user.setToken(res.data.access_token, res.data.refresh_token)
             // 更新 token 后，重启发起之前失败的请求
             this.againRequest()
-        }).catch(() => {
-            // 此时 refreshToken 也失效了，返回登录页
-            window.location.href = '/app/app/login'
         })
     }
 
@@ -140,27 +137,30 @@ class Request {
                 return response
             },
             async (error) => {
+                console.log(error)
                 const { data, config, status } = error.response
                 return new Promise((resolve, reject) => {
                     /** 判断当前请求失败的原因 */
-                    if (status === 400) {
-                        warning(data.msg)
-                    }
-                    else if (status === 403) {
+                    const store = useStore()
+                    if (status === 403) {
                         warning('您目前没有权限执行该操作，请联系管理员')
                     }
                     else if (status === 500) {
                         warning('服务器错误，请稍后再试')
                     }
-                    else if (status === 401 && config.url === '/api/v1/auth/token_update') {
-                        // refreshToken 也失效了，返回登录页
-                        this.clearExpiredRequest()
-                        window.location.href = '/app/app/login'
-                    }
                     else if (status === 401 && config.url !== '/api/v1/auth/token_update') {
                         this.refreshToken(() => {
                             resolve(this.service(config))
                         })
+                    }
+                    else if (status === 400 && config.url === '/api/v1/auth/token_update') {
+                        // refresh token 也失效了，返回登录页
+                        this.clearExpiredRequest()
+                        store.user.setToken('', '')
+                        window.location.href = '/app'
+                    }
+                    else if (status === 400) {
+                        warning(data.msg)
                     }
                     else {
                         window.location.href = '/app/app/login'
