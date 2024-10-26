@@ -69,7 +69,6 @@ func (t *Task) CPUAlarmTask(ctx context.Context) error {
 	}
 	// Duration 时间段内，如果 CPU 使用率的的平均值大于告警阈值，则告警
 	if int(utils.Decimal(total)*100) > threshold.Threshold {
-
 		err := t.db.RunInTransaction(func(tx *gorm.DB) error {
 			msg := fmt.Sprintf("%s CPU 使用率连续 %d 分钟超过 %d", hostReply.Hostname, threshold.Duration, threshold.Threshold)
 			// 存储系统日志
@@ -81,10 +80,13 @@ func (t *Task) CPUAlarmTask(ctx context.Context) error {
 				return err
 			}
 			// 发送告警邮件
+			if _, ok := t.cache.Get("cpu"); ok {
+				return nil
+			}
 			if err := t.sendMail(msg); err != nil {
 				return err
 			}
-
+			t.cache.Set("cpu", "true", 10*time.Minute)
 			return nil
 		})
 		if err != nil {
@@ -128,9 +130,13 @@ func (t *Task) MemoryAlarmTask(ctx context.Context) error {
 			if err := tx.Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
 				return err
 			}
+			if _, ok := t.cache.Get("memory"); ok {
+				return nil
+			}
 			if err := t.sendMail(msg); err != nil {
 				return err
 			}
+			t.cache.Set("memory", "true", 10*time.Minute)
 			return nil
 		})
 		if err != nil {
@@ -176,9 +182,13 @@ func (t *Task) DiskAlarmTask(ctx context.Context) error {
 				if err := tx.Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
 					return err
 				}
+				if _, ok := t.cache.Get("disk"); ok {
+					return nil
+				}
 				if err := t.sendMail(msg); err != nil {
 					return err
 				}
+				t.cache.Set("disk", "true", 10*time.Minute)
 				return nil
 			})
 			if err != nil {
