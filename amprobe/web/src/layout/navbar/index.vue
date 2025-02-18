@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import Avatar from '@/layout/navbar/Avatar.vue'
-import Breadcrumb from './Breadcrumb.vue'
-import ThemeChange from '@/layout/navbar/ThemeChange.vue'
-import Language from '@/layout/navbar/Language.vue'
+import Avatar from '@/layout/navbar/Avatar.vue';
+import Language from '@/layout/navbar/Language.vue'; /* PartiallyEnd: #3632/scriptSetup.vue */
+import ThemeChange from '@/layout/navbar/ThemeChange.vue';
+import Breadcrumb from './Breadcrumb.vue';
 </script>
 
 <template>
@@ -25,7 +25,7 @@ import Language from '@/layout/navbar/Language.vue'
   width: 100%;
   padding: 0 16px;
   color: var(--el-header-text-color);
-  background-color: var(--el-header-bg-color);
+  background-color: var(--el-menu-bg-color);
   border-radius: 4px;
   border-bottom: 1px solid var(--el-header-border-color);
   border-left: 1px solid var(--el-header-border-color);

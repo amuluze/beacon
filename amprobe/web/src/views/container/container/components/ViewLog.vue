@@ -1,6 +1,15 @@
 <script setup lang="ts">
-import { Websocket } from '@/components/Websocket'
-import { useI18n } from 'vue-i18n'
+import { Websocket } from '@/components/Websocket';
+import { useI18n } from 'vue-i18n';
+
+import Codemirror from "codemirror-editor-vue3";
+import "codemirror/mode/javascript/javascript.js";
+
+const cmOptions = {
+  mode: "log",
+  theme: "default",
+
+}
 
 const props = defineProps<{
   visible: boolean
@@ -82,7 +91,13 @@ const { t } = useI18n()
 <template>
     <!--  查看日志弹窗  -->
     <el-dialog v-model="dialogVisible" :title="t('container.log')" width="50%" :destroy-on-close="true">
-        <el-input v-model="logData" :rows="20" type="textarea" />
+        <Codemirror
+            v-model:value="logData"
+            :options="cmOptions"
+            border
+            height="100%"
+            width="100%"
+        />
         <template #footer>
             <div class="dialog-footer">
                 <el-button size="small" type="primary" plain @click="downloadLog">

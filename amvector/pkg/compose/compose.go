@@ -68,6 +68,8 @@ func DockerComposeConfig() DockerCompose {
 	volumes := []string{
 		"/data/amprobe/resources/amprobe/configs:/app/configs",
 		"/data/amprobe/resources/amvector/socks/vector.sock:/app/vector.sock",
+		"/data/amprobe/resources/amprobe/nginx/conf.d:/etc/nginx/conf.d",
+		"/data/amprobe/resources/amprobe/nginx/nginx.conf:/etc/nginx/nginx.conf",
 		"/data/amprobe/logs/amprobe:/app/logs",
 	}
 	dockerCompose.Services.Amprobe.Volumes = append(

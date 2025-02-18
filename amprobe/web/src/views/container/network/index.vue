@@ -10,10 +10,10 @@ import useCommandComponent from '@/hooks/useCommandComponent.ts'
 import AddNetwork from '@/views/container/network/components/AddNetwork.vue'
 import DeleteNetwork from '@/views/container/network/components/DeleteNetwork.vue'
 
-import { useI18n } from 'vue-i18n'
 import useStore from '@/store'
-import en from 'element-plus/es/locale/lang/en'
 import { getBrowserLanguage } from '@/utils'
+import en from 'element-plus/es/locale/lang/en'
+import { useI18n } from 'vue-i18n'
 
 const { tableData, pageable, loading, search, handleSizeChange, handleCurrentChange } = useTable(queryNetworks)
 onMounted(async () => {
@@ -55,7 +55,7 @@ const locale = computed(() => {
                 ref="tableRef"
                 v-loading="loading"
                 :data="tableData as Network[]"
-                :header-cell-style="{ height: '45px', fontSize: '14px', color: '#000', background: '#fafafa' }"
+                :header-cell-style="{ height: '45px', fontSize: '14px', color: '#000' }"
                 height="100%"
                 border
                 @selection-change="handleSelectionChange"

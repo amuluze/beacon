@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { RouteRecordRaw } from 'vue-router'
-import { useI18n } from 'vue-i18n'
+import { useI18n } from 'vue-i18n';
+import type { RouteRecordRaw } from 'vue-router';
 
 defineProps<{
   items: RouteRecordRaw[]
@@ -33,7 +33,7 @@ function handleClickMenu(item: RouteRecordRaw) {
 </template>
 
 <style scoped lang="scss">
-.el-menu {
+/* .el-menu {
   &.el-menu--vertical {
     color: var(--el-menu-hover-text-color);
     background-color: var(--el-menu-bg-color);
@@ -47,7 +47,7 @@ function handleClickMenu(item: RouteRecordRaw) {
   }
   &.is-active {
     color: var(--el-menu-active-color);
-    background-color: var(--el-menu-active-bg-color);
+    background-color: var(--el-menu-bg-color);
   }
 }
 
@@ -59,9 +59,9 @@ function handleClickMenu(item: RouteRecordRaw) {
   }
   &.is-active {
     color: var(--el-menu-active-color);
-    background-color: var(--el-menu-active-bg-color);
+    background-color: var(--el-menu-bg-color);
   }
-}
+} */
 
 /* 文字单行省略号 */
 @include b(sle) {

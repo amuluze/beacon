@@ -118,6 +118,10 @@ export default {
         restartContainer: '重启容器',
         delete: '删除',
         deleteContainer: '删除容器',
+        confirmStop: '确认停止容器?',
+        confirmDelete: '确认删除容器?',
+        confirmStart: '确认启动容器?',
+        confirmRestart: '确认重启容器?',
     },
     image: {
         pullImage: '拉取镜像',

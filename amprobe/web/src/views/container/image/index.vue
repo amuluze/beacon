@@ -1,21 +1,21 @@
 <script setup lang="ts">
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
-import type { TableInstance } from 'element-plus'
 import type { Image } from '@/interface/container.ts'
+import type { TableInstance } from 'element-plus'
 
 import useCommandComponent from '@/hooks/useCommandComponent.ts'
-import PullImage from '@/views/container/image/components/PullImage.vue'
+import DeleteImage from '@/views/container/image/components/DeleteImage.vue'
 import ImportImage from '@/views/container/image/components/ImportImage.vue'
 import PruneImage from '@/views/container/image/components/PruneImage.vue'
-import DeleteImage from '@/views/container/image/components/DeleteImage.vue'
+import PullImage from '@/views/container/image/components/PullImage.vue'
 
-import { useTable } from '@/hooks/useTable'
 import { queryImages } from '@/api/container'
-import { useI18n } from 'vue-i18n'
+import { useTable } from '@/hooks/useTable'
 import useStore from '@/store'
-import en from 'element-plus/es/locale/lang/en'
 import { getBrowserLanguage } from '@/utils'
+import en from 'element-plus/es/locale/lang/en'
+import { useI18n } from 'vue-i18n'
 
 const { tableData, pageable, loading, search, handleSizeChange, handleCurrentChange } = useTable(queryImages)
 onMounted(async () => {
@@ -69,7 +69,7 @@ const locale = computed(() => {
                 ref="tableRef"
                 v-loading="loading"
                 :data="tableData as Image[]"
-                :header-cell-style="{ height: '45px', fontSize: '14px', color: '#000', background: '#fafafa' }"
+                :header-cell-style="{ height: '45px', fontSize: '14px', color: '#000' }"
                 height="100%"
                 border
                 @selection-change="handleSelectionChange"

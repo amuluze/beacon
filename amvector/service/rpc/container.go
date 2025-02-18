@@ -12,8 +12,6 @@ import (
 	"log/slog"
 	"time"
 
-	"gorm.io/gorm"
-
 	"amvector/service/model"
 
 	"github.com/amuluze/docker"
@@ -37,7 +35,7 @@ func (s *Service) Version(ctx context.Context, args rpcSchema.DockerArgs, reply 
 
 func (s *Service) ContainerList(ctx context.Context, args rpcSchema.ContainerQueryArgs, reply *rpcSchema.ContainerQueryReply) error {
 	var containers []model.Container
-	if err := s.DB.Model(&model.Container{}).Order("created_at desc").Group("name").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&containers).Error; err != nil {
+	if err := s.DB.Model(&model.Container{}).Where("ports != ?", "").Group("name").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&containers).Error; err != nil {
 		return err
 	}
 	var results []rpcSchema.Container
@@ -190,15 +188,10 @@ func (s *Service) containerTask() {
 }
 
 func (s *Service) ContainerDelete(ctx context.Context, args rpcSchema.ContainerDeleteArgs, reply *rpcSchema.ContainerDeleteReply) error {
-	if err := s.DB.RunInTransaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&model.Container{}).Where("container_id = ?", args.ContainerID).Delete(&model.Container{}).Error; err != nil {
-			return err
-		}
-		if err := s.Manager.DeleteContainer(ctx, args.ContainerID); err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
+	if err := s.DB.Model(&model.Container{}).Where("container_id = ?", args.ContainerID).Delete(&model.Container{}).Error; err != nil {
+		return err
+	}
+	if err := s.Manager.DeleteContainer(ctx, args.ContainerID); err != nil {
 		return err
 	}
 	return nil

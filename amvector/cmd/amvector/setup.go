@@ -42,13 +42,24 @@ func setupConfig(prefix, configFile string) error {
 }
 
 func setupResources(prefix string) error {
-	amprobeDir := filepath.Join(prefix, resources.RootPath, resources.AmprobeConfigFolder)
-	if err := utils.EnsureDirExists(amprobeDir); err != nil {
+	amprobeConfigDir := filepath.Join(prefix, resources.RootPath, resources.AmprobeConfigFolder)
+	if err := utils.EnsureDirExists(amprobeConfigDir); err != nil {
 		return err
 	}
 	if err := assets.CopyDir(
 		filepath.Join(assets.ResourcesDir, resources.AmprobeConfigFolder),
-		amprobeDir,
+		amprobeConfigDir,
+	); err != nil {
+		return err
+	}
+
+	amprobeNginxDir := filepath.Join(prefix, resources.RootPath, resources.AmprobeNginxFolder)
+	if err := utils.EnsureDirExists(amprobeNginxDir); err != nil {
+		return err
+	}
+	if err := assets.CopyDir(
+		filepath.Join(assets.ResourcesDir, resources.AmprobeNginxFolder),
+		amprobeNginxDir,
 	); err != nil {
 		return err
 	}

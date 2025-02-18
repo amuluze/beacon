@@ -53,7 +53,7 @@ const { t } = useI18n()
     justify-content: space-between;
     height: 48px;
     width: 100%;
-    background-color: var(--el-menu-bg-color);
+    // background-color: var(--el-menu-bg-color);
     // box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
 
     border-radius: 4px;

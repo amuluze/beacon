@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
-import type { TableInstance } from 'element-plus'
 import type { Container } from '@/interface/container.ts'
+import type { TableInstance } from 'element-plus'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
-import { useTable } from '@/hooks/useTable.ts'
 import { queryContainers } from '@/api/container'
+import { useTable } from '@/hooks/useTable.ts'
 
 import useCommandComponent from '@/hooks/useCommandComponent.ts'
 import AddContainer from '@/views/container/container/components/AddContainer.vue'
+import DeleteContainer from '@/views/container/container/components/DeleteContainer.vue'
+import RestartContainer from '@/views/container/container/components/RestartContainer.vue'
 import StartContainer from '@/views/container/container/components/StartContainer.vue'
 import StopContainer from '@/views/container/container/components/StopContainer.vue'
-import RestartContainer from '@/views/container/container/components/RestartContainer.vue'
-import DeleteContainer from '@/views/container/container/components/DeleteContainer.vue'
 import ViewLog from '@/views/container/container/components/ViewLog.vue'
 
-import { useI18n } from 'vue-i18n'
 import useStore from '@/store'
-import en from 'element-plus/es/locale/lang/en'
 import { getBrowserLanguage } from '@/utils'
+import en from 'element-plus/es/locale/lang/en'
+import { useI18n } from 'vue-i18n'
 
 const { tableData, pageable, loading, search, handleSizeChange, handleCurrentChange } = useTable(queryContainers)
 onMounted(async () => {
@@ -68,7 +68,7 @@ const locale = computed(() => {
                 ref="tableRef"
                 v-loading="loading"
                 :data="tableData as Container[]"
-                :header-cell-style="{ height: '45px', fontSize: '14px', color: '#000', background: '#fafafa' }"
+                :header-cell-style="{ height: '45px', fontSize: '14px', color: '#000' }"
                 height="100%"
                 border
                 @selection-change="handleSelectionChange"

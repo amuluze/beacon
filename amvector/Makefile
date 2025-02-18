@@ -22,7 +22,7 @@ wire: assets
 
 .PHONY: amd64
 # build amd64
-amd64: wire assets
+amd64: assets
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(TARGET) $(SERVER)
 
 .PHONY: arm64
@@ -32,7 +32,7 @@ arm64: wire assets
 
 .PHONY: installer
 # generate installer
-installer: wire
+installer:
 	@mkdir -p $(OBJPATH)
 	@cp $(TARGET) $(OBJPATH)
 	@strip $(OBJPATH)/$(TARGET)

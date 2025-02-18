@@ -197,7 +197,7 @@ onMounted(async () => {
   @include e(card) {
     margin-bottom: 8px;
     height: 140px;
-    background-color: var(--el-menu-active-bg-color) !important;
+    //background-color: var(--el-menu-active-bg-color) !important;
   }
 }
 

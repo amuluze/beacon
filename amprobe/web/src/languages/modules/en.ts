@@ -121,6 +121,10 @@ export default {
         restartContainer: 'Restart Container',
         delete: 'Delete',
         deleteContainer: 'Delete Container',
+        confirmStop: 'Confirm Stop?',
+        confirmDelete: 'Confirm Delete?',
+        confirmStart: 'Confirm Start?',
+        confirmRestart: 'Confirm Restart?',
     },
     image: {
         pullImage: 'Pull Image',

@@ -28,7 +28,7 @@ wire:
 
 .PHONY: bin
 # build bin
-bin: wire
+bin:
 	$(GO) build $(BUILD_FLAGS) -o $(APP) $(SERVER)
 
 .PHONY: amd64

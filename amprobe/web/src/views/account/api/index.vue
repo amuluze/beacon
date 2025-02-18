@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { queryResource } from '@/api/account'
 import { useTable } from '@/hooks/useTable.ts'
 import type { TableInstance } from 'element-plus'
 import { useI18n } from 'vue-i18n'
-import { queryResource } from '@/api/account'
 
 const tableRef = ref<TableInstance>()
 const { tableData, loading, search } = useTable(queryResource, {}, false)
@@ -21,7 +21,7 @@ const { t } = useI18n()
                 v-loading="loading"
                 :data="tableData"
                 height="100%"
-                :header-cell-style="{ height: '45px', fontSize: '14px', color: '#000', background: '#fafafa' }"
+                :header-cell-style="{ height: '45px', fontSize: '14px', color: '#000'}"
                 border
             >
                 <el-table-column prop="name" label="接口名称" min-width="100" />

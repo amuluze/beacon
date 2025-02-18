@@ -20,4 +20,5 @@ var (
 
 	AmprobeFolder       = "amprobe"
 	AmprobeConfigFolder = filepath.Join(AmprobeFolder, "configs")
+	AmprobeNginxFolder  = filepath.Join(AmprobeFolder, "nginx")
 )

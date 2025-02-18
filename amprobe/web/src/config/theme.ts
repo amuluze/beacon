@@ -7,13 +7,14 @@
 // * 主题配置
 export const themeConfig: Record<Theme.ThemeType, { [ key: string ]: string }> = {
     light: {
-        // 菜单样式
-        '--el-menu-bg-color': '#fffefb',
+        // 菜单样式#f4f0f0
+        '--el-bg-color': '#f0f1f5',
+        '--el-menu-bg-color': '#ffffff',
         '--el-menu-hover-bg-color': '#71c4ef',
-        '--el-menu-active-bg-color': '#d4eaf7',
+        '--el-menu-active-bg-color': '#409eff',
         '--el-menu-text-color': '#3b3c3d',
-        '--el-menu-active-color': '#00668c',
-        '--el-menu-hover-text-color': '#00668c',
+        '--el-menu-active-color': '#ffffff',
+        '--el-menu-hover-text-color': '#ffffff',
         '--el-menu-horizontal-sub-item-height': '50px',
         // 侧边栏样式
         '--el-aside-logo-text-color': '#303133',
@@ -27,7 +28,8 @@ export const themeConfig: Record<Theme.ThemeType, { [ key: string ]: string }> =
     },
     dark: {
         // 菜单样式
-        '--el-menu-bg-color': '#141414',
+        '--el-bg-color': '#141414',
+        '--el-menu-bg-color': '#1d1e1f',
         '--el-menu-hover-bg-color': '#000000',
         '--el-menu-active-bg-color': '#000000',
         '--el-menu-text-color': '#dadada',

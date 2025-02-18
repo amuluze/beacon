@@ -51,7 +51,8 @@ $modifier-sel: '--' !default;
     :deep(.el-card) {
         height: 100%;
         color: var(--el-menu-text-color);
-        background-color: var(--el-menu-bg-color);
+        background-color: '#fff';
+
         :deep(.el-card__body) {
             height: 100%;
         }
@@ -68,7 +69,7 @@ $modifier-sel: '--' !default;
     background-color: var(--el-menu-bg-color);
 
     .el-table {
-        background-color: var(--el-menu-bg-color) !important;
+        background-color: var(--el-menu-bg-color);
         color: var(--el-menu-text-color);
         //
     }
@@ -77,10 +78,11 @@ $modifier-sel: '--' !default;
         background-color: var(--el-menu-bg-color) !important;
         color: var(--el-menu-text-color) !important;
     }
+
     .el-table__row {
         background-color: var(--el-menu-bg-color);
         color: var(--el-menu-text-color);
-        //border: 1px solid var(--el-header-border-color);
+        // border: 1px solid var(--el-header-border-color);
     }
 }
 
@@ -91,7 +93,7 @@ $modifier-sel: '--' !default;
     height: 36px;
     width: 100%;
     color: var(--el-menu-text-color);
-    background-color: var(--el-menu-bg-color);
+    // background-color: var(--el-menu-bg-color);
 }
 
 @include b(pagination) {
@@ -99,7 +101,7 @@ $modifier-sel: '--' !default;
     align-items: center;
     justify-content: flex-end;
     color: var(--el-menu-text-color);
-    background-color: var(--el-menu-bg-color);
+    // background-color: var(--el-menu-bg-color);
 }
 
 @include b(description) {
