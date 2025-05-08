@@ -6,9 +6,6 @@ SeverHeader = "probe"
 AppName = "probe"
 Prefork = false
 
-[Rpc]
-Address = "/app/vector.sock"
-
 [Gorm]
 Debug = true             # 是否开启调试模式
 DBType = "sqlite"        # 数据库类型(目前支持的数据库类型：postgres, sqlite)
@@ -48,3 +45,6 @@ AutoLoadInternal = 60 # 定期自动加载策略时间间隔（单位秒）
 
 [Task]
 Interval = 15
+MaxAge = 1
+Disk = { Devices = ["vda1"]}
+Ethernet = { Names = ["eth0"]}

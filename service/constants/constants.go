@@ -6,4 +6,7 @@ package constants
 
 const (
 	DaemonJsonPath = "/etc/docker/daemon.json"
+
+	AmprobeFolder       = "/etc/amprobe"
+	AmprobeConfigFolder = "configs"
 )

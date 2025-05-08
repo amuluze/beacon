@@ -45,3 +45,6 @@ AutoLoadInternal = 60 # 定期自动加载策略时间间隔（单位秒）
 
 [Task]
 Interval = 15
+MaxAge = 1
+Disk = { Devices = ["vda1"]}
+Ethernet = { Names = ["eth0"]}

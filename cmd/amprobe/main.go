@@ -33,8 +33,8 @@ func usage() {
 }
 
 func parseConfig() []string {
-	flag.StringVar(&configFile, "conf", "/etc/amprobe/config.yml", "config file path")
-	flag.StringVar(&modelFile, "model", "/etc/amprobe/model.conf", "model file path")
+	flag.StringVar(&configFile, "conf", "/etc/amprobe/configs/config.yml", "config file path")
+	flag.StringVar(&modelFile, "model", "/etc/amprobe/configs/model.conf", "model file path")
 	flag.Parse()
 	return flag.Args()
 }

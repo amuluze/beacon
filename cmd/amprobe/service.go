@@ -30,7 +30,7 @@ func (s *Service) Start() {
 func (s *Service) Run() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
-	clearFunc, err := service.Run(s.configFile, s.modelFile)
+	clearFunc, err := service.Run(s.configFile, service.ModelConfig(s.modelFile))
 	if err != nil {
 		return
 	}
