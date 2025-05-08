@@ -4,7 +4,13 @@
 // Description:
 package psutil
 
-import "testing"
+import (
+	"context"
+	"testing"
+
+	"github.com/shirou/gopsutil/v3/common"
+	"github.com/shirou/gopsutil/v3/disk"
+)
 
 func TestGetCPUPercent(t *testing.T) {
 	cpuPercent, err := GetCPUPercent()
@@ -32,4 +38,12 @@ func TestGetDiskIO(t *testing.T) {
 	devices := map[string]struct{}{"vda3": {}}
 	diskMap, err := GetDiskIO(devices)
 	t.Log(diskMap, err)
+}
+
+func TestGetAllDisk(t *testing.T) {
+	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{})
+	infos, _ := disk.PartitionsWithContext(ctx, false) // false表示只获取物理分区
+	for _, info := range infos {
+		t.Logf("%#v\n", info)
+	}
 }

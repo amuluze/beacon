@@ -90,6 +90,11 @@ func GetAllDiskInfo() (map[string]DiskInfo, error) {
 	diskMap := make(map[string]DiskInfo)
 	infos, _ := disk.PartitionsWithContext(ctx, false) // false表示只获取物理分区
 	for _, info := range infos {
+		// 过滤掉 loop 设备，这些通常是 Linux 系统中 snap 包挂载点，不是真正的物理磁盘
+		if strings.Contains(info.Device, "/loop") {
+			continue
+		}
+
 		usedInfo, err := disk.UsageWithContext(ctx, info.Mountpoint)
 		if usedInfo == nil {
 			slog.Error("get disk usage err", "err", err)
