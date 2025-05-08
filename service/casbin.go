@@ -14,7 +14,7 @@ import (
 	gormAdapter "github.com/casbin/gorm-adapter/v3"
 )
 
-type ModeConf string
+type ModelConfig string
 
 type CasbinRule struct {
 	ID    uint   `gorm:"primaryKey;autoIncrement"`
@@ -35,10 +35,10 @@ func InitAdapter(db *database.DB) *gormAdapter.Adapter {
 	return adapter
 }
 
-func InitCasbin(config *Config, modelPath string, adapter *gormAdapter.Adapter) (*casbin.SyncedEnforcer, func(), error) {
+func InitCasbin(config *Config, modelPath ModelConfig, adapter *gormAdapter.Adapter) (*casbin.SyncedEnforcer, func(), error) {
 	cleanFunc := func() {}
 
-	e, err := casbin.NewSyncedEnforcer(modelPath)
+	e, err := casbin.NewSyncedEnforcer(string(modelPath))
 	if err != nil {
 		slog.Error("init casbin error", "error", err)
 		return nil, cleanFunc, err

@@ -110,6 +110,7 @@ func (a *Prepare) InitAccount(app *fiber.App) {
 	var notAdminResources []*model.Resource
 	var adminResources []*model.Resource
 
+	// 收集资源
 	for _, routers := range app.Stack() {
 		for _, router := range routers {
 			if router.Path == "/" || (router.Method != "GET" && router.Method != "POST") {
@@ -133,57 +134,108 @@ func (a *Prepare) InitAccount(app *fiber.App) {
 		}
 	}
 
-	_ = a.db.RunInTransaction(func(tx *gorm.DB) error {
+	if err := a.db.RunInTransaction(func(tx *gorm.DB) error {
 		// 更新 resource
 		for _, resource := range adminResources {
-			if err := tx.Model(&model.Resource{}).FirstOrCreate(&resource).Error; err != nil {
-				slog.Error("search or create resource failed", "error", err)
+			// First try to find existing resource by name
+			var existingResource model.Resource
+			if err := tx.Model(&model.Resource{}).Where("name = ?", resource.Name).First(&existingResource).Error; err != nil {
+				if err == gorm.ErrRecordNotFound {
+					// Create new resource if not exists
+					if createErr := tx.Create(&resource).Error; createErr != nil {
+						slog.Error("创建资源失败", "resource", resource.Name, "error", err)
+						return err
+					}
+				} else {
+					slog.Error("查询资源失败", "resource", resource.Name, "error", err)
+					return err
+				}
+			} else {
+				// Update existing resource
+				resource.ID = existingResource.ID
+				if err := tx.Model(&existingResource).Updates(resource).Error; err != nil {
+					slog.Error("更新资源失败", "resource", resource.Name, "error", err)
+					return err
+				}
 			}
 		}
 
 		// 更新 user role
 		for _, u := range users {
-			if u.Username == "admin" {
-				u.Roles[0].Resources = adminResources
+			var existingUser model.User
+			if err := tx.Model(&model.User{}).Where("username = ?", u.Username).First(&existingUser).Error; err != nil {
+				if err == gorm.ErrRecordNotFound {
+					// Create new user if not exists
+					if u.Username == "admin" {
+						u.Roles[0].Resources = adminResources
+					} else {
+						u.Roles[0].Resources = notAdminResources
+					}
+					if createErr := tx.Create(&u).Error; createErr != nil {
+						slog.Error("创建用户失败", "username", u.Username, "error", err)
+						return err
+					}
+				} else {
+					slog.Error("查询用户失败", "username", u.Username, "error", err)
+					return err
+				}
 			} else {
-				u.Roles[0].Resources = notAdminResources
-			}
-			// 创建或更新
-			if err := tx.Model(&model.User{}).FirstOrCreate(&u).Error; err != nil {
-				slog.Error("search or create user failed", "error", err)
+				// Update existing user
+				if u.Username == "admin" {
+					u.Roles[0].Resources = adminResources
+				} else {
+					u.Roles[0].Resources = notAdminResources
+				}
+				u.ID = existingUser.ID
+				if err := tx.Model(&existingUser).Updates(u).Error; err != nil {
+					slog.Error("更新用户失败", "username", u.Username, "error", err)
+					return err
+				}
 			}
 		}
 		return nil
-	})
+	}); err != nil {
+		slog.Error("初始化账户事务失败", "error", err)
+	}
 }
 
 func (a *Prepare) InitAlarmThreshold() {
-	for _, threshold := range thresholds {
-		if err := a.db.Model(&model.AlarmThreshold{}).FirstOrCreate(&threshold).Error; err != nil {
-			slog.Error("alarm threshold exist", "error", err)
+	if err := a.db.RunInTransaction(func(tx *gorm.DB) error {
+		for _, threshold := range thresholds {
+			if err := tx.Model(&model.AlarmThreshold{}).FirstOrCreate(&threshold).Error; err != nil {
+				slog.Error("创建或更新告警阈值失败", "type", threshold.Type, "error", err)
+				return err
+			}
 		}
+		return nil
+	}); err != nil {
+		slog.Error("初始化告警阈值事务失败", "error", err)
 	}
 }
 
 func (a *Prepare) InitCasbinRules() {
 	var users []*model.User
 	if err := a.db.Preload(clause.Associations).Preload("Roles").Find(&users).Error; err != nil {
-		slog.Error("get all users error", "error", err)
+		slog.Error("获取所有用户失败", "error", err)
 		return
 	}
 
 	for _, user := range users {
 		for _, role := range user.Roles {
 			if _, err := a.enforcer.AddNamedGroupingPolicy("g", user.ID.String(), role.ID.String()); err != nil {
-				slog.Error("add grouping policy error", "error", err)
+				slog.Error("添加用户角色关系失败", "userId", user.ID, "roleId", role.ID, "error", err)
+				continue
 			}
+
 			var roleResources model.Role
 			if err := a.db.Where("id = ?", role.ID).Preload("Resources").Find(&roleResources).Error; err != nil {
-				slog.Error("get role resources error", "error", err)
+				slog.Error("获取角色资源失败", "roleId", role.ID, "error", err)
+				continue
 			}
+
 			for _, resource := range roleResources.Resources {
 				if _, err := a.enforcer.AddNamedPolicy("p", role.ID.String(), resource.Path, resource.Method); err != nil {
-					slog.Error("add policy error", "error", err)
+					slog.Error("添加权限策略失败", "roleId", role.ID, "resource", resource.Path, "error", err)
 				}
 			}
 		}

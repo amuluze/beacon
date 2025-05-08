@@ -20,7 +20,6 @@ import (
 
 	"github.com/amuluze/docker"
 	"github.com/google/wire"
-	"github.com/patrickmn/go-cache"
 )
 
 var ContainerServiceSet = wire.NewSet(NewContainerRepo, wire.Bind(new(IContainerRepo), new(*ContainerRepo)))
@@ -60,9 +59,7 @@ type IContainerRepo interface {
 }
 
 type ContainerRepo struct {
-	db      *database.DB
 	manager *docker.Manager
-	cache   *cache.Cache
 }
 
 func NewContainerRepo(db *database.DB) *ContainerRepo {
@@ -70,7 +67,7 @@ func NewContainerRepo(db *database.DB) *ContainerRepo {
 	if err != nil {
 		return nil
 	}
-	return &ContainerRepo{db: db, manager: manager, cache: cache.New(cache.NoExpiration, cache.NoExpiration)}
+	return &ContainerRepo{manager: manager}
 }
 
 func (c *ContainerRepo) Version(ctx context.Context) (model.Docker, error) {
@@ -315,7 +312,7 @@ func (c *ContainerRepo) GetDockerRegistryMirrors(ctx context.Context) ([]string,
 	}
 	if _, ok := daemonMap["registry-mirrors"]; ok {
 		for _, val := range daemonMap["registry-mirrors"].([]interface{}) {
-			reply = append(reply, val.(map[string]interface{})["name"].(string))
+			reply = append(reply, val.(string))
 		}
 	}
 	return reply, nil

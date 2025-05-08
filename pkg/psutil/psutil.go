@@ -1,5 +1,5 @@
 // Package psutil
-// Date: 2024/3/6 10:55
+// Date: 2024/06/10 18:58:51
 // Author: Amu
 // Description:
 package psutil
@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/shirou/gopsutil/v3/common"
-
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
@@ -46,7 +45,7 @@ type SystemInfo struct {
 }
 
 func GetMemInfo() (float64, uint64, uint64, error) {
-	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{common.HostProcEnvKey: "/host/proc"})
+	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{})
 	v, err := mem.VirtualMemoryWithContext(ctx)
 	if err != nil {
 		return 0.0, 0, 0, err
@@ -55,7 +54,7 @@ func GetMemInfo() (float64, uint64, uint64, error) {
 }
 
 func GetCPUPercent() (float64, error) {
-	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{common.HostProcEnvKey: "/host/proc"})
+	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{})
 	totalPercent, err := cpu.PercentWithContext(ctx, 3*time.Second, false)
 	if err != nil {
 		return 0.0, err
@@ -64,7 +63,7 @@ func GetCPUPercent() (float64, error) {
 }
 
 func GetDiskInfo(devices map[string]struct{}) (map[string]DiskInfo, error) {
-	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{common.HostRootEnvKey: "/rootfs"})
+	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{})
 	diskMap := make(map[string]DiskInfo)
 	infos, _ := disk.PartitionsWithContext(ctx, false)
 	for _, info := range infos {
@@ -87,7 +86,7 @@ func GetDiskInfo(devices map[string]struct{}) (map[string]DiskInfo, error) {
 }
 
 func GetDiskIO(devices map[string]struct{}) (map[string]DiskIO, error) {
-	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{common.HostProcEnvKey: "/host/proc"})
+	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{})
 	diskMap := make(map[string]DiskIO)
 	// 实现磁盘IO的获取逻辑
 	var names []string
@@ -113,7 +112,7 @@ func GetDiskIO(devices map[string]struct{}) (map[string]DiskIO, error) {
 }
 
 func GetNetworkIO(eth map[string]struct{}) (map[string]NetIO, error) {
-	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{common.HostProcEnvKey: "/host/proc"})
+	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{})
 
 	netMap := make(map[string]NetIO)
 	IOCountersStat, err := net.IOCountersWithContext(ctx, true)
@@ -135,10 +134,7 @@ func GetNetworkIO(eth map[string]struct{}) (map[string]NetIO, error) {
 
 // GetSystemInfo 获取系统信息
 func GetSystemInfo() (*SystemInfo, error) {
-	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{
-		common.HostSysEnvKey:  "/host/sys",
-		common.HostProcEnvKey: "/host/proc",
-	})
+	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{})
 
 	info, err := host.InfoWithContext(ctx)
 	if err != nil {
@@ -146,7 +142,7 @@ func GetSystemInfo() (*SystemInfo, error) {
 	}
 	systemInfo := &SystemInfo{
 		Uptime:          time.Unix(int64(info.BootTime), 0).Local().Format("2006-01-02 15:04:05"),
-		Hostname:        info.HostID,
+		Hostname:        info.Hostname,
 		Os:              info.OS,
 		Platform:        info.Platform,
 		PlatformVersion: info.PlatformVersion,

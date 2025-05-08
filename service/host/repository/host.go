@@ -13,6 +13,7 @@ import (
 	"amprobe/pkg/timectl"
 	"amprobe/service/model"
 	"amprobe/service/schema"
+
 	"github.com/google/wire"
 
 	"github.com/docker/docker/libnetwork/resolvconf"
@@ -23,7 +24,6 @@ var HostRepoSet = wire.NewSet(NewHostRepo, wire.Bind(new(IHostRepo), new(*HostRe
 var _ IHostRepo = (*HostRepo)(nil)
 
 type IHostRepo interface {
-	HostInfo(context.Context) (model.Host, error)
 	CPUInfo(context.Context) (model.CPU, error)
 	CPUUsage(context.Context, schema.CPUUsageArgs) ([]model.CPU, error)
 	MemInfo(context.Context) (model.Memory, error)
@@ -51,14 +51,6 @@ func NewHostRepo(db *database.DB) *HostRepo {
 	return &HostRepo{
 		db: db,
 	}
-}
-
-func (h *HostRepo) HostInfo(ctx context.Context) (model.Host, error) {
-	var info model.Host
-	if err := h.db.Model(&model.Host{}).Order("timestamp desc").First(&info).Error; err != nil {
-		return info, err
-	}
-	return info, nil
 }
 
 func (h *HostRepo) CPUInfo(ctx context.Context) (model.CPU, error) {

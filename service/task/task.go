@@ -27,7 +27,6 @@ type ITask interface {
 	ImageTask(timestamp time.Time) error
 	NetworkTask(timestamp time.Time) error
 
-	HostTask(timestamp time.Time) error
 	CPUTask(timestamp time.Time) error
 	MemoryTask(timestamp time.Time) error
 	DiskTask(timestamp time.Time) error

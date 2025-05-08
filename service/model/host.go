@@ -10,22 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type Host struct {
-	gorm.Model
-	Timestamp       time.Time
-	Uptime          string
-	Hostname        string
-	Os              string
-	Platform        string
-	PlatformVersion string
-	KernelVersion   string
-	KernelArch      string
-}
-
-func (d *Host) TableName() string {
-	return "s_host"
-}
-
 type CPU struct {
 	gorm.Model
 	Timestamp  time.Time

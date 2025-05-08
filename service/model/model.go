@@ -22,7 +22,6 @@ func (a *Models) GetAllModels() []interface{} {
 		new(Audit),
 		new(AlarmThreshold),
 		new(Mail),
-		new(Host),
 		new(CPU),
 		new(Memory),
 		new(Disk),

@@ -13,8 +13,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type ModelConfig string
-
 func InitHttpServer(config *Config, app *fiber.App) func() {
 	appConfig := config.Fiber
 	addr := fmt.Sprintf("%s:%d", appConfig.Host, appConfig.Port)
@@ -22,6 +20,7 @@ func InitHttpServer(config *Config, app *fiber.App) func() {
 	go func() {
 		err := app.Listen(addr)
 		if err != nil {
+			slog.Warn("http server start error", "err", err)
 			panic(err)
 		}
 	}()
@@ -52,7 +51,9 @@ func Run(configFile string, modelFile ModelConfig) (func(), error) {
 	timedTask := injector.Task
 	go timedTask.Run()
 
+	slog.Info("service starting")
 	httpServerCleanFunc := InitHttpServer(injector.Config, injector.App)
+	slog.Info("service start success")
 
 	return func() {
 		timedTask.Stop()

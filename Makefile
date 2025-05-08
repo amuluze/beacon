@@ -19,11 +19,10 @@ BINDATAPATH = $(BINDATAPKG)/bindata.go
 
 CONFIG_FILE := $(shell pwd)/assets/resources/configs/config.toml
 MODEL_FILE := $(shell pwd)/assets/resources/configs/model.conf
-DEV_CONFIG_FILE := $(shell pwd)/assets/resources/configs/config.dev.toml
 
 .PHONY: dev
 dev:
-	@$(GO) run $(SERVER)/main.go run -c $(DEV_CONFIG_FILE) -m $(MODEL_FILE)
+	@$(GO) run $(SERVER)/main.go run -c $(CONFIG_FILE) -m $(MODEL_FILE)
 
 .PHONY: assets
 assets:

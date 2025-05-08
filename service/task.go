@@ -39,7 +39,7 @@ func NewTimedTask(conf *Config, db *database.DB) *TimedTask {
 	for _, d := range conf.Task.Ethernet.Names {
 		eth[d] = struct{}{}
 	}
-
+	slog.Info("task init success", "devices", dev, "ethernet", eth, "interval", interval)
 	newTask := task.NewTask(interval, conf.Task.MaxAge, db, manager, dev, eth)
 
 	return &TimedTask{
@@ -51,11 +51,8 @@ func NewTimedTask(conf *Config, db *database.DB) *TimedTask {
 
 func (a *TimedTask) Execute() {
 	timestamp := time.Now()
-
+	slog.Info("task execute...", "timestamp", time.Now().Unix())
 	// 处理宿主机指标
-	if err := a.task.HostTask(timestamp); err != nil {
-		slog.Error("host summary failed: ", "error", err)
-	}
 	if err := a.task.CPUTask(timestamp); err != nil {
 		slog.Error("cpu summary failed: ", "error", err)
 	}
@@ -69,19 +66,20 @@ func (a *TimedTask) Execute() {
 		slog.Error("net summary failed: ", "error", err)
 	}
 
-	// 处理 Docker 容器指标
-	if err := a.task.DockerTask(timestamp); err != nil {
-		slog.Error("docker summary failed", "error", err)
-	}
-	if err := a.task.ContainerTask(timestamp); err != nil {
-		slog.Error("containers summary failed", "error", err)
-	}
-	if err := a.task.ImageTask(timestamp); err != nil {
-		slog.Error("image summary failed", "error", err)
-	}
-	if err := a.task.NetworkTask(timestamp); err != nil {
-		slog.Error("network summary failed", "error", err)
-	}
+	// // 处理 Docker 容器指标
+	// if err := a.task.DockerTask(timestamp); err != nil {
+	// 	slog.Error("docker summary failed", "error", err)
+	// }
+	// if err := a.task.ContainerTask(timestamp); err != nil {
+	// 	slog.Error("containers summary failed", "error", err)
+	// }
+	// if err := a.task.ImageTask(timestamp); err != nil {
+	// 	slog.Error("image summary failed", "error", err)
+	// }
+	// if err := a.task.NetworkTask(timestamp); err != nil {
+	// 	slog.Error("network summary failed", "error", err)
+	// }
+	slog.Info("task execute success", "timestamp", time.Now().Unix())
 }
 
 func (a *TimedTask) Run() {
@@ -97,5 +95,6 @@ func (a *TimedTask) Run() {
 }
 
 func (a *TimedTask) Stop() {
+	slog.Info("task stop...")
 	close(a.stopCh)
 }

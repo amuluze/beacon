@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -32,10 +33,12 @@ func (s *Service) Run() {
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
 	clearFunc, err := service.Run(s.configFile, service.ModelConfig(s.modelFile))
 	if err != nil {
+		slog.Error("service run error", "error", err)
 		return
 	}
 
 	for range interrupt {
+		slog.Info("received exit signal")
 		clearFunc()
 		return
 	}

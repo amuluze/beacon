@@ -5,11 +5,13 @@
 package service
 
 import (
+	"amprobe/pkg/psutil"
 	"amprobe/service/host/repository"
 	"amprobe/service/schema"
 	"context"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/google/wire"
 )
@@ -56,11 +58,12 @@ func NewHostService(hostRepo repository.IHostRepo) *HostService {
 
 func (h *HostService) HostInfo(ctx context.Context) (schema.HostInfoReply, error) {
 	var reply schema.HostInfoReply
-	info, err := h.HostRepo.HostInfo(ctx)
+	info, err := psutil.GetSystemInfo()
 	if err != nil {
 		return reply, err
 	}
-	reply.Timestamp = info.Timestamp.Unix()
+
+	reply.Timestamp = time.Now().Unix()
 	reply.Hostname = info.Hostname
 	reply.Uptime = info.Uptime
 	reply.KernelArch = info.KernelArch
@@ -68,7 +71,7 @@ func (h *HostService) HostInfo(ctx context.Context) (schema.HostInfoReply, error
 	reply.PlatformVersion = info.PlatformVersion
 	reply.Platform = info.Platform
 	reply.OS = info.Os
-	return reply, err
+	return reply, nil
 }
 
 func (h *HostService) CPUInfo(ctx context.Context) (schema.CPUInfoReply, error) {

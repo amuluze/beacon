@@ -20,11 +20,11 @@ Host = ""             # 连接地址
 Port = ""             # 连接端口
 User = ""             # 用户名
 Password = ""         # 密码
-DBName = "/app/probe" # 数据库
+DBName = "/etc/amprobe/probe" # 数据库
 SSLMode = ""          # SSL模式
 
 [Log]
-Output = "/app/logs/probe.log" # 日志存放路径
+Output = "/etc/amprobe/logs/probe.log" # 日志存放路径
 Level = "debug"                # 日志等级
 Rotation = 1                   # 每天切分一个日志文件
 MaxAge = 7                     # 最多保留 7 天的日志

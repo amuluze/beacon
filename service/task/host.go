@@ -11,26 +11,6 @@ import (
 	"amprobe/service/model"
 )
 
-func (a *Task) HostTask(timestamp time.Time) error {
-	info, _ := psutil.GetSystemInfo()
-	if err := a.db.Unscoped().Where("1 = 1").Delete(&model.Host{}).Error; err != nil {
-		return err
-	}
-	if err := a.db.Model(&model.Host{}).Create(&model.Host{
-		Timestamp:       timestamp,
-		Uptime:          info.Uptime,
-		Hostname:        info.Hostname,
-		Os:              info.Os,
-		Platform:        info.Platform,
-		PlatformVersion: info.PlatformVersion,
-		KernelVersion:   info.KernelVersion,
-		KernelArch:      info.KernelArch,
-	}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
 func (a *Task) CPUTask(timestamp time.Time) error {
 	cpuPercent, _ := psutil.GetCPUPercent()
 	if err := a.db.Model(&model.CPU{}).Create(&model.CPU{
