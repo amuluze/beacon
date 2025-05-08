@@ -5,11 +5,11 @@
 package repository
 
 import (
+	"amprobe/pkg/database"
 	"amprobe/pkg/hash"
-	"amprobe/pkg/utils"
+	"amprobe/pkg/uuid"
 	"amprobe/service/model"
 	"amprobe/service/schema"
-	"common/database"
 	"context"
 	"log/slog"
 
@@ -75,7 +75,7 @@ func (a *AccountRepository) UserCount(ctx context.Context) (int64, error) {
 
 func (a *AccountRepository) UserCreate(ctx context.Context, args schema.UserCreateArgs) (model.User, error) {
 	u := model.User{
-		ID:       utils.MustUUID(),
+		ID:       uuid.MustUUID(),
 		Username: args.Username,
 		Password: hash.SHA1String(args.Password),
 		Status:   args.Status,
@@ -189,7 +189,7 @@ func (a *AccountRepository) RoleCount(ctx context.Context) (int64, error) {
 
 func (a *AccountRepository) RoleCreate(ctx context.Context, args schema.RoleCreateArgs) (model.Role, error) {
 	r := model.Role{
-		ID:     utils.MustUUID(),
+		ID:     uuid.MustUUID(),
 		Name:   args.Name,
 		Status: args.Status,
 		Remark: args.Remark,

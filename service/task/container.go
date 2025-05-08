@@ -94,7 +94,7 @@ func (a *Task) ImageTask(timestamp time.Time) error {
 	if err != nil {
 		return err
 	}
-	var list model.Images
+	var list []model.Image
 	for _, im := range images {
 		list = append(list, model.Image{
 			Timestamp: timestamp,
@@ -122,7 +122,7 @@ func (a *Task) NetworkTask(timestamp time.Time) error {
 	if err != nil {
 		return err
 	}
-	var list model.Networks
+	var list []model.Network
 	for _, net := range nets {
 		subnet := ""
 		gateway := ""

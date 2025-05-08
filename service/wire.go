@@ -16,7 +16,7 @@ import (
 	"github.com/google/wire"
 )
 
-func BuildInjector(configFile string, modelFile string) (*Injector, func(), error) {
+func BuildInjector(configFile string, modelFile ModelConfig) (*Injector, func(), error) {
 	wire.Build(
 		NewConfig,
 		NewLogger,

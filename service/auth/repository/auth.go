@@ -5,13 +5,13 @@
 package repository
 
 import (
+	"amprobe/pkg/database"
 	"amprobe/pkg/hash"
 	"context"
 
 	"amprobe/pkg/errors"
 	"amprobe/service/model"
 	"amprobe/service/schema"
-	"common/database"
 
 	"github.com/google/wire"
 	"gorm.io/gorm"
