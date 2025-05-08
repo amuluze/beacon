@@ -11,6 +11,15 @@ import (
 	"amprobe/service/model"
 )
 
+// cleanOldData 通用的数据清理函数，清理指定模型中超过保留期限的数据
+func (a *Task) cleanOldData(model interface{}) error {
+	ts := time.Now().Add(-time.Duration(a.maxAge) * 24 * time.Hour).Unix()
+	if err := a.db.Model(model).Unscoped().Where("timestamp < ?", ts).Delete(model).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (a *Task) CPUTask(timestamp time.Time) error {
 	cpuPercent, _ := psutil.GetCPUPercent()
 	if err := a.db.Model(&model.CPU{}).Create(&model.CPU{
@@ -19,11 +28,9 @@ func (a *Task) CPUTask(timestamp time.Time) error {
 	}).Error; err != nil {
 		return err
 	}
-	ts := time.Now().Add(-time.Duration(a.maxAge) * 24 * time.Hour).Unix()
-	if err := a.db.Model(&model.CPU{}).Unscoped().Where("timestamp < ?", ts).Delete(&model.CPU{}).Error; err != nil {
-		return err
-	}
-	return nil
+
+	// 清理旧数据
+	return a.cleanOldData(&model.CPU{})
 }
 
 func (a *Task) MemoryTask(timestamp time.Time) error {
@@ -36,11 +43,9 @@ func (a *Task) MemoryTask(timestamp time.Time) error {
 	}).Error; err != nil {
 		return err
 	}
-	ts := time.Now().Add(-time.Duration(a.maxAge) * 24 * time.Hour).Unix()
-	if err := a.db.Model(&model.Memory{}).Unscoped().Where("timestamp < ?", ts).Delete(&model.Memory{}).Error; err != nil {
-		return err
-	}
-	return nil
+
+	// 清理旧数据
+	return a.cleanOldData(&model.Memory{})
 }
 
 /*
@@ -82,11 +87,9 @@ func (a *Task) DiskTask(timestamp time.Time) error {
 	if err := a.db.Model(&model.Disk{}).Create(diskInfos).Error; err != nil {
 		return err
 	}
-	ts := time.Now().Add(-time.Duration(a.maxAge) * 24 * time.Hour).Unix()
-	if err := a.db.Model(&model.Disk{}).Unscoped().Where("timestamp < ?", ts).Delete(&model.Disk{}).Error; err != nil {
-		return err
-	}
-	return nil
+
+	// 清理旧数据
+	return a.cleanOldData(&model.Disk{})
 }
 
 /*
@@ -119,9 +122,7 @@ func (a *Task) NetTask(timestamp time.Time) error {
 	if err := a.db.Model(&model.Net{}).Create(netInfos).Error; err != nil {
 		return err
 	}
-	ts := time.Now().Add(-time.Duration(a.maxAge) * 24 * time.Hour).Unix()
-	if err := a.db.Model(&model.Net{}).Unscoped().Where("timestamp < ?", ts).Delete(&model.Net{}).Error; err != nil {
-		return err
-	}
-	return nil
+
+	// 清理旧数据
+	return a.cleanOldData(&model.Net{})
 }

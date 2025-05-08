@@ -85,6 +85,26 @@ func GetDiskInfo(devices map[string]struct{}) (map[string]DiskInfo, error) {
 	return diskMap, nil
 }
 
+func GetAllDiskInfo() (map[string]DiskInfo, error) {
+	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{})
+	diskMap := make(map[string]DiskInfo)
+	infos, _ := disk.PartitionsWithContext(ctx, false) // false表示只获取物理分区
+	for _, info := range infos {
+		usedInfo, err := disk.UsageWithContext(ctx, info.Mountpoint)
+		if usedInfo == nil {
+			slog.Error("get disk usage err", "err", err)
+			continue
+		}
+		dev := strings.Split(info.Device, "/")[len(strings.Split(info.Device, "/"))-1]
+		diskMap[dev] = DiskInfo{
+			Total:   usedInfo.Total,
+			Percent: usedInfo.UsedPercent,
+			Used:    usedInfo.Used,
+		}
+	}
+	return diskMap, nil
+}
+
 func GetDiskIO(devices map[string]struct{}) (map[string]DiskIO, error) {
 	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{})
 	diskMap := make(map[string]DiskIO)

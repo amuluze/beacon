@@ -22,11 +22,6 @@ const (
 var _ ITask = (*Task)(nil)
 
 type ITask interface {
-	DockerTask(timestamp time.Time) error
-	ContainerTask(timestamp time.Time) error
-	ImageTask(timestamp time.Time) error
-	NetworkTask(timestamp time.Time) error
-
 	CPUTask(timestamp time.Time) error
 	MemoryTask(timestamp time.Time) error
 	DiskTask(timestamp time.Time) error

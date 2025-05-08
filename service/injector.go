@@ -5,7 +5,8 @@
 package service
 
 import (
-	"github.com/amuluze/amutool/logger"
+	"amprobe/pkg/logger"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/wire"
 )

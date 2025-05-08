@@ -65,20 +65,6 @@ func (a *TimedTask) Execute() {
 	if err := a.task.NetTask(timestamp); err != nil {
 		slog.Error("net summary failed: ", "error", err)
 	}
-
-	// // 处理 Docker 容器指标
-	// if err := a.task.DockerTask(timestamp); err != nil {
-	// 	slog.Error("docker summary failed", "error", err)
-	// }
-	// if err := a.task.ContainerTask(timestamp); err != nil {
-	// 	slog.Error("containers summary failed", "error", err)
-	// }
-	// if err := a.task.ImageTask(timestamp); err != nil {
-	// 	slog.Error("image summary failed", "error", err)
-	// }
-	// if err := a.task.NetworkTask(timestamp); err != nil {
-	// 	slog.Error("network summary failed", "error", err)
-	// }
 	slog.Info("task execute success", "timestamp", time.Now().Unix())
 }
 

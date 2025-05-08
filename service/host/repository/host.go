@@ -24,11 +24,8 @@ var HostRepoSet = wire.NewSet(NewHostRepo, wire.Bind(new(IHostRepo), new(*HostRe
 var _ IHostRepo = (*HostRepo)(nil)
 
 type IHostRepo interface {
-	CPUInfo(context.Context) (model.CPU, error)
 	CPUUsage(context.Context, schema.CPUUsageArgs) ([]model.CPU, error)
-	MemInfo(context.Context) (model.Memory, error)
 	MemUsage(context.Context, schema.MemoryUsageArgs) ([]model.Memory, error)
-	DiskInfo(context.Context) ([]model.Disk, error)
 	DiskUsage(context.Context, schema.DiskUsageArgs) ([]model.Disk, error)
 	NetUsage(context.Context, schema.NetUsageArgs) ([]model.Net, error)
 
@@ -53,14 +50,6 @@ func NewHostRepo(db *database.DB) *HostRepo {
 	}
 }
 
-func (h *HostRepo) CPUInfo(ctx context.Context) (model.CPU, error) {
-	var reply model.CPU
-	if err := h.db.Model(&model.CPU{}).Order("timestamp desc").First(&reply).Error; err != nil {
-		return reply, err
-	}
-	return reply, nil
-}
-
 func (h *HostRepo) CPUUsage(ctx context.Context, args schema.CPUUsageArgs) ([]model.CPU, error) {
 	var reply []model.CPU
 	if err := h.db.Model(&model.CPU{}).Where("timestamp >= ?", time.Unix(args.StartTime, 0)).Order("timestamp asc").Find(&reply).Error; err != nil {
@@ -69,25 +58,9 @@ func (h *HostRepo) CPUUsage(ctx context.Context, args schema.CPUUsageArgs) ([]mo
 	return reply, nil
 }
 
-func (h *HostRepo) MemInfo(ctx context.Context) (model.Memory, error) {
-	var reply model.Memory
-	if err := h.db.Model(&model.Memory{}).Order("timestamp desc").First(&reply).Error; err != nil {
-		return reply, err
-	}
-	return reply, nil
-}
-
 func (h *HostRepo) MemUsage(ctx context.Context, args schema.MemoryUsageArgs) ([]model.Memory, error) {
 	var reply []model.Memory
 	if err := h.db.Model(&model.Memory{}).Where("timestamp >= ?", time.Unix(args.StartTime, 0)).Order("timestamp asc").Find(&reply).Error; err != nil {
-		return reply, err
-	}
-	return reply, nil
-}
-
-func (h *HostRepo) DiskInfo(ctx context.Context) ([]model.Disk, error) {
-	var reply []model.Disk
-	if err := h.db.Model(&model.Disk{}).Group("device").Order("timestamp desc").Find(&reply).Error; err != nil {
 		return reply, err
 	}
 	return reply, nil

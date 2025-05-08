@@ -76,11 +76,11 @@ func (h *HostService) HostInfo(ctx context.Context) (schema.HostInfoReply, error
 
 func (h *HostService) CPUInfo(ctx context.Context) (schema.CPUInfoReply, error) {
 	var reply schema.CPUInfoReply
-	cpuInfo, err := h.HostRepo.CPUInfo(ctx)
+	cpuPercent, err := psutil.GetCPUPercent()
 	if err != nil {
 		return reply, err
 	}
-	reply.Percent = cpuInfo.CPUPercent
+	reply.Percent = cpuPercent
 	return reply, nil
 }
 
@@ -103,13 +103,13 @@ func (h *HostService) CPUUsage(ctx context.Context, args schema.CPUUsageArgs) (s
 
 func (h *HostService) MemInfo(ctx context.Context) (schema.MemoryInfoReply, error) {
 	var reply schema.MemoryInfoReply
-	memInfo, err := h.HostRepo.MemInfo(ctx)
+	memPercent, memTotal, memUsed, err := psutil.GetMemInfo()
 	if err != nil {
 		return reply, err
 	}
-	reply.Used = memInfo.MemUsed
-	reply.Total = memInfo.MemTotal
-	reply.Percent = memInfo.MemPercent
+	reply.Used = float64(memUsed)
+	reply.Total = float64(memTotal)
+	reply.Percent = memPercent
 	return reply, nil
 }
 
@@ -132,17 +132,17 @@ func (h *HostService) MemUsage(ctx context.Context, args schema.MemoryUsageArgs)
 
 func (h *HostService) DiskInfo(ctx context.Context) (schema.DiskInfoReply, error) {
 	var reply schema.DiskInfoReply
-	results, err := h.HostRepo.DiskInfo(ctx)
+	results, err := psutil.GetAllDiskInfo()
 	if err != nil {
 		return reply, err
 	}
 	var list []schema.DiskInfo
-	for _, info := range results {
+	for dev, info := range results {
 		list = append(list, schema.DiskInfo{
-			Device:  info.Device,
-			Percent: info.DiskPercent,
-			Total:   info.DiskTotal,
-			Used:    info.DiskUsed,
+			Device:  dev,
+			Percent: info.Percent,
+			Total:   float64(info.Total),
+			Used:    float64(info.Used),
 		})
 	}
 	reply.Info = list

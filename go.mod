@@ -3,7 +3,6 @@ module amprobe
 go 1.21.10
 
 require (
-	github.com/amuluze/amutool/logger v0.0.0-20240821104128-caed9cc0d402
 	github.com/amuluze/docker v0.0.0-20240816152853-43a001dd2bf9
 	github.com/casbin/casbin/v2 v2.98.0
 	github.com/casbin/gorm-adapter/v3 v3.28.0
@@ -27,6 +26,7 @@ require (
 require (
 	github.com/amuluze/amutool/timex v0.0.0-20250418012458-98850b938fee
 	github.com/docker/docker v27.0.3+incompatible
+	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/takama/daemon v1.0.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gorm.io/driver/clickhouse v0.6.1
@@ -72,9 +72,9 @@ require (
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/jonboulle/clockwork v0.4.0 // indirect
 	github.com/klauspost/compress v1.17.8 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
-	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible // indirect
 	github.com/lestrrat-go/strftime v1.0.6 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
