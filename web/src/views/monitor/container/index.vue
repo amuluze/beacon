@@ -1,45 +1,13 @@
 <script setup lang="ts">
-import { queryContainersUsage } from '@/api/container'
-import type { EChartsOption } from '@/components/Echarts/echarts.ts'
-import { containerCpuOption, containerMemOption } from '@/config/echarts.ts'
-import type { CPUTrendingArgs, Usage } from '@/interface/host.ts'
-import { dayjs } from 'element-plus'
-import { set } from 'lodash-es'
-import { useI18n } from 'vue-i18n'
+import type { EChartsOption } from '@/components/Echarts/echarts.ts';
+import { containerCpuOption, containerMemOption } from '@/config/echarts.ts';
+import { dayjs } from 'element-plus';
+import { set } from 'lodash-es';
+// import { useI18n } from 'vue-i18n'
+import { Websocket } from '@/components/Websocket';
 
 const loading = ref(false)
-const { t } = useI18n()
-
-// 时间密度下拉框
-const timeDensity = ref(600)
-const options = [
-    {
-        value: 600,
-        label: '10分钟',
-    },
-    {
-        value: 1800,
-        label: '30分钟',
-    },
-    {
-        value: 3600,
-        label: '1 小时',
-    },
-    {
-        value: 43200,
-        label: '12小时',
-    },
-    {
-        value: 86400,
-        label: '24小时',
-    },
-]
-watch(
-    () => timeDensity.value,
-    () => {
-        render()
-    },
-)
+// const { t } = useI18n()
 
 // CPU 使用率
 const cpuOption = reactive<EChartsOption>(containerCpuOption)
@@ -50,57 +18,8 @@ interface Series {
     smooth: boolean
     data: string[]
 }
-async function render() {
-    const param: CPUTrendingArgs = {
-        start_time: dayjs().unix() - timeDensity.value,
-        end_time: dayjs().unix(),
-    }
-    const { data } = await queryContainersUsage(param)
-    const cpuData = new Map<string, Usage[]>(Object.entries(data.cpu_usage))
-    const memData = new Map<string, Usage[]>(Object.entries(data.mem_usage))
-    set(cpuOption, 'legend.data', data.names)
-    set(memOption, 'legend.data', data.names)
-
-    const couIterator = cpuData.keys()
-    const cpuDataFirstKey = couIterator.next().value
-    const memIterator = memData.keys()
-    const memDataFirstKey = memIterator.next().value
-    set(
-        cpuOption,
-        'xAxis.data',
-        cpuData.get(cpuDataFirstKey as string)?.map(item => `${dayjs(item.timestamp * 1000).hour()}:${dayjs(item.timestamp * 1000).minute()}`),
-    )
-    set(
-        memOption,
-        'xAxis.data',
-        memData.get(memDataFirstKey as string)?.map(item => `${dayjs(item.timestamp * 1000).hour()}:${dayjs(item.timestamp * 1000).minute()}`),
-    )
-    const cpuSeries = reactive<Series[]>([])
-    cpuData.forEach((value, key) => {
-        cpuSeries.push({
-            name: key,
-            type: 'line',
-            smooth: true,
-            data: value.map(item => item.value.toFixed(2)),
-        })
-    })
-    set(cpuOption, 'series', cpuSeries)
-    const memSeries = reactive<Series[]>([])
-    memData.forEach((value, key) => {
-        memSeries.push({
-            name: key,
-            type: 'line',
-            smooth: true,
-            data: value.map(item => item.value.toFixed(2)),
-        })
-    })
-    set(memOption, 'series', memSeries)
-    console.log('cpuOption: ', cpuOption)
-    console.log('memOption: ', memOption)
-}
-
 // WebSocket连接
-let ws: WebSocket | null = null
+let ws: Websocket | null = null
 const containerStats = ref<any[]>([])
 
 // 初始化WebSocket连接
@@ -113,18 +32,19 @@ function initWebSocket() {
     }
 
     // 创建新的WebSocket连接
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsUrl = `${protocol}//${window.location.host}/ws/monitor`
+    // const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const wsUrl = `ws/monitor`
 
-    ws = new WebSocket(wsUrl)
+    const onopen = (ws: Websocket, ev: Event) => {
+        console.log('WebSocket连接已建立', ws, ev)
 
-    ws.onopen = () => {
-        console.log('WebSocket连接已建立')
-        loading.value = false
+        // loading.value = false
     }
 
-    ws.onmessage = (event) => {
-        const data = JSON.parse(event.data)
+    const onmessage = (ws: Websocket, ev: MessageEvent) => {
+        console.log('WebSocket接收到消息', ws, ev)
+        const data = JSON.parse(ev.data)
+        console.log('WebSocket接收到消息', data)
         if (data.type === 'containerStats') {
             containerStats.value = data.stats
             updateCharts()
@@ -134,15 +54,17 @@ function initWebSocket() {
         }
     }
 
-    ws.onerror = (error) => {
-        console.error('WebSocket错误:', error)
-        loading.value = false
-    }
+    ws = new Websocket(wsUrl, onopen, onmessage)
 
-    ws.onclose = () => {
-        console.log('WebSocket连接已关闭')
-        loading.value = false
-    }
+    // ws.onerror = (error) => {
+    //     console.error('WebSocket错误:', error)
+    //     loading.value = false
+    // }
+
+    // ws.onclose = () => {
+    //     console.log('WebSocket连接已关闭')
+    //     loading.value = false
+    // }
 }
 
 // 更新图表数据
@@ -217,24 +139,12 @@ function updateCharts() {
     set(memOption, 'series', memSeries)
 }
 
-// 定时器
-const timer = ref()
 onMounted(() => {
     console.log('mounted')
     // 初始化WebSocket连接
     initWebSocket()
-
-    // 如果WebSocket连接失败，则回退到HTTP API
-    timer.value = setInterval(() => {
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-            console.log('WebSocket未连接，使用HTTP API')
-            render()
-        }
-    }, 5000)
 })
 onUnmounted(() => {
-    clearInterval(timer.value)
-
     // 关闭WebSocket连接
     if (ws) {
         ws.close()
@@ -244,14 +154,6 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="am-density">
-        <el-card shadow="never">
-            <span>{{ t('monitor.timeDensity') }}:</span>
-            <el-select v-model="timeDensity" placeholder="Select" size="default" style="width: 120px">
-                <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
-        </el-card>
-    </div>
     <div class="am-column">
         <el-row>
             <el-col :lg="12" :md="12" :sm="12" :xs="24">

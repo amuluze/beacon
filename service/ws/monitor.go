@@ -2,6 +2,7 @@ package ws
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/amuluze/docker"
@@ -23,6 +24,7 @@ func NewContainerMonitorHandler() *ContainerMonitorHandler {
 }
 
 func (l *ContainerMonitorHandler) Handler(c *websocket.Conn) {
+	slog.Info("ContainerMonitorHandler")
 	// 设置关闭连接时的清理操作
 	defer c.Close()
 
@@ -32,7 +34,7 @@ func (l *ContainerMonitorHandler) Handler(c *websocket.Conn) {
 
 	// 创建一个通道用于接收中断信号
 	done := make(chan struct{})
-
+	slog.Info("Client connected to container monitor")
 	// 在单独的 goroutine 中处理客户端消息
 	go func() {
 		defer close(done)
@@ -60,7 +62,7 @@ func (l *ContainerMonitorHandler) Handler(c *websocket.Conn) {
 				}
 				continue
 			}
-
+			slog.Info("Get container list successfully")
 			// 收集所有容器的状态信息
 			stats := make([]map[string]interface{}, 0, len(containers))
 			for _, container := range containers {
