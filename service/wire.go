@@ -12,6 +12,7 @@ import (
 	"amprobe/service/host"
 	"amprobe/service/mail"
 	"amprobe/service/model"
+	"amprobe/service/ws"
 
 	"github.com/google/wire"
 )
@@ -33,8 +34,8 @@ func BuildInjector(configFile string, modelFile ModelConfig) (*Injector, func(),
 		account.Set,
 		alarm.Set,
 		mail.Set,
-		NewLoggerHandler,
-		NewTermHandler,
+		ws.NewLoggerHandler,
+		ws.NewTermHandler,
 		NewTimedTask,
 		RouterSet,
 		NewFiberApp,

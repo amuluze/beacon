@@ -7,6 +7,7 @@ package service
 import (
 	"amprobe/pkg/auth"
 	"amprobe/service/middleware"
+	"amprobe/service/ws"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/gofiber/contrib/websocket"
@@ -44,8 +45,9 @@ type Router struct {
 	mailAPI      *mailAPI.MailAPI
 	alarmAPI     *alarmAPI.AlarmAPI
 
-	loggerHandler *LoggerHandler
-	termHandler   *TermHandler
+	loggerHandler  *ws.LoggerHandler
+	termHandler    *ws.TermHandler
+	monitorHandler *ws.ContainerMonitorHandler
 }
 
 func (a *Router) RegisterAPI(app *fiber.App) {
@@ -59,7 +61,8 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 		return fiber.ErrUpgradeRequired
 	})
 	app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))
-	app.Get("/ws", websocket.New(a.termHandler.Handler))
+	app.Get("/ws/logger", websocket.New(a.termHandler.Handler))
+	app.Get("/ws/monitor", websocket.New(a.monitorHandler.Handler))
 
 	if a.config.Auth.Enable {
 		app.Use(middleware.UserAuthMiddleware(

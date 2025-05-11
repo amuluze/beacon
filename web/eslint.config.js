@@ -46,13 +46,17 @@ export default antfu(
             'style/indent': ['error', 4],
             'jsonc/indent': ['error', 4],
             'vue/html-indent': ['error', 4],
+            'vue/script-indent': ['error', 4],
+            'vue/style-indent': ['error', 4],
         },
     },
     {
         files: ['**/*.vue'],
         rules: {
             // https://eslint.vuejs.org/rules/script-indent
-            'vue/script-indent': ['error'],
+            'vue/style-indent': ['error', 4], // 确保<style>标签内容缩进为4个空格
+            'vue/html-indent': ['error', 4], // 确保HTML标签的缩进为4个空格
+            'vue/script-indent': ['error', 4], // 确保<script>标签的缩进为4个空格
             'style/indent': 'off',
             'vue/operator-linebreak': ['error', 'before'],
             'vue/html-closing-bracket-newline': ['error', {
@@ -72,6 +76,7 @@ export default antfu(
                 svg: 'always',
                 math: 'always',
             }],
+
         },
     },
 )
