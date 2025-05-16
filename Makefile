@@ -34,4 +34,4 @@ wire:
 
 .PHONY: bin
 bin: assets wire
-	$(GO) build $(BUILD_FLAGS) -o $(APP) $(SERVER)
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GO) build $(BUILD_FLAGS) -o $(APP) $(SERVER)
