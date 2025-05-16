@@ -52,11 +52,13 @@ function viewLog(container_id: string): void {
   }
 
   const onMessage = (ws: Websocket, ev: MessageEvent) => {
+    const data = JSON.parse(ev.data)
     console.log(ws)
-    logData.value = `${logData.value}\n${ev.data}`
+    console.log("view log receive data", data)
+    logData.value = `${logData.value}\n${data.data}`
   }
 
-  ws = new Websocket(`ws/${container_id}`, onOpen, onMessage)
+  ws = new Websocket(`ws/logger`, onOpen, onMessage)
 }
 
 onMounted(() => {
@@ -64,7 +66,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  ws.close()
+    ws.close()
 })
 
 function downloadLog() {

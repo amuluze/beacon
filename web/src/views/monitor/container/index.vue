@@ -26,6 +26,15 @@ const containerStats = ref<any[]>([])
 function initWebSocket() {
     loading.value = true
 
+    // 清空历史数据
+    containerStats.value = []
+    set(cpuOption, 'xAxis.data', [])
+    set(memOption, 'xAxis.data', [])
+    set(cpuOption, 'series', [])
+    set(memOption, 'series', [])
+    set(cpuOption, 'legend.data', [])
+    set(memOption, 'legend.data', [])
+
     // 关闭已存在的连接
     if (ws) {
         ws.close()
@@ -37,8 +46,7 @@ function initWebSocket() {
 
     const onopen = (ws: Websocket, ev: Event) => {
         console.log('WebSocket连接已建立', ws, ev)
-
-        // loading.value = false
+        loading.value = false
     }
 
     const onmessage = (ws: Websocket, ev: MessageEvent) => {
@@ -122,7 +130,7 @@ function updateCharts() {
     containerStats.value.forEach((stat) => {
         const existingSeries = (memSeries as Series[]).find(s => s.name === stat.name)
         if (existingSeries) {
-            existingSeries.data.push(stat.mem.toFixed(2))
+            existingSeries.data.push(stat.memUsed)
             if (existingSeries.data.length > 60) {
                 existingSeries.data.shift()
             }
@@ -132,7 +140,7 @@ function updateCharts() {
                 name: stat.name,
                 type: 'line',
                 smooth: true,
-                data: [stat.mem.toFixed(2)],
+                data: [stat.memUsed],
             })
         }
     })

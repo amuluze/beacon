@@ -51,7 +51,7 @@ type Router struct {
 }
 
 func (a *Router) RegisterAPI(app *fiber.App) {
-	app.Use("ws", func(c *fiber.Ctx) error {
+	app.Use("/ws", func(c *fiber.Ctx) error {
 		// IsWebSocketUpgrade returns true if the client
 		// requested upgrade to the WebSocket protocol.
 		if websocket.IsWebSocketUpgrade(c) {
@@ -60,9 +60,9 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 		}
 		return fiber.ErrUpgradeRequired
 	})
-	app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))
-	app.Get("/ws/logger", websocket.New(a.termHandler.Handler))
+	app.Get("/ws/term", websocket.New(a.termHandler.Handler))
 	app.Get("/ws/monitor", websocket.New(a.monitorHandler.Handler))
+	app.Get("/ws/logger", websocket.New(a.loggerHandler.Handler))
 
 	if a.config.Auth.Enable {
 		app.Use(middleware.UserAuthMiddleware(
