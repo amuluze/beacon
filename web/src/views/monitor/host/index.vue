@@ -78,7 +78,7 @@ async function renderCPU() {
   set(
     cpuOption,
     'xAxis.data',
-    cpuData.map(item => `${dayjs(item.timestamp * 1000).hour()}:${dayjs(item.timestamp * 1000).minute()}`),
+    cpuData.map(item => dayjs(item.timestamp * 1000).format("HH:mm:ss")),
   )
   set(cpuOption, 'legend.data', ['CPU使用率'])
   set(cpuOption, 'series', [
@@ -119,7 +119,7 @@ async function renderMem() {
   set(
     memOption,
     'xAxis.data',
-    memData.map(item => `${dayjs(item.timestamp * 1000).hour()}:${dayjs(item.timestamp * 1000).minute()}`),
+    memData.map(item => dayjs(item.timestamp * 1000).format("HH:mm:ss")),
   )
   set(memOption, 'legend.data', ['内存使用率'])
   set(memOption, 'series', [
@@ -221,7 +221,7 @@ async function renderDisk() {
   set(
     diskOption,
     'xAxis.data',
-    diskData.usage[0].data.map((item: DiskIO) => `${dayjs(item.timestamp * 1000).hour()}:${dayjs(item.timestamp * 1000).minute()}`),
+    diskData.usage[0].data.map((item: DiskIO) => dayjs(item.timestamp * 1000).format("HH:mm:ss")),
   )
   set(diskOption, 'legend.data', generateDiskLegendData(diskData.usage))
   set(diskOption, 'series', generateDiskSeriesData(diskData.usage))
@@ -309,7 +309,7 @@ async function renderNet() {
   set(
     netOption,
     'xAxis.data',
-    netData.usage[0].data.map((item: NetIO) => `${dayjs(item.timestamp * 1000).hour()}:${dayjs(item.timestamp * 1000).minute()}`),
+    netData.usage[0].data.map((item: NetIO) => dayjs(item.timestamp * 1000).format("HH:mm:ss")),
   )
   set(netOption, 'legend.data', generateNetLegendData(netData.usage))
   set(netOption, 'series', generateNetSeriesData(netData.usage))

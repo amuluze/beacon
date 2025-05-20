@@ -28,40 +28,35 @@ function initWebSocket() {
 
     // 清空历史数据
     containerStats.value = []
-    
-    // 初始化时间轴数据（未来10分钟）
-    const initialTimes = Array.from({ length: 10 }, (_, i) => {
-        const time = dayjs().add(i, 'minute')
-        return `${time.hour()}:${time.minute()}`
-    })
-    
-    // 初始化CPU图表
-    set(cpuOption, 'xAxis.data', initialTimes)
-    set(cpuOption, 'yAxis', {
-        type: 'value',
-        min: 0,
-        max: 100,
-        interval: 10,
-        axisLabel: {
-            formatter: '{value}%'
-        }
-    })
+    set(cpuOption, 'xAxis.data', [])
+    set(memOption, 'xAxis.data', [])
     set(cpuOption, 'series', [])
-    set(cpuOption, 'legend.data', [])
-
-    // 初始化内存图表
-    set(memOption, 'xAxis.data', initialTimes)
-    set(memOption, 'yAxis', {
-        type: 'value',
-        min: 0,
-        max: 100,
-        interval: 10,
-        axisLabel: {
-            formatter: '{value}MB'
-        }
-    })
     set(memOption, 'series', [])
+    set(cpuOption, 'legend.data', [])
     set(memOption, 'legend.data', [])
+    
+    // 添加初始化数据，避免图表为空
+    const initialTime = dayjs().format('HH:mm:ss')
+    set(cpuOption, 'xAxis.data', [initialTime])
+    set(memOption, 'xAxis.data', [initialTime])
+    
+    // 设置初始化的空系列，保持图表结构
+    set(cpuOption, 'series', [{
+        name: '等待数据...',
+        type: 'line',
+        smooth: true,
+        data: [0],
+    }])
+    set(memOption, 'series', [{
+        name: '等待数据...',
+        type: 'line',
+        smooth: true,
+        data: [0],
+    }])
+    
+    // 设置初始化的图例
+    set(cpuOption, 'legend.data', ['等待数据...'])
+    set(memOption, 'legend.data', ['等待数据...'])
 
     loading.value = false
 
@@ -115,7 +110,8 @@ function updateCharts() {
     set(memOption, 'legend.data', names)
 
     // 获取当前时间
-    const currentTime = `${dayjs().hour()}:${dayjs().minute()}`
+    // const currentTime = `${dayjs().hour()}:${dayjs().minute()}`
+    const currentTime = dayjs().format('HH:mm:ss')
 
     // 更新X轴数据（时间）
     const xAxisData = (cpuOption.xAxis as any)?.data || []
