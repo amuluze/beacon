@@ -1,4 +1,5 @@
 import type { Usage } from '@/interface/host.ts'
+import { StringStream } from 'codemirror'
 
 /**
  * @Author     : Amu
@@ -12,11 +13,7 @@ export interface Container {
     ip: string
     ports: string
     state: string
-    uptime: string
-    cpu_percent: number
-    memory_percent: number
-    memory_usage: number
-    memory_limit: number
+    uptime: StringStream
 }
 
 export interface CreateContainerArgs {
@@ -68,7 +65,7 @@ export interface PullImageArgs {
     image_name: string
 }
 
-export interface PullImageResult {}
+export interface PullImageResult { }
 
 export interface RemoveImageArgs {
     image_id: string
@@ -114,7 +111,7 @@ export interface NetworkDeleteArgs {
     network_id: string
 }
 
-export interface NetworkDeleteResult {}
+export interface NetworkDeleteResult { }
 
 export interface DockerInfo {
     docker_version: string

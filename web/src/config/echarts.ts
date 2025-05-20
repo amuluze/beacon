@@ -445,8 +445,11 @@ export const containerCpuOption = {
     tooltip: {
         trigger: 'axis',
         formatter(params: any) {
-            params = params[0]
-            return `${params.value}%`
+            let res = ''
+            params.forEach((item: any) => {
+                res += `${item.seriesName}: ${item.value.toFixed(2)} %<br/>`
+            })
+            return res
         },
         axisPointer: {
             type: 'cross',
@@ -471,6 +474,12 @@ export const containerCpuOption = {
     },
     yAxis: {
         type: 'value',
+        axisLabel: {
+            show: true,
+            formatter: function yAxisLabelFormatter(value: number): string {
+                return `${value.toFixed(2)} %`
+            }
+        }
     },
     series: [],
 } as EChartsOption

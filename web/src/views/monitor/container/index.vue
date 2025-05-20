@@ -16,7 +16,7 @@ interface Series {
     name: string
     type: string
     smooth: boolean
-    data: string[]
+    data: number[]
 }
 // WebSocket连接
 let ws: Websocket | null = null
@@ -34,12 +34,12 @@ function initWebSocket() {
     set(memOption, 'series', [])
     set(cpuOption, 'legend.data', [])
     set(memOption, 'legend.data', [])
-    
+
     // 添加初始化数据，避免图表为空
     const initialTime = dayjs().format('HH:mm:ss')
     set(cpuOption, 'xAxis.data', [initialTime])
     set(memOption, 'xAxis.data', [initialTime])
-    
+
     // 设置初始化的空系列，保持图表结构
     set(cpuOption, 'series', [{
         name: '等待数据...',
@@ -53,7 +53,7 @@ function initWebSocket() {
         smooth: true,
         data: [0],
     }])
-    
+
     // 设置初始化的图例
     set(cpuOption, 'legend.data', ['等待数据...'])
     set(memOption, 'legend.data', ['等待数据...'])
@@ -104,6 +104,20 @@ function updateCharts() {
     if (!containerStats.value || containerStats.value.length === 0)
         return
 
+    // 检查是否需要清除初始化数据
+    const needClearInitialData = (cpuOption.legend as { data: string[] })?.data &&
+        (cpuOption.legend as { data: string[] }).data.length === 1 &&
+        (cpuOption.legend as { data: string[] }).data[0] === '等待数据...';
+
+    if (needClearInitialData) {
+        // 清除初始化的系列数据，保留当前时间点
+        const currentTime = dayjs().format('HH:mm:ss')
+        set(cpuOption, 'xAxis.data', [currentTime])
+        set(memOption, 'xAxis.data', [currentTime])
+        set(cpuOption, 'series', [])
+        set(memOption, 'series', [])
+    }
+
     // 提取容器名称列表
     const names = containerStats.value.map(item => item.name)
     set(cpuOption, 'legend.data', names)
@@ -134,7 +148,7 @@ function updateCharts() {
     containerStats.value.forEach((stat) => {
         const existingSeries = (cpuSeries as Series[]).find(s => s.name === stat.name)
         if (existingSeries) {
-            existingSeries.data.push(stat.cpu.toFixed(2))
+            existingSeries.data.push(stat.cpu)
             if (existingSeries.data.length > 60) {
                 existingSeries.data.shift()
             }
@@ -144,10 +158,11 @@ function updateCharts() {
                 name: stat.name,
                 type: 'line',
                 smooth: true,
-                data: [stat.cpu.toFixed(2)],
+                data: [stat.cpu],
             })
         }
     })
+    console.log('cpuSeries', cpuSeries)
     set(cpuOption, 'series', cpuSeries)
 
     // 更新内存数据系列

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"sort"
 
-	"amprobe/pkg/utils"
 	"amprobe/service/container/repository"
 	"amprobe/service/schema"
 
@@ -83,17 +82,13 @@ func (a *ContainerService) ContainerList(ctx context.Context, args schema.Contai
 	var list []schema.Container
 	for _, item := range results {
 		list = append(list, schema.Container{
-			ID:            item.ContainerID,
-			Name:          item.Name,
-			Image:         item.Image,
-			State:         item.State,
-			Uptime:        item.Uptime,
-			IP:            item.IP,
-			Ports:         item.Ports,
-			CPUPercent:    fmt.Sprintf("%.2f", item.CPUPercent) + " %",
-			MemoryPercent: fmt.Sprintf("%.2f", item.MemPercent) + " %",
-			MemoryLimit:   utils.ConvertBytesToReadable(item.MemLimit),
-			MemoryUsage:   utils.ConvertBytesToReadable(item.MemUsage),
+			ID:     item.ContainerID,
+			Name:   item.Name,
+			Image:  item.Image,
+			State:  item.State,
+			Uptime: item.Uptime,
+			IP:     item.IP,
+			Ports:  item.Ports,
 		})
 	}
 	count, err := a.ContainerRepo.ContainerCount(ctx)

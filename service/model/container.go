@@ -17,10 +17,6 @@ type Container struct {
 	Ports       string
 	State       string
 	Uptime      string
-	CPUPercent  float64
-	MemPercent  float64
-	MemUsage    float64
-	MemLimit    float64
 	Labels      string
 }
 

@@ -55,7 +55,7 @@ func GetMemInfo() (float64, uint64, uint64, error) {
 
 func GetCPUPercent() (float64, error) {
 	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{})
-	totalPercent, err := cpu.PercentWithContext(ctx, 3*time.Second, false)
+	totalPercent, err := cpu.PercentWithContext(ctx, time.Second, false)
 	if err != nil {
 		return 0.0, err
 	}

@@ -96,14 +96,6 @@ func (c *ContainerRepo) ContainerList(ctx context.Context) ([]model.Container, e
 		return reply, err
 	}
 	for _, container := range cs {
-		cpuPercent, err := c.manager.GetContainerCpu(ctx, container.ID[:6])
-		if err != nil {
-			cpuPercent = 0
-		}
-		memPercent, memUsed, memLimit, err := c.manager.GetContainerMem(ctx, container.ID[:6])
-		if err != nil {
-			memPercent = 0
-		}
 		labels, _ := json.Marshal(container.Labels)
 		reply = append(reply, model.Container{
 			Timestamp:   time.Now(),
@@ -115,11 +107,8 @@ func (c *ContainerRepo) ContainerList(ctx context.Context) ([]model.Container, e
 			IP:          container.IP,
 			Ports:       strings.Join(container.Ports, ","),
 			Labels:      string(labels),
-			CPUPercent:  cpuPercent,
-			MemPercent:  memPercent,
-			MemUsage:    memUsed,
-			MemLimit:    memLimit,
 		})
+
 	}
 	return reply, nil
 }
