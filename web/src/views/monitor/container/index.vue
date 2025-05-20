@@ -28,12 +28,42 @@ function initWebSocket() {
 
     // 清空历史数据
     containerStats.value = []
-    set(cpuOption, 'xAxis.data', [])
-    set(memOption, 'xAxis.data', [])
+    
+    // 初始化时间轴数据（未来10分钟）
+    const initialTimes = Array.from({ length: 10 }, (_, i) => {
+        const time = dayjs().add(i, 'minute')
+        return `${time.hour()}:${time.minute()}`
+    })
+    
+    // 初始化CPU图表
+    set(cpuOption, 'xAxis.data', initialTimes)
+    set(cpuOption, 'yAxis', {
+        type: 'value',
+        min: 0,
+        max: 100,
+        interval: 10,
+        axisLabel: {
+            formatter: '{value}%'
+        }
+    })
     set(cpuOption, 'series', [])
-    set(memOption, 'series', [])
     set(cpuOption, 'legend.data', [])
+
+    // 初始化内存图表
+    set(memOption, 'xAxis.data', initialTimes)
+    set(memOption, 'yAxis', {
+        type: 'value',
+        min: 0,
+        max: 100,
+        interval: 10,
+        axisLabel: {
+            formatter: '{value}MB'
+        }
+    })
+    set(memOption, 'series', [])
     set(memOption, 'legend.data', [])
+
+    loading.value = false
 
     // 关闭已存在的连接
     if (ws) {
@@ -59,7 +89,6 @@ function initWebSocket() {
         else if (data.error) {
             console.error('WebSocket错误:', data.error)
         }
-        loading.value = false
     }
 
     ws = new Websocket(wsUrl, onopen, onmessage)

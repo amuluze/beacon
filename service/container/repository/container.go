@@ -64,12 +64,12 @@ type ContainerRepo struct {
 	cache   *cache.Cache
 }
 
-func NewContainerRepo(db *database.DB, localCache cache.Cache) *ContainerRepo {
+func NewContainerRepo(db *database.DB, localCache *cache.Cache) *ContainerRepo {
 	manager, err := docker.NewManager()
 	if err != nil {
 		return nil
 	}
-	return &ContainerRepo{manager: manager}
+	return &ContainerRepo{manager: manager, cache: localCache}
 }
 
 func (c *ContainerRepo) Version(ctx context.Context) (model.Docker, error) {

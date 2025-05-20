@@ -6,6 +6,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/patrickmn/go-cache"
 	"log/slog"
 	"time"
 
@@ -22,7 +23,7 @@ type TimedTask struct {
 	stopCh chan struct{}
 }
 
-func NewTimedTask(conf *Config, db *database.DB) *TimedTask {
+func NewTimedTask(conf *Config, db *database.DB, localCache *cache.Cache) *TimedTask {
 	interval := conf.Task.Interval
 	tk := timex.NewTicker(time.Duration(interval) * time.Second)
 	manager, err := docker.NewManager()
@@ -40,7 +41,7 @@ func NewTimedTask(conf *Config, db *database.DB) *TimedTask {
 		eth[d] = struct{}{}
 	}
 	slog.Info("task init success", "devices", dev, "ethernet", eth, "interval", interval)
-	newTask := task.NewTask(interval, conf.Task.MaxAge, db, manager, dev, eth)
+	newTask := task.NewTask(interval, conf.Task.MaxAge, db, manager, localCache, dev, eth)
 
 	return &TimedTask{
 		task:   newTask,
