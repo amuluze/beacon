@@ -12,13 +12,6 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
-const (
-	LatestDiskReadKey   = "latest_disk_io_read_"
-	LatestDisKWriteKey  = "latest_disk_io_write_"
-	LatestNetReceiveKey = "latest_net_io_receive_"
-	LatestNetSendKey    = "latest_net_io_send_"
-)
-
 var _ ITask = (*Task)(nil)
 
 type ITask interface {
@@ -38,7 +31,7 @@ type Task struct {
 	cache    *cache.Cache
 }
 
-func NewTask(interval int, maxAge int, db *database.DB, manager *docker.Manager, dev map[string]struct{}, eth map[string]struct{}) *Task {
+func NewTask(interval int, maxAge int, db *database.DB, manager *docker.Manager, localCache *cache.Cache, dev map[string]struct{}, eth map[string]struct{}) *Task {
 	return &Task{
 		interval: interval,
 		maxAge:   maxAge,
@@ -46,6 +39,6 @@ func NewTask(interval int, maxAge int, db *database.DB, manager *docker.Manager,
 		manager:  manager,
 		devices:  dev,
 		ethernet: eth,
-		cache:    cache.New(5*time.Minute, 60*time.Second),
+		cache:    localCache,
 	}
 }

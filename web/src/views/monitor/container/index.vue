@@ -46,7 +46,6 @@ function initWebSocket() {
 
     const onopen = (ws: Websocket, ev: Event) => {
         console.log('WebSocket连接已建立', ws, ev)
-        loading.value = false
     }
 
     const onmessage = (ws: Websocket, ev: MessageEvent) => {
@@ -60,6 +59,7 @@ function initWebSocket() {
         else if (data.error) {
             console.error('WebSocket错误:', data.error)
         }
+        loading.value = false
     }
 
     ws = new Websocket(wsUrl, onopen, onmessage)

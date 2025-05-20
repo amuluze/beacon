@@ -20,6 +20,7 @@ import (
 
 	"github.com/amuluze/docker"
 	"github.com/google/wire"
+	"github.com/patrickmn/go-cache"
 )
 
 var ContainerServiceSet = wire.NewSet(NewContainerRepo, wire.Bind(new(IContainerRepo), new(*ContainerRepo)))
@@ -60,9 +61,10 @@ type IContainerRepo interface {
 
 type ContainerRepo struct {
 	manager *docker.Manager
+	cache   *cache.Cache
 }
 
-func NewContainerRepo(db *database.DB) *ContainerRepo {
+func NewContainerRepo(db *database.DB, localCache cache.Cache) *ContainerRepo {
 	manager, err := docker.NewManager()
 	if err != nil {
 		return nil

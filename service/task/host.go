@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"amprobe/pkg/psutil"
+	"amprobe/service/constants"
 	"amprobe/service/model"
 )
 
@@ -66,18 +67,18 @@ func (a *Task) DiskTask(timestamp time.Time) error {
 		disk.DiskUsed = float64(info.Used)
 		for dev, state := range diskIOMap {
 			if dev == device {
-				if latestReadBytes, ok := a.cache.Get(LatestDiskReadKey + device); ok {
+				if latestReadBytes, ok := a.cache.Get(constants.LatestDiskReadKey + device); ok {
 					disk.DiskRead = float64((state.Read - latestReadBytes.(uint64)) / uint64(a.interval))
-					a.cache.Set(LatestDiskReadKey+device, state.Read, 0)
+					a.cache.Set(constants.LatestDiskReadKey+device, state.Read, 0)
 				} else {
-					a.cache.Set(LatestDiskReadKey+device, state.Read, 0)
+					a.cache.Set(constants.LatestDiskReadKey+device, state.Read, 0)
 					disk.DiskRead = 0
 				}
-				if latestWriteBytes, ok := a.cache.Get(LatestDisKWriteKey + device); ok {
+				if latestWriteBytes, ok := a.cache.Get(constants.LatestDisKWriteKey + device); ok {
 					disk.DiskWrite = float64((state.Write - latestWriteBytes.(uint64)) / uint64(a.interval))
-					a.cache.Set(LatestDisKWriteKey+device, state.Write, 0)
+					a.cache.Set(constants.LatestDisKWriteKey+device, state.Write, 0)
 				} else {
-					a.cache.Set(LatestDisKWriteKey+device, state.Write, 0)
+					a.cache.Set(constants.LatestDisKWriteKey+device, state.Write, 0)
 					disk.DiskWrite = 0
 				}
 			}
@@ -103,18 +104,18 @@ func (a *Task) NetTask(timestamp time.Time) error {
 	for eth, info := range netMap {
 		net := model.Net{Timestamp: timestamp}
 		net.Ethernet = eth
-		if LatestNetReceiveBytes, ok := a.cache.Get(LatestNetReceiveKey + eth); ok {
+		if LatestNetReceiveBytes, ok := a.cache.Get(constants.LatestNetReceiveKey + eth); ok {
 			net.NetRecv = float64((info.Recv - LatestNetReceiveBytes.(uint64)) / uint64(a.interval))
-			a.cache.Set(LatestNetReceiveKey+eth, info.Recv, 0)
+			a.cache.Set(constants.LatestNetReceiveKey+eth, info.Recv, 0)
 		} else {
-			a.cache.Set(LatestNetReceiveKey+eth, info.Recv, 0)
+			a.cache.Set(constants.LatestNetReceiveKey+eth, info.Recv, 0)
 			net.NetRecv = 0
 		}
-		if LatestNetSendBytes, ok := a.cache.Get(LatestNetSendKey + eth); ok {
+		if LatestNetSendBytes, ok := a.cache.Get(constants.LatestNetSendKey + eth); ok {
 			net.NetSend = float64((info.Send - LatestNetSendBytes.(uint64)) / uint64(a.interval))
-			a.cache.Set(LatestNetSendKey+eth, info.Send, 0)
+			a.cache.Set(constants.LatestNetSendKey+eth, info.Send, 0)
 		} else {
-			a.cache.Set(LatestNetSendKey+eth, info.Send, 0)
+			a.cache.Set(constants.LatestNetSendKey+eth, info.Send, 0)
 			net.NetSend = 0
 		}
 		netInfos = append(netInfos, net)
