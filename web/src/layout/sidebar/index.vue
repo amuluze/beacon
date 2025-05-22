@@ -7,26 +7,32 @@ import useStore from '@/store'
 const currentRoute = useRoute()
 const store = useStore()
 
-const menus = computed(() => {
-  return dynamicRoutes.filter((item) => {
-    if (item.meta?.show) {
-      // 当 store.user.userInfo.name 不为 'admin' 时，不返回 item.name === 'user-manage' 的项
-      if (store.user.userInfo.name !== 'admin' && item.name === 'account') {
+const filterRoutes = (routes: any[]) => {
+    return routes.filter((item) => {
+        if (item.meta?.show) {
+            if (store.user.userInfo.name !== 'admin' && item.name === 'account') {
+                return false
+            }
+            // 递归过滤子路由
+            if (item.children) {
+                item.children = filterRoutes(item.children)
+            }
+            return true
+        }
         return false
-      }
-      // 其他情况下，返回所有 item.meta?.show 为 true 的项
-      return true
-    }
-    return false
-  })
+    })
+}
+
+const menus = computed(() => {
+  return filterRoutes(dynamicRoutes)
 })
 </script>
 
 <template>
-    <el-aside :width="store.app.isCollapse ? '64px' : '210px'">
+    <el-aside :width="store.app.isCollapse ? '64px' : '120px'">
         <div class="am-logo">
             <img class="am-logo__img" src="@/assets/images/amprobe.png" alt="template" />
-            <span v-show="!store.app.isCollapse" class="am-logo__text">Amprobe</span>
+            <!-- <span v-show="!store.app.isCollapse" class="am-logo__text">Amprobe</span> -->
         </div>
         <div class="am-menu">
             <el-scrollbar>

@@ -27,6 +27,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
                 component: async () => import('@/views/monitor/host/index.vue'),
                 meta: {
                     title: 'menu.hostMonitor',
+                    show: false,
                 },
             },
             {
@@ -35,6 +36,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
                 component: async () => import('@/views/monitor/container/index.vue'),
                 meta: {
                     title: 'menu.containerMonitor',
+                    show: false,
                 },
             },
         ],
@@ -55,6 +57,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
                 component: async () => import('@/views/container/container/index.vue'),
                 meta: {
                     title: 'menu.containerManager',
+                    show: false,
                 },
             },
             {
@@ -63,6 +66,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
                 component: async () => import('@/views/container/image/index.vue'),
                 meta: {
                     title: 'menu.imageManager',
+                    show: false,
                 },
             },
             {
@@ -71,34 +75,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
                 component: async () => import('@/views/container/network/index.vue'),
                 meta: {
                     title: 'menu.networkManager',
-                },
-            },
-        ],
-    },
-    {
-        path: '/audit',
-        name: 'audit',
-        redirect: '/audit/operator',
-        meta: {
-            title: 'menu.audit',
-            icon: 'menu-result',
-            show: true,
-        },
-        children: [
-            {
-                path: '/audit/operator',
-                name: 'operatorLog',
-                component: async () => import('@/views/audit/operator/index.vue'),
-                meta: {
-                    title: 'menu.operatorLog',
-                },
-            },
-            {
-                path: '/audit/system',
-                name: 'systemLog',
-                component: async () => import('@/views/audit/system/index.vue'),
-                meta: {
-                    title: 'menu.systemLog',
+                    show: false,
                 },
             },
         ],
@@ -119,6 +96,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
                 component: async () => import('@/views/setting/alarm/index.vue'),
                 meta: {
                     title: 'menu.alarmSetting',
+                    show: false,
                 },
             },
             {
@@ -127,6 +105,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
                 component: async () => import('@/views/setting/host/index.vue'),
                 meta: {
                     title: 'menu.systemSetting',
+                    show: false,
                 },
             },
             {
@@ -135,6 +114,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
                 component: async () => import('@/views/setting/docker/index.vue'),
                 meta: {
                     title: 'menu.systemDocker',
+                    show: false,
                 },
             },
         ],
@@ -155,6 +135,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
                 component: async () => import('@/views/account/user/index.vue'),
                 meta: {
                     title: 'menu.userManager',
+                    show: false,
                 },
             },
             {
@@ -163,6 +144,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
                 component: async () => import('@/views/account/role/index.vue'),
                 meta: {
                     title: 'menu.roleManager',
+                    show: false,
                 },
             },
             {
@@ -171,6 +153,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
                 component: async () => import('@/views/account/api/index.vue'),
                 meta: {
                     title: 'menu.apiManager',
+                    show: false,
                 },
             },
         ],

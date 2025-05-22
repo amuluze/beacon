@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import type { EChartsOption } from '@/components/Echarts/echarts.ts'
 import type { CPUTrendingArgs, DiskIO, DiskTrendingArgs, DiskUsage, MemTrendingArgs, NetIO, NetTrendingArgs, NetUsage } from '@/interface/host.ts'
+import { useRoute, useRouter } from 'vue-router'
+const router = useRouter()
+const route = useRoute()
+
+const activeTab = computed(() => {
+  return route.path.startsWith('/monitor/host') ? 'host' : 'container'
+})
 
 import { queryCPUInfo, queryCPUUsage, queryDiskInfo, queryDiskUsage, queryMemInfo, queryMemUsage, queryNetworkUsage } from '@/api/host'
 import { cpuTrendingOption, diskTrendingOption, memTrendingOption, netTrendingOption } from '@/config/echarts.ts'
@@ -43,6 +50,7 @@ const options = [
     label: '24小时',
   },
 ]
+
 watch(
   () => timeDensity.value,
   () => {
@@ -348,13 +356,41 @@ const { t } = useI18n()
 </script>
 
 <template>
-    <div class="am-density">
-        <el-card shadow="never">
-            <span>{{ t('monitor.timeDensity') }}：</span>
-            <el-select v-model="timeDensity" placeholder="Select" size="default" style="width: 120px">
-                <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
-        </el-card>
+    <div class="am-header-container">
+        <div class="am-button-group">
+            <el-button-group class="monitor-switch">
+                <el-button
+                    type="primary"
+                    class="am-monitor-btn"
+                    :class="{ active: activeTab === 'host' }"
+                    @click="router.push('/monitor/host')">
+                    主机监控
+                </el-button>
+                <el-button
+                    type="primary"
+                    class="am-monitor-btn"
+                    :class="{ active: activeTab === 'container' }"
+                    @click="router.push('/monitor/container')">
+                    容器监控
+                </el-button>
+            </el-button-group>
+        </div>
+
+        <div class="am-density-selector">
+            <div class="selector-wrapper">
+                <!-- <span class="density-label">{{ t('monitor.timeDensity') }}</span> -->
+                <el-select
+                    v-model="timeDensity"
+                    placeholder="Select"
+                    size="default"
+                    class="density-select"
+                    :popper-append-to-body="false"
+                    :popper-style="{ minWidth: '200px' }"
+                    auto-width>
+                    <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
+                </el-select>
+            </div>
+        </div>
     </div>
     <div class="am-column">
         <el-row>
@@ -411,28 +447,73 @@ const { t } = useI18n()
 </template>
 
 <style scoped lang="scss">
-@include b(density) {
-  height: 48px;
-  width: 100%;
-
-  span {
-    font-size: 14px;
-  }
+@include b(header-container) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 16px;
 
   .el-card {
-    height: 100%;
+    border-radius: 8px;
+    background: var(--el-bg-color-page);
+
     :deep(.el-card__body) {
-      height: 100% !important;
-      padding: 0 16px 0 16px;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: flex-end;
+      padding: 8px 16px !important;
     }
   }
+}
 
-  border-radius: 4px;
-  margin-bottom: 4px;
+@include b(button-group) {
+  background: var(--el-bg-color-page);
+  border-radius: 8px;
+  padding: 4px;
+
+  .monitor-switch {
+    display: flex;
+    gap: 4px;
+
+    .am-monitor-btn {
+      border: 1px solid var(--el-border-color);
+      background: transparent;
+      color: var(--el-text-color-regular);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+      &.active {
+        background: var(--el-color-primary);
+        border-color: var(--el-color-primary);
+        color: var(--el-color-white);
+        box-shadow: 0 2px 4px rgba(var(--el-color-primary-rgb), 0.2);
+      }
+
+      &:hover:not(.active) {
+        border-color: var(--el-color-primary-light-5);
+        color: var(--el-color-primary);
+        transform: none;
+      }
+
+      &:first-child {
+        border-radius: 6px 0 0 6px;
+      }
+
+      &:last-child {
+        border-radius: 0 6px 6px 0;
+      }
+    }
+  }
+}
+
+@include b(density-selector) {
+  background: var(--el-bg-color-page);
+  border-radius: 8px;
+  padding: 8px 16px;
+
+  .selector-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 100%;
+  }
 }
 
 @include b(column) {
@@ -445,5 +526,14 @@ const { t } = useI18n()
 @include b(column-content) {
   height: 260px;
   width: 100%;
+}
+
+.density-select {
+  width: auto;
+  min-width: 160px;
+
+  :deep(.el-input__inner) {
+    min-width: 160px;
+  }
 }
 </style>

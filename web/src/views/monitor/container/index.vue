@@ -6,6 +6,14 @@ import { set } from 'lodash-es';
 // import { useI18n } from 'vue-i18n'
 import { Websocket } from '@/components/Websocket';
 
+import { useRoute, useRouter } from 'vue-router';
+const router = useRouter()
+const route = useRoute()
+
+const activeTab = computed(() => {
+  return route.path.startsWith('/monitor/host') ? 'host' : 'container'
+})
+
 const loading = ref(false)
 // const { t } = useI18n()
 
@@ -202,6 +210,26 @@ onUnmounted(() => {
 </script>
 
 <template>
+    <div class="am-header-container">
+        <div class="am-button-group">
+            <el-button-group class="monitor-switch">
+                <el-button
+                    type="primary"
+                    class="am-monitor-btn"
+                    :class="{ active: activeTab === 'host' }"
+                    @click="router.push('/monitor/host')">
+                    主机监控
+                </el-button>
+                <el-button
+                    type="primary"
+                    class="am-monitor-btn"
+                    :class="{ active: activeTab === 'container' }"
+                    @click="router.push('/monitor/container')">
+                    容器监控
+                </el-button>
+            </el-button-group>
+        </div>
+    </div>
     <div class="am-column">
         <el-row>
             <el-col :lg="12" :md="12" :sm="12" :xs="24">
@@ -227,29 +255,73 @@ onUnmounted(() => {
 </template>
 
 <style scoped lang="scss">
-@include b(density) {
-    height: 48px;
-    width: 100%;
+@include b(header-container) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 16px;
 
-    span {
-        font-size: 14px;
+  .el-card {
+    border-radius: 8px;
+    background: var(--el-bg-color-page);
+
+    :deep(.el-card__body) {
+      padding: 8px 16px !important;
     }
+  }
+}
 
-    .el-card {
-        height: 100%;
+@include b(button-group) {
+  background: var(--el-bg-color-page);
+  border-radius: 8px;
+  padding: 4px;
 
-        :deep(.el-card__body) {
-            height: 100% !important;
-            padding: 0 16px 0 16px;
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: flex-end;
-        }
+  .monitor-switch {
+    display: flex;
+    gap: 4px;
+
+    .am-monitor-btn {
+      border: 1px solid var(--el-border-color);
+      background: transparent;
+      color: var(--el-text-color-regular);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+      &.active {
+        background: var(--el-color-primary);
+        border-color: var(--el-color-primary);
+        color: var(--el-color-white);
+        box-shadow: 0 2px 4px rgba(var(--el-color-primary-rgb), 0.2);
+      }
+
+      &:hover:not(.active) {
+        border-color: var(--el-color-primary-light-5);
+        color: var(--el-color-primary);
+        transform: none;
+      }
+
+      &:first-child {
+        border-radius: 6px 0 0 6px;
+      }
+
+      &:last-child {
+        border-radius: 0 6px 6px 0;
+      }
     }
+  }
+}
 
-    border-radius: 4px;
-    margin-bottom: 4px;
+@include b(density-selector) {
+  background: var(--el-bg-color-page);
+  border-radius: 8px;
+  padding: 8px 16px;
+
+  .selector-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 100%;
+  }
 }
 
 @include b(column) {

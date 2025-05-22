@@ -71,8 +71,10 @@ export default defineConfig({
         open: true,
         proxy: {
             '/api/': {
-                target: 'http://124.70.156.29:8000',
+                target: 'http://124.70.156.29:8000', // 移除重复的/api路径
                 changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/api/, '/api/'), // 新增路径重写规则
+                ws: true // 启用websocket代理
             },
         },
     },
