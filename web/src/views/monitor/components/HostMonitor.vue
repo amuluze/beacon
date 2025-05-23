@@ -6,66 +6,60 @@ import type { CPUTrendingArgs, DiskIO, DiskTrendingArgs, DiskUsage, MemTrendingA
 import { convertBytesToReadable } from '@/utils/convert.ts'
 import { dayjs } from 'element-plus'
 import { set } from 'lodash-es'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const loading = ref(false)
 
-// 时间密度下拉框
-const timeDensity = ref(600)
-const options = [
-  {
-    value: 120,
-    label: '2分钟',
-  },
-  {
-    value: 300,
-    label: '5分钟',
-  },
-  {
-    value: 600,
-    label: '10分钟',
-  },
-  {
-    value: 1800,
-    label: '30分钟',
-  },
-  {
-    value: 3600,
-    label: '1 小时',
-  },
-  {
-    value: 43200,
-    label: '12小时',
-  },
-  {
-    value: 86400,
-    label: '24小时',
-  },
-]
+// 定义 props
+const props = defineProps<{
+  timeDensity: number
+}>()
 
-watch(
-  () => timeDensity.value,
-  () => {
-    renderCPUPercent()
-    renderCPU()
-    renderMemInfo()
-    renderMem()
-    renderDiskInfo()
-    renderDisk()
-    renderNet()
+// 定义数据缓存
+const dataCache = reactive({
+  cpu: {
+    lastUpdate: 0,
+    data: null as any,
+    interval: 5000, // CPU数据每5秒更新一次
   },
-)
+  mem: {
+    lastUpdate: 0,
+    data: null as any,
+    interval: 5000, // 内存数据每5秒更新一次
+  },
+  disk: {
+    lastUpdate: 0,
+    data: null as any,
+    interval: 5000, // 磁盘数据每10秒更新一次
+  },
+  net: {
+    lastUpdate: 0,
+    data: null as any,
+    interval: 5000, // 网络数据每5秒更新一次
+  },
+})
+
+// 检查数据是否需要更新
+function shouldUpdate(type: keyof typeof dataCache): boolean {
+  const now = Date.now()
+  return !dataCache[type].data || (now - dataCache[type].lastUpdate) >= dataCache[type].interval
+}
 
 // CPU 使用率
 const cpuPercent = ref('0.0%')
 async function renderCPUPercent() {
+  if (!shouldUpdate('cpu')) return
   const { data } = await queryCPUInfo()
   cpuPercent.value = `${data.percent.toFixed(2)}%`
+  dataCache.cpu.lastUpdate = Date.now()
 }
 
 const cpuOption = reactive<EChartsOption>(cpuTrendingOption as EChartsOption)
 async function renderCPU() {
+  if (!shouldUpdate('cpu')) return
   const param: CPUTrendingArgs = {
-    start_time: dayjs().unix() - timeDensity.value,
+    start_time: dayjs().unix() - props.timeDensity,
     end_time: dayjs().unix(),
   }
 
@@ -86,6 +80,8 @@ async function renderCPU() {
       showSymbol: false,
     },
   ])
+  dataCache.cpu.data = cpuData
+  dataCache.cpu.lastUpdate = Date.now()
 }
 
 // 内存使用率
@@ -95,15 +91,18 @@ const memInfo = ref({
   used: '0',
 })
 async function renderMemInfo() {
+  if (!shouldUpdate('mem')) return
   const { data } = await queryMemInfo()
   memInfo.value.percent = `${data.percent.toFixed(2)}%`
   memInfo.value.total = convertBytesToReadable(data.total)
   memInfo.value.used = convertBytesToReadable(data.used)
+  dataCache.mem.lastUpdate = Date.now()
 }
 const memOption = reactive<EChartsOption>(memTrendingOption as EChartsOption)
 async function renderMem() {
+  if (!shouldUpdate('mem')) return
   const param: MemTrendingArgs = {
-    start_time: dayjs().unix() - timeDensity.value,
+    start_time: dayjs().unix() - props.timeDensity,
     end_time: dayjs().unix(),
   }
   const { data } = await queryMemUsage(param)
@@ -123,6 +122,8 @@ async function renderMem() {
       showSymbol: false,
     },
   ])
+  dataCache.mem.data = memData
+  dataCache.mem.lastUpdate = Date.now()
 }
 
 // 磁盘使用率
@@ -135,6 +136,7 @@ const diskInfo = ref<
   }[]
 >([])
 async function renderDiskInfo() {
+  if (!shouldUpdate('disk')) return
   const { data } = await queryDiskInfo()
   diskInfo.value = []
   data.info.map((item) => {
@@ -146,6 +148,7 @@ async function renderDiskInfo() {
     })
     return diskInfo
   })
+  dataCache.disk.lastUpdate = Date.now()
 }
 const diskOption = reactive<EChartsOption>(diskTrendingOption as EChartsOption)
 function generateDiskLegendData(data: DiskUsage[]) {
@@ -199,26 +202,43 @@ function generateDiskSeriesData(data: DiskUsage[]) {
   return series
 }
 async function renderDisk() {
+  if (!shouldUpdate('disk')) return
   const param: DiskTrendingArgs = {
-    start_time: dayjs().unix() - timeDensity.value,
+    start_time: dayjs().unix() - props.timeDensity,
     end_time: dayjs().unix(),
   }
   const { data } = await queryDiskUsage(param)
-  const diskData = data.data
+  const diskData = data.usage
   set(
     diskOption,
     'xAxis.data',
-    diskData[0].data.map(item => dayjs(item.timestamp * 1000).format("HH:mm:ss")),
+    diskData[0].data.map((item: DiskIO) => dayjs(item.timestamp * 1000).format("HH:mm:ss")),
   )
   set(diskOption, 'legend.data', generateDiskLegendData(diskData))
   set(diskOption, 'series', generateDiskSeriesData(diskData))
+  dataCache.disk.data = diskData
+  dataCache.disk.lastUpdate = Date.now()
 }
 
 // 网络使用率
-const netInfo = ref<NetUsage[]>([])
+const netInfo = ref<{
+  ethernet: string
+  read: string
+  write: string
+}[]>([])
 async function renderNetInfo() {
-  const { data } = await queryNetworkUsage()
-  netInfo.value = data.info
+  if (!shouldUpdate('net')) return
+  const param: NetTrendingArgs = {
+    start_time: dayjs().unix() - props.timeDensity,
+    end_time: dayjs().unix(),
+  }
+  const { data } = await queryNetworkUsage(param)
+  netInfo.value = data.usage.map(item => ({
+    ethernet: item.ethernet,
+    read: convertBytesToReadable(item.data[item.data.length - 1].bytes_recv),
+    write: convertBytesToReadable(item.data[item.data.length - 1].bytes_sent)
+  }))
+  dataCache.net.lastUpdate = Date.now()
 }
 const netOption = reactive<EChartsOption>(netTrendingOption as EChartsOption)
 function generateNetLegendData(data: NetUsage[]) {
@@ -226,7 +246,7 @@ function generateNetLegendData(data: NetUsage[]) {
   const res: string[] = []
   options.forEach((item: string) => {
     data.forEach((i: NetUsage) => {
-      res.push(`${i.device}_${item}`)
+      res.push(`${i.ethernet}_${item}`)
     })
   })
   return res
@@ -247,8 +267,8 @@ function generateNetSeriesData(data: NetUsage[]) {
     data.forEach((i: NetUsage) => {
       if (item === 'Receive') {
         series.push({
-          name: `${i.device}_${item}`,
-          data: i.data.map((val: NetIO) => val.io_receive),
+          name: `${i.ethernet}_${item}`,
+          data: i.data.map((val: NetIO) => val.bytes_recv),
           type: 'line',
           smooth: true,
           showSymbol: true,
@@ -258,8 +278,8 @@ function generateNetSeriesData(data: NetUsage[]) {
       }
       else {
         series.push({
-          name: `${i.device}_${item}`,
-          data: i.data.map((val: NetIO) => val.io_send),
+          name: `${i.ethernet}_${item}`,
+          data: i.data.map((val: NetIO) => val.bytes_sent),
           type: 'line',
           smooth: true,
           showSymbol: true,
@@ -272,22 +292,29 @@ function generateNetSeriesData(data: NetUsage[]) {
   return series
 }
 async function renderNet() {
+  if (!shouldUpdate('net')) return
   const param: NetTrendingArgs = {
-    start_time: dayjs().unix() - timeDensity.value,
+    start_time: dayjs().unix() - props.timeDensity,
     end_time: dayjs().unix(),
   }
   const { data } = await queryNetworkUsage(param)
-  const netData = data.data
+  const netData = data.usage
   set(
     netOption,
     'xAxis.data',
-    netData[0].data.map(item => dayjs(item.timestamp * 1000).format("HH:mm:ss")),
+    netData[0].data.map((item: NetIO) => dayjs(item.timestamp * 1000).format("HH:mm:ss")),
   )
   set(netOption, 'legend.data', generateNetLegendData(netData))
   set(netOption, 'series', generateNetSeriesData(netData))
+  dataCache.net.data = netData
+  dataCache.net.lastUpdate = Date.now()
 }
 
+// 分离定时器
+const timers = ref<{ [key: string]: NodeJS.Timeout }>({})
+
 onMounted(() => {
+  // 初始化数据
   renderCPUPercent()
   renderCPU()
   renderMemInfo()
@@ -296,118 +323,130 @@ onMounted(() => {
   renderDisk()
   renderNetInfo()
   renderNet()
+
+  // 为每个指标设置独立的定时器
+  timers.value.cpu = setInterval(() => {
+    renderCPUPercent()
+    renderCPU()
+  }, dataCache.cpu.interval)
+
+  timers.value.mem = setInterval(() => {
+    renderMemInfo()
+    renderMem()
+  }, dataCache.mem.interval)
+
+  timers.value.disk = setInterval(() => {
+    renderDiskInfo()
+    renderDisk()
+  }, dataCache.disk.interval)
+
+  timers.value.net = setInterval(() => {
+    renderNetInfo()
+    renderNet()
+  }, dataCache.net.interval)
+})
+
+onUnmounted(() => {
+  // 清除所有定时器
+  Object.values(timers.value).forEach(timer => clearInterval(timer))
 })
 </script>
 
 <template>
   <div class="monitor-container">
-    <div class="monitor-header">
-      <el-select v-model="timeDensity" class="time-density">
-        <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
-      </el-select>
-    </div>
-    <div class="monitor-content">
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <el-card class="monitor-card">
-            <template #header>
-              <div class="card-header">
-                <span>CPU 使用率</span>
-                <span class="percent">{{ cpuPercent }}</span>
+    <el-card shadow="hover" class="chart-card">
+      <el-skeleton :loading="loading" animated>
+        <div class="am-column-content">
+          <div class="chart-container">
+            <div class="chart-item">
+              <div class="chart-info">{{ t('monitor.percent') }}： {{ cpuPercent }}</div>
+              <echarts :option="cpuOption" />
+            </div>
+            <div class="chart-item">
+              <div class="chart-info">{{ t('monitor.total') }}：{{ memInfo.total }} {{ t('monitor.used') }}：{{ memInfo.used }} {{ t('monitor.percent') }}： {{ memInfo.percent }}</div>
+              <echarts :option="memOption" />
+            </div>
+            <div class="chart-item">
+              <div class="chart-info" v-for="(item, index) in diskInfo" :key="index">
+                {{ item.device }} {{ t('monitor.total') }}：{{ item.total }} {{ t('monitor.used') }}：{{ item.used }} {{ t('monitor.percent') }}：{{ item.percent }}
               </div>
-            </template>
-            <Echarts :option="cpuOption" />
-          </el-card>
-        </el-col>
-        <el-col :span="12">
-          <el-card class="monitor-card">
-            <template #header>
-              <div class="card-header">
-                <span>内存使用率</span>
-                <div class="info">
-                  <span>总内存: {{ memInfo.total }}</span>
-                  <span>已用: {{ memInfo.used }}</span>
-                  <span class="percent">{{ memInfo.percent }}</span>
-                </div>
+              <echarts :option="diskOption" />
+            </div>
+            <div class="chart-item">
+              <div class="chart-info" v-for="(item, index) in netInfo" :key="index">
+                {{ item.ethernet }} {{ t('monitor.receive') }}：{{ item.read }} {{ t('monitor.send') }}：{{ item.write }}
               </div>
-            </template>
-            <Echarts :option="memOption" />
-          </el-card>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20" class="mt-4">
-        <el-col :span="24">
-          <el-card class="monitor-card">
-            <template #header>
-              <div class="card-header">
-                <span>磁盘使用率</span>
-              </div>
-            </template>
-            <el-table :data="diskInfo" style="width: 100%">
-              <el-table-column prop="device" label="设备" />
-              <el-table-column prop="total" label="总容量" />
-              <el-table-column prop="used" label="已用" />
-              <el-table-column prop="percent" label="使用率" />
-            </el-table>
-            <Echarts :option="diskOption" class="mt-4" />
-          </el-card>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20" class="mt-4">
-        <el-col :span="24">
-          <el-card class="monitor-card">
-            <template #header>
-              <div class="card-header">
-                <span>网络使用率</span>
-              </div>
-            </template>
-            <el-table :data="netInfo" style="width: 100%">
-              <el-table-column prop="device" label="设备" />
-              <el-table-column prop="ip" label="IP地址" />
-              <el-table-column prop="mac" label="MAC地址" />
-            </el-table>
-            <Echarts :option="netOption" class="mt-4" />
-          </el-card>
-        </el-col>
-      </el-row>
-    </div>
+              <echarts :option="netOption" />
+            </div>
+          </div>
+        </div>
+      </el-skeleton>
+    </el-card>
   </div>
 </template>
 
 <style scoped lang="scss">
 .monitor-container {
+  height: 100%;
+  width: 100%;
+}
+
+.chart-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 24px;
+  height: 100%;
+}
+
+.chart-item {
+  flex: 1;
+  min-width: calc(50% - 12px);
+  min-height: 300px;
+  position: relative;
+  background: var(--el-bg-color-page);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.chart-info {
+  margin-bottom: 8px;
+  color: var(--el-text-color-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@include b(column-content) {
+  height: auto;
+  min-height: 680px;
+  width: 100%;
+  padding: 16px;
+  border-radius: 4px;
+}
+
+.chart-card {
+  transition: all 0.3s;
+  border-radius: 16px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  :deep(.el-card__body) {
+    padding: 20px;
+  }
+}
+
+:deep(.el-skeleton) {
+  width: 100%;
+  height: 100%;
   padding: 20px;
+}
 
-  .monitor-header {
-    margin-bottom: 20px;
-
-    .time-density {
-      width: 120px;
-    }
-  }
-
-  .monitor-content {
-    .monitor-card {
-      .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-
-        .info {
-          display: flex;
-          gap: 16px;
-        }
-
-        .percent {
-          font-weight: bold;
-          color: var(--el-color-primary);
-        }
-      }
-    }
-  }
-
-  .mt-4 {
-    margin-top: 16px;
-  }
+:deep(.el-skeleton__item) {
+  height: 300px;
+  margin-bottom: 16px;
 }
 </style>

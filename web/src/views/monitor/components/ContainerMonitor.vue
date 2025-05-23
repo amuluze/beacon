@@ -186,51 +186,94 @@ onUnmounted(() => {
 
 <template>
   <div class="monitor-container">
-    <div class="monitor-content">
-      <el-row :gutter="20">
-        <el-col :span="24">
-          <el-card class="monitor-card">
-            <template #header>
-              <div class="card-header">
-                <span>CPU 使用率</span>
+    <el-card shadow="hover" class="chart-card">
+      <el-skeleton :loading="loading" animated>
+        <div class="am-column-content">
+          <div class="chart-container">
+            <div class="chart-item">
+              <div class="chart-header">
+                <span class="chart-title">CPU 使用率</span>
               </div>
-            </template>
-            <Echarts :option="cpuOption" />
-          </el-card>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20" class="mt-4">
-        <el-col :span="24">
-          <el-card class="monitor-card">
-            <template #header>
-              <div class="card-header">
-                <span>内存使用率</span>
+              <echarts :option="cpuOption" />
+            </div>
+            <div class="chart-item">
+              <div class="chart-header">
+                <span class="chart-title">内存使用率</span>
               </div>
-            </template>
-            <Echarts :option="memOption" />
-          </el-card>
-        </el-col>
-      </el-row>
-    </div>
+              <echarts :option="memOption" />
+            </div>
+          </div>
+        </div>
+      </el-skeleton>
+    </el-card>
   </div>
 </template>
 
 <style scoped lang="scss">
 .monitor-container {
+  height: 100%;
+  width: 100%;
+}
+
+.chart-container {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  height: 100%;
+}
+
+.chart-item {
+  flex: 1;
+  min-height: 300px;
+  position: relative;
+  background: var(--el-bg-color-page);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.chart-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+}
+
+.chart-card {
+  transition: all 0.3s;
+  border-radius: 16px;
+
+  :deep(.el-card__header) {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  :deep(.el-card__body) {
+    padding: 20px;
+  }
+}
+
+@include b(column-content) {
+  height: 400px;
+  width: 100%;
+  padding: 16px;
+  border-radius: 4px;
+}
+
+:deep(.el-skeleton) {
+  width: 100%;
+  height: 100%;
   padding: 20px;
+}
 
-  .monitor-content {
-    .monitor-card {
-      .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-    }
-  }
-
-  .mt-4 {
-    margin-top: 16px;
-  }
+:deep(.el-skeleton__item) {
+  height: 300px;
+  margin-bottom: 16px;
 }
 </style>

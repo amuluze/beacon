@@ -14,33 +14,43 @@ export const dynamicRoutes: RouteRecordRaw[] = [
     {
         path: '/monitor',
         name: 'monitor',
-        redirect: '/monitor/host',
+        component: async () => import('@/views/monitor/index.vue'),
         meta: {
             title: 'menu.monitor',
             icon: 'menu-data',
             show: true,
         },
-        children: [
-            {
-                path: '/monitor/host',
-                name: 'hostMonitor',
-                component: async () => import('@/views/monitor/host/index.vue'),
-                meta: {
-                    title: 'menu.hostMonitor',
-                    show: false,
-                },
-            },
-            {
-                path: '/monitor/container',
-                name: 'containerMonitor',
-                component: async () => import('@/views/monitor/container/index.vue'),
-                meta: {
-                    title: 'menu.containerMonitor',
-                    show: false,
-                },
-            },
-        ],
     },
+    // {
+    //     path: '/monitor',
+    //     name: 'monitor',
+    //     redirect: '/monitor/host',
+    //     meta: {
+    //         title: 'menu.monitor',
+    //         icon: 'menu-data',
+    //         show: true,
+    //     },
+    //     children: [
+    //         {
+    //             path: '/monitor/host',
+    //             name: 'hostMonitor',
+    //             component: async () => import('@/views/monitor/host/index.vue'),
+    //             meta: {
+    //                 title: 'menu.hostMonitor',
+    //                 show: false,
+    //             },
+    //         },
+    //         {
+    //             path: '/monitor/container',
+    //             name: 'containerMonitor',
+    //             component: async () => import('@/views/monitor/container/index.vue'),
+    //             meta: {
+    //                 title: 'menu.containerMonitor',
+    //                 show: false,
+    //             },
+    //         },
+    //     ],
+    // },
     {
         path: '/container',
         name: 'container',

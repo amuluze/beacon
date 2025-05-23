@@ -13,6 +13,7 @@ function useEcharts(elRef: Ref<HTMLDivElement>, options: EChartsOption): {
     echartsResize: () => void
 } {
     const charts = shallowRef<echarts.ECharts>()
+    const isActive = ref(true)
 
     const setOptions = (options: EChartsOption): void => {
         charts.value && charts.value.setOption(options)
@@ -24,26 +25,42 @@ function useEcharts(elRef: Ref<HTMLDivElement>, options: EChartsOption): {
     }
 
     const echartsResize = (): void => {
-        charts.value && charts.value.resize()
+        if (isActive.value && charts.value) {
+            charts.value.resize()
+        }
+    }
+
+    // 统一处理事件监听器的添加和移除
+    const handleResize = () => {
+        if (isActive.value) {
+            window.addEventListener('resize', echartsResize)
+        }
+    }
+
+    const removeResize = () => {
+        window.removeEventListener('resize', echartsResize)
     }
 
     onMounted(() => {
-        window.addEventListener('resize', echartsResize)
-    })
-
-    // 防止 echarts 页面 keep-alive 时，还在继续监听页面
-    onDeactivated(() => {
-        window.removeEventListener('resize', echartsResize)
-    })
-
-    onBeforeUnmount(() => {
-        window.removeEventListener('resize', echartsResize)
-        charts.value && charts.value.dispose()
+        handleResize()
     })
 
     onActivated(() => {
-        window.addEventListener('resize', echartsResize)
+        isActive.value = true
+        handleResize()
     })
+
+    onDeactivated(() => {
+        isActive.value = false
+        removeResize()
+    })
+
+    onBeforeUnmount(() => {
+        isActive.value = false
+        removeResize()
+        charts.value && charts.value.dispose()
+    })
+
     return { initCharts, setOptions, echartsResize }
 }
 
