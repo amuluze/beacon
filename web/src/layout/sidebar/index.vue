@@ -83,14 +83,99 @@ const menus = computed(() => {
 
 @include b(menu) {
   height: calc(100vh - 64px);
+  border-radius: 16px;
   :deep(.el-menu) {
     border: none !important;
+    background-color: transparent;
   }
   :deep(.el-menu-item) {
-    margin: 0 !important;
+    margin: 4px 8px !important;
+    border-radius: 8px;
+    height: 50px;
+    line-height: 50px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+
+    &:hover {
+      background-color: var(--el-color-primary-light-9);
+      color: var(--el-color-primary);
+      transform: translateX(4px);
+    }
+
+    &.is-active {
+      background: linear-gradient(90deg, var(--el-color-primary-light-8) 0%, var(--el-color-primary-light-9) 100%);
+      color: var(--el-color-primary);
+      font-weight: 600;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 24px;
+        background-color: var(--el-color-primary);
+        border-radius: 0 4px 4px 0;
+        z-index: 1;
+      }
+    }
+
+    .el-icon {
+      font-size: 18px;
+      margin-right: 8px;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 2;
+    }
   }
+
   :deep(.el-sub-menu) {
-    margin: 0 !important;
+    margin: 4px 8px !important;
+    position: relative;
+
+    .el-sub-menu__title {
+      border-radius: 8px;
+      height: 50px;
+      line-height: 50px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+
+      &:hover {
+        background-color: var(--el-color-primary-light-9);
+        color: var(--el-color-primary);
+      }
+
+      .el-icon {
+        font-size: 18px;
+        margin-right: 8px;
+        transition: all 0.3s ease;
+        position: relative;
+        z-index: 2;
+      }
+    }
+
+    &.is-active {
+      > .el-sub-menu__title {
+        color: var(--el-color-primary);
+        font-weight: 600;
+
+        &::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 4px;
+          height: 24px;
+          background-color: var(--el-color-primary);
+          border-radius: 0 4px 4px 0;
+          z-index: 1;
+        }
+      }
+    }
   }
 }
 
@@ -98,7 +183,7 @@ const menus = computed(() => {
   width: 12px;
   height: 32px;
   background: var(--el-menu-bg-color);
-  border-radius: 0 5px 5px 0;
+  border-radius: 0 6px 6px 0;
   display: flex;
   justify-content: center;
   align-items: center;

@@ -212,46 +212,30 @@ onUnmounted(() => {
 <template>
     <div class="am-header-container">
         <div class="am-button-group">
-            <el-button-group class="monitor-switch">
-                <el-button
-                    type="primary"
-                    class="am-monitor-btn"
-                    :class="{ active: activeTab === 'host' }"
-                    @click="router.push('/monitor/host')">
+            <div class="tab-nav-container">
+                <div class="tab-nav-item" :class="{ active: activeTab === 'host' }" @click="router.push('/monitor/host')">
                     主机监控
-                </el-button>
-                <el-button
-                    type="primary"
-                    class="am-monitor-btn"
-                    :class="{ active: activeTab === 'container' }"
-                    @click="router.push('/monitor/container')">
+                </div>
+                <div class="tab-nav-item" :class="{ active: activeTab === 'container' }" @click="router.push('/monitor/container')">
                     容器监控
-                </el-button>
-            </el-button-group>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="am-column">
-        <el-row>
-            <el-col :lg="12" :md="12" :sm="12" :xs="24">
-                <el-card shadow="never">
-                    <el-skeleton :loading="loading" animated>
-                        <div class="am-column-content">
+    <el-card shadow="hover" class="chart-card">
+            <el-skeleton :loading="loading" animated>
+                <div class="am-column-content">
+                    <div class="chart-container">
+                        <div class="chart-item">
                             <echarts :option="cpuOption" />
                         </div>
-                    </el-skeleton>
-                </el-card>
-            </el-col>
-            <el-col :lg="12" :md="12" :sm="12" :xs="24">
-                <el-card shadow="never">
-                    <el-skeleton :loading="loading" animated>
-                        <div class="am-column-content">
+                        <div class="chart-item">
                             <echarts :option="memOption" />
                         </div>
-                    </el-skeleton>
-                </el-card>
-            </el-col>
-        </el-row>
-    </div>
+                    </div>
+                </div>
+            </el-skeleton>
+        </el-card>
 </template>
 
 <style scoped lang="scss">
@@ -263,7 +247,7 @@ onUnmounted(() => {
   gap: 16px;
 
   .el-card {
-    border-radius: 8px;
+    border-radius: 12px;
     background: var(--el-bg-color-page);
 
     :deep(.el-card__body) {
@@ -274,10 +258,42 @@ onUnmounted(() => {
 
 @include b(button-group) {
   background: var(--el-bg-color-page);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 4px;
 
-  .monitor-switch {
+  .tab-nav-container {
+    display: flex;
+    background-color: #f5f7fa;
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .tab-nav-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #606266;
+    border-radius: 12px;
+    transition: all 0.3s;
+    position: relative;
+    white-space: nowrap;
+
+    &:hover:not(.active) {
+      color: var(--el-color-primary);
+      background-color: rgba(var(--el-color-primary-rgb), 0.05);
+    }
+
+    &.active {
+      color: var(--el-color-primary);
+      background-color: #fff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      font-weight: 500;
+    }
+  }
+}
+
+@include b(monitor-switch) {
     display: flex;
     gap: 4px;
 
@@ -309,11 +325,11 @@ onUnmounted(() => {
       }
     }
   }
-}
+
 
 @include b(density-selector) {
   background: var(--el-bg-color-page);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 8px 16px;
 
   .selector-wrapper {
@@ -331,8 +347,65 @@ onUnmounted(() => {
     overflow-y: auto;
 }
 
+.chart-container {
+    display: flex;
+    flex-direction: row;
+    gap: 24px;
+    height: 100%;
+}
+
+.chart-item {
+    flex: 1;
+    min-height: 300px;
+    position: relative;
+    background: var(--el-bg-color-page);
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.chart-label {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--el-text-color-secondary);
+    padding: 8px 0;
+    z-index: 1;
+}
+
+.chart-card {
+    transition: all 0.3s;
+    // margin-bottom: 16px;
+    border-radius: 16px;
+
+    :deep(.el-card__header) {
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    :deep(.el-card__body) {
+        padding: 20px;
+    }
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chart-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+}
+
 @include b(column-content) {
-    height: 320px;
+    height: 400px;
     width: 100%;
+    padding: 16px;
+    border-radius: 4px;
 }
 </style>

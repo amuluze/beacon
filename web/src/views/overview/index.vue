@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import type { HostInfo } from '@/interface/host'
-import type { DockerInfo } from '@/interface/container.ts'
 import type { EChartsOption } from '@/components/Echarts/echarts.ts'
+import type { DockerInfo } from '@/interface/container.ts'
+import type { HostInfo } from '@/interface/host'
 
 import { queryContainers, queryDockerInfo, queryImages } from '@/api/container'
 import { queryCPUInfo, queryDiskInfo, queryHostInfo, queryMemInfo } from '@/api/host'
 import { cpuOption, diskOption, memOption } from '@/config/echarts.ts'
 
-import { useI18n } from 'vue-i18n'
-import { set } from 'lodash-es'
 import type { Pagination } from '@/interface/pagination.ts'
+import { set } from 'lodash-es'
+import { useI18n } from 'vue-i18n'
 
 const loading = ref(true)
 const { t } = useI18n()
@@ -84,162 +84,242 @@ onMounted(async () => {
 </script>
 
 <template>
-    <el-row class="am-overview" :gutter="8" justify="space-between">
-        <el-col :span="16">
-            <el-row :gutter="8">
-                <el-col :xl="12" :lg="12" :md="12" :sm="12" :xs="24">
-                    <el-card shadow="never" class="am-overview__card">
-                        <el-skeleton :loading="loading" animated :rows="2">
-                            <template #default>
-                                <div class="am-panel">
-                                    <div class="am-description">
-                                        <div class="am-description__text">
-                                            {{ t('content.containerNumber') }}
-                                        </div>
-                                        <div class="am-description__number">
-                                            {{ containerCount }}
-                                        </div>
-                                    </div>
-                                </div>
-                            </template>
-                        </el-skeleton>
-                    </el-card>
-                </el-col>
-                <el-col :xl="12" :lg="12" :md="12" :sm="12" :xs="24">
-                    <el-card shadow="never" class="am-overview__card">
-                        <el-skeleton :loading="loading" animated :rows="2">
-                            <template #default>
-                                <div class="am-panel">
-                                    <div class="am-description">
-                                        <div class="am-description__text">
-                                            {{ t('content.imageNumber') }}
-                                        </div>
-                                        <div class="am-description__number">
-                                            {{ imageCount }}
-                                        </div>
-                                    </div>
-                                </div>
-                            </template>
-                        </el-skeleton>
-                    </el-card>
-                </el-col>
-            </el-row>
-            <el-row :gutter="8">
-                <el-col :xl="8" :lg="8" :md="8" :sm="8" :xs="24">
-                    <div class="am-chart">
-                        <el-card shadow="never">
-                            <el-skeleton :loading="loading" animated>
-                                <Echarts :option="cpuOptionData" />
-                            </el-skeleton>
-                        </el-card>
+    <el-card shadow="hover" class="am-overview">
+        <el-skeleton :loading="loading" animated>
+            <div class="overview-container">
+                <div class="overview-stats">
+                    <div class="stat-item">
+                        <div class="stat-content">
+                            <div class="stat-label">{{ t('content.containerNumber') }}</div>
+                            <div class="stat-value">{{ containerCount }}</div>
+                        </div>
                     </div>
-                </el-col>
-                <el-col :xl="8" :lg="8" :md="8" :sm="8" :xs="24">
-                    <div class="am-chart">
-                        <el-card shadow="never">
-                            <el-skeleton :loading="loading" animated>
-                                <Echarts :option="memOptionData" />
-                            </el-skeleton>
-                        </el-card>
+                    <div class="stat-item">
+                        <div class="stat-content">
+                            <div class="stat-label">{{ t('content.imageNumber') }}</div>
+                            <div class="stat-value">{{ imageCount }}</div>
+                        </div>
                     </div>
-                </el-col>
-                <el-col :xl="8" :lg="8" :md="8" :sm="8" :xs="24">
-                    <div class="am-chart">
-                        <el-card shadow="never">
-                            <el-skeleton :loading="loading" animated>
-                                <Echarts :option="diskOptionData" />
-                            </el-skeleton>
-                        </el-card>
+                </div>
+                <div class="overview-charts">
+                    <div class="chart-item">
+                        <Echarts :option="cpuOptionData" />
                     </div>
-                </el-col>
-            </el-row>
-        </el-col>
-        <el-col :span="8">
-            <content-wrap :style="{ 'margin-bottom': '8px', 'height': '250px' }" :title="t('content.hostInfo')" :message="t('content.hostInfo')">
-                <el-skeleton :loading="loading" animated>
-                    <p>
-                        {{ t('content.hostName') }}：<el-tag>{{ hostInfo?.hostname }}</el-tag>
-                    </p>
-                    <p>
-                        {{ t('content.upTime') }}：<el-tag>{{ hostInfo?.uptime }}</el-tag>
-                    </p>
-                    <p>
-                        {{ t('content.releaseVersion') }}：<el-tag>{{ hostInfo?.platform }}-{{ hostInfo?.platform_version }}</el-tag>
-                    </p>
-                    <p>
-                        {{ t('content.kernelVersion') }}：<el-tag>{{ hostInfo?.kernel_version }}</el-tag>
-                    </p>
-                    <p>
-                        {{ t('content.os') }}：<el-tag>{{ hostInfo?.os }}/{{ hostInfo?.kernel_arch }}</el-tag>
-                    </p>
-                </el-skeleton>
-            </content-wrap>
-            <content-wrap :style="{ 'margin-bottom': '8px', 'height': '200px' }" :title="t('content.dockerInfo')" :message="t('content.dockerInfo')">
-                <el-skeleton :loading="loading" animated>
-                    <p>
-                        {{ t('content.dockerVersion') }}：<el-tag>{{ dockerInfo?.docker_version }}</el-tag>
-                    </p>
-                    <p>
-                        {{ t('content.apiVersion') }}： <el-tag>{{ dockerInfo?.min_api_version }}-{{ dockerInfo?.api_version }}</el-tag>
-                    </p>
-                    <p>
-                        {{ t('content.os') }}： <el-tag>{{ dockerInfo?.os }}/{{ dockerInfo?.arch }}</el-tag>
-                    </p>
-                </el-skeleton>
-            </content-wrap>
-        </el-col>
-    </el-row>
+                    <div class="chart-item">
+                        <Echarts :option="memOptionData" />
+                    </div>
+                    <div class="chart-item">
+                        <Echarts :option="diskOptionData" />
+                    </div>
+                </div>
+                <div class="overview-info">
+                    <div class="info-section">
+                        <div class="info-title">{{ t('content.hostInfo') }}</div>
+                        <div class="info-content">
+                            <div class="info-item">
+                                <span class="info-label">{{ t('content.hostName') }}：</span>
+                                <el-tag>{{ hostInfo?.hostname }}</el-tag>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">{{ t('content.upTime') }}：</span>
+                                <el-tag>{{ hostInfo?.uptime }}</el-tag>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">{{ t('content.releaseVersion') }}：</span>
+                                <el-tag>{{ hostInfo?.platform }}-{{ hostInfo?.platform_version }}</el-tag>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">{{ t('content.kernelVersion') }}：</span>
+                                <el-tag>{{ hostInfo?.kernel_version }}</el-tag>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">{{ t('content.os') }}：</span>
+                                <el-tag>{{ hostInfo?.os }}/{{ hostInfo?.kernel_arch }}</el-tag>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="info-section">
+                        <div class="info-title">{{ t('content.dockerInfo') }}</div>
+                        <div class="info-content">
+                            <div class="info-item">
+                                <span class="info-label">{{ t('content.dockerVersion') }}：</span>
+                                <el-tag>{{ dockerInfo?.docker_version }}</el-tag>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">{{ t('content.apiVersion') }}：</span>
+                                <el-tag>{{ dockerInfo?.min_api_version }}-{{ dockerInfo?.api_version }}</el-tag>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">{{ t('content.os') }}：</span>
+                                <el-tag>{{ dockerInfo?.os }}/{{ dockerInfo?.arch }}</el-tag>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </el-skeleton>
+    </el-card>
 </template>
 
-<style scoped lang="scss">
-@include b(overview) {
-  overflow: auto;
-  @include e(card) {
-    margin-bottom: 8px;
-    height: 140px;
-    //background-color: var(--el-menu-active-bg-color) !important;
-  }
-}
+<style lang="scss" scoped>
+.am-overview {
+    border-radius: 16px;
+    transition: all 0.3s;
+    height: calc(100vh - 80px);
+    overflow: hidden;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--el-border-color-light);
 
-@include b(panel) {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-}
-
-@include b(chart) {
-  height: 310px;
-  margin-bottom: 8px;
-  .el-card {
-    height: 100%;
-    :deep(.el-card__body) {
-      height: 100%;
+    &:hover {
+        box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.1);
     }
-  }
+
+    :deep(.el-card__body) {
+        padding: 16px;
+        height: 100%;
+        overflow: hidden;
+    }
 }
 
-@include b(description) {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
+.overview-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: 100%;
+    overflow-y: auto;
+    padding-right: 4px;
 
-  @include e(text) {
+    &::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: var(--el-border-color-darker);
+        border-radius: 2px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: var(--el-border-color-light);
+        border-radius: 2px;
+    }
+}
+
+.overview-stats {
+    display: flex;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.stat-item {
+    flex: 1;
+    background: var(--el-bg-color-page);
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--el-border-color-light);
+    transition: all 0.3s;
+
+    &:hover {
+        box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
+    }
+}
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stat-label {
     font-size: 14px;
-    font-weight: normal;
-  }
-
-  @include e(number) {
-    font-size: 28px;
-  }
+    color: var(--el-text-color-secondary);
 }
 
-h4 {
-  margin: 16px 0;
+.stat-value {
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--el-text-color-primary);
 }
-p {
-  font-size: 14px;
-  margin: 8px 0;
+
+.overview-charts {
+    display: flex;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.chart-item {
+    flex: 1;
+    background: var(--el-bg-color-page);
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--el-border-color-light);
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+
+    &:hover {
+        box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
+    }
+
+    :deep(.echarts) {
+        width: 100%;
+        height: 100%;
+    }
+}
+
+.overview-info {
+    display: flex;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.info-section {
+    flex: 1;
+    background: var(--el-bg-color-page);
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--el-border-color-light);
+    transition: all 0.3s;
+
+    &:hover {
+        box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
+    }
+}
+
+.info-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--el-text-color-primary);
+    margin-bottom: 12px;
+}
+
+.info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-label {
+    color: var(--el-text-color-secondary);
+    font-size: 14px;
+    min-width: 110px;
+}
+
+:deep(.el-tag) {
+    border-radius: 4px;
+    font-size: 14px;
+    padding: 0 8px;
+    height: 24px;
+    line-height: 24px;
 }
 </style>

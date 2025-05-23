@@ -358,95 +358,110 @@ const { t } = useI18n()
 <template>
     <div class="am-header-container">
         <div class="am-button-group">
-            <el-button-group class="monitor-switch">
-                <el-button
-                    type="primary"
-                    class="am-monitor-btn"
-                    :class="{ active: activeTab === 'host' }"
-                    @click="router.push('/monitor/host')">
+            <div class="tab-nav-container">
+                <div class="tab-nav-item" :class="{ active: activeTab === 'host' }" @click="router.push('/monitor/host')">
                     主机监控
-                </el-button>
-                <el-button
-                    type="primary"
-                    class="am-monitor-btn"
-                    :class="{ active: activeTab === 'container' }"
-                    @click="router.push('/monitor/container')">
+                </div>
+                <div class="tab-nav-item" :class="{ active: activeTab === 'container' }" @click="router.push('/monitor/container')">
                     容器监控
-                </el-button>
-            </el-button-group>
+                </div>
+            </div>
         </div>
 
         <div class="am-density-selector">
-            <div class="selector-wrapper">
-                <!-- <span class="density-label">{{ t('monitor.timeDensity') }}</span> -->
-                <el-select
-                    v-model="timeDensity"
-                    placeholder="Select"
-                    size="default"
-                    class="density-select"
-                    :popper-append-to-body="false"
-                    :popper-style="{ minWidth: '200px' }"
-                    auto-width>
-                    <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
-                </el-select>
+            <div class="tab-nav-container">
+                <div class="tab-nav-item density-item">
+                    <el-select
+                        v-model="timeDensity"
+                        placeholder="Select"
+                        size="default"
+                        class="density-select"
+                        :popper-append-to-body="false"
+                        :popper-style="{ minWidth: '200px' }"
+                        auto-width>
+                        <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
+                    </el-select>
+                </div>
             </div>
         </div>
     </div>
     <div class="am-column">
-        <el-row>
-            <el-col :lg="12" :md="12" :sm="12" :xs="24">
-                <el-card shadow="never">
+                <el-card shadow="hover" class="chart-card">
                     <el-skeleton :loading="loading" animated>
-                        <div>{{ t('monitor.cpuPercent') }}</div>
-                        <div>{{ t('monitor.percent') }}： {{ cpuPercent }}</div>
-                        <div class="am-column-content">
+                <div class="am-column-content">
+                    <div class="chart-container">
+                        <div class="chart-item">
+                        <div class="chart-info">{{ t('monitor.percent') }}： {{ cpuPercent }}</div>
                             <echarts :option="cpuOption" />
                         </div>
-                    </el-skeleton>
-                </el-card>
-            </el-col>
-            <el-col :lg="12" :md="12" :sm="12" :xs="24">
-                <el-card shadow="never">
-                    <el-skeleton :loading="loading" animated>
-                        <div>{{ t('monitor.memPercent') }}</div>
-                        <div>{{ t('monitor.total') }}：{{ memInfo.total }} {{ t('monitor.used') }}：{{ memInfo.used }} {{ t('monitor.percent') }}： {{ memInfo.percent }}</div>
-                        <div class="am-column-content">
+                        <div class="chart-item">
+                        <div class="chart-info">{{ t('monitor.total') }}：{{ memInfo.total }} {{ t('monitor.used') }}：{{ memInfo.used }} {{ t('monitor.percent') }}： {{ memInfo.percent }}</div>
                             <echarts :option="memOption" />
                         </div>
-                    </el-skeleton>
-                </el-card>
-            </el-col>
-            <el-col :lg="12" :md="12" :sm="12" :xs="24">
-                <el-card shadow="never">
-                    <el-skeleton :loading="loading" animated>
-                        <div>{{ t('monitor.diskPercent') }}</div>
-                        <div v-for="(item, index) in diskInfo" :key="index">
+                        <div class="chart-item">
+                        <div class="chart-info" v-for="(item, index) in diskInfo" :key="index">
                             {{ item.device }} {{ t('monitor.total') }}：{{ item.total }} {{ t('monitor.used') }}：{{ item.used }} {{ t('monitor.percent') }}：{{ item.percent }}
                         </div>
-                        <div class="am-column-content">
                             <echarts :option="diskOption" />
                         </div>
-                    </el-skeleton>
-                </el-card>
-            </el-col>
-            <el-col :lg="12" :md="12" :sm="12" :xs="24">
-                <el-card shadow="never">
-                    <el-skeleton :loading="loading" animated>
-                        <div>{{ t('monitor.netLine') }}</div>
-                        <div v-for="(item, index) in netInfo" :key="index">
+                        <div class="chart-item">
+                        <div class="chart-info" v-for="(item, index) in netInfo" :key="index">
                             {{ item.ethernet }} {{ t('monitor.receive') }}：{{ item.read }} {{ t('monitor.send') }}：{{ item.write }}
                         </div>
-                        <div class="am-column-content">
                             <echarts :option="netOption" />
+                        </div>
+                    </div>
                         </div>
                     </el-skeleton>
                 </el-card>
-            </el-col>
-        </el-row>
     </div>
 </template>
+<style lang="scss" scoped>
+// 在部分添加
+.chart-card {
+  transition: all 0.3s;
+  margin-bottom: 16px;
 
-<style scoped lang="scss">
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  :deep(.el-card__header) {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  :deep(.el-card__body) {
+    padding: 16px;
+  }
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chart-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+}
+
+.chart-info {
+  margin-bottom: 8px;
+  color: var(--el-text-color-secondary);
+  font-size: 14px;
+}
+
+@include b(column-content) {
+  height: 320px;
+  width: 100%;
+  padding: 8px;
+  border-radius: 4px;
+}
+
 @include b(header-container) {
   display: flex;
   justify-content: space-between;
@@ -469,36 +484,67 @@ const { t } = useI18n()
   border-radius: 8px;
   padding: 4px;
 
-  .monitor-switch {
+  .tab-nav-container {
     display: flex;
-    gap: 4px;
+    background-color: #f5f7fa;
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
 
-    .am-monitor-btn {
-      border: 1px solid var(--el-border-color);
-      background: transparent;
-      color: var(--el-text-color-regular);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  .tab-nav-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #606266;
+    border-radius: 6px;
+    transition: all 0.3s;
+    position: relative;
+    white-space: nowrap;
 
-      &.active {
-        background: var(--el-color-primary);
-        border-color: var(--el-color-primary);
-        color: var(--el-color-white);
-        box-shadow: 0 2px 4px rgba(var(--el-color-primary-rgb), 0.2);
-      }
+    &:hover:not(.active) {
+      color: var(--el-color-primary);
+      background-color: rgba(var(--el-color-primary-rgb), 0.05);
+    }
 
-      &:hover:not(.active) {
-        border-color: var(--el-color-primary-light-5);
-        color: var(--el-color-primary);
-        transform: none;
-      }
+    &.active {
+      color: var(--el-color-primary);
+      background-color: #fff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      font-weight: 500;
+    }
+  }
+}
 
-      &:first-child {
-        border-radius: 6px 0 0 6px;
-      }
+@include b(monitor-switch) {
+  display: flex;
+  gap: 4px;
 
-      &:last-child {
-        border-radius: 0 6px 6px 0;
-      }
+  .am-monitor-btn {
+    border: 1px solid var(--el-border-color);
+    background: transparent;
+    color: var(--el-text-color-regular);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &.active {
+      background: var(--el-color-primary);
+      border-color: var(--el-color-primary);
+      color: var(--el-color-white);
+      box-shadow: 0 2px 4px rgba(var(--el-color-primary-rgb), 0.2);
+    }
+
+    &:hover:not(.active) {
+      border-color: var(--el-color-primary-light-5);
+      color: var(--el-color-primary);
+      transform: none;
+    }
+
+    &:first-child {
+      border-radius: 6px 0 0 6px;
+    }
+
+    &:last-child {
+      border-radius: 0 6px 6px 0;
     }
   }
 }
@@ -506,13 +552,44 @@ const { t } = useI18n()
 @include b(density-selector) {
   background: var(--el-bg-color-page);
   border-radius: 8px;
-  padding: 8px 16px;
+  padding: 4px;
+
+  .tab-nav-container {
+    display: flex;
+    background-color: #f5f7fa;
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .tab-nav-item.density-item {
+    padding: 4px 8px;
+    background-color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    border-radius: 6px;
+  }
 
   .selector-wrapper {
     display: flex;
     align-items: center;
     gap: 8px;
     height: 100%;
+  }
+}
+
+.density-select {
+  width: auto;
+  min-width: 160px;
+
+  :deep(.el-input__wrapper) {
+    box-shadow: none !important;
+    padding: 0 8px;
+  }
+
+  :deep(.el-input__inner) {
+    min-width: 160px;
+    height: 32px;
+    line-height: 32px;
   }
 }
 
@@ -528,12 +605,46 @@ const { t } = useI18n()
   width: 100%;
 }
 
-.density-select {
-  width: auto;
-  min-width: 160px;
+.chart-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 24px;
+    height: 100%;
+}
 
-  :deep(.el-input__inner) {
-    min-width: 160px;
-  }
+.chart-item {
+    flex: 1;
+    min-width: calc(50% - 12px);
+    min-height: 300px;
+    position: relative;
+    background: var(--el-bg-color-page);
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.chart-info {
+    margin-bottom: 8px;
+    color: var(--el-text-color-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+@include b(column-content) {
+    height: auto;
+    min-height: 680px;
+    width: 100%;
+    padding: 16px;
+    border-radius: 4px;
+}
+
+.chart-card {
+    transition: all 0.3s;
+    border-radius: 16px;
+
+    :deep(.el-card__body) {
+        padding: 20px;
+    }
 }
 </style>

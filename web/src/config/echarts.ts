@@ -25,8 +25,8 @@ export const cpuOption = {
         data: [0.5],
         label: {
             normal: {
-                color: '#045cc0',
-                insideColor: '#045cc0',
+                color: '#409EFF',
+                insideColor: '#409EFF',
                 textStyle: {
                     fontSize: '24px',
                     fontWeight: 'bold',
@@ -44,7 +44,7 @@ export const cpuOption = {
                 color: ['#fff'],
             }, {
                 offset: 0,
-                color: ['#6a7feb'],
+                color: ['#409EFF'],
             }],
             global: false,
         }],
@@ -56,7 +56,7 @@ export const cpuOption = {
             show: true,
             borderDistance: 8, // 内层白圈的宽度
             itemStyle: { // 最外层圈的颜色的宽度
-                borderColor: '#6a7feb',
+                borderColor: '#409EFF',
                 borderWidth: 4,
             },
         },
@@ -83,8 +83,8 @@ export const memOption = {
         data: [0.5],
         label: {
             normal: {
-                color: '#c06504',
-                insideColor: '#c06504',
+                color: '#67C23A',
+                insideColor: '#67C23A',
                 textStyle: {
                     fontSize: '24px',
                     fontWeight: 'bold',
@@ -102,7 +102,7 @@ export const memOption = {
                 color: ['#fff'],
             }, {
                 offset: 0,
-                color: ['#c06504'],
+                color: ['#67C23A'],
             }],
             global: false,
         }],
@@ -114,7 +114,7 @@ export const memOption = {
             show: true,
             borderDistance: 8, // 内层白圈的宽度
             itemStyle: { // 最外层圈的颜色的宽度
-                borderColor: '#c06504',
+                borderColor: '#67C23A',
                 borderWidth: 4,
             },
         },
@@ -141,8 +141,8 @@ export const diskOption = {
         data: [0.5],
         label: {
             normal: {
-                color: '#5f7906',
-                insideColor: '#5f7906',
+                color: '#E6A23C',
+                insideColor: '#E6A23C',
                 textStyle: {
                     fontSize: '24px',
                     fontWeight: 'bold',
@@ -160,7 +160,7 @@ export const diskOption = {
                 color: ['#fff'],
             }, {
                 offset: 0,
-                color: ['#5f7906'],
+                color: ['#E6A23C'],
             }],
             global: false,
         }],
@@ -172,7 +172,7 @@ export const diskOption = {
             show: true,
             borderDistance: 8, // 内层白圈的宽度
             itemStyle: { // 最外层圈的颜色的宽度
-                borderColor: '#5f7906',
+                borderColor: '#E6A23C',
                 borderWidth: 4,
             },
         },
