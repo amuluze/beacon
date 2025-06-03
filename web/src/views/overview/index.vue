@@ -16,78 +16,78 @@ const { t } = useI18n()
 
 const hostInfo = ref<HostInfo>()
 async function getHostInfo() {
-  const { data } = await queryHostInfo()
-  hostInfo.value = data
+    const { data } = await queryHostInfo()
+    hostInfo.value = data
 }
 
 const dockerInfo = ref<DockerInfo>()
 async function getDockerInfo() {
-  const { data } = await queryDockerInfo()
-  dockerInfo.value = data
+    const { data } = await queryDockerInfo()
+    dockerInfo.value = data
 }
 
 const containerCount = ref(0)
 const imageCount = ref(0)
 
 async function statisticContainer() {
-  const params: Pagination = {
-    page: 1,
-    size: 10,
-  }
-  const { data } = await queryContainers(params)
-  containerCount.value = data.total
+    const params: Pagination = {
+        page: 1,
+        size: 10,
+    }
+    const { data } = await queryContainers(params)
+    containerCount.value = data.total
 }
 
 async function statisticImage() {
-  const params: Pagination = {
-    page: 1,
-    size: 10,
-  }
-  const { data } = await queryImages(params)
-  imageCount.value = data.total
+    const params: Pagination = {
+        page: 1,
+        size: 10,
+    }
+    const { data } = await queryImages(params)
+    imageCount.value = data.total
 }
 
 const cpuOptionData: EChartsOption = reactive<EChartsOption>(cpuOption) as EChartsOption
 async function renderCPU() {
-  const { data } = await queryCPUInfo()
-  set(cpuOption, 'title.text', 'CPU')
-  set(cpuOption, 'series[0].data', [Math.round(data.percent) / 100])
-  console.log('cpu option: ', cpuOptionData)
+    const { data } = await queryCPUInfo()
+    set(cpuOption, 'title.text', 'CPU')
+    set(cpuOption, 'series[0].data', [Math.round(data.percent) / 100])
+    console.log('cpu option: ', cpuOptionData)
 }
 
 const memOptionData: EChartsOption = reactive<EChartsOption>(memOption) as EChartsOption
 async function renderMem() {
-  const { data } = await queryMemInfo()
-  set(memOption, 'title.text', 'Mem')
-  set(memOption, 'series[0].data', [Math.round(data.percent) / 100])
-  console.log('mem option: ', memOptionData)
+    const { data } = await queryMemInfo()
+    set(memOption, 'title.text', 'Mem')
+    set(memOption, 'series[0].data', [Math.round(data.percent) / 100])
+    console.log('mem option: ', memOptionData)
 }
 
 const diskOptionData: EChartsOption = reactive<EChartsOption>(diskOption) as EChartsOption
 async function renderDisk() {
-  const { data } = await queryDiskInfo()
-  set(diskOption, 'title.text', 'Disk')
-  set(diskOption, 'series[0].data', [Math.round(data.info[0].percent) / 100])
-  console.log('disk option: ', diskOptionData)
+    const { data } = await queryDiskInfo()
+    set(diskOption, 'title.text', 'Disk')
+    set(diskOption, 'series[0].data', [Math.round(data.info[0].percent) / 100])
+    console.log('disk option: ', diskOptionData)
 }
 
 onMounted(async () => {
-  await getHostInfo()
-  await getDockerInfo()
-  await statisticContainer()
-  await statisticImage()
-  await renderCPU()
-  await renderMem()
-  await renderDisk()
-  loading.value = false
+    await getHostInfo()
+    await getDockerInfo()
+    await statisticContainer()
+    await statisticImage()
+    await renderCPU()
+    await renderMem()
+    await renderDisk()
+    loading.value = false
 })
 </script>
 
 <template>
     <el-card shadow="hover" class="am-overview">
         <el-skeleton :loading="loading" animated>
-            <div class="overview-container">
-                <div class="overview-stats">
+            <div class="am-overview-container">
+                <div class="am-overview-container__stats">
                     <div class="stat-item">
                         <div class="stat-content">
                             <div class="stat-label">{{ t('content.containerNumber') }}</div>
@@ -101,7 +101,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
-                <div class="overview-charts">
+                <div class="am-overview-container__charts">
                     <div class="chart-item">
                         <Echarts :option="cpuOptionData" />
                     </div>
@@ -112,7 +112,7 @@ onMounted(async () => {
                         <Echarts :option="diskOptionData" />
                     </div>
                 </div>
-                <div class="overview-info">
+                <div class="am-overview-container__info">
                     <div class="info-section">
                         <div class="info-title">{{ t('content.hostInfo') }}</div>
                         <div class="info-content">
@@ -161,11 +161,11 @@ onMounted(async () => {
     </el-card>
 </template>
 
-<style lang="scss" scoped>
-.am-overview {
+<style scoped lang="scss">
+@include b(overview) {
     border-radius: 16px;
     transition: all 0.3s;
-    height: calc(100vh - 80px);
+    height: calc(100vh - 68px);
     overflow: hidden;
     box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
     border: 1px solid var(--el-border-color-light);
@@ -181,13 +181,132 @@ onMounted(async () => {
     }
 }
 
-.overview-container {
+@include b(overview-container) {
     display: flex;
     flex-direction: column;
     gap: 16px;
     height: 100%;
     overflow-y: auto;
     padding-right: 4px;
+
+    @include e(stats) {
+        display: flex;
+        gap: 16px;
+        flex-shrink: 0;
+
+        .stat-item {
+            flex: 1;
+            background: var(--el-bg-color-page);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--el-border-color-light);
+            transition: all 0.3s;
+
+            &:hover {
+                box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        .stat-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--el-text-color-secondary);
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--el-text-color-primary);
+        }
+    }
+
+    @include e(charts) {
+        display: flex;
+        gap: 16px;
+        flex-shrink: 0;
+
+        .chart-item {
+            flex: 1;
+            background: var(--el-bg-color-page);
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--el-border-color-light);
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+
+            &:hover {
+                box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
+            }
+
+            :deep(.echarts) {
+                width: 100%;
+                height: 100%;
+            }
+        }
+    }
+
+    @include e(info) {
+        display: flex;
+        gap: 16px;
+        flex-shrink: 0;
+
+        .info-section {
+            flex: 1;
+            background: var(--el-bg-color-page);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--el-border-color-light);
+            transition: all 0.3s;
+
+            &:hover {
+                box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        .info-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--el-text-color-primary);
+            margin-bottom: 12px;
+        }
+
+        .info-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-label {
+            color: var(--el-text-color-secondary);
+            font-size: 14px;
+            min-width: 110px;
+        }
+
+        :deep(.el-tag) {
+            border-radius: 4px;
+            font-size: 14px;
+            padding: 0 8px;
+            height: 24px;
+            line-height: 24px;
+        }
+    }
 
     &::-webkit-scrollbar {
         width: 4px;
@@ -202,124 +321,5 @@ onMounted(async () => {
         background: var(--el-border-color-light);
         border-radius: 2px;
     }
-}
-
-.overview-stats {
-    display: flex;
-    gap: 16px;
-    flex-shrink: 0;
-}
-
-.stat-item {
-    flex: 1;
-    background: var(--el-bg-color-page);
-    border-radius: 8px;
-    padding: 16px;
-    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.05);
-    border: 1px solid var(--el-border-color-light);
-    transition: all 0.3s;
-
-    &:hover {
-        box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
-    }
-}
-
-.stat-content {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.stat-label {
-    font-size: 14px;
-    color: var(--el-text-color-secondary);
-}
-
-.stat-value {
-    font-size: 24px;
-    font-weight: 500;
-    color: var(--el-text-color-primary);
-}
-
-.overview-charts {
-    display: flex;
-    gap: 16px;
-    flex-shrink: 0;
-}
-
-.chart-item {
-    flex: 1;
-    background: var(--el-bg-color-page);
-    border-radius: 8px;
-    padding: 12px;
-    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.05);
-    border: 1px solid var(--el-border-color-light);
-    height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s;
-
-    &:hover {
-        box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
-    }
-
-    :deep(.echarts) {
-        width: 100%;
-        height: 100%;
-    }
-}
-
-.overview-info {
-    display: flex;
-    gap: 16px;
-    flex-shrink: 0;
-}
-
-.info-section {
-    flex: 1;
-    background: var(--el-bg-color-page);
-    border-radius: 8px;
-    padding: 16px;
-    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.05);
-    border: 1px solid var(--el-border-color-light);
-    transition: all 0.3s;
-
-    &:hover {
-        box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
-    }
-}
-
-.info-title {
-    font-size: 16px;
-    font-weight: 500;
-    color: var(--el-text-color-primary);
-    margin-bottom: 12px;
-}
-
-.info-content {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.info-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.info-label {
-    color: var(--el-text-color-secondary);
-    font-size: 14px;
-    min-width: 110px;
-}
-
-:deep(.el-tag) {
-    border-radius: 4px;
-    font-size: 14px;
-    padding: 0 8px;
-    height: 24px;
-    line-height: 24px;
 }
 </style>

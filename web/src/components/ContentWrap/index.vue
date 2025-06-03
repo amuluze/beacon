@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineProps<{
-  title: string
-  message: string
+    title: string
+    message: string
 }>()
 </script>
 
@@ -28,11 +28,13 @@ defineProps<{
 
 <style scoped lang="scss">
 @include b(card) {
-  @include e(title) {
-    font-size: 14px;
-    font-weight: 500;
-    margin-right: 4px;
-    color: var(--el-text-color-primary);
-  }
+    border-radius: 16px;
+
+    @include e(title) {
+        font-size: 14px;
+        font-weight: 500;
+        margin-right: 4px;
+        color: var(--el-text-color-primary);
+    }
 }
 </style>

@@ -227,7 +227,7 @@ export default {
         previewAddress: 'Preview Address',
         info: 'Amprobe is a lightweight host monitoring and Docker container management tool that can easily help us with the following tasks:',
         infoFirst: 'Monitor the CPU, memory, disk IO, and network IO of the host',
-        infoSecond: 'Monitor the running status, CPU, and memory usage of Docker containers deployed on hosts',
+        infoSecond: 'Monitor the status of Docker containers',
         infoThird: 'View Docker container logs in real time and support log download',
     },
     account: {

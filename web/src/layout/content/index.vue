@@ -8,18 +8,18 @@
 
 <style scoped lang="scss">
 @include b(content) {
-  display: flex;
-  flex-direction: column;
+    display: flex;
+    flex-direction: column;
 
-  width: 100%;
-  height: calc(100vh - 72px);
+    width: 100%;
+    height: calc(100vh - 68px);
 
-  overflow: hidden;
-  margin-top: 8px;
-  position: relative;
-  box-sizing: border-box;
+    overflow: hidden;
+    margin-top: 8px;
+    position: relative;
+    box-sizing: border-box;
 
-  color: var(--el-header-text-color);
-  background-color: var(--el-bg-color);
+    color: var(--el-header-text-color);
+    background-color: var(--el-bg-color);
 }
 </style>

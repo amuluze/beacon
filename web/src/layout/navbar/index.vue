@@ -14,27 +14,26 @@ import Breadcrumb from './Breadcrumb.vue';
             <Avatar />
         </div>
     </div>
-    <!-- TODO：增加 menu title -->
 </template>
 
 <style scoped lang="scss">
 @include b(navbar) {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 60px;
-  width: 100%;
-  padding: 0 16px;
-  color: var(--el-header-text-color);
-  background-color: var(--el-menu-bg-color);
-  border-radius: 12px;
-  border-bottom: 1px solid var(--el-header-border-color);
-  border-left: 1px solid var(--el-header-border-color);
-
-  @include e(right) {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-  }
+    justify-content: space-between;
+    height: 60px;
+    width: 100%;
+    padding: 0 16px;
+    color: var(--el-header-text-color);
+    background-color: var(--el-menu-bg-color);
+    border-radius: 12px;
+    border-bottom: 1px solid var(--el-header-border-color);
+    border-left: 1px solid var(--el-header-border-color);
+
+    @include e(right) {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
 }
 </style>

@@ -5,6 +5,8 @@
 
 /* el-drawer */
 .el-drawer {
+    background-color: var(--el-menu-bg-color) !important;
+
     .el-drawer__header {
         padding: 16px 20px;
         margin-bottom: 0;
@@ -25,6 +27,7 @@
 /* el-dialog */
 .el-dialog {
     padding: 0;
+    background-color: var(--el-menu-bg-color) !important;
 
     .el-dialog__header {
         padding: 15px 20px;
@@ -88,6 +91,6 @@
     }
 }
 
-el-table {
+.el-table {
     background-color: var(--el-menu-bg-color) !important;
 }

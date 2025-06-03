@@ -59,12 +59,13 @@ export default antfu(
             'vue/script-indent': ['error', 4], // 确保<script>标签的缩进为4个空格
             'style/indent': 'off',
             'vue/operator-linebreak': ['error', 'before'],
+            // 修改这个规则，允许多行属性的标签在同一行关闭
             'vue/html-closing-bracket-newline': ['error', {
                 singleline: 'never',
-                multiline: 'always',
+                multiline: 'never',  // 改为 'never'，允许多行属性的标签在同一行关闭
                 selfClosingTag: {
                     singleline: 'never',
-                    multiline: 'always',
+                    multiline: 'never',  // 改为 'never'
                 },
             }],
             'vue/html-self-closing': ['error', {
@@ -76,7 +77,6 @@ export default antfu(
                 svg: 'always',
                 math: 'always',
             }],
-
         },
     },
 )

@@ -18,29 +18,30 @@ import Sidebar from '@/layout/sidebar/index.vue';
 
 <style scoped lang="scss">
 @include b(layout) {
-  width: 100%;
-  height: 100%;
-  background-color: var(--el-bg-color);
-  overflow: hidden;
+    width: 100%;
+    height: 100%;
+    background-color: var(--el-bg-color);
+    overflow: hidden;
 }
 
 @include b(layout-sidebar) {
-  display: block;
-  position: relative;
-  height: 100%;
-  transition: 0.5s;
-  border-right: var(--el-aside-border-color) 1px solid;
-  background-color: var(--el-menu-bg-color);
+    display: block;
+    position: relative;
+    height: 100%;
+    transition: 0.5s;
+    border-radius: 16px;
+    border-right: var(--el-aside-border-color) 1px solid;
+    background-color: var(--el-menu-bg-color);
 }
 
 @include b(layout-main) {
-  display: block;
-  position: relative;
-  width: 100%;
-  height: 100%;
-  margin-left: 16px;
-  border-radius: 4px;
-  background-color: var(--el-bg-color);
-  overflow-y: scroll;
+    display: block;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    margin-left: 12px;
+    border-radius: 4px;
+    background-color: var(--el-bg-color);
+    overflow-y: scroll;
 }
 </style>

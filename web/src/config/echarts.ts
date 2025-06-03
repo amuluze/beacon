@@ -200,7 +200,7 @@ export const cpuTrendingOption = {
     grid: {
         left: '3%',
         right: '4%',
-        bottom: '3%',
+        bottom: '9%',
         containLabel: true,
     },
     xAxis: {
@@ -251,7 +251,7 @@ export const memTrendingOption = {
     grid: {
         left: '3%',
         right: '4%',
-        bottom: '3%',
+        bottom: '9%',
         containLabel: true,
     },
     xAxis: {
@@ -311,7 +311,7 @@ export const diskTrendingOption = {
     grid: {
         left: '3%',
         right: '4%',
-        bottom: '3%',
+        bottom: '9%',
         containLabel: true,
     },
     xAxis: {
@@ -388,7 +388,7 @@ export const netTrendingOption = {
     grid: {
         left: '3%',
         right: '4%',
-        bottom: '3%',
+        bottom: '9%',
         containLabel: true,
     },
     xAxis: {
@@ -437,7 +437,7 @@ export const netTrendingOption = {
 
 export const containerCpuOption = {
     title: {
-        text: 'CPU',
+        text: 'CPU使用率',
         textStyle: {
             fontSize: '15px',
         },
