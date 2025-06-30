@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import ContainerMonitor from './components/ContainerMonitor.vue';
 import HostMonitor from './components/HostMonitor.vue';
 
@@ -36,6 +37,8 @@ const options = [
         label: '24小时',
     },
 ]
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -44,11 +47,11 @@ const options = [
             <div class="am-button-group">
                 <div class="am-button-group__tab">
                     <div class="tab-item" :class="{ active: activeTab === 'host' }" @click="activeTab = 'host'">
-                        主机监控
+                        {{ t('menu.hostMonitor') }}
                     </div>
                     <div class="tab-item" :class="{ active: activeTab === 'container' }"
                         @click="activeTab = 'container'">
-                        容器监控
+                        {{ t('menu.containerMonitor') }}
                     </div>
                 </div>
             </div>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import Container from './container/index.vue';
 import Image from './image/index.vue';
 import Network from './network/index.vue';
@@ -16,6 +17,8 @@ function getActiveComponent() {
             return Container;
     }
 }
+
+const { t } = useI18n()
 </script>
 <template>
     <div class="am-container-container">
@@ -24,13 +27,13 @@ function getActiveComponent() {
                 <div class="am-button-group__tab">
                     <div class="tab-item" :class="{ active: activeTab === 'container' }"
                         @click="activeTab = 'container'">
-                        容器管理
+                        {{ t('menu.containerManager') }}
                     </div>
                     <div class="tab-item" :class="{ active: activeTab === 'image' }" @click="activeTab = 'image'">
-                        镜像管理
+                        {{ t('menu.imageManager') }}
                     </div>
                     <div class="tab-item" :class="{ active: activeTab === 'network' }" @click="activeTab = 'network'">
-                        网络管理
+                        {{ t('menu.networkManager') }}
                     </div>
                 </div>
             </div>

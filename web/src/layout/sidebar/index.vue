@@ -29,7 +29,7 @@ const menus = computed(() => {
 </script>
 
 <template>
-    <el-aside :width="store.app.isCollapse ? '64px' : '120px'">
+    <el-aside :width="store.app.isCollapse ? '64px' : '160px'">
         <div class="am-logo">
             <img class="am-logo__img" src="@/assets/images/amprobe.png" alt="template" />
             <span v-show="!store.app.isCollapse" class="am-logo__text">Amprobe</span>

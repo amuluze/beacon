@@ -7,7 +7,7 @@ import type { EChartsOption } from '@/components/Echarts/echarts.ts'
 
 export const cpuOption = {
     title: {
-        text: 'CPU 使用率',
+        text: 'CPU',
         x: '50%',
         y: 30,
         textAlign: 'center',
@@ -65,7 +65,7 @@ export const cpuOption = {
 
 export const memOption = {
     title: {
-        text: '内存使用率',
+        text: 'Memory',
         x: '50%',
         y: 30,
         textAlign: 'center',
@@ -123,7 +123,7 @@ export const memOption = {
 
 export const diskOption = {
     title: {
-        text: '磁盘使用率',
+        text: 'Disk',
         x: '50%',
         y: 30,
         textAlign: 'center',
@@ -194,7 +194,7 @@ export const cpuTrendingOption = {
         },
     },
     legend: {
-        data: [{ name: 'CPU 使用率' }],
+        data: [{ name: 'CPU' }],
         left: 'right',
     },
     grid: {
@@ -219,7 +219,7 @@ export const cpuTrendingOption = {
     ],
     series: [
         {
-            name: 'CPU 使用率',
+            name: 'CPU',
             type: 'line',
             smooth: true,
             lineStyle: {
@@ -245,7 +245,7 @@ export const memTrendingOption = {
         },
     },
     legend: {
-        data: ['内存使用率'],
+        data: ['Memory'],
         left: 'right',
     },
     grid: {
@@ -270,7 +270,7 @@ export const memTrendingOption = {
     ],
     series: [
         {
-            name: '内存使用率',
+            name: 'Memory',
             type: 'line',
             smooth: true,
             lineStyle: {
@@ -437,7 +437,7 @@ export const netTrendingOption = {
 
 export const containerCpuOption = {
     title: {
-        text: 'CPU使用率',
+        text: 'CPU',
         textStyle: {
             fontSize: '15px',
         },
@@ -486,7 +486,7 @@ export const containerCpuOption = {
 
 export const containerMemOption = {
     title: {
-        text: '内存',
+        text: 'Memory',
         textStyle: {
             fontSize: '15px',
         },

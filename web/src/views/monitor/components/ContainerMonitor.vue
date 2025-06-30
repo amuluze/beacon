@@ -41,21 +41,21 @@ function initWebSocket() {
 
     // 设置初始化的空系列，保持图表结构
     set(cpuOption, 'series', [{
-        name: '等待数据...',
+        name: '...',
         type: 'line',
         smooth: true,
         data: [0],
     }])
     set(memOption, 'series', [{
-        name: '等待数据...',
+        name: '...',
         type: 'line',
         smooth: true,
         data: [0],
     }])
 
     // 设置初始化的图例
-    set(cpuOption, 'legend.data', ['等待数据...'])
-    set(memOption, 'legend.data', ['等待数据...'])
+    set(cpuOption, 'legend.data', ['...'])
+    set(memOption, 'legend.data', ['...'])
 
     loading.value = false
 
@@ -95,7 +95,7 @@ function updateCharts() {
     // 检查是否需要清除初始化数据
     const needClearInitialData = (cpuOption.legend as { data: string[] })?.data &&
         (cpuOption.legend as { data: string[] }).data.length === 1 &&
-        (cpuOption.legend as { data: string[] }).data[0] === '等待数据...'
+        (cpuOption.legend as { data: string[] }).data[0] === '...'
 
     if (needClearInitialData) {
         // 清除初始化的系列数据，保留当前时间点
