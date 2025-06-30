@@ -70,10 +70,10 @@ async function renderCPU() {
         'xAxis.data',
         cpuData.map(item => dayjs(item.timestamp * 1000).format("HH:mm:ss")),
     )
-    set(cpuOption, 'legend.data', ['CPU使用率'])
+    set(cpuOption, 'legend.data', ['CPU'])
     set(cpuOption, 'series', [
         {
-            name: 'CPU使用率',
+            name: 'CPU',
             data: cpuData.map(item => item.value.toFixed(2)),
             type: 'line',
             smooth: true,
@@ -112,10 +112,10 @@ async function renderMem() {
         'xAxis.data',
         memData.map(item => dayjs(item.timestamp * 1000).format("HH:mm:ss")),
     )
-    set(memOption, 'legend.data', ['内存使用率'])
+    set(memOption, 'legend.data', ['Memory'])
     set(memOption, 'series', [
         {
-            name: '内存使用率',
+            name: 'Memory',
             data: memData.map(item => item.value.toFixed(2)),
             type: 'line',
             smooth: true,
