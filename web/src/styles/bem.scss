@@ -1,0 +1,140 @@
+$namespace: 'am' !default;
+$block-sel: '-' !default;
+$element-sel: '__' !default;
+$modifier-sel: '--' !default;
+
+@mixin bfc {
+    height: 100%;
+    overflow: hidden;
+}
+
+@mixin b($block) {
+    .#{ $namespace + $block-sel + $block } {
+        // 差值语法 #{}
+        @content; // 内容替换
+    }
+}
+
+@mixin e($element) {
+    $selector: &;
+
+    @at-root {
+        #{$selector + $element-sel + $element} {
+            @content;
+        }
+    }
+}
+
+@mixin m($modifier) {
+    $selector: &;
+
+    @at-root {
+        #{$selector + $modifier-sel + $modifier} {
+            @content;
+        }
+    }
+}
+
+@include b(container) {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    height: 100%;
+    width: 100%;
+    border-radius: 16px;
+    border: 1px solid var(--el-header-border-color);
+    color: var(--el-header-text-color);
+    background-color: var(--el-menu-bg-color);
+    padding: 16px;
+    overflow: hidden;
+    /* 添加此行防止内容溢出 */
+
+    :deep(.el-card) {
+        height: 100%;
+        color: var(--el-menu-text-color);
+        background-color: '#fff';
+
+        :deep(.el-card__body) {
+            height: 100%;
+        }
+    }
+}
+
+// el-table 撑满
+@include b(table) {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+    overflow: auto;
+    margin: 8px 0;
+    color: var(--el-menu-text-color);
+    background-color: var(--el-menu-bg-color);
+
+    // 添加滚动条样式
+    &::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: var(--el-border-color-darker);
+        border-radius: 2px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: var(--el-border-color-light);
+        border-radius: 2px;
+    }
+
+    .el-table {
+        flex: 1;
+        background-color: var(--el-menu-bg-color) !important;
+        color: var(--el-menu-text-color);
+    }
+
+    .el-table__header th {
+        background-color: var(--el-menu-bg-color) !important;
+        color: var(--el-menu-text-color) !important;
+    }
+
+    .el-table__row {
+        background-color: var(--el-menu-bg-color);
+        color: var(--el-menu-text-color);
+    }
+}
+
+@include b(table-operator) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 36px;
+    width: 100%;
+    color: var(--el-menu-text-color);
+    background-color: var(--el-menu-bg-color);
+}
+
+@include b(pagination) {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    color: var(--el-menu-text-color);
+    background-color: var(--el-menu-bg-color);
+}
+
+@include b(description) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+
+    @include e(text) {
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    @include e(number) {
+        font-size: 32px;
+        font-weight: bold;
+    }
+}

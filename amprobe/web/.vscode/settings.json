@@ -1,8 +1,0 @@
-{
-  "editor.codeActionsOnSave": {
-    "source.fixAll": "never",
-    "source.fixAll.eslint": "explicit"
-  },
-  "editor.formatOnSave": true,
-  "editor.tabSize": 4
-}

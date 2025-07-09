@@ -1,0 +1,50 @@
+[Fiber]
+Host = "0.0.0.0"      # http监听地址
+Port = 8000           # http监听端口
+ShutdownTimeout = 30  # http优雅关闭等待超时时长(单位秒)
+SeverHeader = "probe"
+AppName = "probe"
+Prefork = false
+
+[Gorm]
+Debug = true             # 是否开启调试模式
+DBType = "sqlite"        # 数据库类型(目前支持的数据库类型：postgres, sqlite)
+MaxLifetime = 7200       # 设置连接可以重用的最长时间(单位：秒)
+MaxOpenConns = 150       # 设置数据库的最大打开连接数
+MaxIdleConns = 50        # 设置空闲连接池中的最大连接数
+TablePrefix = "s_"       # 数据库表名前缀
+EnableAutoMigrate = true # 是否启用自动映射数据库表结构
+
+[DB]
+Host = ""             # 连接地址
+Port = ""             # 连接端口
+User = ""             # 用户名
+Password = ""         # 密码
+DBName = "/etc/amprobe/probe" # 数据库
+SSLMode = ""          # SSL模式
+
+[Log]
+Output = "/etc/amprobe/logs/probe.log" # 日志存放路径
+Level = "debug"                # 日志等级
+Rotation = 1                   # 每天切分一个日志文件
+MaxAge = 7                     # 最多保留 7 天的日志
+
+[Auth]
+Enable = true           # 是否启用
+SigningMethod = "HS512" # 签名方式(支持：HS512/HS384/HS512)
+SigningKey = "amprobe"  # 签名key
+Expired = 7200          # 过期时间（单位秒）
+RefreshExpired = 86400  # 刷新过期时间（单位秒）
+Prefix = "auth_"        # key 前缀
+
+[Casbin]
+Enable = true         # 是否启用casbin
+Debug = false         # debug模式
+AutoLoad = true       # 是否启用定期自动加载策略
+AutoLoadInternal = 60 # 定期自动加载策略时间间隔（单位秒）
+
+[Task]
+Interval = 15
+MaxAge = 1
+Disk = { Devices = ["vda1"]}
+Ethernet = { Names = ["eth0"]}
