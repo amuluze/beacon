@@ -98,8 +98,8 @@ export interface NetworkQueryResult {
 export interface NetworkCreateArgs {
     name: string
     driver: string
-    network_sebnet: string
-    network_gateway: string
+    subnet: string
+    gateway: string
     labels: Map<string, string>
 }
 
