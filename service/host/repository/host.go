@@ -105,7 +105,7 @@ func (h *HostRepo) GetSystemTime(ctx context.Context) (string, error) {
 }
 
 func (h *HostRepo) SetSystemTime(ctx context.Context, args schema.SetSystemTimeArgs) error {
-	tt, err := time.Parse(args.SystemTime, "2006-01-02 15:04:05")
+	tt, err := time.Parse("2006-01-02 15:04:05", args.SystemTime)
 	if err != nil {
 		return err
 	}
