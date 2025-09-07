@@ -26,7 +26,7 @@
 
 - 查看用户登录、登出、操作记录
 
-官网地址：[官网 | Amprobe (amprobe.amuluze.com)](https://amprobe.amuluze.com/official/)
+官网地址：[官网 | Amprobe (amprobe.amuluze.com)](https://official.amprobe.amuluze.com/)
 
 > **docker 版本要求：>= 20.10.9**
 
