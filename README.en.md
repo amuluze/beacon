@@ -32,14 +32,55 @@ Official website Address:[Website | Amprobe (official.amprobe.amuluze.com)](http
 
 ## Technology Stack
 
-Golang + Vue3
+Amprobe adopts a front-end and back-end separated technical architecture.
+
+**Frontend Technology Stack:**
+
+- `Vue3`
+- `TypeScript`
+- `Element+`
+- `Vue-router`
+- `Pinia`
+
+**Backend Technology Stack:**
+
+- `Golang`
+- `Fiber`
+- `Sqlite`
+
+## Download & Installation
+
+### Method 1: Download Binary Files Directly
+
+Download the latest binary file for your system from the [Releases](https://github.com/amuluze/amprobe/releases) page.
+
+### Method 2: Compile from Source
+
+1. Clone the repository
+```bash
+git clone https://github.com/amuluze/amprobe.git
+cd amprobe
+```
+
+2. Build the frontend
+```bash
+cd web
+make install  # Install dependencies
+make build    # Build frontend
+cd ..
+```
+
+3. Build the backend
+```bash
+make assets   # Package frontend resources into backend
+make wire     # Generate dependency injection code
+make bin      # Compile binary file
+```
+
+## Usage
+
+Install and use instructions can be found in the [Manual](https://official.amprobe.amuluze.com/document)
 
 ## License
 
 Amprobe is available under the MIT license
-
-## Thanks
-
-> [GoLand](https://www.jetbrains.com/go/?from=gopay) A Go IDE with extended support for JavaScript, TypeScript, and Databases。
-
-Special thanks to [JetBrains](https://www.jetbrains.com/?from=gopay) for the Goland license for the open source project

@@ -48,6 +48,39 @@
 - `Fiber`
 - `Sqlite`
 
+## 下载与安装
+
+### 方式一：直接下载二进制文件
+
+从 [Releases](https://github.com/amuluze/amprobe/releases) 页面下载对应您系统的最新版本二进制文件。
+
+### 方式二：从源码编译
+
+1. 克隆仓库
+```bash
+git clone https://github.com/amuluze/amprobe.git
+cd amprobe
+```
+
+2. 编译前端
+```bash
+cd web
+make install  # 安装依赖
+make build    # 构建前端
+cd ..
+```
+
+3. 编译后端
+```bash
+make assets   # 打包前端资源到后端
+make wire     # 生成依赖注入代码
+make bin      # 编译二进制文件
+```
+
+## 使用方法
+
+安装使用参见：[使用手册](https://official.amprobe.amuluze.com/document)
+
 ## 请作者喝杯咖啡
 
 非常感谢大家使用 `Amprobe`, 目前该项目由个人用业余时间在维护，如果本项目有帮助到你的话，可以考虑请作者喝杯咖啡~
@@ -65,9 +98,3 @@
 ## License
 
 MIT
-
-## 鸣谢
-
-> [GoLand](https://www.jetbrains.com/go/?from=gopay) A Go IDE with extended support for JavaScript, TypeScript, and Databases。
-
-特别感谢 [JetBrains](https://www.jetbrains.com/?from=gopay) 为开源项目提供免费的 [GoLand](https://www.jetbrains.com/go/?from=gopay) 等 IDE 的授权

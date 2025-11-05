@@ -25,8 +25,6 @@ github.com/ClickHouse/clickhouse-go/v2 v2.23.2 h1:+DAKPMnxLS7pduQZsrJc8OhdLS2L9M
 github.com/ClickHouse/clickhouse-go/v2 v2.23.2/go.mod h1:aNap51J1OM3yxQJRgM+AlP/MPkGBCL8A74uQThoQhR0=
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
-github.com/amuluze/amutool/timex v0.0.0-20250418012458-98850b938fee h1:MJs1W69j0ptglWHwJ7YE+bA/K5L67icdFR4GpO5EYGo=
-github.com/amuluze/amutool/timex v0.0.0-20250418012458-98850b938fee/go.mod h1:i4gYDCtrLZRCopxiYdmmwmI5Da1nr6Pl/TMTUKTuIMw=
 github.com/amuluze/docker v0.0.0-20240816152853-43a001dd2bf9 h1:WfKdaEmqKH6yDFQVR02sxyhOPUL4oFcrA4SrFfX3TYk=
 github.com/amuluze/docker v0.0.0-20240816152853-43a001dd2bf9/go.mod h1:QEk+9tXbBBAlcxwSxTDzBMbNvl6WvW9K9BvvexnFeoQ=
 github.com/andybalholm/brotli v1.1.0 h1:eLKJA0d02Lf0mVpIDgYnqXcUn0GqVmEFny3VuID1U3M=

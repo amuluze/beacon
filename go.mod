@@ -24,7 +24,6 @@ require (
 )
 
 require (
-	github.com/amuluze/amutool/timex v0.0.0-20250418012458-98850b938fee
 	github.com/docker/docker v27.0.3+incompatible
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/takama/daemon v1.0.0
