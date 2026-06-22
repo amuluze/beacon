@@ -8,17 +8,17 @@
 set -ex
 
 
-# 检查是否已安装 amvector，若已安装则跳过
-[ -r "/etc/amvector/config.yml" ] && {
-    echo "Amvector already installed!"
+# 检查是否已安装 collia，若已安装则跳过
+[ -r "/etc/collia/config.yml" ] && {
+    echo "Collia already installed!"
     exit 0
 }
 
-# 安装 amvector
-./amvector.install  || {
+# 安装 collia
+./collia.install  || {
     echo "Installation failed!"
     exit 1
 }
 
-mkdir -p /etc/amvector/versions
-cp -v VERSION.TXT /etc/amvector/versions
+mkdir -p /etc/collia/versions
+cp -v VERSION.TXT /etc/collia/versions

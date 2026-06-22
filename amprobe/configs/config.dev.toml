@@ -7,7 +7,14 @@ AppName = "probe"
 Prefork = false
 
 [Rpc]
-Address = ""
+Network = "unix"
+Address = "/app/collia.sock"
+DefaultAgentID = "default"
+
+[Rpc.TLS]
+Enable = false
+CertDir = "/app/certs/collia"
+ServerName = ""
 
 [Gorm]
 Debug = true             # 是否开启调试模式
@@ -48,3 +55,12 @@ AutoLoadInternal = 60 # 定期自动加载策略时间间隔（单位秒）
 
 [Task]
 Interval = 15
+
+[AgentInstall]
+Enable = true
+Token = "change-me"
+PublicBaseURL = ""
+PackageDir = "/app/downloads/collia"
+RPCPort = 18080
+TLSEnable = true
+CertDir = "/etc/collia/certs"

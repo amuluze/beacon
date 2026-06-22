@@ -9,6 +9,7 @@ import "context"
 type (
 	userIDCtx   struct{}
 	usernameCtx struct{}
+	agentIDCtx  struct{}
 )
 
 func NewUserID(ctx context.Context, userID string) context.Context {
@@ -31,6 +32,20 @@ func NewUsername(ctx context.Context, username string) context.Context {
 
 func FromUsername(ctx context.Context) string {
 	v := ctx.Value(usernameCtx{})
+	if v != nil {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
+func NewAgentID(ctx context.Context, agentID string) context.Context {
+	return context.WithValue(ctx, agentIDCtx{}, agentID)
+}
+
+func FromAgentID(ctx context.Context) string {
+	v := ctx.Value(agentIDCtx{})
 	if v != nil {
 		if s, ok := v.(string); ok {
 			return s

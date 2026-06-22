@@ -8,7 +8,14 @@ English | [中文](./README.md)
 
 ## Introduction
 
-Amprobe is a lightweight host and Docker container monitoring tool, it can easily help us to complete the following aspects of work:
+Amprobe is a lightweight host and Docker container monitoring tool. The project uses a Server-Agent architecture:
+
+- `amprobe`: the Server side, responsible for the Web UI, HTTP API, authentication, authorization, auditing, alarm configuration, and task orchestration.
+- `collia`: the Agent side, responsible for host and Docker metric collection, local execution capabilities, and exposing them to the Server through a local rpcx Unix socket.
+
+It can help us complete the following tasks:
+
+Architecture details: [Server-Agent Architecture](./docs/server-agent-architecture.md)
 
 ### Container Manager
 

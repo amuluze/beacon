@@ -9,14 +9,15 @@ import (
 )
 
 type Config struct {
-	Fiber  Fiber
-	Rpc    Rpc
-	Gorm   Gorm
-	DB     DB
-	Log    Log
-	Auth   Auth
-	Casbin Casbin
-	Task   Task
+	Fiber        Fiber
+	Rpc          Rpc
+	Gorm         Gorm
+	DB           DB
+	Log          Log
+	Auth         Auth
+	Casbin       Casbin
+	Task         Task
+	AgentInstall AgentInstall
 }
 
 // NewConfig Load config file (toml/json/yaml)
@@ -45,7 +46,24 @@ type Fiber struct {
 }
 
 type Rpc struct {
+	Network        string
+	Address        string
+	DefaultAgentID string
+	TLS            TLS
+	Agents         []Agent
+}
+
+type Agent struct {
+	ID      string
+	Network string
 	Address string
+	TLS     TLS
+}
+
+type TLS struct {
+	Enable     bool
+	CertDir    string
+	ServerName string
 }
 
 type Gorm struct {
@@ -74,6 +92,16 @@ type Disk struct {
 
 type Task struct {
 	Interval int
+}
+
+type AgentInstall struct {
+	Enable        bool
+	Token         string
+	PublicBaseURL string
+	PackageDir    string
+	RPCPort       int
+	TLSEnable     bool
+	CertDir       string
 }
 
 type Ethernet struct {

@@ -124,6 +124,7 @@ type FilesSearchReply struct {
 type FileUploadArgs struct {
 	SourceFilePath string `json:"source_file_path"`
 	TargetFilePath string `json:"target_file_path"`
+	Data           []byte `json:"-"`
 }
 
 type FileUploadReply struct{}
@@ -138,7 +139,9 @@ type FileRemoteDownloadArgs struct {
 }
 
 type FileDownloadReply struct {
-	Filepath string
+	Filepath string `json:"filepath"`
+	FileName string `json:"file_name"`
+	Data     []byte `json:"-"`
 }
 
 type FileDeleteArgs struct {

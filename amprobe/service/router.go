@@ -6,6 +6,7 @@ package service
 
 import (
 	"amprobe/pkg/auth"
+	"amprobe/pkg/contextx"
 	"amprobe/service/middleware"
 
 	"github.com/casbin/casbin/v2"
@@ -49,6 +50,17 @@ type Router struct {
 }
 
 func (a *Router) RegisterAPI(app *fiber.App) {
+	app.Use(func(c *fiber.Ctx) error {
+		agentID := c.Get("X-Agent-ID")
+		if agentID == "" {
+			agentID = c.Query("agent_id")
+		}
+		if agentID != "" {
+			c.SetUserContext(contextx.NewAgentID(c.UserContext(), agentID))
+		}
+		return c.Next()
+	})
+
 	app.Use("ws", func(c *fiber.Ctx) error {
 		// IsWebSocketUpgrade returns true if the client
 		// requested upgrade to the WebSocket protocol.
@@ -67,6 +79,7 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			middleware.AllowPathPrefixSkipper("/api/v1/index/index"),
 			middleware.AllowPathPrefixSkipper("/api/v1/auth/login"),
 			middleware.AllowPathPrefixSkipper("/api/v1/auth/token_update"),
+			middleware.AllowPathPrefixSkipper("/api/v1/host/install"),
 		))
 	}
 
@@ -76,6 +89,7 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			middleware.AllowPathPrefixSkipper("/api/v1/index/index"),
 			middleware.AllowPathPrefixSkipper("/api/v1/auth/login"),
 			middleware.AllowPathPrefixSkipper("/api/v1/auth/token_update"),
+			middleware.AllowPathPrefixSkipper("/api/v1/host/install"),
 		))
 	}
 	api := app.Group("/api")
@@ -144,6 +158,10 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 
 			gHost := v1.Group("host")
 			{
+				gHost.Get("/install", a.AgentInstallScript).Name("获取 Collia 安装脚本")
+				gHost.Get("/install/package", a.AgentInstallPackage).Name("下载 Collia 安装包")
+				gHost.Get("/install/config", a.AgentInstallConfig).Name("下载 Collia 配置")
+				gHost.Get("/install/certs", a.AgentInstallCerts).Name("下载 Collia 证书")
 				gHost.Get("/host_info", a.hostAPI.HostInfo).Name("获取主机信息")
 				gHost.Get("/cpu_info", a.hostAPI.CPUInfo).Name("获取 CPU 信息")
 				gHost.Get("/mem_info", a.hostAPI.MemInfo).Name("获取内存信息")

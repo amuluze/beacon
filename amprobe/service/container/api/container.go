@@ -10,7 +10,7 @@ import (
 	"amprobe/pkg/validatex"
 	"amprobe/service/container/service"
 	"amprobe/service/schema"
-	"fmt"
+	"io"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -199,12 +199,19 @@ func (a *ContainerAPI) ImageImport(ctx *fiber.Ctx) error {
 	if err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	// save file
-	if err := ctx.SaveFile(file, fmt.Sprintf("/tmp/%s", file.Filename)); err != nil {
+	src, err := file.Open()
+	if err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
+	defer src.Close()
+	data, err := io.ReadAll(src)
+	if err != nil {
+		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+	}
+
 	args := schema.ImageImportArgs{
-		SourceFile: fmt.Sprintf("/tmp/%s", file.Filename),
+		FileName: file.Filename,
+		Data:     data,
 	}
 	if err := a.ContainerService.ImageImport(c, args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
@@ -223,10 +230,12 @@ func (a *ContainerAPI) ImageExport(ctx *fiber.Ctx) error {
 	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	if err := a.ContainerService.ImageExport(c, args); err != nil {
+	reply, err := a.ContainerService.ImageExport(c, args)
+	if err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	return ctx.Download(fmt.Sprintf("/tmp/%s.tar", args.ImageName))
+	ctx.Attachment(reply.FileName)
+	return ctx.Send(reply.Data)
 }
 
 func (a *ContainerAPI) ImageRemove(ctx *fiber.Ctx) error {

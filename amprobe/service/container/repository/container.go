@@ -30,13 +30,14 @@ type IContainerRepo interface {
 	ContainerStart(ctx context.Context, args rpcSchema.ContainerStartArgs) error
 	ContainerStop(ctx context.Context, args rpcSchema.ContainerStopArgs) error
 	ContainerRestart(ctx context.Context, args rpcSchema.ContainerRestartArgs) error
+	ContainerLogs(ctx context.Context, args rpcSchema.ContainerLogsArgs) (rpcSchema.ContainerLogsReply, error)
 
 	ImageList(ctx context.Context, args rpcSchema.ImageQueryArgs) (rpcSchema.ImageQueryReply, error)
 	ImageCount(ctx context.Context, args rpcSchema.ImageCountArgs) (rpcSchema.ImageCountReply, error)
 	ImagePull(ctx context.Context, args rpcSchema.ImagePullArgs) error
 	ImageTag(ctx context.Context, args rpcSchema.ImageTagArgs) error
 	ImageImport(ctx context.Context, args rpcSchema.ImageImportArgs) error
-	ImageExport(ctx context.Context, args rpcSchema.ImageExportArgs) error
+	ImageExport(ctx context.Context, args rpcSchema.ImageExportArgs) (rpcSchema.ImageExportReply, error)
 	ImageDelete(ctx context.Context, args rpcSchema.ImageDeleteArgs) error
 	ImagesPrune(ctx context.Context) error
 
@@ -122,6 +123,12 @@ func (c *ContainerRepo) ContainerRestart(ctx context.Context, args rpcSchema.Con
 	return c.RPCClient.Call(ctx, "ContainerRestart", args, &reply)
 }
 
+func (c *ContainerRepo) ContainerLogs(ctx context.Context, args rpcSchema.ContainerLogsArgs) (rpcSchema.ContainerLogsReply, error) {
+	var reply rpcSchema.ContainerLogsReply
+	err := c.RPCClient.Call(ctx, "ContainerLogs", args, &reply)
+	return reply, err
+}
+
 func (c *ContainerRepo) ImageList(ctx context.Context, args rpcSchema.ImageQueryArgs) (rpcSchema.ImageQueryReply, error) {
 	var reply rpcSchema.ImageQueryReply
 	err := c.RPCClient.Call(ctx, "ImageList", args, &reply)
@@ -149,9 +156,10 @@ func (c *ContainerRepo) ImageImport(ctx context.Context, args rpcSchema.ImageImp
 	return c.RPCClient.Call(ctx, "ImageImport", args, &reply)
 }
 
-func (c *ContainerRepo) ImageExport(ctx context.Context, args rpcSchema.ImageExportArgs) error {
+func (c *ContainerRepo) ImageExport(ctx context.Context, args rpcSchema.ImageExportArgs) (rpcSchema.ImageExportReply, error) {
 	var reply rpcSchema.ImageExportReply
-	return c.RPCClient.Call(ctx, "ImageExport", args, &reply)
+	err := c.RPCClient.Call(ctx, "ImageExport", args, &reply)
+	return reply, err
 }
 
 func (c *ContainerRepo) ImageDelete(ctx context.Context, args rpcSchema.ImageDeleteArgs) error {

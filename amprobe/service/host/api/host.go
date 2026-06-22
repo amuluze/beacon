@@ -5,7 +5,8 @@
 package api
 
 import (
-	"fmt"
+	"io"
+	"path"
 
 	"amprobe/pkg/fiberx"
 	"amprobe/pkg/validatex"
@@ -147,14 +148,20 @@ func (a *HostAPI) FileUpload(ctx *fiber.Ctx) error {
 	if err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	if err := ctx.SaveFile(file, fmt.Sprintf("/tmp/%s", file.Filename)); err != nil {
+	src, err := file.Open()
+	if err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	// var args schema.FileUploadArgs
+	defer src.Close()
+	data, err := io.ReadAll(src)
+	if err != nil {
+		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+	}
+
 	prefix := ctx.FormValue("prefix", "")
 	args := schema.FileUploadArgs{
-		SourceFilePath: fmt.Sprintf("/tmp/%s", file.Filename),
-		TargetFilePath: fmt.Sprintf("%s/%s", prefix, file.Filename),
+		TargetFilePath: path.Join(prefix, file.Filename),
+		Data:           data,
 	}
 	if err := a.HostService.FileUpload(c, args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
@@ -176,7 +183,8 @@ func (a *HostAPI) FileDownload(ctx *fiber.Ctx) error {
 	if err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
-	return ctx.Download(res.Filepath)
+	ctx.Attachment(res.FileName)
+	return ctx.Send(res.Data)
 }
 func (a *HostAPI) FileDelete(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
