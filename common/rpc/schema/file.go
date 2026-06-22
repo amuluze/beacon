@@ -44,6 +44,7 @@ type FileDeleteReply struct{}
 type FileUploadArgs struct {
 	SourceFilePath string `json:"source_file_path" validate:"required"`
 	TargetFilePath string `json:"target_file_path" validate:"required"`
+	Data           []byte `json:"data"`
 }
 
 type FileUploadReply struct{}
@@ -55,6 +56,8 @@ type FileDownloadArgs struct {
 
 type FileDownloadReply struct {
 	Filepath string `json:"filepath"`
+	FileName string `json:"file_name"`
+	Data     []byte `json:"data"`
 }
 
 type FolderCreateArgs struct {

@@ -7,7 +7,7 @@ build:
       - amuluze/amprobe:v1.3.10
   - type: file
     include:
-      - amvector.install
+      - collia.install
       - setup.sh
       - VERSION.TXT
 install:

@@ -8,7 +8,30 @@
 
 ## 简介
 
-`Amprobe` 是一款轻量级主机及 `Docker` 容器监控工具，它可以轻松的帮助我们完成以下几方面的工作：
+`Amprobe` 是一款轻量级主机及 `Docker` 容器监控工具。当前项目采用 `Server-Agent` 架构：
+
+- `amprobe`：Server 端，负责 Web UI、HTTP API、认证授权、审计、告警配置和任务编排。
+- `collia`：Agent 端，负责主机与 Docker 指标采集、本机执行能力，并通过本地 `rpcx` Unix Socket 提供给 Server 调用。
+
+## Docker Compose 启动
+
+Amprobe 面板服务通过仓库根目录的 `compose.yaml` 启动：
+
+```bash
+docker compose up -d --build
+```
+
+默认暴露 `http://<host>:1443`。Collia Agent 可通过 Amprobe 下发的安装脚本安装：
+
+```bash
+curl -kfsSL 'http://<host>:1443/api/v1/host/install?node=1&os_type=linux' | sudo bash -s -- --token=<install-token>
+```
+
+安装包放在 `deploy/downloads/collia/<os>/<arch>/collia.install`，启用 mTLS 时证书包放在 `deploy/downloads/collia/certs/<node>.tar.gz`。
+
+它可以帮助我们完成以下几方面的工作：
+
+架构细节见：[Server-Agent Architecture](./docs/server-agent-architecture.md)
 
 ### 容器管理
 

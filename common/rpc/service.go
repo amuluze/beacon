@@ -34,6 +34,7 @@ type IService interface {
 	ContainerStart(context.Context, schema.ContainerStartArgs, *schema.ContainerStartReply) error
 	ContainerStop(context.Context, schema.ContainerStopArgs, *schema.ContainerStopReply) error
 	ContainerRestart(context.Context, schema.ContainerRestartArgs, *schema.ContainerRestartReply) error
+	ContainerLogs(context.Context, schema.ContainerLogsArgs, *schema.ContainerLogsReply) error
 	ImagePull(context.Context, schema.ImagePullArgs, *schema.ImagePullReply) error
 	ImageTag(context.Context, schema.ImageTagArgs, *schema.ImageTagReply) error
 	ImageDelete(context.Context, schema.ImageDeleteArgs, *schema.ImageDeleteReply) error

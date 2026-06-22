@@ -88,7 +88,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	alarmRepository := repository7.NewAlarmRepository(db)
 	alarmService := service7.NewAlarmService(alarmRepository)
 	alarmAPI := api7.NewAlarmAPI(alarmService)
-	loggerHandler := NewLoggerHandler()
+	loggerHandler := NewLoggerHandler(client)
 	termHandler := NewTermHandler()
 	router := &Router{
 		config:        config,

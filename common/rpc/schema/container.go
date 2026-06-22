@@ -175,6 +175,14 @@ type ContainerRestartArgs struct {
 
 type ContainerRestartReply struct{}
 
+type ContainerLogsArgs struct {
+	ContainerID string `json:"container_id"`
+}
+
+type ContainerLogsReply struct {
+	Data []byte `json:"data"`
+}
+
 type ImagePullArgs struct {
 	ImageName string `json:"image_name"`
 }
@@ -196,6 +204,8 @@ type ImageDeleteReply struct{}
 
 type ImageImportArgs struct {
 	SourceFile string `json:"source_file"`
+	FileName   string `json:"file_name"`
+	Data       []byte `json:"data"`
 }
 
 type ImageImportReply struct{}
@@ -205,7 +215,10 @@ type ImageExportArgs struct {
 	TargetFile string   `json:"target_file"`
 }
 
-type ImageExportReply struct{}
+type ImageExportReply struct {
+	FileName string `json:"file_name"`
+	Data     []byte `json:"data"`
+}
 
 type NetworkCreateArgs struct {
 	Name    string            `json:"name"`

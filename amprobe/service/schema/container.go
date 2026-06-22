@@ -127,6 +127,8 @@ type ImagePullReply struct{}
 
 type ImageImportArgs struct {
 	SourceFile string `json:"source_file"`
+	FileName   string `json:"file_name"`
+	Data       []byte `json:"-"`
 }
 
 type ImageImportReply struct{}
@@ -141,7 +143,10 @@ type ImageExportRPCArgs struct {
 	TargetFile string   `json:"target_file"`
 }
 
-type ImageExportReply struct{}
+type ImageExportReply struct {
+	FileName string `json:"file_name"`
+	Data     []byte `json:"-"`
+}
 
 type ImageDeleteArgs struct {
 	ImageID string `json:"image_id" validate:"required"`

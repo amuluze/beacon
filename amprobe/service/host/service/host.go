@@ -6,9 +6,7 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
-	"strings"
 
 	"amprobe/service/host/repository"
 	"amprobe/service/schema"
@@ -259,22 +257,23 @@ func (h *HostService) FileUpload(ctx context.Context, args schema.FileUploadArgs
 	rpcArgs := rpcSchema.FileUploadArgs{
 		SourceFilePath: args.SourceFilePath,
 		TargetFilePath: args.TargetFilePath,
+		Data:           args.Data,
 	}
 	return h.HostRepo.FileUpload(ctx, rpcArgs)
 }
 
 func (h *HostService) FileDownload(ctx context.Context, args schema.FileDownloadArgs) (schema.FileDownloadReply, error) {
 	var reply schema.FileDownloadReply
-	filename := strings.Split(args.Filepath, "/")[len(strings.Split(args.Filepath, "/"))-1]
 	rpcArgs := rpcSchema.FileDownloadArgs{
 		SourceFilePath: args.Filepath,
-		TargetFilePath: fmt.Sprintf("/tmp/%s", filename),
 	}
 	rpcReply, err := h.HostRepo.FileDownload(ctx, rpcArgs)
 	if err != nil {
 		return reply, err
 	}
 	reply.Filepath = rpcReply.Filepath
+	reply.FileName = rpcReply.FileName
+	reply.Data = rpcReply.Data
 	return reply, nil
 }
 
