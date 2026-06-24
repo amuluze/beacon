@@ -17,8 +17,4 @@ var (
 	ColliaStorageConfigDBPath = filepath.Join(ColliaStorageFolder, "collia")
 	ColliaSockFolder          = filepath.Join(ColliaFolder, "socks")
 	ColliaSockFile            = filepath.Join(ColliaSockFolder, "collia.sock")
-
-	AmprobeFolder       = "amprobe"
-	AmprobeConfigFolder = filepath.Join(AmprobeFolder, "configs")
-	AmprobeNginxFolder  = filepath.Join(AmprobeFolder, "nginx")
 )

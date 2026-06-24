@@ -1,0 +1,45 @@
+# collia Agent 配置文件示例
+# 文件路径: /etc/collia/config.yml
+
+rpc:
+  network: unix
+  address: /data/amprobe/collia/socks/collia.sock
+  tls:
+    enable: false
+    cert_dir: /data/amprobe/certs
+    client_names:
+      - amprobe
+
+log:
+  output: /data/amprobe/logs/collia/collia.log
+  level: info
+  rotation: 1
+  max_age: 7
+
+task:
+  interval: 30          # 采集间隔（秒）
+  max_age: 1            # 本地数据保留天数（已弃用，监控数据不再存本地）
+  disk:
+    devices:
+      - vda2            # 监控的磁盘设备
+  ethernet:
+    names:
+      - eth0            # 监控的网卡名称
+  report:
+    url: "http://127.0.0.1:8000/api/v1/host/report"
+    token: ""
+    agent_id: default
+
+db:
+  dbtype: sqlite
+  host: ""
+  port: ""
+  user: ""
+  password: ""
+  dbname: /data/amprobe/collia/storage/collia
+  sslmode: ""
+
+variables:
+  image_tag: latest
+  host_prefix: /data/amprobe
+  container_prefix: /

@@ -1,16 +1,18 @@
 // Package repository
-// Date: 2024/06/11 19:38:25
-// Author: Amu
-// Description:
 package repository
 
 import (
 	"context"
+	"time"
 
+	"amprobe/pkg/contextx"
 	"amprobe/pkg/rpc"
+	"amprobe/service/model"
+	"common/database"
 	rpcSchema "common/rpc/schema"
 
 	"github.com/google/wire"
+	"gorm.io/gorm"
 )
 
 var ContainerServiceSet = wire.NewSet(NewContainerRepo, wire.Bind(new(IContainerRepo), new(*ContainerRepo)))
@@ -52,51 +54,188 @@ type IContainerRepo interface {
 
 type ContainerRepo struct {
 	RPCClient *rpc.Client
+	DB        *database.DB
 }
 
-func NewContainerRepo(client *rpc.Client) *ContainerRepo {
-	return &ContainerRepo{RPCClient: client}
+func NewContainerRepo(client *rpc.Client, db *database.DB) *ContainerRepo {
+	return &ContainerRepo{RPCClient: client, DB: db}
 }
+
+func (c *ContainerRepo) agentDB(ctx context.Context) *gorm.DB {
+	agentID := contextx.FromAgentID(ctx)
+	db := c.DB.DB
+	if agentID != "" {
+		return db.Where("agent_id = ?", agentID)
+	}
+	return db
+}
+
+// ── Monitoring queries (local DB) ──
 
 func (c *ContainerRepo) Version(ctx context.Context, args rpcSchema.DockerArgs) (rpcSchema.DockerReply, error) {
-	var reply rpcSchema.DockerReply
-	err := c.RPCClient.Call(ctx, "Version", args, &reply)
-	return reply, err
+	var result model.MonitorDocker
+	if err := c.agentDB(ctx).Model(&model.MonitorDocker{}).First(&result).Error; err != nil {
+		return rpcSchema.DockerReply{}, err
+	}
+	return rpcSchema.DockerReply{
+		Data: rpcSchema.Docker{
+			Timestamp:     result.Timestamp,
+			DockerVersion: result.DockerVersion,
+			APIVersion:    result.APIVersion,
+			MinAPIVersion: result.MinAPIVersion,
+			GitCommit:     result.GitCommit,
+			GoVersion:     result.GoVersion,
+			Os:            result.Os,
+			Arch:          result.Arch,
+		},
+	}, nil
 }
 
 func (c *ContainerRepo) ContainerList(ctx context.Context, args rpcSchema.ContainerQueryArgs) (rpcSchema.ContainerQueryReply, error) {
-	var reply rpcSchema.ContainerQueryReply
-	err := c.RPCClient.Call(ctx, "ContainerList", args, &reply)
-	return reply, err
+	var containers []model.MonitorContainer
+	if err := c.agentDB(ctx).Model(&model.MonitorContainer{}).
+		Where("ports != ?", "").Group("name").
+		Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&containers).Error; err != nil {
+		return rpcSchema.ContainerQueryReply{}, err
+	}
+	var results []rpcSchema.Container
+	for _, container := range containers {
+		results = append(results, rpcSchema.Container{
+			Timestamp:   container.Timestamp,
+			ContainerID: container.ContainerID,
+			Name:        container.Name,
+			Image:       container.Image,
+			IP:          container.IP,
+			Ports:       container.Ports,
+			State:       container.State,
+			Uptime:      container.Uptime,
+			CPUPercent:  container.CPUPercent,
+			MemPercent:  container.MemPercent,
+			MemUsage:    container.MemUsage,
+			MemLimit:    container.MemLimit,
+			Labels:      container.Labels,
+		})
+	}
+	return rpcSchema.ContainerQueryReply{Data: results}, nil
 }
 
 func (c *ContainerRepo) Usage(ctx context.Context, args rpcSchema.ContainerUsageArgs) (rpcSchema.ContainerUsageReply, error) {
-	var reply rpcSchema.ContainerUsageReply
-	err := c.RPCClient.Call(ctx, "ContainerCPUUsage", args, &reply)
-	return reply, err
+	var containers []model.MonitorContainer
+	if err := c.agentDB(ctx).Model(&model.MonitorContainer{}).
+		Order("timestamp asc").
+		Where("timestamp > ?", time.Unix(args.StartTime, 0)).Find(&containers).Error; err != nil {
+		return rpcSchema.ContainerUsageReply{}, err
+	}
+	reply := rpcSchema.ContainerUsageReply{
+		Names:    make([]string, 0),
+		CPUUsage: make(map[string][]rpcSchema.Usage),
+		MemUsage: make(map[string][]rpcSchema.Usage),
+	}
+	for _, item := range containers {
+		if _, ok := reply.CPUUsage[item.Name]; !ok {
+			reply.Names = append(reply.Names, item.Name)
+			reply.CPUUsage[item.Name] = make([]rpcSchema.Usage, 0)
+			reply.MemUsage[item.Name] = make([]rpcSchema.Usage, 0)
+		}
+		reply.CPUUsage[item.Name] = append(reply.CPUUsage[item.Name], rpcSchema.Usage{
+			Timestamp: item.Timestamp.Unix(), Value: item.CPUPercent,
+		})
+		reply.MemUsage[item.Name] = append(reply.MemUsage[item.Name], rpcSchema.Usage{
+			Timestamp: item.Timestamp.Unix(), Value: item.MemUsage,
+		})
+	}
+	return reply, nil
 }
 
 func (c *ContainerRepo) ContainersByImage(ctx context.Context, image string) (num int, err error) {
-	args := rpcSchema.ContainersByImageArgs{Image: image}
-	var reply rpcSchema.ContainersByImageReply
-	err = c.RPCClient.Call(ctx, "ContainersByImage", args, &reply)
-	return reply.Num, err
-
+	var count int64
+	if err := c.agentDB(ctx).Model(&model.MonitorContainer{}).Where("image = ?", image).Group("name").Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return int(count), nil
 }
 
 func (c *ContainerRepo) ContainerCount(ctx context.Context, args rpcSchema.ContainerCountArgs) (rpcSchema.ContainerCountReply, error) {
-	var reply rpcSchema.ContainerCountReply
-	err := c.RPCClient.Call(ctx, "ContainerCount", args, &reply)
+	var count int64
+	if err := c.agentDB(ctx).Model(&model.MonitorContainer{}).Group("name").Count(&count).Error; err != nil {
+		return rpcSchema.ContainerCountReply{}, err
+	}
+	return rpcSchema.ContainerCountReply{Count: int(count)}, nil
+}
+
+func (c *ContainerRepo) ImageList(ctx context.Context, args rpcSchema.ImageQueryArgs) (rpcSchema.ImageQueryReply, error) {
+	var results []model.MonitorImage
+	if err := c.agentDB(ctx).Model(&model.MonitorImage{}).
+		Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&results).Error; err != nil {
+		return rpcSchema.ImageQueryReply{}, err
+	}
+	var list []rpcSchema.Image
+	for _, result := range results {
+		list = append(list, rpcSchema.Image{
+			Timestamp: result.Timestamp,
+			ImageID:   result.ImageID,
+			Name:      result.Name,
+			Tag:       result.Tag,
+			Created:   result.Created,
+			Size:      result.Size,
+		})
+	}
+	return rpcSchema.ImageQueryReply{Data: list}, nil
+}
+
+func (c *ContainerRepo) ImageCount(ctx context.Context, args rpcSchema.ImageCountArgs) (rpcSchema.ImageCountReply, error) {
+	var total int64
+	if err := c.agentDB(ctx).Model(&model.MonitorImage{}).Order("created_at desc").Count(&total).Error; err != nil {
+		return rpcSchema.ImageCountReply{}, err
+	}
+	return rpcSchema.ImageCountReply{Count: int(total)}, nil
+}
+
+func (c *ContainerRepo) NetworkList(ctx context.Context, args rpcSchema.NetworkQueryArgs) (rpcSchema.NetworkQueryReply, error) {
+	var networks []model.MonitorNetwork
+	if err := c.agentDB(ctx).Model(&model.MonitorNetwork{}).
+		Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&networks).Error; err != nil {
+		return rpcSchema.NetworkQueryReply{}, err
+	}
+	var list []rpcSchema.Network
+	for _, n := range networks {
+		list = append(list, rpcSchema.Network{
+			Timestamp: n.Timestamp,
+			NetworkID: n.NetworkID,
+			Name:      n.Name,
+			Driver:    n.Driver,
+			Scope:     n.Scope,
+			Created:   n.Created,
+			Internal:  n.Internal,
+			Subnet:    n.Subnet,
+			Gateway:   n.Gateway,
+			Labels:    n.Labels,
+		})
+	}
+	return rpcSchema.NetworkQueryReply{Data: list}, nil
+}
+
+func (c *ContainerRepo) NetworkCount(ctx context.Context, args rpcSchema.NetworkCountArgs) (rpcSchema.NetworkCountReply, error) {
+	var total int64
+	if err := c.agentDB(ctx).Model(&model.MonitorNetwork{}).Order("created_at desc").Count(&total).Error; err != nil {
+		return rpcSchema.NetworkCountReply{}, err
+	}
+	return rpcSchema.NetworkCountReply{Count: int(total)}, nil
+}
+
+func (c *ContainerRepo) GetDockerRegistryMirrors(ctx context.Context, args rpcSchema.GetDockerRegistryMirrorsArgs) (rpcSchema.GetDockerRegistryMirrorsReply, error) {
+	// This still requires Agent access
+	var reply rpcSchema.GetDockerRegistryMirrorsReply
+	err := c.RPCClient.Call(ctx, "GetDockerRegistryMirrors", args, &reply)
 	return reply, err
 }
+
+// ── Operational commands (RPC to Agent) ──
 
 func (c *ContainerRepo) ContainerCreate(ctx context.Context, args rpcSchema.ContainerCreateArgs) (rpcSchema.ContainerCreateReply, error) {
 	var reply rpcSchema.ContainerCreateReply
 	err := c.RPCClient.Call(ctx, "ContainerCreate", args, &reply)
-	if err != nil {
-		return rpcSchema.ContainerCreateReply{}, err
-	}
-	return reply, nil
+	return reply, err
 }
 
 func (c *ContainerRepo) ContainerUpdate(ctx context.Context, args rpcSchema.ContainerUpdateArgs) (rpcSchema.ContainerUpdateReply, error) {
@@ -126,18 +265,6 @@ func (c *ContainerRepo) ContainerRestart(ctx context.Context, args rpcSchema.Con
 func (c *ContainerRepo) ContainerLogs(ctx context.Context, args rpcSchema.ContainerLogsArgs) (rpcSchema.ContainerLogsReply, error) {
 	var reply rpcSchema.ContainerLogsReply
 	err := c.RPCClient.Call(ctx, "ContainerLogs", args, &reply)
-	return reply, err
-}
-
-func (c *ContainerRepo) ImageList(ctx context.Context, args rpcSchema.ImageQueryArgs) (rpcSchema.ImageQueryReply, error) {
-	var reply rpcSchema.ImageQueryReply
-	err := c.RPCClient.Call(ctx, "ImageList", args, &reply)
-	return reply, err
-}
-
-func (c *ContainerRepo) ImageCount(ctx context.Context, args rpcSchema.ImageCountArgs) (rpcSchema.ImageCountReply, error) {
-	var reply rpcSchema.ImageCountReply
-	err := c.RPCClient.Call(ctx, "ImageCount", args, &reply)
 	return reply, err
 }
 
@@ -171,25 +298,10 @@ func (c *ContainerRepo) ImagesPrune(ctx context.Context) error {
 	return c.RPCClient.Call(ctx, "ImagesPrune", nil, nil)
 }
 
-func (c *ContainerRepo) NetworkList(ctx context.Context, args rpcSchema.NetworkQueryArgs) (rpcSchema.NetworkQueryReply, error) {
-	var reply rpcSchema.NetworkQueryReply
-	err := c.RPCClient.Call(ctx, "NetworkList", args, &reply)
-	return reply, err
-}
-
-func (c *ContainerRepo) NetworkCount(ctx context.Context, args rpcSchema.NetworkCountArgs) (rpcSchema.NetworkCountReply, error) {
-	var reply rpcSchema.NetworkCountReply
-	err := c.RPCClient.Call(ctx, "NetworkCount", args, &reply)
-	return reply, err
-}
-
 func (c *ContainerRepo) NetworkCreate(ctx context.Context, args rpcSchema.NetworkCreateArgs) (rpcSchema.NetworkCreateReply, error) {
 	var reply rpcSchema.NetworkCreateReply
 	err := c.RPCClient.Call(ctx, "NetworkCreate", args, &reply)
-	if err != nil {
-		return rpcSchema.NetworkCreateReply{}, err
-	}
-	return reply, nil
+	return reply, err
 }
 
 func (c *ContainerRepo) NetworkDelete(ctx context.Context, args rpcSchema.NetworkDeleteArgs) error {
@@ -197,18 +309,7 @@ func (c *ContainerRepo) NetworkDelete(ctx context.Context, args rpcSchema.Networ
 	return c.RPCClient.Call(ctx, "NetworkDelete", args, &reply)
 }
 
-func (c *ContainerRepo) GetDockerRegistryMirrors(ctx context.Context, args rpcSchema.GetDockerRegistryMirrorsArgs) (rpcSchema.GetDockerRegistryMirrorsReply, error) {
-	var reply rpcSchema.GetDockerRegistryMirrorsReply
-	// 调用rpc获取数据
-	err := c.RPCClient.Call(ctx, "GetDockerRegistryMirrors", args, &reply)
-	if err != nil {
-		return rpcSchema.GetDockerRegistryMirrorsReply{}, err
-	}
-	return reply, nil
-}
-
 func (c *ContainerRepo) SetDockerRegistryMirrors(ctx context.Context, args rpcSchema.SetDockerRegistryMirrorsArgs) error {
 	var reply rpcSchema.SetDockerRegistryMirrorsReply
-	// 调用rpc设置数据
 	return c.RPCClient.Call(ctx, "SetDockerRegistryMirrors", args, &reply)
 }

@@ -9,5 +9,4 @@ services:
     ports:
       - "1443:80"
     volumes:
-      - ./deploy/downloads:/app/downloads:ro
       - ./deploy/logs:/app/logs

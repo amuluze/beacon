@@ -1,32 +1,33 @@
 // Package service
-// Date: 2024/06/10 18:30:23
-// Author: Amu
-// Description:
 package service
 
 import (
-	"common/database"
 	"fmt"
 	"log/slog"
 	"time"
 
+	"collia/service/report"
 	"collia/service/task"
+	rpcSchema "common/rpc/schema"
 
 	"github.com/amuluze/amutool/timex"
 	"github.com/amuluze/docker"
 )
 
 type TimedTask struct {
-	task   task.ITask
-	ticker timex.Ticker
-	stopCh chan struct{}
+	agentID      string
+	task         task.ITask
+	ticker       timex.Ticker
+	stopCh       chan struct{}
+	reportClient *report.Client
 }
 
-func NewTimedTask(conf *Config, db *database.DB) *TimedTask {
+func NewTimedTask(conf *Config) *TimedTask {
 	interval := conf.Task.Interval
 	tk := timex.NewTicker(time.Duration(interval) * time.Second)
 	manager, err := docker.NewManager()
 	if err != nil {
+		slog.Error("create docker manager failed", "error", err)
 		return nil
 	}
 
@@ -40,47 +41,157 @@ func NewTimedTask(conf *Config, db *database.DB) *TimedTask {
 		eth[d] = struct{}{}
 	}
 
-	newTask := task.NewTask(interval, conf.Task.MaxAge, db, manager, dev, eth)
+	newTask := task.NewTask(interval, manager, dev, eth)
+
+	var rptClient *report.Client
+	if conf.Task.Report.URL != "" {
+		rptClient = report.NewClient(conf.Task.Report.URL, conf.Task.Report.Token)
+	}
 
 	return &TimedTask{
-		task:   newTask,
-		ticker: tk,
-		stopCh: make(chan struct{}),
+		agentID:      conf.Task.Report.AgentID,
+		task:         newTask,
+		ticker:       tk,
+		stopCh:       make(chan struct{}),
+		reportClient: rptClient,
 	}
 }
 
 func (a *TimedTask) Execute() {
 	timestamp := time.Now()
-	// 处理宿主机指标
-	if err := a.task.HostTask(timestamp); err != nil {
-		slog.Error("host summary failed: ", "error", err)
+	r, err := a.task.Report(timestamp)
+	if err != nil {
+		slog.Error("report collection failed", "error", err)
+		return
 	}
-	if err := a.task.CPUTask(timestamp); err != nil {
-		slog.Error("cpu summary failed: ", "error", err)
+	if a.reportClient != nil && r != nil {
+		args := a.buildReportArgs(timestamp, r)
+		if err := a.reportClient.Push(nil, args); err != nil {
+			slog.Error("push report failed", "error", err)
+		}
 	}
-	if err := a.task.MemoryTask(timestamp); err != nil {
-		slog.Error("memory summary failed: ", "error", err)
-	}
-	if err := a.task.DiskTask(timestamp); err != nil {
-		slog.Error("disk summary failed: ", "error", err)
-	}
-	if err := a.task.NetTask(timestamp); err != nil {
-		slog.Error("net summary failed: ", "error", err)
+}
+
+func (a *TimedTask) buildReportArgs(ts time.Time, r *task.MonitorReport) rpcSchema.MonitorReportArgs {
+	args := rpcSchema.MonitorReportArgs{
+		AgentID: a.agentID,
 	}
 
-	// 处理 Docker 容器指标
-	if err := a.task.DockerTask(timestamp); err != nil {
-		slog.Error("docker summary failed", "error", err)
+	// Host
+	if r.Host != nil {
+		args.Host = rpcSchema.HostReport{
+			Timestamp:       ts,
+			Uptime:          r.Host.Uptime,
+			Hostname:        r.Host.Hostname,
+			Os:              r.Host.Os,
+			Platform:        r.Host.Platform,
+			PlatformVersion: r.Host.PlatformVersion,
+			KernelArch:      r.Host.KernelArch,
+			KernelVersion:   r.Host.KernelVersion,
+		}
 	}
-	if err := a.task.ContainerTask(timestamp); err != nil {
-		slog.Error("containers summary failed", "error", err)
+
+	// CPU
+	if r.CPU != nil {
+		args.CPU = rpcSchema.CPUReport{Timestamp: ts, CPUPercent: r.CPU.CPUPercent}
 	}
-	if err := a.task.ImageTask(timestamp); err != nil {
-		slog.Error("image summary failed", "error", err)
+
+	// Memory
+	if r.Memory != nil {
+		args.Memory = rpcSchema.MemoryReport{
+			Timestamp:  ts,
+			MemPercent: r.Memory.MemPercent,
+			MemTotal:   r.Memory.MemTotal,
+			MemUsed:    r.Memory.MemUsed,
+		}
 	}
-	if err := a.task.NetworkTask(timestamp); err != nil {
-		slog.Error("network summary failed", "error", err)
+
+	// Disk
+	for _, d := range r.Disks {
+		args.Disks = append(args.Disks, rpcSchema.DiskReport{
+			Timestamp:   ts,
+			Device:      d.Device,
+			DiskPercent: d.DiskPercent,
+			DiskTotal:   d.DiskTotal,
+			DiskUsed:    d.DiskUsed,
+			DiskRead:    d.DiskRead,
+			DiskWrite:   d.DiskWrite,
+		})
 	}
+
+	// Net
+	for _, n := range r.Nets {
+		args.Nets = append(args.Nets, rpcSchema.NetReport{
+			Timestamp: ts,
+			Ethernet:  n.Ethernet,
+			NetRecv:   n.NetRecv,
+			NetSend:   n.NetSend,
+		})
+	}
+
+	// Docker
+	if r.Docker != nil {
+		args.Docker = rpcSchema.DockerReport{
+			Timestamp:     ts,
+			DockerVersion: r.Docker.DockerVersion,
+			APIVersion:    r.Docker.APIVersion,
+			MinAPIVersion: r.Docker.MinAPIVersion,
+			GitCommit:     r.Docker.GitCommit,
+			GoVersion:     r.Docker.GoVersion,
+			Os:            r.Docker.Os,
+			Arch:          r.Docker.Arch,
+		}
+	}
+
+	// Containers
+	for _, c := range r.Containers {
+		args.Containers = append(args.Containers, rpcSchema.ContainerReport{
+			Timestamp:   ts,
+			ContainerID: c.ContainerID,
+			Name:        c.Name,
+			Image:       c.Image,
+			IP:          c.IP,
+			Ports:       c.Ports,
+			State:       c.State,
+			Uptime:      c.Uptime,
+			CPUPercent:  c.CPUPercent,
+			MemPercent:  c.MemPercent,
+			MemUsage:    c.MemUsage,
+			MemLimit:    c.MemLimit,
+			Labels:      c.Labels,
+		})
+	}
+
+	// Images
+	for _, im := range r.Images {
+		args.Images = append(args.Images, rpcSchema.ImageReport{
+			Timestamp: ts,
+			ImageID:   im.ImageID,
+			Name:      im.Name,
+			Tag:       im.Tag,
+			Created:   im.Created,
+			Size:      im.Size,
+			Number:    im.Number,
+		})
+	}
+
+	// Networks
+	for _, n := range r.Networks {
+		args.Networks = append(args.Networks, rpcSchema.NetworkReport{
+			Timestamp: ts,
+			NetworkID: n.NetworkID,
+			Name:      n.Name,
+			Driver:    n.Driver,
+			Scope:     n.Scope,
+			Created:   n.Created,
+			Internal:  n.Internal,
+			Subnet:    n.Subnet,
+			Gateway:   n.Gateway,
+			Labels:    n.Labels,
+		})
+	}
+
+	return args
 }
 
 func (a *TimedTask) Run() {
@@ -97,4 +208,7 @@ func (a *TimedTask) Run() {
 
 func (a *TimedTask) Stop() {
 	close(a.stopCh)
+	if a.reportClient != nil {
+		a.reportClient.Close()
+	}
 }

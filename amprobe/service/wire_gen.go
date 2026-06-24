@@ -67,10 +67,10 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		cleanup()
 		return nil, nil, err
 	}
-	containerRepo := repository.NewContainerRepo(client)
+	containerRepo := repository.NewContainerRepo(client, db)
 	containerService := service.NewContainerService(containerRepo)
 	containerAPI := api.NewContainerAPI(containerService)
-	hostRepo := repository2.NewHostRepo(client)
+	hostRepo := repository2.NewHostRepo(client, db)
 	hostService := service2.NewHostService(hostRepo)
 	hostAPI := api2.NewHostAPI(hostService)
 	authRepo := repository3.NewAuthRepo(db)
@@ -90,6 +90,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	alarmAPI := api7.NewAlarmAPI(alarmService)
 	loggerHandler := NewLoggerHandler(client)
 	termHandler := NewTermHandler()
+	reportService := NewReportService(config, db)
 	router := &Router{
 		config:        config,
 		auth:          auther,
@@ -101,6 +102,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		accountAPI:    accountAPI,
 		mailAPI:       mailAPI,
 		alarmAPI:      alarmAPI,
+		reportSvc:     reportService,
 		loggerHandler: loggerHandler,
 		termHandler:   termHandler,
 	}
@@ -111,7 +113,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	}
 	timedTask := NewTimedTask(config, client, db)
 	logger := NewLogger(config)
-	injector, err := NewInjector(app, router, prepare, config, timedTask, logger)
+	injector, err := NewInjector(app, router, prepare, config, timedTask, reportService, logger)
 	if err != nil {
 		cleanup3()
 		cleanup2()

@@ -14,6 +14,8 @@ import (
 
 const defaultAgentInstallPackageDir = "/app/downloads/collia"
 
+const colliaBinaryName = "collia"
+
 var safeInstallNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]*$`)
 
 func (a *Router) AgentInstallScript(ctx *fiber.Ctx) error {
@@ -29,18 +31,13 @@ func (a *Router) AgentInstallScript(ctx *fiber.Ctx) error {
 		return fiber.NewError(http.StatusBadRequest, "invalid node")
 	}
 
-	osType := ctx.Query("os_type", "linux")
-	if !isSafeInstallName(osType) {
-		return fiber.NewError(http.StatusBadRequest, "invalid os_type")
-	}
-
 	baseURL := a.config.AgentInstall.PublicBaseURL
 	if baseURL == "" {
 		baseURL = requestBaseURL(ctx)
 	}
 
 	ctx.Type("sh")
-	return ctx.SendString(buildAgentInstallScript(baseURL, node, osType, a.agentInstallRPCPort(), a.config.AgentInstall.TLSEnable))
+	return ctx.SendString(buildAgentInstallScript(baseURL, node, a.agentInstallRPCPort(), a.config.AgentInstall.TLSEnable))
 }
 
 func (a *Router) AgentInstallPackage(ctx *fiber.Ctx) error {
@@ -48,20 +45,19 @@ func (a *Router) AgentInstallPackage(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	osType := ctx.Query("os_type", "linux")
 	arch := ctx.Query("arch", "amd64")
-	if !isSafeInstallName(osType) || !isSafeInstallName(arch) {
-		return fiber.NewError(http.StatusBadRequest, "invalid package selector")
+	if arch != "amd64" && arch != "arm64" {
+		return fiber.NewError(http.StatusBadRequest, "unsupported arch")
 	}
 
-	packagePath, err := safeJoin(a.agentInstallPackageDir(), osType, arch, "collia.install")
+	packagePath, err := safeJoin(a.agentInstallPackageDir(), arch, colliaBinaryName)
 	if err != nil {
 		return fiber.NewError(http.StatusBadRequest, err.Error())
 	}
 	if _, err := os.Stat(packagePath); err != nil {
-		return fiber.NewError(http.StatusNotFound, "collia install package not found")
+		return fiber.NewError(http.StatusNotFound, "collia binary not found")
 	}
-	return ctx.Download(packagePath, "collia.install")
+	return ctx.Download(packagePath, colliaBinaryName)
 }
 
 func (a *Router) AgentInstallConfig(ctx *fiber.Ctx) error {
@@ -124,6 +120,11 @@ func (a *Router) buildColliaConfig(node string) string {
 		certDir = "/etc/collia/certs"
 	}
 
+	reportURL := ""
+	if a.config.AgentInstall.PublicBaseURL != "" {
+		reportURL = a.config.AgentInstall.PublicBaseURL + "/api/v1/host/report"
+	}
+
 	return fmt.Sprintf(`rpc:
   network: tcp
   address: 0.0.0.0:%d
@@ -146,6 +147,10 @@ task:
   ethernet:
     names:
       - eth0
+  report:
+    url: "%s"
+    token: "%s"
+    agent_id: %s
 db:
   dbtype: sqlite
   dbname: /data/amprobe/resources/collia/storage/collia
@@ -154,7 +159,7 @@ variables:
   host_prefix: /data/amprobe
   container_prefix: /
   node: %s
-`, a.agentInstallRPCPort(), a.config.AgentInstall.TLSEnable, certDir, node)
+`, a.agentInstallRPCPort(), a.config.AgentInstall.TLSEnable, certDir, reportURL, a.config.AgentInstall.Token, node, node)
 }
 
 func (a *Router) agentInstallPackageDir() string {
@@ -183,24 +188,20 @@ func requestBaseURL(ctx *fiber.Ctx) string {
 	return strings.TrimRight(scheme+"://"+host, "/")
 }
 
-func buildAgentInstallScript(baseURL string, node string, osType string, rpcPort int, tlsEnabled bool) string {
+func buildAgentInstallScript(baseURL string, node string, rpcPort int, tlsEnabled bool) string {
 	return fmt.Sprintf(`#!/bin/sh
 set -eu
 
 BASE_URL=%s
 NODE=%s
-OS_TYPE=%s
 RPC_PORT=%s
 TLS_ENABLED=%s
 TOKEN=""
-ARCH=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --token=*) TOKEN="${1#*=}" ;;
     --token) shift; TOKEN="${1:-}" ;;
-    --arch=*) ARCH="${1#*=}" ;;
-    --arch) shift; ARCH="${1:-}" ;;
     *) echo "unknown argument: $1" >&2; exit 1 ;;
   esac
   shift
@@ -211,13 +212,11 @@ if [ -z "$TOKEN" ]; then
   exit 1
 fi
 
-if [ -z "$ARCH" ]; then
-  case "$(uname -m)" in
-    x86_64|amd64) ARCH="amd64" ;;
-    aarch64|arm64) ARCH="arm64" ;;
-    *) echo "unsupported arch: $(uname -m)" >&2; exit 1 ;;
-  esac
-fi
+case "$(uname -m)" in
+  x86_64|amd64) ARCH="amd64" ;;
+  aarch64|arm64) ARCH="arm64" ;;
+  *) echo "unsupported arch: $(uname -m)" >&2; exit 1 ;;
+esac
 
 WORKDIR="$(mktemp -d /tmp/collia-install.XXXXXX)"
 cleanup() {
@@ -229,13 +228,12 @@ download() {
   curl -kfsSL -H "X-Install-Token: $TOKEN" "$1" -o "$2"
 }
 
-mkdir -p /etc/collia /data/amprobe/resources/collia/storage /data/amprobe/logs/collia
+mkdir -p /etc/collia /data/amprobe/resources/collia/storage /data/amprobe/logs/collia /usr/sbin
 
-download "$BASE_URL/api/v1/host/install/package?node=$NODE&os_type=$OS_TYPE&arch=$ARCH" "$WORKDIR/collia.install"
+download "$BASE_URL/api/v1/host/install/package?arch=$ARCH" "$WORKDIR/collia"
 download "$BASE_URL/api/v1/host/install/config?node=$NODE" "$WORKDIR/config.yml"
 
-chmod +x "$WORKDIR/collia.install"
-"$WORKDIR/collia.install"
+install -m 0755 "$WORKDIR/collia" /usr/sbin/collia
 install -m 0644 "$WORKDIR/config.yml" /etc/collia/config.yml
 
 if [ "$TLS_ENABLED" = "true" ]; then
@@ -249,7 +247,7 @@ collia stop || true
 collia start
 
 echo "collia installed and started on tcp://0.0.0.0:$RPC_PORT"
-`, shellQuote(baseURL), shellQuote(node), shellQuote(osType), shellQuote(strconv.Itoa(rpcPort)), shellQuote(strconv.FormatBool(tlsEnabled)))
+`, shellQuote(baseURL), shellQuote(node), shellQuote(strconv.Itoa(rpcPort)), shellQuote(strconv.FormatBool(tlsEnabled)))
 }
 
 func isSafeInstallName(s string) bool {

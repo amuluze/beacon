@@ -70,7 +70,6 @@ cd amprobe/web && make dev
 cd amprobe/web && make install
 cd collia && make amd64
 cd collia && make arm64
-cd collia && make assets
 cd collia && make installer
 cd collia && make wire
 cd amprobe/web && npm run build

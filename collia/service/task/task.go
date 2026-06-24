@@ -1,11 +1,7 @@
 // Package task
-// Date: 2022/11/9 10:18
-// Author: Amu
-// Description:
 package task
 
 import (
-	"common/database"
 	"time"
 
 	"github.com/amuluze/docker"
@@ -22,36 +18,134 @@ const (
 var _ ITask = (*Task)(nil)
 
 type ITask interface {
-	DockerTask(timestamp time.Time) error
-	ContainerTask(timestamp time.Time) error
-	ImageTask(timestamp time.Time) error
-	NetworkTask(timestamp time.Time) error
-
-	HostTask(timestamp time.Time) error
-	CPUTask(timestamp time.Time) error
-	MemoryTask(timestamp time.Time) error
-	DiskTask(timestamp time.Time) error
-	NetTask(timestamp time.Time) error
+	Report(timestamp time.Time) (*MonitorReport, error)
 }
 
 type Task struct {
 	interval int
-	maxAge   int
-	db       *database.DB
 	manager  *docker.Manager
 	devices  map[string]struct{}
 	ethernet map[string]struct{}
 	cache    *cache.Cache
 }
 
-func NewTask(interval int, maxAge int, db *database.DB, manager *docker.Manager, dev map[string]struct{}, eth map[string]struct{}) *Task {
+// MonitorReport holds all collected monitoring data for one tick.
+type MonitorReport struct {
+	Host       *HostReport
+	CPU        *CPUReport
+	Memory     *MemoryReport
+	Disks      []*DiskReport
+	Nets       []*NetReport
+	Docker     *DockerReport
+	Containers []*ContainerReport
+	Images     []*ImageReport
+	Networks   []*NetworkReport
+	Error      error
+}
+
+type HostReport struct {
+	Uptime          string
+	Hostname        string
+	Os              string
+	Platform        string
+	PlatformVersion string
+	KernelVersion   string
+	KernelArch      string
+}
+
+type CPUReport struct {
+	CPUPercent float64
+}
+
+type MemoryReport struct {
+	MemPercent float64
+	MemTotal   float64
+	MemUsed    float64
+}
+
+type DiskReport struct {
+	Device      string
+	DiskPercent float64
+	DiskTotal   float64
+	DiskUsed    float64
+	DiskRead    float64
+	DiskWrite   float64
+}
+
+type NetReport struct {
+	Ethernet string
+	NetRecv  float64
+	NetSend  float64
+}
+
+type DockerReport struct {
+	DockerVersion string
+	APIVersion    string
+	MinAPIVersion string
+	GitCommit     string
+	GoVersion     string
+	Os            string
+	Arch          string
+}
+
+type ContainerReport struct {
+	ContainerID string
+	Name        string
+	Image       string
+	IP          string
+	Ports       string
+	State       string
+	Uptime      string
+	CPUPercent  float64
+	MemPercent  float64
+	MemUsage    float64
+	MemLimit    float64
+	Labels      string
+}
+
+type ImageReport struct {
+	ImageID string
+	Name    string
+	Tag     string
+	Created string
+	Size    string
+	Number  int
+}
+
+type NetworkReport struct {
+	NetworkID string
+	Name      string
+	Driver    string
+	Scope     string
+	Created   string
+	Internal  bool
+	Subnet    string
+	Gateway   string
+	Labels    string
+}
+
+func NewTask(interval int, manager *docker.Manager, dev map[string]struct{}, eth map[string]struct{}) *Task {
 	return &Task{
 		interval: interval,
-		maxAge:   maxAge,
-		db:       db,
 		manager:  manager,
 		devices:  dev,
 		ethernet: eth,
 		cache:    cache.New(5*time.Minute, 60*time.Second),
 	}
+}
+
+// Report collects all monitoring data and returns it as a MonitorReport.
+func (a *Task) Report(timestamp time.Time) (*MonitorReport, error) {
+	report := &MonitorReport{
+		Host:   a.HostTask(),
+		CPU:    a.CPUTask(),
+		Memory: a.MemoryTask(),
+		Disks:  a.DiskTask(),
+		Nets:   a.NetTask(),
+		Docker: a.DockerTask(),
+		Containers: a.ContainerTask(),
+		Images:     a.ImageTask(),
+		Networks:   a.NetworkTask(),
+	}
+	return report, nil
 }

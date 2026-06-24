@@ -8,6 +8,7 @@ import (
 	"amprobe/pkg/auth"
 	"amprobe/pkg/contextx"
 	"amprobe/service/middleware"
+	"amprobe/service/report"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/gofiber/contrib/websocket"
@@ -44,6 +45,7 @@ type Router struct {
 	accountAPI   *accountAPI.AccountAPI
 	mailAPI      *mailAPI.MailAPI
 	alarmAPI     *alarmAPI.AlarmAPI
+	reportSvc    *report.Service
 
 	loggerHandler *LoggerHandler
 	termHandler   *TermHandler
@@ -162,6 +164,7 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 				gHost.Get("/install/package", a.AgentInstallPackage).Name("下载 Collia 安装包")
 				gHost.Get("/install/config", a.AgentInstallConfig).Name("下载 Collia 配置")
 				gHost.Get("/install/certs", a.AgentInstallCerts).Name("下载 Collia 证书")
+				gHost.Post("/report", a.reportSvc.HandleReport).Name("Agent 上报监控数据")
 				gHost.Get("/host_info", a.hostAPI.HostInfo).Name("获取主机信息")
 				gHost.Get("/cpu_info", a.hostAPI.CPUInfo).Name("获取 CPU 信息")
 				gHost.Get("/mem_info", a.hostAPI.MemInfo).Name("获取内存信息")
