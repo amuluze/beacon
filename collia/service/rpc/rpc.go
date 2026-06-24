@@ -7,8 +7,8 @@ package rpc
 import (
 	"common/database"
 	"common/rpc"
+
 	"github.com/amuluze/docker"
-	"github.com/patrickmn/go-cache"
 )
 
 var _ rpc.IService = (*Service)(nil)
@@ -16,9 +16,8 @@ var _ rpc.IService = (*Service)(nil)
 type Service struct {
 	DB      *database.DB
 	Manager *docker.Manager
-	cache   *cache.Cache
 }
 
 func NewService(db *database.DB, manager *docker.Manager) *Service {
-	return &Service{DB: db, Manager: manager, cache: cache.New(0, 0)}
+	return &Service{DB: db, Manager: manager}
 }

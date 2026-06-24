@@ -23,5 +23,14 @@ func (a *Models) GetAllModels() []interface{} {
 		new(AlarmThreshold),
 		new(Mail),
 		new(License),
+		new(MonitorHost),
+		new(MonitorCPU),
+		new(MonitorMemory),
+		new(MonitorDisk),
+		new(MonitorNet),
+		new(MonitorDocker),
+		new(MonitorContainer),
+		new(MonitorImage),
+		new(MonitorNetwork),
 	}
 }

@@ -24,10 +24,10 @@ docker compose up -d --build
 默认暴露 `http://<host>:1443`。Collia Agent 可通过 Amprobe 下发的安装脚本安装：
 
 ```bash
-curl -kfsSL 'http://<host>:1443/api/v1/host/install?node=1&os_type=linux' | sudo bash -s -- --token=<install-token>
+curl -kfsSL 'http://<host>:1443/api/v1/host/install?node=1' | sudo bash -s -- --token=<install-token>
 ```
 
-安装包放在 `deploy/downloads/collia/<os>/<arch>/collia.install`，启用 mTLS 时证书包放在 `deploy/downloads/collia/certs/<node>.tar.gz`。
+Collia 二进制在构建 Amprobe 镜像时一并打包进镜像，安装时由 Amprobe 直接下发；启用 mTLS 时证书包需在构建镜像前放置在 `deploy/downloads/collia/certs/<node>.tar.gz`，会随镜像一同打进镜像。
 
 它可以帮助我们完成以下几方面的工作：
 

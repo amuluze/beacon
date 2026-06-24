@@ -1,19 +1,15 @@
 // Package task
-// Date:   2024/10/15 11:19
-// Author: Amu
-// Description:
 package task
 
 import (
-	"amprobe/pkg/rpc"
-	"amprobe/pkg/utils"
-	"amprobe/service/model"
-	"common/database"
-	rpcSchema "common/rpc/schema"
 	"context"
 	"fmt"
 	"strings"
 	"time"
+
+	"amprobe/pkg/utils"
+	"amprobe/service/model"
+	"common/database"
 
 	"github.com/patrickmn/go-cache"
 	"gopkg.in/gomail.v2"
@@ -30,16 +26,14 @@ type ITask interface {
 }
 
 type Task struct {
-	rpcClient *rpc.Client
-	db        *database.DB
-	cache     *cache.Cache
+	db    *database.DB
+	cache *cache.Cache
 }
 
-func NewTask(cli *rpc.Client, db *database.DB) *Task {
+func NewTask(db *database.DB) *Task {
 	return &Task{
-		rpcClient: cli,
-		db:        db,
-		cache:     cache.New(5*time.Minute, 10*time.Minute),
+		db:    db,
+		cache: cache.New(5*time.Minute, 10*time.Minute),
 	}
 }
 
@@ -48,50 +42,27 @@ func (t *Task) CPUAlarmTask(ctx context.Context) error {
 	if err := t.db.Model(&model.AlarmThreshold{}).First(&threshold).Error; err != nil {
 		return err
 	}
-	hostArgs := rpcSchema.HostInfoArgs{}
-	var hostReply rpcSchema.HostInfoReply
-	err := t.rpcClient.Call(ctx, "HostInfo", hostArgs, &hostReply)
-	if err != nil {
+
+	// Read host info from local DB
+	var hostInfo model.MonitorHost
+	var hostname string
+	if err := t.db.Model(&model.MonitorHost{}).Order("timestamp desc").First(&hostInfo).Error; err == nil {
+		hostname = hostInfo.Hostname
+	}
+
+	// Read CPU data from local DB
+	startTime := time.Now().Add(-time.Duration(threshold.Duration) * time.Minute).Unix()
+	var cpuData []model.MonitorCPU
+	if err := t.db.Model(&model.MonitorCPU{}).Where("timestamp > ?", time.Unix(startTime, 0)).Order("timestamp asc").Find(&cpuData).Error; err != nil {
 		return err
 	}
-	args := rpcSchema.CPUAlarmQueryArgs{
-		StartTime: time.Now().Add(-(time.Duration(threshold.Duration)) * time.Minute).UnixMicro(),
-		EndTime:   time.Now().UnixMicro(),
-	}
-	var reply rpcSchema.CPUAlarmQueryReply
-	err = t.rpcClient.Call(ctx, "CPUAlarmQuery", args, &reply)
-	if err != nil {
-		return err
-	}
+
 	total := 0.0
-	for _, item := range reply.Data {
-		total += item.Value
+	for _, item := range cpuData {
+		total += item.CPUPercent
 	}
-	// Duration 时间段内，如果 CPU 使用率的的平均值大于告警阈值，则告警
-	if int(utils.Decimal(total)*100) > threshold.Threshold {
-		err := t.db.RunInTransaction(func(tx *gorm.DB) error {
-			msg := fmt.Sprintf("%s CPU 使用率连续 %d 分钟超过 %d", hostReply.Hostname, threshold.Duration, threshold.Threshold)
-			// 存储系统日志
-			operateLog := model.Audit{
-				Username: "system",
-				Operate:  msg,
-			}
-			if err := tx.Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
-				return err
-			}
-			// 发送告警邮件
-			if _, ok := t.cache.Get("cpu"); ok {
-				return nil
-			}
-			if err := t.sendMail(msg); err != nil {
-				return err
-			}
-			t.cache.Set("cpu", "true", 10*time.Minute)
-			return nil
-		})
-		if err != nil {
-			return err
-		}
+	if len(cpuData) > 0 && int(utils.Decimal(total/float64(len(cpuData)))*100) > threshold.Threshold {
+		return t.triggerAlarm("cpu", fmt.Sprintf("%s CPU 使用率连续 %d 分钟超过 %d%%", hostname, threshold.Duration, threshold.Threshold))
 	}
 	return nil
 }
@@ -101,47 +72,25 @@ func (t *Task) MemoryAlarmTask(ctx context.Context) error {
 	if err := t.db.Model(&model.AlarmThreshold{}).First(&threshold).Error; err != nil {
 		return err
 	}
-	hostArgs := rpcSchema.HostInfoArgs{}
-	var hostReply rpcSchema.HostInfoReply
-	err := t.rpcClient.Call(ctx, "HostInfo", hostArgs, &hostReply)
-	if err != nil {
+
+	var hostInfo model.MonitorHost
+	var hostname string
+	if err := t.db.Model(&model.MonitorHost{}).Order("timestamp desc").First(&hostInfo).Error; err == nil {
+		hostname = hostInfo.Hostname
+	}
+
+	startTime := time.Now().Add(-time.Duration(threshold.Duration) * time.Minute).Unix()
+	var memData []model.MonitorMemory
+	if err := t.db.Model(&model.MonitorMemory{}).Where("timestamp > ?", time.Unix(startTime, 0)).Order("timestamp asc").Find(&memData).Error; err != nil {
 		return err
 	}
-	args := rpcSchema.MemoryAlarmQueryArgs{
-		StartTime: time.Now().Add(-(time.Duration(threshold.Duration)) * time.Minute).UnixMicro(),
-		EndTime:   time.Now().UnixMicro(),
-	}
-	var reply rpcSchema.MemoryAlarmQueryReply
-	err = t.rpcClient.Call(ctx, "MemoryAlarmQuery", args, &reply)
-	if err != nil {
-		return err
-	}
+
 	total := 0.0
-	for _, item := range reply.Data {
-		total += item.Value
+	for _, item := range memData {
+		total += item.MemPercent
 	}
-	if int(utils.Decimal(total)*100) > threshold.Threshold {
-		err := t.db.RunInTransaction(func(tx *gorm.DB) error {
-			msg := fmt.Sprintf("%s 内存使用率连续 %d 分钟 %d", hostReply.Hostname, threshold.Duration, threshold.Threshold)
-			operateLog := model.Audit{
-				Username: "system",
-				Operate:  msg,
-			}
-			if err := tx.Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
-				return err
-			}
-			if _, ok := t.cache.Get("memory"); ok {
-				return nil
-			}
-			if err := t.sendMail(msg); err != nil {
-				return err
-			}
-			t.cache.Set("memory", "true", 10*time.Minute)
-			return nil
-		})
-		if err != nil {
-			return err
-		}
+	if len(memData) > 0 && int(utils.Decimal(total/float64(len(memData)))*100) > threshold.Threshold {
+		return t.triggerAlarm("memory", fmt.Sprintf("%s 内存使用率连续 %d 分钟超过 %d%%", hostname, threshold.Duration, threshold.Threshold))
 	}
 	return nil
 }
@@ -151,79 +100,44 @@ func (t *Task) DiskAlarmTask(ctx context.Context) error {
 	if err := t.db.Model(&model.AlarmThreshold{}).First(&threshold).Error; err != nil {
 		return err
 	}
-	hostArgs := rpcSchema.HostInfoArgs{}
-	var hostReply rpcSchema.HostInfoReply
-	err := t.rpcClient.Call(ctx, "HostInfo", hostArgs, &hostReply)
-	if err != nil {
+
+	var hostInfo model.MonitorHost
+	var hostname string
+	if err := t.db.Model(&model.MonitorHost{}).Order("timestamp desc").First(&hostInfo).Error; err == nil {
+		hostname = hostInfo.Hostname
+	}
+
+	// Get latest disk info by device
+	var diskData []model.MonitorDisk
+	if err := t.db.Model(&model.MonitorDisk{}).Group("device").Order("timestamp desc").Find(&diskData).Error; err != nil {
 		return err
 	}
-	args := rpcSchema.DiskAlarmQueryArgs{
-		StartTime: time.Now().Add(-(time.Duration(threshold.Duration)) * time.Minute).UnixMicro(),
-		EndTime:   time.Now().UnixMicro(),
-	}
-	var reply rpcSchema.DiskAlarmQueryReply
-	err = t.rpcClient.Call(ctx, "DiskAlarmQuery", args, &reply)
-	if err != nil {
-		return err
-	}
-	var diskMap = make(map[string]struct{})
-	for _, item := range reply.Data {
+
+	diskMap := make(map[string]struct{})
+	for _, item := range diskData {
 		if _, ok := diskMap[item.Device]; ok {
 			continue
 		}
 		diskMap[item.Device] = struct{}{}
 		if int(utils.Decimal(item.DiskPercent)*100) > threshold.Threshold {
-			err := t.db.RunInTransaction(func(tx *gorm.DB) error {
-				msg := fmt.Sprintf("%s 磁盘 %s 使用率超过 %d", hostReply.Hostname, item.Device, threshold.Threshold)
-				operateLog := model.Audit{
-					Username: "system",
-					Operate:  msg,
-				}
-				if err := tx.Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
-					return err
-				}
-				if _, ok := t.cache.Get("disk"); ok {
-					return nil
-				}
-				if err := t.sendMail(msg); err != nil {
-					return err
-				}
-				t.cache.Set("disk", "true", 10*time.Minute)
-				return nil
-			})
-			if err != nil {
-				return err
-			}
+			return t.triggerAlarm("disk", fmt.Sprintf("%s 磁盘 %s 使用率超过 %d%%", hostname, item.Device, threshold.Threshold))
 		}
 	}
 	return nil
 }
 
 func (t *Task) ServiceTask(ctx context.Context) error {
-	args := rpcSchema.ServiceAlarmQueryArgs{}
-	var reply rpcSchema.ServiceAlarmQueryReply
-	err := t.rpcClient.Call(ctx, "ServiceAlarmQuery", args, &reply)
-	if err != nil {
+	// Read latest container states from local DB
+	var containers []model.MonitorContainer
+	if err := t.db.Model(&model.MonitorContainer{}).Order("created_at desc").Find(&containers).Error; err != nil {
 		return err
 	}
-	for _, item := range reply.Data {
+
+	for _, item := range containers {
 		if containerStateBytes, ok := t.cache.Get(item.Name); ok {
 			if containerStateBytes.(string) != item.State {
-				err := t.db.RunInTransaction(func(tx *gorm.DB) error {
-					msg := fmt.Sprintf("容器 %s 的状态由 %s 变为 %s", item.Name, containerStateBytes.(string), item.State)
-					operateLog := model.Audit{
-						Username: "system",
-						Operate:  msg,
-					}
-					if err := tx.Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
-						return err
-					}
-					if err := t.sendMail(msg); err != nil {
-						return err
-					}
-					return nil
-				})
-				if err != nil {
+				msg := fmt.Sprintf("容器 %s 的状态由 %s 变为 %s", item.Name, containerStateBytes.(string), item.State)
+				if err := t.sendAlarmAudit(msg); err != nil {
 					return err
 				}
 			}
@@ -231,6 +145,42 @@ func (t *Task) ServiceTask(ctx context.Context) error {
 		t.cache.Set(item.Name, item.State, 0)
 	}
 	return nil
+}
+
+func (t *Task) triggerAlarm(key string, msg string) error {
+	return t.db.RunInTransaction(func(tx *gorm.DB) error {
+		operateLog := model.Audit{
+			Username: "system",
+			Operate:  msg,
+		}
+		if err := tx.Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
+			return err
+		}
+		if _, ok := t.cache.Get(key); ok {
+			return nil
+		}
+		if err := t.sendMail(msg); err != nil {
+			return err
+		}
+		t.cache.Set(key, "true", 10*time.Minute)
+		return nil
+	})
+}
+
+func (t *Task) sendAlarmAudit(msg string) error {
+	return t.db.RunInTransaction(func(tx *gorm.DB) error {
+		operateLog := model.Audit{
+			Username: "system",
+			Operate:  msg,
+		}
+		if err := tx.Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
+			return err
+		}
+		if err := t.sendMail(msg); err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func (t *Task) sendMail(msg string) error {

@@ -15,6 +15,7 @@ DefaultAgentID = "default"
 Enable = false
 CertDir = "/app/certs/collia"
 ServerName = ""
+ClientNames = []
 
 # 多 Agent 示例。启用后可通过请求头 X-Agent-ID 或查询参数 agent_id 选择目标 Agent。
 # [[Rpc.Agents]]

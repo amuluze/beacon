@@ -60,14 +60,6 @@ func (s *Service) manager(args []string) (string, error) {
 			return s.daemon.Stop()
 		case "status":
 			return s.daemon.Status()
-		case "setup":
-			fmt.Printf("initializing configuration files...\n")
-			if err := runSetup(); err != nil {
-				fmt.Printf("error initializing configuration files: %v\n", err)
-				os.Exit(-1)
-			} else {
-				os.Exit(0)
-			}
 		default:
 			usage()
 			return "", nil

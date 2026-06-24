@@ -1,10 +1,9 @@
 // Package schema
-// Date: 2022/11/9 10:18
-// Author: Amu
-// Description:
 package schema
 
 import "time"
+
+// ── Shared data types (used by both report push and Server-side queries) ──
 
 type Usage struct {
 	Timestamp int64   `json:"timestamp"`
@@ -73,8 +72,9 @@ type NetUsage struct {
 	Data     []NetIO `json:"data"`
 }
 
-type HostInfoArgs struct{}
+// ── Query argument/reply types (used by Server-side repository interfaces) ──
 
+type HostInfoArgs struct{}
 type HostInfoReply struct {
 	Timestamp       int64  `json:"timestamp"`
 	Uptime          string `json:"uptime"`
@@ -87,7 +87,6 @@ type HostInfoReply struct {
 }
 
 type CPUInfoArgs struct{}
-
 type CPUInfoReply struct {
 	Percent float64 `json:"percent"`
 }
@@ -96,13 +95,11 @@ type CPUUsageArgs struct {
 	StartTime int64 `json:"start_time"`
 	EndTime   int64 `json:"end_time"`
 }
-
 type CPUUsageReply struct {
 	Data []Usage `json:"data"`
 }
 
 type MemoryInfoArgs struct{}
-
 type MemoryInfoReply struct {
 	Percent float64 `json:"percent"`
 	Total   float64 `json:"total"`
@@ -113,13 +110,11 @@ type MemoryUsageArgs struct {
 	StartTime int64 `json:"start_time"`
 	EndTime   int64 `json:"end_time"`
 }
-
 type MemoryUsageReply struct {
 	Data []Usage `json:"data"`
 }
 
 type DiskInfoArgs struct{}
-
 type DiskInfoReply struct {
 	Info []Disk `json:"info"`
 }
@@ -128,7 +123,6 @@ type DiskUsageArgs struct {
 	StartTime int64 `json:"start_time"`
 	EndTime   int64 `json:"end_time"`
 }
-
 type DiskUsageReply struct {
 	Usage []DiskUsage `json:"usage"`
 }
@@ -137,7 +131,6 @@ type NetUsageArgs struct {
 	StartTime int64 `json:"start_time"`
 	EndTime   int64 `json:"end_time"`
 }
-
 type NetUsageReply struct {
 	Usage []NetUsage `json:"usage"`
 }

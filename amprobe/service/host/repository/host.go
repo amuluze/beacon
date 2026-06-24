@@ -1,16 +1,18 @@
 // Package repository
-// Date: 2024/06/11 19:26:34
-// Author: Amu
-// Description:
 package repository
 
 import (
 	"context"
+	"time"
 
+	"amprobe/pkg/contextx"
 	"amprobe/pkg/rpc"
+	"amprobe/service/model"
+	"common/database"
 	rpcSchema "common/rpc/schema"
 
 	"github.com/google/wire"
+	"gorm.io/gorm"
 )
 
 var HostRepoSet = wire.NewSet(NewHostRepo, wire.Bind(new(IHostRepo), new(*HostRepo)))
@@ -46,61 +48,147 @@ type IHostRepo interface {
 
 type HostRepo struct {
 	RPCClient *rpc.Client
+	DB        *database.DB
 }
 
-func NewHostRepo(client *rpc.Client) *HostRepo {
+func NewHostRepo(client *rpc.Client, db *database.DB) *HostRepo {
 	return &HostRepo{
 		RPCClient: client,
+		DB:        db,
 	}
 }
 
+// agentDB returns a scoped DB query filtered by the agent in context.
+func (h *HostRepo) agentDB(ctx context.Context) *gorm.DB {
+	agentID := contextx.FromAgentID(ctx)
+	db := h.DB.DB
+	if agentID != "" {
+		return db.Where("agent_id = ?", agentID)
+	}
+	return db
+}
+
+// ── Monitoring queries (local DB) ──
+
 func (h *HostRepo) HostInfo(ctx context.Context, args rpcSchema.HostInfoArgs) (rpcSchema.HostInfoReply, error) {
-	var reply rpcSchema.HostInfoReply
-	err := h.RPCClient.Call(ctx, "HostInfo", args, &reply)
-	return reply, err
+	var info model.MonitorHost
+	if err := h.agentDB(ctx).Model(&model.MonitorHost{}).Order("timestamp desc").First(&info).Error; err != nil {
+		return rpcSchema.HostInfoReply{}, err
+	}
+	return rpcSchema.HostInfoReply{
+		Timestamp:       info.Timestamp.Unix(),
+		Uptime:          info.Uptime,
+		Hostname:        info.Hostname,
+		OS:              info.Os,
+		Platform:        info.Platform,
+		PlatformVersion: info.PlatformVersion,
+		KernelVersion:   info.KernelVersion,
+		KernelArch:      info.KernelArch,
+	}, nil
 }
 
 func (h *HostRepo) CPUInfo(ctx context.Context, args rpcSchema.CPUInfoArgs) (rpcSchema.CPUInfoReply, error) {
-	var reply rpcSchema.CPUInfoReply
-	err := h.RPCClient.Call(ctx, "CPUInfo", args, &reply)
-	return reply, err
+	var info model.MonitorCPU
+	if err := h.agentDB(ctx).Model(&model.MonitorCPU{}).Order("timestamp desc").First(&info).Error; err != nil {
+		return rpcSchema.CPUInfoReply{}, err
+	}
+	return rpcSchema.CPUInfoReply{Percent: info.CPUPercent}, nil
 }
 
 func (h *HostRepo) CPUUsage(ctx context.Context, args rpcSchema.CPUUsageArgs) (rpcSchema.CPUUsageReply, error) {
-	var reply rpcSchema.CPUUsageReply
-	err := h.RPCClient.Call(ctx, "CPUUsage", args, &reply)
-	return reply, err
+	var results []model.MonitorCPU
+	if err := h.agentDB(ctx).Model(&model.MonitorCPU{}).
+		Where("timestamp > ?", time.Unix(args.StartTime, 0)).
+		Order("timestamp asc").Find(&results).Error; err != nil {
+		return rpcSchema.CPUUsageReply{}, err
+	}
+	var list []rpcSchema.Usage
+	for _, item := range results {
+		list = append(list, rpcSchema.Usage{Timestamp: item.Timestamp.Unix(), Value: item.CPUPercent})
+	}
+	return rpcSchema.CPUUsageReply{Data: list}, nil
 }
 
 func (h *HostRepo) MemInfo(ctx context.Context, args rpcSchema.MemoryInfoArgs) (rpcSchema.MemoryInfoReply, error) {
-	var reply rpcSchema.MemoryInfoReply
-	err := h.RPCClient.Call(ctx, "MemoryInfo", args, &reply)
-	return reply, err
+	var info model.MonitorMemory
+	if err := h.agentDB(ctx).Model(&model.MonitorMemory{}).Order("timestamp desc").First(&info).Error; err != nil {
+		return rpcSchema.MemoryInfoReply{}, err
+	}
+	return rpcSchema.MemoryInfoReply{Percent: info.MemPercent, Total: info.MemTotal, Used: info.MemUsed}, nil
 }
 
 func (h *HostRepo) MemUsage(ctx context.Context, args rpcSchema.MemoryUsageArgs) (rpcSchema.MemoryUsageReply, error) {
-	var reply rpcSchema.MemoryUsageReply
-	err := h.RPCClient.Call(ctx, "MemoryUsage", args, &reply)
-	return reply, err
+	var results []model.MonitorMemory
+	if err := h.agentDB(ctx).Model(&model.MonitorMemory{}).
+		Where("timestamp > ?", time.Unix(args.StartTime, 0)).
+		Order("timestamp asc").Find(&results).Error; err != nil {
+		return rpcSchema.MemoryUsageReply{}, err
+	}
+	var list []rpcSchema.Usage
+	for _, item := range results {
+		list = append(list, rpcSchema.Usage{Timestamp: item.Timestamp.Unix(), Value: item.MemPercent})
+	}
+	return rpcSchema.MemoryUsageReply{Data: list}, nil
 }
 
 func (h *HostRepo) DiskInfo(ctx context.Context, args rpcSchema.DiskInfoArgs) (rpcSchema.DiskInfoReply, error) {
-	var reply rpcSchema.DiskInfoReply
-	err := h.RPCClient.Call(ctx, "DiskInfo", args, &reply)
-	return reply, err
+	var infos []model.MonitorDisk
+	if err := h.agentDB(ctx).Model(&model.MonitorDisk{}).Group("device").Order("timestamp desc").Find(&infos).Error; err != nil {
+		return rpcSchema.DiskInfoReply{}, err
+	}
+	var list []rpcSchema.Disk
+	for _, info := range infos {
+		list = append(list, rpcSchema.Disk{
+			Device:      info.Device,
+			DiskPercent: info.DiskPercent,
+			DiskTotal:   info.DiskTotal,
+			DiskUsed:    info.DiskUsed,
+		})
+	}
+	return rpcSchema.DiskInfoReply{Info: list}, nil
 }
 
 func (h *HostRepo) DiskUsage(ctx context.Context, args rpcSchema.DiskUsageArgs) (rpcSchema.DiskUsageReply, error) {
-	var reply rpcSchema.DiskUsageReply
-	err := h.RPCClient.Call(ctx, "DiskUsage", args, &reply)
-	return reply, err
+	var results []model.MonitorDisk
+	if err := h.agentDB(ctx).Model(&model.MonitorDisk{}).
+		Where("timestamp > ?", time.Unix(args.StartTime, 0)).
+		Order("timestamp asc").Find(&results).Error; err != nil {
+		return rpcSchema.DiskUsageReply{}, err
+	}
+	list := make(map[string][]rpcSchema.DiskIO)
+	for _, item := range results {
+		list[item.Device] = append(list[item.Device], rpcSchema.DiskIO{
+			Timestamp: item.Timestamp.Unix(), IORead: item.DiskRead, IOWrite: item.DiskWrite,
+		})
+	}
+	var data []rpcSchema.DiskUsage
+	for device, l := range list {
+		data = append(data, rpcSchema.DiskUsage{Device: device, Data: l})
+	}
+	return rpcSchema.DiskUsageReply{Usage: data}, nil
 }
 
 func (h *HostRepo) NetUsage(ctx context.Context, args rpcSchema.NetUsageArgs) (rpcSchema.NetUsageReply, error) {
-	var reply rpcSchema.NetUsageReply
-	err := h.RPCClient.Call(ctx, "NetUsage", args, &reply)
-	return reply, err
+	var results []model.MonitorNet
+	if err := h.agentDB(ctx).Model(&model.MonitorNet{}).
+		Where("timestamp > ?", time.Unix(args.StartTime, 0)).
+		Order("timestamp asc").Find(&results).Error; err != nil {
+		return rpcSchema.NetUsageReply{}, nil
+	}
+	list := make(map[string][]rpcSchema.NetIO)
+	for _, item := range results {
+		list[item.Ethernet] = append(list[item.Ethernet], rpcSchema.NetIO{
+			Timestamp: item.Timestamp.Unix(), BytesSent: item.NetSend, BytesRecv: item.NetRecv,
+		})
+	}
+	var data []rpcSchema.NetUsage
+	for eth, l := range list {
+		data = append(data, rpcSchema.NetUsage{Ethernet: eth, Data: l})
+	}
+	return rpcSchema.NetUsageReply{Usage: data}, nil
 }
+
+// ── Operational commands (RPC to Agent) ──
 
 func (h *HostRepo) FilesSearch(ctx context.Context, args rpcSchema.FilesSearchArgs) (rpcSchema.FilesSearchReply, error) {
 	var reply rpcSchema.FilesSearchReply
@@ -167,6 +255,7 @@ func (h *HostRepo) GetSystemTimeZone(ctx context.Context, args rpcSchema.GetSyst
 	err := h.RPCClient.Call(ctx, "GetSystemTimeZone", args, &reply)
 	return reply, err
 }
+
 func (h *HostRepo) SetSystemTimeZone(ctx context.Context, args rpcSchema.SetSystemTimeZoneArgs) error {
 	var reply rpcSchema.SetSystemTimeZoneReply
 	return h.RPCClient.Call(ctx, "SetSystemTimeZone", args, &reply)

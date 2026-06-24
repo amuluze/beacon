@@ -1,7 +1,4 @@
 // Package task
-// Date: 2022/11/9 10:18
-// Author: Amu
-// Description:
 package task
 
 import (
@@ -10,58 +7,49 @@ import (
 	"log/slog"
 	"strings"
 	"time"
-
-	"collia/service/model"
 )
 
-func (a *Task) DockerTask(timestamp time.Time) error {
+func (a *Task) DockerTask() *DockerReport {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	dockerVersion, err := a.manager.Version(ctx)
+	version, err := a.manager.Version(ctx)
 	if err != nil {
-		return err
+		slog.Error("docker version failed", "error", err)
+		return nil
 	}
-	if err := a.db.Unscoped().Where("1 = 1").Delete(&model.Docker{}).Error; err != nil {
-		return err
+	return &DockerReport{
+		DockerVersion: version.DockerVersion,
+		APIVersion:    version.APIVersion,
+		MinAPIVersion: version.MinAPIVersion,
+		GitCommit:     version.GitCommit,
+		GoVersion:     version.GoVersion,
+		Os:            version.OS,
+		Arch:          version.Arch,
 	}
-	if err := a.db.Model(&model.Docker{}).Create(&model.Docker{
-		Timestamp:     timestamp,
-		DockerVersion: dockerVersion.DockerVersion,
-		APIVersion:    dockerVersion.APIVersion,
-		MinAPIVersion: dockerVersion.MinAPIVersion,
-		GitCommit:     dockerVersion.GitCommit,
-		GoVersion:     dockerVersion.GoVersion,
-		Os:            dockerVersion.OS,
-		Arch:          dockerVersion.Arch,
-	}).Error; err != nil {
-		return err
-	}
-	return nil
 }
 
-func (a *Task) ContainerTask(timestamp time.Time) error {
+func (a *Task) ContainerTask() []*ContainerReport {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	cs, err := a.manager.ListContainer(ctx)
 	if err != nil {
 		slog.Error("failed to list containers", "error", err)
-		return err
+		return nil
 	}
-	var containers []model.Container
+	var containers []*ContainerReport
 	for _, info := range cs {
 		cpuPercent, err := a.manager.GetContainerCpu(ctx, info.ID[:6])
 		if err != nil {
-			return err
+			slog.Error("get container cpu failed", "id", info.ID[:6], "error", err)
 		}
 		memPercent, used, limit, err := a.manager.GetContainerMem(ctx, info.ID[:6])
 		if err != nil {
-			return err
+			slog.Error("get container mem failed", "id", info.ID[:6], "error", err)
 		}
 		labels, _ := json.Marshal(info.Labels)
-		containers = append(containers, model.Container{
-			Timestamp:   timestamp,
+		containers = append(containers, &ContainerReport{
 			ContainerID: info.ID[:6],
 			Name:        info.Name,
 			State:       info.State,
@@ -76,53 +64,41 @@ func (a *Task) ContainerTask(timestamp time.Time) error {
 			MemLimit:    limit,
 		})
 	}
-	if err := a.db.Model(&model.Container{}).Create(&containers).Error; err != nil {
-		return err
-	}
-	ts := time.Now().Add(-time.Duration(a.maxAge) * 24 * time.Hour).Unix()
-	if err := a.db.Unscoped().Where("timestamp < ?", ts).Delete(&model.Container{}).Error; err != nil {
-		return err
-	}
-	return nil
+	return containers
 }
 
-func (a *Task) ImageTask(timestamp time.Time) error {
+func (a *Task) ImageTask() []*ImageReport {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	images, err := a.manager.ListImage(ctx)
 	if err != nil {
-		return err
+		slog.Error("list images failed", "error", err)
+		return nil
 	}
-	var list model.Images
+	var reports []*ImageReport
 	for _, im := range images {
-		list = append(list, model.Image{
-			Timestamp: timestamp,
-			ImageID:   im.ID[7:19],
-			Name:      im.Name,
-			Tag:       im.Tag,
-			Created:   im.Created,
-			Size:      im.Size,
+		reports = append(reports, &ImageReport{
+			ImageID: im.ID[7:19],
+			Name:    im.Name,
+			Tag:     im.Tag,
+			Created: im.Created,
+			Size:    im.Size,
 		})
 	}
-	if err := a.db.Unscoped().Where("1 = 1").Delete(&model.Image{}).Error; err != nil {
-		slog.Error("failed to delete image", "error", err)
-	}
-	if err := a.db.Model(&model.Image{}).Create(&list).Error; err != nil {
-		return err
-	}
-	return nil
+	return reports
 }
 
-func (a *Task) NetworkTask(timestamp time.Time) error {
+func (a *Task) NetworkTask() []*NetworkReport {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	nets, err := a.manager.ListNetwork(ctx)
 	if err != nil {
-		return err
+		slog.Error("list networks failed", "error", err)
+		return nil
 	}
-	var list model.Networks
+	var reports []*NetworkReport
 	for _, net := range nets {
 		subnet := ""
 		gateway := ""
@@ -131,8 +107,7 @@ func (a *Task) NetworkTask(timestamp time.Time) error {
 			subnet = net.SubNet[0].Subnet
 			gateway = net.SubNet[0].Gateway
 		}
-		list = append(list, model.Network{
-			Timestamp: timestamp,
+		reports = append(reports, &NetworkReport{
 			NetworkID: net.ID[:6],
 			Name:      net.Name,
 			Driver:    net.Driver,
@@ -144,11 +119,5 @@ func (a *Task) NetworkTask(timestamp time.Time) error {
 			Labels:    string(labels),
 		})
 	}
-	if err := a.db.Unscoped().Where("1 = 1").Delete(&model.Network{}).Error; err != nil {
-		return err
-	}
-	if err := a.db.Model(&model.Network{}).Create(&list).Error; err != nil {
-		return err
-	}
-	return nil
+	return reports
 }

@@ -15,6 +15,7 @@ DefaultAgentID = "default"
 Enable = false
 CertDir = "/app/certs/collia"
 ServerName = ""
+ClientNames = []
 
 [Gorm]
 Debug = true             # 是否开启调试模式

@@ -43,6 +43,13 @@ type Task struct {
 	MaxAge   int      `yaml:"max_age"`
 	Disk     Disk     `yaml:"disk"`
 	Ethernet Ethernet `yaml:"ethernet"`
+	Report   Report   `yaml:"report"`
+}
+
+type Report struct {
+	URL     string `yaml:"url"`
+	Token   string `yaml:"token"`
+	AgentID string `yaml:"agent_id"`
 }
 
 type Rpc struct {

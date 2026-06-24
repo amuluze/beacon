@@ -26,7 +26,7 @@ func NewTimedTask(conf *Config, cli *rpc.Client, db *database.DB) *TimedTask {
 	interval := conf.Task.Interval
 	tk := timex.NewTicker(time.Duration(interval) * time.Second)
 
-	newTask := task.NewTask(cli, db)
+	newTask := task.NewTask(db)
 
 	return &TimedTask{
 		task:   newTask,

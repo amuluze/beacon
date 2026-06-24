@@ -61,9 +61,10 @@ type Agent struct {
 }
 
 type TLS struct {
-	Enable     bool
-	CertDir    string
-	ServerName string
+	Enable      bool
+	CertDir     string
+	ServerName  string
+	ClientNames []string
 }
 
 type Gorm struct {

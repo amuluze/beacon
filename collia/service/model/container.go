@@ -33,22 +33,6 @@ func (d *Container) TableName() string {
 	return "s_container"
 }
 
-type Docker struct {
-	gorm.Model
-	Timestamp     time.Time
-	DockerVersion string
-	APIVersion    string
-	MinAPIVersion string
-	GitCommit     string
-	GoVersion     string
-	Os            string
-	Arch          string
-}
-
-func (d *Docker) TableName() string {
-	return "s_docker"
-}
-
 type Images []Image
 
 type Image struct {

@@ -22,7 +22,7 @@ func BuildInjector(configFile string, prefix Prefix) (*Injector, func(), error) 
 	if err != nil {
 		return nil, nil, err
 	}
-	timedTask := NewTimedTask(config, db)
+	timedTask := NewTimedTask(config)
 	server, err := NewRPCServer(config, db)
 	if err != nil {
 		return nil, nil, err

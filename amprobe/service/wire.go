@@ -22,6 +22,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		NewLogger,
 		NewDB,
 		NewRPCClient,
+		NewReportService,
 		InitAuthStore,
 		InitAuth,
 		InitAdapter,

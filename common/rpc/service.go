@@ -1,7 +1,4 @@
 // Package rpc
-// Date: 2022/11/9 10:18
-// Author: Amu
-// Description:
 package rpc
 
 import (
@@ -9,25 +6,11 @@ import (
 	"context"
 )
 
+// IService defines the RPC interface that collia Agent exposes to amprobe Server.
+// Monitoring data is pushed separately via ReportService; this interface only
+// contains operational commands (container/image/network/file/system).
 type IService interface {
-	Version(context.Context, schema.DockerArgs, *schema.DockerReply) error
-	ContainerList(context.Context, schema.ContainerQueryArgs, *schema.ContainerQueryReply) error
-	ContainerCPUUsage(context.Context, schema.ContainerUsageArgs, *schema.ContainerUsageReply) error
-	ContainersByImage(context.Context, schema.ContainersByImageArgs, *schema.ContainersByImageReply) error
-	ContainerCount(context.Context, schema.ContainerCountArgs, *schema.ContainerCountReply) error
-	ImageList(context.Context, schema.ImageQueryArgs, *schema.ImageQueryReply) error
-	ImageCount(context.Context, schema.ImageCountArgs, *schema.ImageCountReply) error
-	NetworkList(context.Context, schema.NetworkQueryArgs, *schema.NetworkQueryReply) error
-	NetworkCount(context.Context, schema.NetworkCountArgs, *schema.NetworkCountReply) error
-	HostInfo(context.Context, schema.HostInfoArgs, *schema.HostInfoReply) error
-	CPUInfo(context.Context, schema.CPUInfoArgs, *schema.CPUInfoReply) error
-	CPUUsage(context.Context, schema.CPUUsageArgs, *schema.CPUUsageReply) error
-	MemoryInfo(context.Context, schema.MemoryInfoArgs, *schema.MemoryInfoReply) error
-	MemoryUsage(context.Context, schema.MemoryUsageArgs, *schema.MemoryUsageReply) error
-	DiskInfo(context.Context, schema.DiskInfoArgs, *schema.DiskInfoReply) error
-	DiskUsage(context.Context, schema.DiskUsageArgs, *schema.DiskUsageReply) error
-	NetUsage(context.Context, schema.NetUsageArgs, *schema.NetUsageReply) error
-
+	// ── Container operations ──
 	ContainerCreate(context.Context, schema.ContainerCreateArgs, *schema.ContainerCreateReply) error
 	ContainerUpdate(context.Context, schema.ContainerUpdateArgs, *schema.ContainerUpdateReply) error
 	ContainerDelete(context.Context, schema.ContainerDeleteArgs, *schema.ContainerDeleteReply) error
@@ -35,15 +18,20 @@ type IService interface {
 	ContainerStop(context.Context, schema.ContainerStopArgs, *schema.ContainerStopReply) error
 	ContainerRestart(context.Context, schema.ContainerRestartArgs, *schema.ContainerRestartReply) error
 	ContainerLogs(context.Context, schema.ContainerLogsArgs, *schema.ContainerLogsReply) error
+
+	// ── Image operations ──
 	ImagePull(context.Context, schema.ImagePullArgs, *schema.ImagePullReply) error
 	ImageTag(context.Context, schema.ImageTagArgs, *schema.ImageTagReply) error
 	ImageDelete(context.Context, schema.ImageDeleteArgs, *schema.ImageDeleteReply) error
 	ImagesPrune(ctx context.Context) error
 	ImageImport(context.Context, schema.ImageImportArgs, *schema.ImageImportReply) error
 	ImageExport(context.Context, schema.ImageExportArgs, *schema.ImageExportReply) error
+
+	// ── Network operations ──
 	NetworkCreate(context.Context, schema.NetworkCreateArgs, *schema.NetworkCreateReply) error
 	NetworkDelete(context.Context, schema.NetworkDeleteArgs, *schema.NetworkDeleteReply) error
 
+	// ── File operations ──
 	FilesSearch(context.Context, schema.FilesSearchArgs, *schema.FilesSearchReply) error
 	DirSize(context.Context, schema.DirSizeArgs, *schema.DirSizeReply) error
 	FileCreate(context.Context, schema.FileCreateArgs, *schema.FileCreateReply) error
@@ -51,6 +39,8 @@ type IService interface {
 	FileUpload(context.Context, schema.FileUploadArgs, *schema.FileUploadReply) error
 	FileDownload(context.Context, schema.FileDownloadArgs, *schema.FileDownloadReply) error
 	FolderCreate(context.Context, schema.FolderCreateArgs, *schema.FolderCreateReply) error
+
+	// ── System operations ──
 	Reboot(context.Context, schema.RebootArgs, *schema.RebootReply) error
 	Shutdown(context.Context, schema.ShutdownArgs, *schema.ShutdownReply) error
 	GetDNS(context.Context, schema.GetDNSArgs, *schema.GetDNSReply) error
@@ -62,9 +52,4 @@ type IService interface {
 	GetSystemTimeZoneList(context.Context, schema.GetSystemTimeZoneListArgs, *schema.GetSystemTimeZoneListReply) error
 	GetDockerRegistryMirrors(context.Context, schema.GetDockerRegistryMirrorsArgs, *schema.GetDockerRegistryMirrorsReply) error
 	SetDockerRegistryMirrors(context.Context, schema.SetDockerRegistryMirrorsArgs, *schema.SetDockerRegistryMirrorsReply) error
-
-	CPUAlarmQuery(context.Context, schema.CPUAlarmQueryArgs, *schema.CPUAlarmQueryReply) error
-	MemoryAlarmQuery(context.Context, schema.MemoryAlarmQueryArgs, *schema.MemoryAlarmQueryReply) error
-	DiskAlarmQuery(context.Context, schema.DiskAlarmQueryArgs, *schema.DiskAlarmQueryReply) error
-	ServiceAlarmQuery(context.Context, schema.ServiceAlarmQueryArgs, *schema.ServiceAlarmQueryReply) error
 }
