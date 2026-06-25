@@ -23,9 +23,9 @@ Move monitoring data storage from Agent to Server:
 Frontend → HTTP API → amprobe RPC Client → collia RPC Server → SQLite
 ```
 
-### After (Push model)
+### After (Push model, current implementation)
 ```
-collia (collect) → RPC push → amprobe RPC Server → central DB
+collia (collect) → HTTP POST /api/v1/host/report → amprobe → central DB
 Frontend → HTTP API → amprobe → central DB
 ```
 
@@ -38,18 +38,18 @@ Frontend → HTTP API → amprobe → central DB
 - File: `amprobe/service/model/monitor.go` — GORM models matching collia's current models
 - Update: `amprobe/service/model/model.go` — register new models
 
-### Step 3: Server — RPC Report Service
-- File: `amprobe/service/report/report.go` — receives push data, stores in DB
-- File: `amprobe/service/report/rpc_server.go` — rpcx server registration and lifecycle
+### Step 3: Server — HTTP Report Service
+- File: `amprobe/service/report/report.go` — receives push data, validates Agent identity, stores batch in DB
+- Route: `POST /api/v1/host/report` — registered in Fiber router
 
 ### Step 4: Server — Query Path Migration
 - Modify: `amprobe/service/host/repository/host.go` — read from local DB, not RPC
 - Modify: `amprobe/service/container/repository/container.go` — read from local DB, not RPC
 - Update: `amprobe/service/task/task.go` — alarm checks read from local DB
 
-### Step 5: Server — RPC Server Startup
-- Modify: `amprobe/service/server.go` — start RPC server alongside HTTP server
-- Update: `amprobe/service/config.go` — add RPC server config (listen address)
+### Step 5: Server — HTTP Route Startup
+- Modify: `amprobe/service/router.go` — register report route on existing HTTP server
+- Config: reuse existing HTTP server and Agent install/report token semantics
 
 ### Step 6: Agent — Push Client
 - File: `collia/service/report/client.go` — RPC client to push data to Server
@@ -63,8 +63,9 @@ Frontend → HTTP API → amprobe → central DB
 
 ## Key Design Decisions
 
-1. **RPC Direction**: Agent pushes to Server (new RPC server on Server side)
+1. **Report Direction**: Agent pushes monitoring data to Server via HTTP POST
 2. **DB Schema**: Same table structure as current Agent models, just on Server
 3. **Data Flow**: Agent collects → pushes immediately → Server stores → Frontend queries
 4. **Agent DB**: Remove `s_host`, `s_cpu`, `s_memory`, `s_disk`, `s_net`, `s_container`, `s_docker`, `s_image`, `s_network` tables from Agent
 5. **System Operations**: Keep file/DNS/time/reboot/shutdown operations on Agent (they require local system access)
+6. **Batch Consistency**: Server accepts or rejects an Agent report batch as one consistency unit; missing `agent_id` is rejected.

@@ -5,16 +5,18 @@
 
 ## 模块职责
 
-`amprobe` 的主要角色是：Server control plane: Web/API 接入、认证授权、目标选择、RPC client 和运行时协调。
+`amprobe` 的主要角色是：Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client。
 
-- 接收 Web/API 请求，负责认证授权、路由聚合、Agent 选择和跨模块协调。
+- 接收 Web/API 请求，负责认证授权、路由聚合、Agent 选择、Agent 列表查询和跨模块协调。
+- 接收 Agent HTTP 监控上报批次，并把批次作为一致性单元写入 Server 本地监控表。
+- 对容器、文件、系统等控制操作，通过 `common/rpc/tunnel` 按 Agent 标识调用目标 Agent。
 - 相关源码包：`amprobe/cmd/amprobe`, `amprobe/pkg/auth`, `amprobe/pkg/auth/jwtauth`, `amprobe/pkg/contextx`, `amprobe/pkg/errors`, `amprobe/pkg/fiberx`。
 
 ## 职责边界
 
 | 职责 | 说明 | 是否负责 |
 |------|------|----------|
-| 模块内实现 | Server control plane: Web/API 接入、认证授权、目标选择、RPC client 和运行时协调 | yes |
+| 模块内实现 | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client | yes |
 | 跨模块协调 | 仅通过公开接口或项目约定完成 | conditional |
 | 其他模块内部状态 | 不直接读写其他模块私有实现 | no |
 
@@ -22,18 +24,20 @@
 
 - 模块路径：`amprobe`
 - Go 版本：`1.21.10`
-- Go 源码文件：108
-- Go 测试文件：1
-- 包名：`account`, `alarm`, `api`, `audit`, `auth`, `container`, `contextx`, `errors`, `fiberx`, `hash`, `host`, `jwtauth`, `license`, `mail`, `main`, `middleware`, `model`, `repository`, `rpc`, `schema`, `service`, `task`, `utils`, `uuid`, `validatex`, `web`
-- 推断角色：Server control plane: Web/API 接入、认证授权、目标选择、RPC client 和运行时协调
+- Go 源码文件：115
+- Go 测试文件：5
+- 包名：`account`, `agent`, `alarm`, `api`, `audit`, `auth`, `container`, `contextx`, `errors`, `fiberx`, `hash`, `host`, `jwtauth`, `license`, `mail`, `main`, `middleware`, `model`, `report`, `repository`, `rpc`, `schema`, `service`, `task`, `utils`, `uuid`, `validatex`, `web`
+- 推断角色：Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client
 
 ## 接口与符号信号
 
 本节记录源码扫描得到的导出符号或前端入口信号；它们是候选接口线索，不等同于跨模块公开 API。跨模块调用仍以 facade、模块文档和 Domain Spec 约束为准。
 
 - `interface Auther (amprobe/pkg/auth/auth.go)`
+- `interface Caller (amprobe/pkg/rpc/rpc.go)`
 - `interface IAccountRepository (amprobe/service/account/repository/account.go)`
 - `interface IAccountService (amprobe/service/account/service/account.go)`
+- `interface IAgentRepo (amprobe/service/agent/repository/repository.go)`
 - `interface IAlarmRepository (amprobe/service/alarm/repository/alarm.go)`
 - `interface IAlarmService (amprobe/service/alarm/service/alarm.go)`
 - `interface IAuditRepo (amprobe/service/audit/repository/audit.go)`
@@ -45,8 +49,6 @@
 - `interface IHostRepo (amprobe/service/host/repository/host.go)`
 - `interface IHostService (amprobe/service/host/service/host.go)`
 - `interface ILicenseRepository (amprobe/service/license/repository/license.go)`
-- `interface ILicenseService (amprobe/service/license/service/license.go)`
-- `interface IMailRepository (amprobe/service/mail/repository/mail.go)`
 - 另有 149 个导出符号未展开；请用 `rg`、codegraph 或 IDE 按需查看完整清单。
 
 ## 依赖关系
@@ -72,10 +74,10 @@
 
 ## 配置与入口信号
 
-- 配置：`BASE_URL` at `amprobe/service/agent_install.go:235`
+- 配置：`BASE_URL` at `amprobe/service/agent_install.go:222`
 - 配置：`Config` in `amprobe/service/config.go`
-- 配置：`DNS` at `amprobe/service/router.go:179`
-- 配置：`DNS` at `amprobe/service/router.go:180`
+- 配置：`DNS` at `amprobe/service/router.go:189`
+- 配置：`DNS` at `amprobe/service/router.go:190`
 - 配置：`ENGINE` at `amprobe/service/db.go:40`
 - 配置：`GetDNSSettingsArgs` in `amprobe/service/schema/host.go`
 - 配置：`GetDNSSettingsReply` in `amprobe/service/schema/host.go`
@@ -83,46 +85,46 @@
 - 配置：`Option` in `amprobe/service/server.go`
 - 配置：`SetDNSSettingsArgs` in `amprobe/service/schema/host.go`
 - 配置：`SetDNSSettingsReply` in `amprobe/service/schema/host.go`
-- 配置：`TLS` at `amprobe/service/rpc.go:18`
-- 配置：`TLS` at `amprobe/service/rpc.go:34`
-- 配置：`WORKDIR` at `amprobe/service/agent_install.go:239`
-- 入口：`api := app.Group("/api")` at `amprobe/service/router.go:95`
-- 入口：`app.Get("/ws", websocket.New(a.termHandler.Handler))` at `amprobe/service/router.go:74`
-- 入口：`app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))` at `amprobe/service/router.go:73`
+- 配置：`WORKDIR` at `amprobe/service/agent_install.go:225`
+- 入口：`api := app.Group("/api")` at `amprobe/service/router.go:99`
+- 入口：`app.Get("/ws", websocket.New(a.termHandler.Handler))` at `amprobe/service/router.go:78`
+- 入口：`app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))` at `amprobe/service/router.go:77`
 - 入口：`app.Use("/", filesystem.New(filesystem.Config{` at `amprobe/service/app.go:37`
-- 入口：`app.Use("ws", func(c *fiber.Ctx) error {` at `amprobe/service/router.go:64`
-- 入口：`app.Use(func(c *fiber.Ctx) error {` at `amprobe/service/router.go:53`
-- 入口：`app.Use(middleware.CasbinMiddleware(` at `amprobe/service/router.go:87`
+- 入口：`app.Use("ws", func(c *fiber.Ctx) error {` at `amprobe/service/router.go:68`
+- 入口：`app.Use(func(c *fiber.Ctx) error {` at `amprobe/service/router.go:57`
+- 入口：`app.Use(middleware.CasbinMiddleware(` at `amprobe/service/router.go:91`
 - 入口：`app.Use(middleware.PanicMiddleware())` at `amprobe/service/app.go:34`
 - 入口：`app.Use(middleware.StackMiddleware)` at `amprobe/service/app.go:35`
-- 入口：`app.Use(middleware.UserAuthMiddleware(` at `amprobe/service/router.go:77`
-- 入口：`gAlarm.Get("/alarm_query", a.alarmAPI.AlarmQuery).Name("查询告警阈值")` at `amprobe/service/router.go:207`
-- 入口：`gAlarm.Post("/alarm_update", a.alarmAPI.AlarmUpdate).Name("更新告警阈值")` at `amprobe/service/router.go:206`
-- 入口：`gAudit.Get("/query", a.auditAPI.AuditQuery).Name("获取审计日志")` at `amprobe/service/router.go:192`
-- 入口：`gAuth.Get("/user_info", a.authAPI.UserInfo).Name("查询权限")` at `amprobe/service/router.go:133`
-- 入口：`gAuth.Post("/login", a.authAPI.Login).Name("登录")` at `amprobe/service/router.go:129`
-- 入口：`gAuth.Post("/logout", a.authAPI.Logout).Name("登出")` at `amprobe/service/router.go:130`
+- 入口：`app.Use(middleware.UserAuthMiddleware(` at `amprobe/service/router.go:81`
+- 入口：`gAgent.Get("/list", a.agentAPI.List).Name("查询 Agent 列表")` at `amprobe/service/router.go:133`
+- 入口：`gAlarm.Get("/alarm_query", a.alarmAPI.AlarmQuery).Name("查询告警阈值")` at `amprobe/service/router.go:217`
+- 入口：`gAlarm.Post("/alarm_update", a.alarmAPI.AlarmUpdate).Name("更新告警阈值")` at `amprobe/service/router.go:216`
+- 入口：`gAudit.Get("/query", a.auditAPI.AuditQuery).Name("获取审计日志")` at `amprobe/service/router.go:202`
+- 入口：`gAuth.Get("/user_info", a.authAPI.UserInfo).Name("查询权限")` at `amprobe/service/router.go:142`
+- 入口：`gAuth.Post("/login", a.authAPI.Login).Name("登录")` at `amprobe/service/router.go:138`
 
 ## 数据模型与状态
 
 - 数据模型以源码结构、导出类型信号和测试断言为准；本节只记录静态发现结果。
+- `interface ILicenseService (amprobe/service/license/service/license.go)`
+- `interface IMailRepository (amprobe/service/mail/repository/mail.go)`
 - `interface IMailService (amprobe/service/mail/service/mail.go)`
 - `interface IRouter (amprobe/service/router.go)`
 - `interface ITask (amprobe/service/task/task.go)`
 - `interface Storer (amprobe/pkg/auth/jwtauth/store.go)`
 - `interface TokenInfo (amprobe/pkg/auth/auth.go)`
+- `struct API (amprobe/service/agent/agent.go)`
 - `struct AccountAPI (amprobe/service/account/api/account.go)`
 - `struct AccountRepository (amprobe/service/account/repository/account.go)`
-- `struct AccountService (amprobe/service/account/service/account.go)`
-- `struct Agent (amprobe/service/config.go)`
-- `struct AgentInstall (amprobe/service/config.go)`
-- 另有 61 个导出模型/接口符号未展开；完整清单以源码为准。
+- 另有 56 个导出模型/接口符号未展开；完整清单以源码为准。
 
 ## 使用注意事项
 
 - 不跨越模块边界直接依赖内部路径或未导出符号。
 - 修改跨模块公开 API、导出符号信号、配置或副作用边界时，同步更新本文件、根入口文档和相关 Domain Spec。
 - 配置、凭据和外部副作用只记录语义边界，不记录真实敏感值。
+- 监控查询默认读取 Server 本地监控表；控制操作才走反向 tunnel。新增接口时必须明确属于查询路径、上报路径还是控制路径。
+- Agent 上报必须携带 Agent 标识并保持批次一致性；失败不得伪装为成功空结果。
 
 ## 验证命令
 

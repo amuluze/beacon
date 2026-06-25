@@ -8,7 +8,7 @@
 - Go 运行环境需满足各模块 `go.mod` 声明的版本。
 - 前端或 Node.js 包需安装依赖后运行对应 scripts。
 - Docker/Compose 可作为本地或容器化启动入口。
-- 运行前需要确认配置文件中的监听、数据库、Agent、凭据和路径语义。
+- 运行前需要确认配置文件中的 HTTP 监听、反向 tunnel 控制端口、监控上报 URL、数据库、Agent、凭据和路径语义。
 
 ## 快速启动
 
@@ -25,6 +25,7 @@ docker compose -f compose.yaml up
 - 前端包通过 package scripts 运行本地开发、类型检查、lint 和构建。
 - `compose.yaml` 提供 Docker Compose 启动入口。
 - `amprobe/Dockerfile` 提供镜像构建上下文。
+- Go workspace 根目录不是一个 Go module；验证时应进入 `amprobe`、`collia`、`common` 模块分别执行 `go test ./...` 或 `go build ./...`。
 
 ## 配置说明
 
@@ -33,11 +34,13 @@ docker compose -f compose.yaml up
 | `amprobe/configs/config.dev.toml` | 开发环境配置，通常包含本地监听、数据库或 Agent 连接参数；检测到键/段：`Address`, `AgentInstall`, `AppName`, `Auth`, `AutoLoad`, `AutoLoadInternal`, `Casbin`, `CertDir` |
 | `amprobe/configs/config.toml` | 运行时配置文件；检测到键/段：`Address`, `AgentInstall`, `AppName`, `Auth`, `AutoLoad`, `AutoLoadInternal`, `Casbin`, `CertDir` |
 | `amprobe/web/tsconfig.json` | TypeScript 编译配置，用于类型检查或前端构建；检测到键/段：`allowImportingTsExtensions`, `compilerOptions`, `isolatedModules`, `jsx`, `lib`, `module`, `moduleResolution`, `noEmit` |
-| `collia/assets/config.yml` | 运行时配置文件 |
-| `collia/assets/resources/amprobe/configs/config.toml` | 运行时配置文件；检测到键/段：`Address`, `AgentInstall`, `AppName`, `Auth`, `AutoLoad`, `AutoLoadInternal`, `Casbin`, `CertDir` |
+| `collia/config.yml` | 运行时配置文件；检测到键/段：`agent_id`, `control`, `disk`, `interval`, `join_token`, `level`, `log`, `max_age` |
 
 - 本节只列运行/构建配置文件；源码中的 Args/Reply/schema 类型不作为运行时配置项输出。
 - Agent 选择应以请求头、查询参数或配置中的 agent 标识为准；缺省目标必须有清晰回退语义。
+- `amprobe` 的 `[Control] Address` 是 Agent 反向连接的 tunnel 监听地址；`DefaultAgentID` 是未显式选择 Agent 时的控制调用回退目标。
+- `collia` 的 `control.server` / `control.agent_id` 用于建立反向 tunnel；`task.report.url` / `task.report.agent_id` 用于 HTTP 监控上报。两处 Agent 标识必须保持同一节点语义，避免监控查询和控制调用指向不同节点。
+- `AgentInstall.Token` 与 `task.report.token` 属于敏感凭据，只记录语义，不在文档中写入真实值。
 - 数据库配置必须说明驱动、地址、库名、凭据加载边界和迁移策略。
 - 容器运行时操作配置必须说明运行权限、运行时访问方式和失败回滚语义。
 
@@ -55,6 +58,8 @@ docker compose -f compose.yaml up
 - 确认 `.docs/MANIFEST.yml` 中 required 文档存在且章节完整。
 - 确认 Domain Spec 没有混入文件路径、技术选型或伪代码。
 - 确认构建、测试和质量门禁命令在目标环境可重复执行。
+- 当前 Go 模块验证入口是分模块执行：`cd amprobe && go test ./...`、`cd collia && go test ./...`、`cd common && go test ./...`。
+- 当前前端类型检查入口是 `cd amprobe/web && npm run ts`。`npm run lint` 已配置但存在存量格式/排序问题，启用为发布门禁前需要先收敛存量 lint。
 
 ## Makefile Targets
 
@@ -75,8 +80,6 @@ docker compose -f compose.yaml up
 
 - `make amd64`: build amd64
 - `make arm64`: build arm64
-- `make assets`: generate assets
-- `make installer`: generate installer
 - `make wire`: generate wire
 
 ## Package Scripts
@@ -88,4 +91,4 @@ docker compose -f compose.yaml up
 |------|--------|----|
 | `amprobe` | `amprobe` | `1.21.10` |
 | `collia` | `collia` | `1.21.10` |
-| `common` | `common` | `1.21.10` |
+| `common` | `common` | `1.25.0` |

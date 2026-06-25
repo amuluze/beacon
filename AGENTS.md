@@ -4,14 +4,14 @@
 
 ## 30 秒项目摘要
 
-`Amprobe` 是一个 Server-Agent 监控/探测平台：Server 侧提供 Web UI 和 HTTP API，按 Agent 标识选择目标节点，通过 rpcx 调用 Agent；Agent 侧采集主机与 Docker 状态、执行容器控制动作，并把结果落到数据库或返回给前端。
+`Amprobe` 是一个 Server-Agent 监控/探测平台：Server 侧提供 Web UI 和 HTTP API，按 Agent 标识选择目标节点；Agent 侧采集主机与 Docker 状态，通过 HTTP 上报监控批次，并通过反向 gRPC tunnel 接收 Server 发起的控制调用。
 
 核心链路：
 - Vue/Vite Web 前端发起用户操作或订阅日志、终端等实时通道。
 - Fiber Server 接收 HTTP/WebSocket 请求，完成认证授权、参数解析和 Agent 选择。
-- Server 通过 rpcx client 按 Agent 标识调用目标 Agent 的 RPC Service。
-- Agent 读取 GORM 持久化数据或调用 Docker/主机系统 API 完成采集与控制。
-- 结果通过共享 schema 或 RPC reply 回到 Server，再转换为前端可展示的响应或实时事件。
+- 监控查询读取 Server 本地监控表，并按 `X-Agent-ID` 或 `agent_id` 过滤目标 Agent。
+- 控制操作通过 `common/rpc/tunnel` 的反向 gRPC tunnel 按 Agent 标识调用目标 Agent。
+- Agent 调用 Docker/主机系统 API 完成采集与控制；监控批次通过 HTTP report 入口原子落库，控制结果通过 tunnel reply 或实时流回到 Server。
 
 ## 文档地图
 
@@ -27,7 +27,6 @@
 | [.docs/modules/collia.md](.docs/modules/collia.md) | collia module responsibilities, implementation signals, exported-symbol hints, dependencies, state and validation |
 | [.docs/modules/common.md](.docs/modules/common.md) | common module responsibilities, implementation signals, exported-symbol hints, dependencies, state and validation |
 | [.docs/project-analysis.md](.docs/project-analysis.md) | workspace inventory, documentation health, coverage model and update guidance |
-| [docs/server-agent-architecture.md](docs/server-agent-architecture.md) | 项目原有文档；用于补充 `.docs/` 生成视图 |
 
 ## 文档健康
 
@@ -45,12 +44,10 @@
 | `.docs/` | implementation documentation |
 | `.plans/` | SDD implementation plans |
 | `.specs/` | SDD task, status, and domain specs |
-| `amprobe/` | Server control plane: Web/API 接入、认证授权、目标选择、RPC client 和运行时协调 |
-| `collia/` | Agent runtime: 主机/容器采集、Docker 控制、GORM 本地状态和 rpcx Service |
-| `common/` | shared contract library: 复用 schema、数据库封装、RPC 参数/返回值和跨模块类型 |
+| `amprobe/` | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client |
+| `collia/` | Agent runtime: 主机/容器采集、HTTP 监控上报、Docker 控制和反向 tunnel Service |
+| `common/` | shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型 |
 | `deploy/` | supporting project directory |
-| `docs/` | project documentation |
-| `installer/` | supporting project directory |
 
 ## Domain Specs
 
@@ -70,7 +67,6 @@ cd amprobe/web && make dev
 cd amprobe/web && make install
 cd collia && make amd64
 cd collia && make arm64
-cd collia && make installer
 cd collia && make wire
 cd amprobe/web && npm run build
 ```
@@ -84,7 +80,9 @@ cd amprobe/web && npm run build
 
 ## 技术栈
 
-- rpcx Server-Agent RPC
+- reverse gRPC tunnel control channel
+- HTTP monitoring report channel
+- rpcx dependency retained in module metadata
 - Docker/host operation boundary
 - Vue/Vite frontend
 - Fiber/HTTP API
@@ -103,3 +101,5 @@ cd amprobe/web && npm run build
 - `AGENTS.md` 是 AI 协作入口的 SSOT；`CLAUDE.md` 是同步副本，内容必须一致。
 - 新增模块、命令、路由、配置或领域概念后，重新运行 `/sdd doc update` 并检查 `.docs/MANIFEST.yml`。
 - 不在文档中写入真实密钥、Token、内部凭据或不可公开的环境值。
+- 根目录不是 Go module；Go 验证需进入 `amprobe`、`collia`、`common` 分别执行。
+- 监控查询、监控上报和控制调用是三条不同路径；新增接口或修复 Bug 时必须明确所属路径和 Agent 选择语义。

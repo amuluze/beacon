@@ -5,7 +5,7 @@
 
 ## 架构概览
 
-`Amprobe` 是一个 Server-Agent 监控/探测平台：Server 侧提供 Web UI 和 HTTP API，按 Agent 标识选择目标节点，通过 rpcx 调用 Agent；Agent 侧采集主机与 Docker 状态、执行容器控制动作，并把结果落到数据库或返回给前端。
+`Amprobe` 是一个 Server-Agent 监控/探测平台：Server 侧提供 Web UI 和 HTTP API，按 Agent 标识选择目标节点；Agent 侧采集主机与 Docker 状态，通过 HTTP 上报监控批次，并通过反向 gRPC tunnel 接收 Server 发起的控制调用。
 
 当前检测到 3 个 Go workspace 模块，以及 1 个 package.json 驱动的前端/Node 模块；模块间边界以 `go.work`、各模块 `go.mod`、`package.json` 和 `.specs/domain/*.md` 为主要约束来源。
 
@@ -13,13 +13,16 @@
 
 1. Vue/Vite Web 前端发起用户操作或订阅日志、终端等实时通道。
 2. Fiber Server 接收 HTTP/WebSocket 请求，完成认证授权、参数解析和 Agent 选择。
-3. Server 通过 rpcx client 按 Agent 标识调用目标 Agent 的 RPC Service。
-4. Agent 读取 GORM 持久化数据或调用 Docker/主机系统 API 完成采集与控制。
-5. 结果通过共享 schema 或 RPC reply 回到 Server，再转换为前端可展示的响应或实时事件。
+3. 监控查询读取 Server 本地持久化数据，并按 `X-Agent-ID` 或 `agent_id` 过滤目标 Agent。
+4. 控制操作通过 `common/rpc/tunnel` 的反向 gRPC tunnel 按 Agent 标识调用目标 Agent 的 Service。
+5. Agent 调用 Docker/主机系统 API 完成采集与控制；监控批次通过 HTTP report 入口原子落库，控制结果通过 tunnel reply 或实时流回到 Server。
+6. Server 把 common schema、数据库查询结果或 tunnel reply 转换为前端可展示的响应或实时事件。
 
 ## 技术栈
 
-- rpcx Server-Agent RPC
+- reverse gRPC tunnel control channel
+- HTTP monitoring report channel
+- rpcx dependency retained in module metadata
 - Docker/host operation boundary
 - Vue/Vite frontend
 - Fiber/HTTP API
@@ -35,18 +38,18 @@
 
 | Module | Role |
 |--------|------|
-| `amprobe` | Server control plane: Web/API 接入、认证授权、目标选择、RPC client 和运行时协调 |
-| `collia` | Agent runtime: 主机/容器采集、Docker 控制、GORM 本地状态和 rpcx Service |
-| `common` | shared contract library: 复用 schema、数据库封装、RPC 参数/返回值和跨模块类型 |
+| `amprobe` | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client |
+| `collia` | Agent runtime: 主机/容器采集、HTTP 监控上报、Docker 控制和反向 tunnel Service |
+| `common` | shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型 |
 | `amprobe-web` | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 |
 
 ## 职责边界
 
 | 边界 | 负责内容 | 不负责内容 | 约束来源 |
 |------|----------|------------|----------|
-| `amprobe` | Server control plane: Web/API 接入、认证授权、目标选择、RPC client 和运行时协调 | 其他模块的内部实现细节 | `go.mod`、导出符号信号、模块 AGENTS |
-| `collia` | Agent runtime: 主机/容器采集、Docker 控制、GORM 本地状态和 rpcx Service | 其他模块的内部实现细节 | `go.mod`、导出符号信号、模块 AGENTS |
-| `common` | shared contract library: 复用 schema、数据库封装、RPC 参数/返回值和跨模块类型 | 其他模块的内部实现细节 | `go.mod`、导出符号信号、模块 AGENTS |
+| `amprobe` | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client | 其他模块的内部实现细节 | `go.mod`、导出符号信号、模块 AGENTS |
+| `collia` | Agent runtime: 主机/容器采集、HTTP 监控上报、Docker 控制和反向 tunnel Service | 其他模块的内部实现细节 | `go.mod`、导出符号信号、模块 AGENTS |
+| `common` | shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型 | 其他模块的内部实现细节 | `go.mod`、导出符号信号、模块 AGENTS |
 
 ## 目录结构
 
@@ -55,18 +58,16 @@
 | `.docs/` | implementation documentation |
 | `.plans/` | SDD implementation plans |
 | `.specs/` | SDD task, status, and domain specs |
-| `amprobe/` | Server control plane: Web/API 接入、认证授权、目标选择、RPC client 和运行时协调 |
-| `collia/` | Agent runtime: 主机/容器采集、Docker 控制、GORM 本地状态和 rpcx Service |
-| `common/` | shared contract library: 复用 schema、数据库封装、RPC 参数/返回值和跨模块类型 |
+| `amprobe/` | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client |
+| `collia/` | Agent runtime: 主机/容器采集、HTTP 监控上报、Docker 控制和反向 tunnel Service |
+| `common/` | shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型 |
 | `deploy/` | supporting project directory |
-| `docs/` | project documentation |
-| `installer/` | supporting project directory |
 
 ## 调用关系
 
-- `amprobe`：导出符号信号 `func AllowMethodAndPathPrefixSkipper (amprobe/service/middleware/skip.go)`, `func AllowPathPrefixNoSkipper (amprobe/service/middleware/skip.go)`, `func AllowPathPrefixSkipper (amprobe/service/middleware/skip.go)`, `func BuildInjector (amprobe/service/wire.go)`, `func BuildInjector (amprobe/service/wire_gen.go)`；入口信号 ``api := app.Group("/api")` at `amprobe/service/router.go:95``, ``app.Get("/ws", websocket.New(a.termHandler.Handler))` at `amprobe/service/router.go:74``, ``app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))` at `amprobe/service/router.go:73``；包含配置边界。
-- `collia`：导出符号信号 `func Asset (collia/assets/bindata.go)`, `func AssetDir (collia/assets/bindata.go)`, `func AssetNames (collia/assets/bindata.go)`, `func BuildInjector (collia/service/wire.go)`, `func BuildInjector (collia/service/wire_gen.go)`；包含配置边界。
-- `common`：导出符号信号 `func ClientConfig (common/transport/tlsconfig/tlsconfig.go)`, `func NewDB (common/database/db.go)`, `func OptionDB (common/database/queryoption.go)`, `func OrderBy (common/database/queryoption.go)`, `func ServerConfig (common/transport/tlsconfig/tlsconfig.go)`；包含配置边界。
+- `amprobe`：导出符号信号 `func AllowMethodAndPathPrefixSkipper (amprobe/service/middleware/skip.go)`, `func AllowPathPrefixNoSkipper (amprobe/service/middleware/skip.go)`, `func AllowPathPrefixSkipper (amprobe/service/middleware/skip.go)`, `func BuildInjector (amprobe/service/wire.go)`, `func BuildInjector (amprobe/service/wire_gen.go)`；入口信号 ``api := app.Group("/api")` at `amprobe/service/router.go:99``, ``app.Get("/ws", websocket.New(a.termHandler.Handler))` at `amprobe/service/router.go:78``, ``app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))` at `amprobe/service/router.go:77``, ``gAgent.Get("/list", a.agentAPI.List)` at `amprobe/service/router.go:133``；包含配置边界。
+- `collia`：导出符号信号 `func BuildInjector (collia/service/wire.go)`, `func BuildInjector (collia/service/wire_gen.go)`, `func ClientConfig (collia/pkg/conn/config.go)`, `func CopyFile (collia/pkg/utils/file.go)`, `func EnsureDirExists (collia/pkg/utils/dir.go)`；包含配置边界。
+- `common`：导出符号信号 `func ClientConfig (common/transport/tlsconfig/tlsconfig.go)`, `func NewAgentTunnel (common/rpc/tunnel/agent.go)`, `func NewDB (common/database/db.go)`, `func NewReverseTunnelClient (common/rpc/tunnel/tunnel_grpc.pb.go)`, `func NewServerTunnel (common/rpc/tunnel/server.go)`；包含配置边界。
 
 ## 依赖方向
 
@@ -96,7 +97,6 @@
 - `github.com/golang-jwt/jwt` `v3.2.2+incompatible`（amprobe/go.mod）
 - `github.com/google/uuid` `v1.6.0`（amprobe/go.mod）
 - `github.com/google/wire` `v0.6.0`（amprobe/go.mod）
-- `github.com/mcuadros/go-defaults` `v1.2.0`（collia/go.mod）
 - `github.com/patrickmn/go-cache` `v2.1.0+incompatible`（amprobe/go.mod）
 - `github.com/pkg/errors` `v0.9.1`（amprobe/go.mod）
 - `github.com/shirou/gopsutil/v3` `v3.24.5`（collia/go.mod）
@@ -105,8 +105,6 @@
 - `github.com/takama/daemon` `v1.0.0`（collia/go.mod）
 - `github.com/urfave/cli/v2` `v2.27.4`（amprobe/go.mod）
 - `gopkg.in/gomail.v2` `v2.0.0-20160411212932-81ebce5c23df`（amprobe/go.mod）
-- `gopkg.in/yaml.v2` `v2.4.0`（collia/go.mod）
-- `gopkg.in/yaml.v3` `v3.0.1`（collia/go.mod）
 - `gorm.io/driver/clickhouse` `v0.6.1`（common/go.mod）
 - `gorm.io/driver/mysql` `v1.5.7`（common/go.mod）
 - `gorm.io/driver/postgres` `v1.5.9`（common/go.mod）
@@ -122,14 +120,18 @@
 
 ## 配置与入口信号
 
-- 配置文件：5 个；配置源码信号：22 个；入口/路由信号：16 个。
+- 配置文件：4 个；配置源码信号：16 个；入口/路由信号：16 个。
 - 详细配置语义与运行方式见 `.docs/deployment.md`，本节只保留架构级计数，避免与部署文档重复。
 
 ## 验证入口
 
 ```bash
-go test ./...
-go build ./...
+cd amprobe && go test ./...
+cd collia && go test ./...
+cd common && go test ./...
+cd amprobe && go build ./...
+cd collia && go build ./...
+cd common && go build ./...
 ```
 
 ## Domain Specs

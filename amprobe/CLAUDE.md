@@ -2,7 +2,7 @@
 
 `amprobe` 模块入口文档，由 `/sdd doc update` 根据当前 workspace 事实重写。
 
-该模块当前角色：Server control plane: Web/API 接入、认证授权、目标选择、RPC client 和运行时协调。
+该模块当前角色：Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client。
 
 ## 文档
 
@@ -26,7 +26,7 @@
 
 | 目录/文件 | 职责 |
 |-----------|------|
-| `amprobe/` | Server control plane: Web/API 接入、认证授权、目标选择、RPC client 和运行时协调 |
+| `amprobe/` | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client |
 | `amprobe/cmd/` | 命令行或进程入口 |
 | `amprobe/configs/` | 运行时配置文件 |
 | `amprobe/nginx/` | Nginx 部署或反向代理配置 |
@@ -70,6 +70,8 @@
 - 仅通过公开接口与其他模块协作，不依赖其他模块内部实现细节。
 - 修改公开 API、配置或副作用边界时，同步更新 `.docs/modules/` 中对应文档。
 - 若模块承载长期领域语义，相关约束应在 `.specs/domain/` 中可追踪。
+- 监控查询读取 Server 本地监控表；Agent 上报通过 HTTP report 入口写入；控制操作通过反向 tunnel 调用 Agent。
+- 新增控制调用时必须明确 Agent 选择来源，并禁止未实现操作返回成功空结果。
 
 ## 开发命令
 

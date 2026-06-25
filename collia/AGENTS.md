@@ -2,7 +2,7 @@
 
 `collia` 模块入口文档，由 `/sdd doc update` 根据当前 workspace 事实重写。
 
-该模块当前角色：Agent runtime: 主机/容器采集、Docker 控制、GORM 本地状态和 rpcx Service。
+该模块当前角色：Agent runtime: 主机/容器采集、HTTP 监控上报、Docker 控制和反向 tunnel Service。
 
 ## 文档
 
@@ -26,12 +26,9 @@
 
 | 目录/文件 | 职责 |
 |-----------|------|
-| `collia/` | Agent runtime: 主机/容器采集、Docker 控制、GORM 本地状态和 rpcx Service |
-| `collia/assets/` | static assets or embedded resources |
+| `collia/` | Agent runtime: 主机/容器采集、HTTP 监控上报、Docker 控制和反向 tunnel Service |
 | `collia/cmd/` | 命令行或进程入口 |
 | `collia/pkg/` | 可复用公共包集合 |
-| `collia/pkg/compose/` | supporting project directory |
-| `collia/pkg/config/` | 运行时配置文件 |
 | `collia/pkg/conn/` | supporting project directory |
 | `collia/pkg/psutil/` | supporting project directory |
 | `collia/pkg/resources/` | supporting project directory |
@@ -39,7 +36,7 @@
 | `collia/pkg/utils/` | 通用辅助函数 |
 | `collia/script/` | supporting project directory |
 | `collia/service/` | 业务核心层：路由、认证、Server/RPC、数据库或领域服务 |
-| `collia/cmd/collia/` | Go package `main`，源码 3，测试 0 |
+| `collia/cmd/collia/` | Go package `main`，源码 2，测试 0 |
 
 ## 依赖
 
@@ -48,14 +45,11 @@
 - `github.com/amuluze/docker` `v0.0.0-20240822095446-429928f7463e`
 - `github.com/docker/docker` `v27.2.1+incompatible`
 - `github.com/google/wire` `v0.6.0`
-- `github.com/mcuadros/go-defaults` `v1.2.0`
 - `github.com/patrickmn/go-cache` `v2.1.0+incompatible`
 - `github.com/shirou/gopsutil/v3` `v3.24.5`
 - `github.com/smallnest/rpcx` `v1.8.32`
 - `github.com/spf13/viper` `v1.19.0`
 - `github.com/takama/daemon` `v1.0.0`
-- `gopkg.in/yaml.v2` `v2.4.0`
-- `gopkg.in/yaml.v3` `v3.0.1`
 - `gorm.io/gorm` `v1.25.12`
 
 ## 模块约束
@@ -63,6 +57,8 @@
 - 仅通过公开接口与其他模块协作，不依赖其他模块内部实现细节。
 - 修改公开 API、配置或副作用边界时，同步更新 `.docs/modules/` 中对应文档。
 - 若模块承载长期领域语义，相关约束应在 `.specs/domain/` 中可追踪。
+- 采集路径通过 HTTP report client 上报监控批次；控制路径通过反向 tunnel Service 执行 Docker/主机操作。
+- `control.agent_id` 和 `task.report.agent_id` 必须表达同一节点身份，避免监控数据与控制目标分裂。
 
 ## 开发命令
 

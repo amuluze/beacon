@@ -49,7 +49,7 @@ func (s *Service) ContainerCreate(ctx context.Context, args rpcSchema.ContainerC
 }
 
 func (s *Service) ContainerUpdate(ctx context.Context, args rpcSchema.ContainerUpdateArgs, reply *rpcSchema.ContainerUpdateReply) error {
-	return nil
+	return fmt.Errorf("container update is not implemented")
 }
 
 func (s *Service) ContainerDelete(ctx context.Context, args rpcSchema.ContainerDeleteArgs, reply *rpcSchema.ContainerDeleteReply) error {
@@ -91,7 +91,6 @@ func (s *Service) ContainerRestart(ctx context.Context, args rpcSchema.Container
 	}
 	return nil
 }
-
 
 func (s *Service) ContainerLogs(ctx context.Context, args rpcSchema.ContainerLogsArgs, reply *rpcSchema.ContainerLogsReply) error {
 	// Use streaming implementation for new pipeline; legacy stub kept for interface compliance
@@ -210,6 +209,9 @@ func (s *Service) ImageExport(ctx context.Context, args rpcSchema.ImageExportArg
 // ── Network operations ──
 
 func (s *Service) NetworkCreate(ctx context.Context, args rpcSchema.NetworkCreateArgs, reply *rpcSchema.NetworkCreateReply) error {
+	if args.Labels == nil {
+		args.Labels = make(map[string]string)
+	}
 	args.Labels[docker.CreatedByProbe] = "true"
 	if networkID, err := s.Manager.CreateNetwork(ctx, args.Name, args.Driver, args.Subnet, args.Gateway, args.Labels); err != nil {
 		return err

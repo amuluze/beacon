@@ -5,49 +5,49 @@
 
 ## 模块职责
 
-`common` 的主要角色是：shared contract library: 复用 schema、数据库封装、RPC 参数/返回值和跨模块类型。
+`common` 的主要角色是：shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型。
 
-- 承载跨 Server/Agent 复用的数据结构、数据库封装、RPC schema 和错误模型。
-- 相关源码包：`common/database`, `common/rpc`, `common/rpc/schema`, `common/transport/tlsconfig`。
+- 承载跨 Server/Agent 复用的数据结构、数据库封装、RPC schema、反向 tunnel transport 和错误模型。
+- 相关源码包：`common/database`, `common/rpc`, `common/rpc/schema`, `common/rpc/tunnel`, `common/transport/tlsconfig`。
 
 ## 职责边界
 
 | 职责 | 说明 | 是否负责 |
 |------|------|----------|
-| 模块内实现 | shared contract library: 复用 schema、数据库封装、RPC 参数/返回值和跨模块类型 | yes |
+| 模块内实现 | shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型 | yes |
 | 跨模块协调 | 仅通过公开接口或项目约定完成 | conditional |
 | 其他模块内部状态 | 不直接读写其他模块私有实现 | no |
 
 ## 模块事实
 
 - 模块路径：`common`
-- Go 版本：`1.21.10`
-- Go 源码文件：10
+- Go 版本：`1.25.0`
+- Go 源码文件：14
 - Go 测试文件：1
-- 包名：`database`, `rpc`, `schema`, `tlsconfig`
-- 推断角色：shared contract library: 复用 schema、数据库封装、RPC 参数/返回值和跨模块类型
+- 包名：`database`, `rpc`, `schema`, `tlsconfig`, `tunnel`
+- 推断角色：shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型
 
 ## 接口与符号信号
 
 本节记录源码扫描得到的导出符号或前端入口信号；它们是候选接口线索，不等同于跨模块公开 API。跨模块调用仍以 facade、模块文档和 Domain Spec 约束为准。
 
+- `interface AgentLifecycle (common/rpc/tunnel/server.go)`
 - `interface IService (common/rpc/service.go)`
-- `struct ServiceAlarmQueryArgs (common/rpc/schema/alarm.go)`
-- `struct ServiceAlarmQueryReply (common/rpc/schema/alarm.go)`
+- `interface ReverseTunnelClient (common/rpc/tunnel/tunnel_grpc.pb.go)`
+- `interface ReverseTunnelServer (common/rpc/tunnel/tunnel_grpc.pb.go)`
+- `interface UnsafeReverseTunnelServer (common/rpc/tunnel/tunnel_grpc.pb.go)`
+- `type Handler (common/rpc/tunnel/agent.go)`
 - `func ClientConfig (common/transport/tlsconfig/tlsconfig.go)`
+- `func NewServerTunnel (common/rpc/tunnel/server.go)`
+- `func RegisterReverseTunnelServer (common/rpc/tunnel/tunnel_grpc.pb.go)`
 - `func ServerConfig (common/transport/tlsconfig/tlsconfig.go)`
+- `struct AgentOfflineError (common/rpc/tunnel/server.go)`
+- `struct RPCError (common/rpc/tunnel/server.go)`
+- `struct ServerTunnel (common/rpc/tunnel/server.go)`
+- `struct UnimplementedReverseTunnelServer (common/rpc/tunnel/tunnel_grpc.pb.go)`
+- `type ReverseTunnel_TunnelServer (common/rpc/tunnel/tunnel_grpc.pb.go)`
 - `func OptionDB (common/database/queryoption.go)`
-- `func OrderBy (common/database/queryoption.go)`
-- `func WithDBName (common/database/options.go)`
-- `func WithDebug (common/database/options.go)`
-- `func WithHost (common/database/options.go)`
-- `func WithId (common/database/queryoption.go)`
-- `func WithIds (common/database/queryoption.go)`
-- `func WithLimit (common/database/queryoption.go)`
-- `func WithMaxIdleConns (common/database/options.go)`
-- `func WithMaxLifetime (common/database/options.go)`
-- `func WithMaxOpenConns (common/database/options.go)`
-- 另有 134 个导出符号未展开；请用 `rg`、codegraph 或 IDE 按需查看完整清单。
+- 另有 155 个导出符号未展开；请用 `rg`、codegraph 或 IDE 按需查看完整清单。
 
 ## 依赖关系
 
@@ -56,7 +56,7 @@
 - `gorm.io/driver/mysql` `v1.5.7`
 - `gorm.io/driver/postgres` `v1.5.9`
 - `gorm.io/gorm` `v1.25.10`
-- 间接依赖 35 个，完整列表以模块 `go.mod` 为准。
+- 间接依赖 39 个，完整列表以模块 `go.mod` 为准。
 
 ## 配置与入口信号
 
@@ -68,21 +68,23 @@
 - 数据模型以源码结构、导出类型信号和测试断言为准；本节只记录静态发现结果。
 - `type Option (common/database/options.go)`
 - `type QueryOption (common/database/queryoption.go)`
-- `struct CPUAlarmQueryArgs (common/rpc/schema/alarm.go)`
-- `struct CPUAlarmQueryReply (common/rpc/schema/alarm.go)`
 - `struct CPUInfoArgs (common/rpc/schema/host.go)`
 - `struct CPUInfoReply (common/rpc/schema/host.go)`
 - `struct CPUUsageArgs (common/rpc/schema/host.go)`
 - `struct CPUUsageReply (common/rpc/schema/host.go)`
 - `struct ContainerCountArgs (common/rpc/schema/container.go)`
 - `struct ContainerCountReply (common/rpc/schema/container.go)`
-- 另有 115 个导出模型/接口符号未展开；完整清单以源码为准。
+- `struct ContainerCreateArgs (common/rpc/schema/container.go)`
+- `struct ContainerCreateReply (common/rpc/schema/container.go)`
+- 另有 132 个导出模型/接口符号未展开；完整清单以源码为准。
 
 ## 使用注意事项
 
 - 不跨越模块边界直接依赖内部路径或未导出符号。
 - 修改跨模块公开 API、导出符号信号、配置或副作用边界时，同步更新本文件、根入口文档和相关 Domain Spec。
 - 配置、凭据和外部副作用只记录语义边界，不记录真实敏感值。
+- `common/rpc/schema` 是 Server 与 Agent 的契约边界；字段变更需要同时检查前端 API 类型、Server repository/service、Agent dispatcher 和 Domain Spec。
+- `common/rpc/tunnel` 是反向控制通道的 transport 边界；错误类型必须保留 Agent 不在线、RPC 失败和调用超时的可区分语义。
 
 ## 验证命令
 

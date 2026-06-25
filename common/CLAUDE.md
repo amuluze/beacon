@@ -2,7 +2,7 @@
 
 `common` 模块入口文档，由 `/sdd doc update` 根据当前 workspace 事实重写。
 
-该模块当前角色：shared contract library: 复用 schema、数据库封装、RPC 参数/返回值和跨模块类型。
+该模块当前角色：shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型。
 
 ## 文档
 
@@ -25,11 +25,12 @@
 
 | 目录/文件 | 职责 |
 |-----------|------|
-| `common/` | shared contract library: 复用 schema、数据库封装、RPC 参数/返回值和跨模块类型 |
+| `common/` | shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型 |
 | `common/database/` | supporting project directory |
 | `common/rpc/` | RPC client/server 封装 |
 | `common/transport/` | supporting project directory |
 | `common/rpc/schema/` | Go package `schema`，源码 5，测试 0 |
+| `common/rpc/tunnel/` | Go package `tunnel`，源码 4，测试 0 |
 | `common/transport/tlsconfig/` | Go package `tlsconfig`，源码 1，测试 1 |
 
 ## 依赖
@@ -45,6 +46,8 @@
 - 仅通过公开接口与其他模块协作，不依赖其他模块内部实现细节。
 - 修改公开 API、配置或副作用边界时，同步更新 `.docs/modules/` 中对应文档。
 - 若模块承载长期领域语义，相关约束应在 `.specs/domain/` 中可追踪。
+- `common/rpc/schema` 是 Server-Agent 契约边界；字段变更必须同步检查 Server、Agent、前端 API 类型和 Domain Spec。
+- `common/rpc/tunnel` 承载反向控制通道，错误必须保留 Agent 不在线、调用失败和超时的可区分语义。
 
 ## 开发命令
 

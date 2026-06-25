@@ -34,6 +34,10 @@ func NewClient(url, token string) *Client {
 
 // Push sends a batch of monitoring data to the Server via HTTP POST.
 func (c *Client) Push(ctx context.Context, args rpcSchema.MonitorReportArgs) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	body, err := json.Marshal(args)
 	if err != nil {
 		return fmt.Errorf("marshal report: %w", err)

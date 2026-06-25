@@ -11,17 +11,18 @@
 |------|------|------------|
 | 前端输入 | Vue 页面、API client 或 WebSocket 入口收集用户操作 | `package.json`、前端路由、HTTP/WebSocket 路径 |
 | Server 接入 | Fiber 路由完成认证、参数解析、Agent 标识注入和 handler 分发 | Fiber route signals、`X-Agent-ID`/`agent_id` |
-| RPC 协调 | Server rpcx client 根据 Agent 标识选择目标 Agent 并调用 Service | rpcx dependency、RPC client/service package |
-| Agent 处理 | Agent RPC Service 读取 GORM 数据、调用 Docker API 或系统命令 | GORM/Docker dependency、model/task/rpc package |
-| 前端反馈 | Server 把 common schema/RPC reply 转为 HTTP JSON、无内容响应或实时流 | common schema、fiberx response、WebSocket |
+| 监控查询 | Server 按 Agent 标识读取本地监控表，避免查询路径直接依赖 Agent 在线状态 | `agent_id` filter、monitor models、report store |
+| 控制协调 | Server tunnel client 根据 Agent 标识选择目标 Agent 并调用 Service | `common/rpc/tunnel`、RPC caller/service package |
+| Agent 处理 | Agent Service 调用 Docker API 或主机系统 API；定时任务采集指标并 HTTP 上报 | Docker dependency、task/report/rpc package |
+| 前端反馈 | Server 把 common schema、数据库查询结果或 tunnel reply 转为 HTTP JSON、无内容响应或实时流 | common schema、fiberx response、WebSocket |
 
 ## 数据边界
 
 | 边界 | 输入 | 输出 | 约束 |
 |------|------|------|------|
-| `amprobe` | HTTP/WebSocket 请求、认证上下文、目标资源或节点标识、运行时配置 | JSON/API 响应、实时事件、RPC 调用结果、审计或持久化副作用 | Server control plane: Web/API 接入、认证授权、目标选择、RPC client 和运行时协调 |
-| `collia` | RPC 请求、主机/容器资源标识、采集任务、运行时配置 | 采集快照、控制操作结果、错误状态、本地持久化记录 | Agent runtime: 主机/容器采集、Docker 控制、GORM 本地状态和 rpcx Service |
-| `common` | 调用方传入的 schema、查询参数、数据库/传输配置 | 跨模块复用的结构体、RPC 参数/返回值、数据库或传输封装结果 | shared contract library: 复用 schema、数据库封装、RPC 参数/返回值和跨模块类型 |
+| `amprobe` | HTTP/WebSocket 请求、认证上下文、目标资源或节点标识、运行时配置、Agent 上报批次 | JSON/API 响应、实时事件、tunnel 调用结果、审计或持久化副作用 | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client |
+| `collia` | tunnel RPC 请求、主机/容器资源标识、采集任务、运行时配置 | HTTP 监控批次、控制操作结果、错误状态、实时日志流 | Agent runtime: 主机/容器采集、HTTP 监控上报、Docker 控制和反向 tunnel Service |
+| `common` | 调用方传入的 schema、查询参数、数据库/传输配置 | 跨模块复用的结构体、RPC 参数/返回值、数据库或反向 tunnel 封装结果 | shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型 |
 | `amprobe-web` | 路由参数、表单输入、用户操作、API 响应、实时事件 | 页面状态、API 请求、组件事件、本地 store/cache 更新、实时通道订阅状态、HTTP client 调用 | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 |
 
 ## 事件传播
@@ -30,6 +31,8 @@
 - 跨模块调用应保留错误分类和关联 ID，使 API 响应、日志、审计记录或实时事件可以互相对齐。
 - 实时事件、后台任务和外部副作用应有可重试或可降级语义，避免部分成功被展示为完整成功。
 - 错误传播必须保留可恢复性、幂等性和用户可见表现。
+- 监控上报批次必须整体成功或整体失败；缺失 Agent 标识、存储失败或部分写入失败不得被展示为成功实时数据。
+- 未实现或不可达的控制操作必须显式返回错误，禁止返回成功空结果。
 
 ## 失败语义
 
