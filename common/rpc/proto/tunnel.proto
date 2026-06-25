@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package tunnel;
+
+option go_package = "common/rpc/tunnel";
+
+// ReverseTunnel defines the bidirectional streaming tunnel between
+// Agent and Server. The Agent connects to the Server, and the Server
+// multiplexes RPC calls through the same connection.
+service ReverseTunnel {
+  // Tunnel accepts a bidirectional stream from the Agent.
+  // Server sends Request frames, Agent replies with Response frames.
+  rpc Tunnel(stream Frame) returns (stream Frame);
+}
+
+// FrameType distinguishes frame roles in the tunnel protocol.
+enum FrameType {
+  FRAME_UNSPECIFIED = 0;
+  FRAME_REQUEST     = 1;  // Server → Agent: RPC call request
+  FRAME_REPLY       = 2;  // Agent → Server: single response
+  FRAME_STREAM_DATA = 3;  // Agent → Server: streaming data chunk
+  FRAME_STREAM_END  = 4;  // Agent → Server: stream complete
+  FRAME_HEARTBEAT   = 5;  // Agent → Server: keep-alive ping
+  FRAME_REGISTER    = 6;  // Agent → Server: registration
+}
+
+// Frame is a single message exchanged over the tunnel.
+message Frame {
+  string id       = 1;  // correlation ID, matches request with response
+  string method   = 2;  // RPC method name, e.g. "ContainerCreate"
+  bytes  payload  = 3;  // JSON-encoded args (request) or reply (response)
+  string error    = 4;  // non-empty if the RPC returned an error
+  bool   eos      = 5;  // end-of-stream marker (deprecated, use frame_type)
+  FrameType frame_type = 6;  // frame role
+}

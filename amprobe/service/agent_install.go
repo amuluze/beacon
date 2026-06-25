@@ -37,7 +37,7 @@ func (a *Router) AgentInstallScript(ctx *fiber.Ctx) error {
 	}
 
 	ctx.Type("sh")
-	return ctx.SendString(buildAgentInstallScript(baseURL, node, a.agentInstallRPCPort(), a.config.AgentInstall.TLSEnable))
+	return ctx.SendString(buildAgentInstallScript(baseURL, node))
 }
 
 func (a *Router) AgentInstallPackage(ctx *fiber.Ctx) error {
@@ -115,24 +115,21 @@ func (a *Router) verifyAgentInstallToken(ctx *fiber.Ctx) error {
 }
 
 func (a *Router) buildColliaConfig(node string) string {
-	certDir := a.config.AgentInstall.CertDir
-	if certDir == "" {
-		certDir = "/etc/collia/certs"
-	}
-
 	reportURL := ""
+	controlServer := "127.0.0.1:17000"
+	controlPort := a.config.AgentInstall.ControlPort
+	if controlPort == 0 {
+		controlPort = 17000
+	}
 	if a.config.AgentInstall.PublicBaseURL != "" {
 		reportURL = a.config.AgentInstall.PublicBaseURL + "/api/v1/host/report"
+		controlServer = extractHost(a.config.AgentInstall.PublicBaseURL) + ":" + strconv.Itoa(controlPort)
 	}
 
-	return fmt.Sprintf(`rpc:
-  network: tcp
-  address: 0.0.0.0:%d
-  tls:
-    enable: %t
-    cert_dir: %s
-    client_names:
-      - amprobe
+	return fmt.Sprintf(`control:
+  server: %s
+  agent_id: %s
+  join_token: ""
 log:
   output: /data/amprobe/logs/collia/collia.log
   level: info
@@ -159,7 +156,7 @@ variables:
   host_prefix: /data/amprobe
   container_prefix: /
   node: %s
-`, a.agentInstallRPCPort(), a.config.AgentInstall.TLSEnable, certDir, reportURL, a.config.AgentInstall.Token, node, node)
+`, controlServer, node, reportURL, a.config.AgentInstall.Token, node, node)
 }
 
 func (a *Router) agentInstallPackageDir() string {
@@ -167,13 +164,6 @@ func (a *Router) agentInstallPackageDir() string {
 		return a.config.AgentInstall.PackageDir
 	}
 	return defaultAgentInstallPackageDir
-}
-
-func (a *Router) agentInstallRPCPort() int {
-	if a.config.AgentInstall.RPCPort > 0 {
-		return a.config.AgentInstall.RPCPort
-	}
-	return 18080
 }
 
 func requestBaseURL(ctx *fiber.Ctx) string {
@@ -188,14 +178,12 @@ func requestBaseURL(ctx *fiber.Ctx) string {
 	return strings.TrimRight(scheme+"://"+host, "/")
 }
 
-func buildAgentInstallScript(baseURL string, node string, rpcPort int, tlsEnabled bool) string {
+func buildAgentInstallScript(baseURL string, node string) string {
 	return fmt.Sprintf(`#!/bin/sh
 set -eu
 
 BASE_URL=%s
 NODE=%s
-RPC_PORT=%s
-TLS_ENABLED=%s
 TOKEN=""
 
 while [ "$#" -gt 0 ]; do
@@ -236,18 +224,12 @@ download "$BASE_URL/api/v1/host/install/config?node=$NODE" "$WORKDIR/config.yml"
 install -m 0755 "$WORKDIR/collia" /usr/sbin/collia
 install -m 0644 "$WORKDIR/config.yml" /etc/collia/config.yml
 
-if [ "$TLS_ENABLED" = "true" ]; then
-  mkdir -p /etc/collia/certs
-  download "$BASE_URL/api/v1/host/install/certs?node=$NODE" "$WORKDIR/certs.tar.gz"
-  tar -xzf "$WORKDIR/certs.tar.gz" -C /etc/collia/certs
-fi
-
 collia install || true
 collia stop || true
 collia start
 
-echo "collia installed and started on tcp://0.0.0.0:$RPC_PORT"
-`, shellQuote(baseURL), shellQuote(node), shellQuote(strconv.Itoa(rpcPort)), shellQuote(strconv.FormatBool(tlsEnabled)))
+echo "collia installed and started, reverse tunnel -> $BASE_URL"
+`, shellQuote(baseURL), shellQuote(node))
 }
 
 func isSafeInstallName(s string) bool {
@@ -272,6 +254,28 @@ func safeJoin(base string, elems ...string) (string, error) {
 		return "", fmt.Errorf("path escapes base dir")
 	}
 	return joined, nil
+}
+
+// extractHost extracts the host portion from a URL (e.g., "http://example.com:8000" -> "example.com").
+func extractHost(rawURL string) string {
+	if rawURL == "" {
+		return "127.0.0.1"
+	}
+	// Strip protocol prefix
+	clean := rawURL
+	for _, prefix := range []string{"https://", "http://"} {
+		if strings.HasPrefix(clean, prefix) {
+			clean = strings.TrimPrefix(clean, prefix)
+			break
+		}
+	}
+	// Strip port and path
+	if idx := strings.Index(clean, ":"); idx > 0 {
+		clean = clean[:idx]
+	} else if idx := strings.Index(clean, "/"); idx > 0 {
+		clean = clean[:idx]
+	}
+	return clean
 }
 
 func shellQuote(s string) string {

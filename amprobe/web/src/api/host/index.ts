@@ -31,26 +31,26 @@ import type {
     NetUsageResult,
 } from '@/interface/host.ts'
 
-export async function queryHostInfo() {
-    return request.get<HostInfo>('/api/v1/host/host_info', {})
+export async function queryHostInfo(params?: object) {
+    return request.get<HostInfo>('/api/v1/host/host_info', params || {})
 }
 
-export async function queryCPUInfo() {
-    return request.get<CPUInfo>('/api/v1/host/cpu_info', {})
+export async function queryCPUInfo(params?: object) {
+    return request.get<CPUInfo>('/api/v1/host/cpu_info', params || {})
 }
 export async function queryCPUUsage(param: CPUTrendingArgs) {
     return request.get<CPUTrending>('/api/v1/host/cpu_trending', param)
 }
 
-export async function queryMemInfo() {
-    return request.get<MemInfo>('/api/v1/host/mem_info', {})
+export async function queryMemInfo(params?: object) {
+    return request.get<MemInfo>('/api/v1/host/mem_info', params || {})
 }
 export async function queryMemUsage(param: MemTrendingArgs) {
     return request.get<MemTrending>('/api/v1/host/mem_trending', param)
 }
 
-export async function queryDiskInfo() {
-    return request.get<DiskInfoResult>('/api/v1/host/disk_info', {})
+export async function queryDiskInfo(params?: object) {
+    return request.get<DiskInfoResult>('/api/v1/host/disk_info', params || {})
 }
 
 export async function queryDiskUsage(param: DiskTrendingArgs) {
@@ -83,4 +83,8 @@ export async function deleteFolder(params: FolderDeleteArgs) {
 
 export async function downloadFile(params: FileDeleteArgs) {
     return request.post<FileDownloadResult>('/api/v1/host/file_download', params)
+}
+
+export async function queryAgentList() {
+    return request.get<{ agent_id: string; hostname: string }[]>('/api/v1/agent/list', {})
 }

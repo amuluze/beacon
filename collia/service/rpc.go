@@ -5,63 +5,58 @@
 package service
 
 import (
-	"collia/pkg/resources"
+	"context"
+	"log/slog"
+
 	"common/database"
-	transporttls "common/transport/tlsconfig"
-	"path/filepath"
+	rpctunnel "common/rpc/tunnel"
 
 	"collia/service/rpc"
 
 	"github.com/amuluze/docker"
-	"github.com/smallnest/rpcx/server"
 )
 
+// Server manages the reverse tunnel connection to the Server.
 type Server struct {
-	network string
-	address string
-	server  *server.Server
+	tunnel *rpctunnel.AgentTunnel
 }
 
+// NewRPCServer creates the tunnel connection to the Server.
 func NewRPCServer(config *Config, db *database.DB) (*Server, error) {
-	srv := server.NewServer()
-	if config.Rpc.TLS.Enable {
-		tlsConfig, err := transporttls.ServerConfig(config.Rpc.TLS.CertDir, config.Rpc.TLS.ClientNames)
-		if err != nil {
-			return nil, err
-		}
-		srv = server.NewServer(server.WithTLSConfig(tlsConfig))
-	}
 	manager, err := docker.NewManager()
 	if err != nil {
 		return nil, err
 	}
 	s := rpc.NewService(db, manager)
 
-	err = srv.Register(s, "")
-	if err != nil {
-		return nil, err
+	agentID := config.Control.AgentID
+	if agentID == "" {
+		agentID = "default"
 	}
 
-	network := config.Rpc.Network
-	address := config.Rpc.Address
-	if network == "" {
-		network = "unix"
-	}
-	if address == "" {
-		address = filepath.Join(string(config.prefix), resources.RootPath, resources.ColliaSockFile)
-	}
+	tunnel := rpctunnel.NewAgentTunnel(config.Control.Server, agentID)
+	tunnel.SetHandler(buildRPCDispatcher(s))
+	slog.Info("reverse tunnel configured", "server", config.Control.Server, "agent_id", agentID)
 
 	return &Server{
-		network: network,
-		address: address,
-		server:  srv,
+		tunnel: tunnel,
 	}, nil
 }
 
+// buildRPCDispatcher creates a dispatch handler that routes RPC calls
+// to the methods on the Service struct based on method name.
+func buildRPCDispatcher(svc *rpc.Service) rpctunnel.Handler {
+	dispatch := rpc.NewDispatcher(svc)
+	return func(ctx context.Context, method string, payload []byte, streamSender func(*rpctunnel.Frame)) ([]byte, error) {
+		return dispatch.Call(ctx, method, payload, streamSender)
+	}
+}
+
 func (s *Server) Start() error {
-	return s.server.Serve(s.network, s.address)
+	slog.Info("starting reverse tunnel connection")
+	return s.tunnel.Start(context.Background())
 }
 
 func (s *Server) Stop() error {
-	return s.server.Close()
+	return s.tunnel.Close()
 }

@@ -6,33 +6,10 @@ SeverHeader = "probe"
 AppName = "probe"
 Prefork = false
 
-[Rpc]
-Network = "unix"
-Address = "/app/collia.sock"
+[Control]
+Enable = true          # 启用反向隧道（替代 rpcx）
+Address = ":17000"     # gRPC 控制端口
 DefaultAgentID = "default"
-
-[Rpc.TLS]
-Enable = false
-CertDir = "/app/certs/collia"
-ServerName = ""
-ClientNames = []
-
-# 多 Agent 示例。启用后可通过请求头 X-Agent-ID 或查询参数 agent_id 选择目标 Agent。
-# [[Rpc.Agents]]
-# ID = "host-a"
-# Network = "tcp"
-# Address = "10.0.0.11:18080"
-# TLS.Enable = true
-# TLS.CertDir = "/app/certs/host-a"
-# TLS.ServerName = "collia-host-a"
-#
-# [[Rpc.Agents]]
-# ID = "host-b"
-# Network = "tcp"
-# Address = "10.0.0.12:18080"
-# TLS.Enable = true
-# TLS.CertDir = "/app/certs/host-b"
-# TLS.ServerName = "collia-host-b"
 
 [Gorm]
 Debug = true             # 是否开启调试模式
@@ -79,6 +56,6 @@ Enable = true
 Token = "change-me"
 PublicBaseURL = ""
 PackageDir = "/app/downloads/collia"
-RPCPort = 18080
+ControlPort = 17000
 TLSEnable = true
 CertDir = "/etc/collia/certs"

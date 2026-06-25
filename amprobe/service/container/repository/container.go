@@ -53,11 +53,11 @@ type IContainerRepo interface {
 }
 
 type ContainerRepo struct {
-	RPCClient *rpc.Client
+	RPCClient rpc.Caller
 	DB        *database.DB
 }
 
-func NewContainerRepo(client *rpc.Client, db *database.DB) *ContainerRepo {
+func NewContainerRepo(client rpc.Caller, db *database.DB) *ContainerRepo {
 	return &ContainerRepo{RPCClient: client, DB: db}
 }
 

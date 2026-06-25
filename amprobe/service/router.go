@@ -7,6 +7,7 @@ package service
 import (
 	"amprobe/pkg/auth"
 	"amprobe/pkg/contextx"
+	"amprobe/service/agent"
 	"amprobe/service/middleware"
 	"amprobe/service/report"
 
@@ -45,6 +46,7 @@ type Router struct {
 	accountAPI   *accountAPI.AccountAPI
 	mailAPI      *mailAPI.MailAPI
 	alarmAPI     *alarmAPI.AlarmAPI
+	agentAPI     *agent.API
 	reportSvc    *report.Service
 
 	loggerHandler *LoggerHandler

@@ -47,11 +47,11 @@ type IHostRepo interface {
 }
 
 type HostRepo struct {
-	RPCClient *rpc.Client
+	RPCClient rpc.Caller
 	DB        *database.DB
 }
 
-func NewHostRepo(client *rpc.Client, db *database.DB) *HostRepo {
+func NewHostRepo(client rpc.Caller, db *database.DB) *HostRepo {
 	return &HostRepo{
 		RPCClient: client,
 		DB:        db,

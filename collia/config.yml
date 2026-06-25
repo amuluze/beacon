@@ -1,14 +1,10 @@
 # collia Agent 配置文件示例
 # 文件路径: /etc/collia/config.yml
 
-rpc:
-  network: unix
-  address: /data/amprobe/collia/socks/collia.sock
-  tls:
-    enable: false
-    cert_dir: /data/amprobe/certs
-    client_names:
-      - amprobe
+control:
+  server: 127.0.0.1:17000
+  agent_id: default
+  join_token: ""
 
 log:
   output: /data/amprobe/logs/collia/collia.log
