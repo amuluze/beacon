@@ -128,6 +128,11 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 				gResource.Get("/resource_query", a.accountAPI.ResourceQuery).Name("查询资源")
 			}
 
+			gAgent := v1.Group("agent")
+			{
+				gAgent.Get("/list", a.agentAPI.List).Name("查询 Agent 列表")
+			}
+
 			gAuth := v1.Group("auth")
 			{
 				gAuth.Post("/login", a.authAPI.Login).Name("登录")

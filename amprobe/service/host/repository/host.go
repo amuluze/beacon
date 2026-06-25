@@ -173,7 +173,7 @@ func (h *HostRepo) NetUsage(ctx context.Context, args rpcSchema.NetUsageArgs) (r
 	if err := h.agentDB(ctx).Model(&model.MonitorNet{}).
 		Where("timestamp > ?", time.Unix(args.StartTime, 0)).
 		Order("timestamp asc").Find(&results).Error; err != nil {
-		return rpcSchema.NetUsageReply{}, nil
+		return rpcSchema.NetUsageReply{}, err
 	}
 	list := make(map[string][]rpcSchema.NetIO)
 	for _, item := range results {

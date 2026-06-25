@@ -5,16 +5,16 @@
 
 ## 模块职责
 
-`collia` 的主要角色是：Agent runtime: 主机/容器采集、Docker 控制、GORM 本地状态和 rpcx Service。
+`collia` 的主要角色是：Agent runtime: 主机/容器采集、HTTP 监控上报、Docker 控制和反向 tunnel Service。
 
-- 在目标主机侧执行采集和控制动作，通过 RPC 服务把主机、容器和系统能力暴露给 Server。
-- 相关源码包：`collia/assets`, `collia/cmd/collia`, `collia/pkg/compose`, `collia/pkg/config`, `collia/pkg/conn`, `collia/pkg/psutil`。
+- 在目标主机侧执行采集和控制动作，通过 HTTP report client 上报监控批次，通过反向 tunnel 服务把容器、文件和系统控制能力暴露给 Server。
+- 相关源码包：`collia/cmd/collia`, `collia/pkg/conn`, `collia/pkg/psutil`, `collia/pkg/resources`, `collia/pkg/timectl`, `collia/pkg/utils`。
 
 ## 职责边界
 
 | 职责 | 说明 | 是否负责 |
 |------|------|----------|
-| 模块内实现 | Agent runtime: 主机/容器采集、Docker 控制、GORM 本地状态和 rpcx Service | yes |
+| 模块内实现 | Agent runtime: 主机/容器采集、HTTP 监控上报、Docker 控制和反向 tunnel Service | yes |
 | 跨模块协调 | 仅通过公开接口或项目约定完成 | conditional |
 | 其他模块内部状态 | 不直接读写其他模块私有实现 | no |
 
@@ -22,10 +22,10 @@
 
 - 模块路径：`collia`
 - Go 版本：`1.21.10`
-- Go 源码文件：35
+- Go 源码文件：29
 - Go 测试文件：3
-- 包名：`assets`, `compose`, `config`, `conn`, `main`, `model`, `psutil`, `resources`, `rpc`, `service`, `task`, `timectl`, `utils`
-- 推断角色：Agent runtime: 主机/容器采集、Docker 控制、GORM 本地状态和 rpcx Service
+- 包名：`conn`, `main`, `model`, `psutil`, `report`, `resources`, `rpc`, `service`, `task`, `timectl`, `utils`
+- 推断角色：Agent runtime: 主机/容器采集、HTTP 监控上报、Docker 控制和反向 tunnel Service
 
 ## 接口与符号信号
 
@@ -34,8 +34,10 @@
 - `interface ITask (collia/service/task/task.go)`
 - `func BuildInjector (collia/service/wire.go)`
 - `func BuildInjector (collia/service/wire_gen.go)`
+- `func NewClient (collia/service/report/client.go)`
 - `func NewConfig (collia/service/config.go)`
 - `func NewDB (collia/service/db.go)`
+- `func NewDispatcher (collia/service/rpc/dispatcher.go)`
 - `func NewInjector (collia/service/injector.go)`
 - `func NewLogger (collia/service/logger.go)`
 - `func NewModels (collia/service/model/model.go)`
@@ -44,10 +46,8 @@
 - `func NewTask (collia/service/task/task.go)`
 - `func NewTimedTask (collia/service/task.go)`
 - `func Run (collia/service/server.go)`
-- `struct CPU (collia/service/model/host.go)`
-- `struct Config (collia/service/config.go)`
-- `struct Container (collia/service/model/container.go)`
-- 另有 60 个导出符号未展开；请用 `rg`、codegraph 或 IDE 按需查看完整清单。
+- `struct CPUReport (collia/service/task/task.go)`
+- 另有 59 个导出符号未展开；请用 `rg`、codegraph 或 IDE 按需查看完整清单。
 
 ## 依赖关系
 
@@ -56,46 +56,41 @@
 - `github.com/amuluze/docker` `v0.0.0-20240822095446-429928f7463e`
 - `github.com/docker/docker` `v27.2.1+incompatible`
 - `github.com/google/wire` `v0.6.0`
-- `github.com/mcuadros/go-defaults` `v1.2.0`
 - `github.com/patrickmn/go-cache` `v2.1.0+incompatible`
 - `github.com/shirou/gopsutil/v3` `v3.24.5`
 - `github.com/smallnest/rpcx` `v1.8.32`
 - `github.com/spf13/viper` `v1.19.0`
 - `github.com/takama/daemon` `v1.0.0`
-- `gopkg.in/yaml.v2` `v2.4.0`
-- `gopkg.in/yaml.v3` `v3.0.1`
 - `gorm.io/gorm` `v1.25.12`
-- 间接依赖 94 个，完整列表以模块 `go.mod` 为准。
+- 间接依赖 95 个，完整列表以模块 `go.mod` 为准。
 
 ## 配置与入口信号
 
-- 配置：`Config` in `collia/pkg/compose/compose.go`
-- 配置：`Config` in `collia/pkg/config/config.go`
 - 配置：`Config` in `collia/service/config.go`
 - 配置：`TLSConfig` in `collia/pkg/conn/config.go`
-- 配置：`TLS` at `collia/service/rpc.go:27`
-- 配置：`TLS` at `collia/service/rpc.go:28`
 
 ## 数据模型与状态
 
 - 数据模型以源码结构、导出类型信号和测试断言为准；本节只记录静态发现结果。
+- `struct Client (collia/service/report/client.go)`
+- `struct Config (collia/service/config.go)`
+- `struct Container (collia/service/model/container.go)`
+- `struct ContainerReport (collia/service/task/task.go)`
+- `struct Control (collia/service/config.go)`
 - `struct DB (collia/service/config.go)`
 - `struct Disk (collia/service/config.go)`
-- `struct Disk (collia/service/model/host.go)`
-- `struct Docker (collia/service/model/container.go)`
-- `struct Ethernet (collia/service/config.go)`
-- `struct Host (collia/service/model/host.go)`
-- `struct Image (collia/service/model/container.go)`
-- `struct Injector (collia/service/injector.go)`
-- `struct Log (collia/service/config.go)`
-- `struct Memory (collia/service/model/host.go)`
-- 另有 28 个导出模型/接口符号未展开；完整清单以源码为准。
+- `struct DiskReport (collia/service/task/task.go)`
+- `struct Dispatcher (collia/service/rpc/dispatcher.go)`
+- `struct DockerReport (collia/service/task/task.go)`
+- 另有 33 个导出模型/接口符号未展开；完整清单以源码为准。
 
 ## 使用注意事项
 
 - 不跨越模块边界直接依赖内部路径或未导出符号。
 - 修改跨模块公开 API、导出符号信号、配置或副作用边界时，同步更新本文件、根入口文档和相关 Domain Spec。
 - 配置、凭据和外部副作用只记录语义边界，不记录真实敏感值。
+- 采集路径通过 `service/task` 生成监控批次，并由 `service/report` 推送到 Server；控制路径通过 `service/rpc` 响应 Server tunnel 调用。
+- 新增控制方法时需同步 `common/rpc/service.go`、`common/rpc/schema`、Agent dispatcher 和 Server repository 调用，未实现操作必须返回明确错误。
 
 ## 验证命令
 

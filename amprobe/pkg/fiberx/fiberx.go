@@ -15,7 +15,7 @@ import (
 // GetToken Get jwt token from header (Authorization: Bearer xxx)
 func GetToken(c *fiber.Ctx) string {
 	var token string
-	auth := c.GetReqHeaders()["Authorization"][0]
+	auth := c.Get("Authorization")
 	prefix := "Bearer "
 	if auth != "" && strings.HasPrefix(auth, prefix) {
 		token = auth[len(prefix):]

@@ -11,25 +11,31 @@
 
 ### `amprobe`
 
-- `api := app.Group("/api")` at `amprobe/service/router.go:95`
-- `app.Get("/ws", websocket.New(a.termHandler.Handler))` at `amprobe/service/router.go:74`
-- `app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))` at `amprobe/service/router.go:73`
+- `api := app.Group("/api")` at `amprobe/service/router.go:99`
+- `app.Get("/ws", websocket.New(a.termHandler.Handler))` at `amprobe/service/router.go:78`
+- `app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))` at `amprobe/service/router.go:77`
 - `app.Use("/", filesystem.New(filesystem.Config{` at `amprobe/service/app.go:37`
-- `app.Use("ws", func(c *fiber.Ctx) error {` at `amprobe/service/router.go:64`
-- `app.Use(func(c *fiber.Ctx) error {` at `amprobe/service/router.go:53`
-- `app.Use(middleware.CasbinMiddleware(` at `amprobe/service/router.go:87`
+- `app.Use("ws", func(c *fiber.Ctx) error {` at `amprobe/service/router.go:68`
+- `app.Use(func(c *fiber.Ctx) error {` at `amprobe/service/router.go:57`
+- `app.Use(middleware.CasbinMiddleware(` at `amprobe/service/router.go:91`
 - `app.Use(middleware.PanicMiddleware())` at `amprobe/service/app.go:34`
 - `app.Use(middleware.StackMiddleware)` at `amprobe/service/app.go:35`
-- `app.Use(middleware.UserAuthMiddleware(` at `amprobe/service/router.go:77`
-- `gAlarm.Get("/alarm_query", a.alarmAPI.AlarmQuery).Name("查询告警阈值")` at `amprobe/service/router.go:207`
-- `gAlarm.Post("/alarm_update", a.alarmAPI.AlarmUpdate).Name("更新告警阈值")` at `amprobe/service/router.go:206`
-- `gAudit.Get("/query", a.auditAPI.AuditQuery).Name("获取审计日志")` at `amprobe/service/router.go:192`
-- `gAuth.Get("/user_info", a.authAPI.UserInfo).Name("查询权限")` at `amprobe/service/router.go:133`
-- `gAuth.Post("/login", a.authAPI.Login).Name("登录")` at `amprobe/service/router.go:129`
-- `gAuth.Post("/logout", a.authAPI.Logout).Name("登出")` at `amprobe/service/router.go:130`
+- `app.Use(middleware.UserAuthMiddleware(` at `amprobe/service/router.go:81`
+- `gAgent.Get("/list", a.agentAPI.List).Name("查询 Agent 列表")` at `amprobe/service/router.go:133`
+- `gAlarm.Get("/alarm_query", a.alarmAPI.AlarmQuery).Name("查询告警阈值")` at `amprobe/service/router.go:217`
+- `gAlarm.Post("/alarm_update", a.alarmAPI.AlarmUpdate).Name("更新告警阈值")` at `amprobe/service/router.go:216`
+- `gAudit.Get("/query", a.auditAPI.AuditQuery).Name("获取审计日志")` at `amprobe/service/router.go:202`
+- `gAuth.Get("/user_info", a.authAPI.UserInfo).Name("查询权限")` at `amprobe/service/router.go:142`
+- `gAuth.Post("/login", a.authAPI.Login).Name("登录")` at `amprobe/service/router.go:138`
 
 ## 维护约束
 
 - 新增或修改路由时，同步检查请求参数、响应 schema、权限和错误语义。
 - 该文件不替代 OpenAPI/接口契约；当 API contract 需要稳定对外发布时，应补充专门契约文档或测试。
 - 若未来检测到路由信号，本索引只作为入口清单；请求/响应字段、鉴权和错误码仍应由测试或正式契约文档验证。
+
+## 关键契约提示
+
+- `/api/v1/agent/list` 是前端多 Agent 选择器的来源；不得用前端固定默认值替代真实 Agent 生命周期状态。
+- `/api/v1/host/report` 是 Agent 监控批次上报入口；请求必须携带可识别 Agent，批次写入必须整体成功或整体失败。
+- `/ws/:id` 是容器日志实时通道；Agent 选择应沿用 `X-Agent-ID` 或 `agent_id` 语义，避免跨节点读取日志。

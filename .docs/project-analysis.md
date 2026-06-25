@@ -9,7 +9,7 @@
 |------|--------|----|
 | `amprobe` | `amprobe` | `1.21.10` |
 | `collia` | `collia` | `1.21.10` |
-| `common` | `common` | `1.21.10` |
+| `common` | `common` | `1.25.0` |
 
 ## Top-Level Directories
 
@@ -18,12 +18,10 @@
 | `.docs/` | implementation documentation |
 | `.plans/` | SDD implementation plans |
 | `.specs/` | SDD task, status, and domain specs |
-| `amprobe/` | Server control plane: Web/API 接入、认证授权、目标选择、RPC client 和运行时协调 |
-| `collia/` | Agent runtime: 主机/容器采集、Docker 控制、GORM 本地状态和 rpcx Service |
-| `common/` | shared contract library: 复用 schema、数据库封装、RPC 参数/返回值和跨模块类型 |
+| `amprobe/` | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client |
+| `collia/` | Agent runtime: 主机/容器采集、HTTP 监控上报、Docker 控制和反向 tunnel Service |
+| `common/` | shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型 |
 | `deploy/` | supporting project directory |
-| `docs/` | project documentation |
-| `installer/` | supporting project directory |
 
 ## Makefile Targets
 
@@ -44,8 +42,6 @@
 
 - `make amd64`: build amd64
 - `make arm64`: build arm64
-- `make assets`: generate assets
-- `make installer`: generate installer
 - `make wire`: generate wire
 
 ## Package Scripts
@@ -66,10 +62,6 @@
 - `.docs/modules/common.md`
 - `.docs/project-analysis.md`
 
-### Existing project `docs/` references
-
-- `docs/server-agent-architecture.md`（项目原有文档；`.docs/` 为 SDD 生成文档视图）
-
 ## Unmanaged Documentation Signals
 
 - No unmanaged generated documentation or CLAUDE-only AI entries detected.
@@ -78,11 +70,15 @@
 
 本节只列出静态发现的测试入口；Domain Spec 中的验收方式是建议验证路径，不代表这些测试已经证明约束成立。
 
-- Test files discovered: 5
+- Test files discovered: 9
+- `amprobe/pkg/fiberx/fiberx_test.go`
 - `amprobe/service/agent_install_test.go`
-- `collia/pkg/compose/compose_test.go`
+- `amprobe/service/container/repository/container_test.go`
+- `amprobe/service/host/repository/host_test.go`
+- `amprobe/service/report/report_test.go`
 - `collia/pkg/psutil/psutil_test.go`
 - `collia/pkg/timectl/timectl_test.go`
+- `collia/service/report/client_test.go`
 - `common/transport/tlsconfig/tlsconfig_test.go`
 
 ### Domain Spec Evidence Notes
@@ -95,7 +91,11 @@
 
 | Domain Ref | Evidence | Last Verified | Notes |
 |------------|----------|---------------|-------|
-| `<domain>/I###` | `<test name or command>` | `<date or commit>` | `<scope / residual risk>` |
+| `monitoring-platform/I001` | `TestContainerUpdateCallsAgentRPC`; `cd amprobe && go test ./...` | working tree validation | 覆盖控制调用不在 Server 本地伪成功；仍需补多 Agent 集成测试。 |
+| `monitoring-platform/I005` | `TestStorePersistsReportBatch`; `TestStoreRejectsMissingAgentID`; `cd amprobe && go test ./...` | working tree validation | 覆盖成功批次和缺失 Agent 拒绝；仍需补真实 DB 写入失败回滚测试。 |
+| `monitoring-platform/R001` | `TestNetUsageReturnsDBError`; `cd amprobe && go test ./...` | working tree validation | 覆盖监控查询 DB 错误不降级为空成功；仍需补 API 层错误表现。 |
+| `monitoring-platform/R005` | `TestStoreRejectsMissingAgentID`; `cd amprobe && go test ./...` | working tree validation | 覆盖缺失 Agent 上报拒绝。 |
+| `monitoring-platform/R006` | `TestContainerUpdateCallsAgentRPC`; Agent `ContainerUpdate` 返回未实现错误 | working tree validation | 覆盖 Server 不再本地假成功；仍需补端到端 API/RPC 契约测试。 |
 
 ## Domain Specs
 
@@ -127,7 +127,7 @@
 - Governance warnings: 0
 - Health failures: 0
 - Domain specs audited: 1
-- Domain constraint IDs: 8
+- Domain constraint IDs: 12
 - Task Domain refs: 0
 - Reference errors: 0
 - Manifest structure failures: 0

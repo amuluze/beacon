@@ -2,6 +2,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"time"
@@ -66,7 +67,7 @@ func (a *TimedTask) Execute() {
 	}
 	if a.reportClient != nil && r != nil {
 		args := a.buildReportArgs(timestamp, r)
-		if err := a.reportClient.Push(nil, args); err != nil {
+		if err := a.reportClient.Push(context.Background(), args); err != nil {
 			slog.Error("push report failed", "error", err)
 		}
 	}

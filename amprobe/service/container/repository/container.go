@@ -239,7 +239,9 @@ func (c *ContainerRepo) ContainerCreate(ctx context.Context, args rpcSchema.Cont
 }
 
 func (c *ContainerRepo) ContainerUpdate(ctx context.Context, args rpcSchema.ContainerUpdateArgs) (rpcSchema.ContainerUpdateReply, error) {
-	return rpcSchema.ContainerUpdateReply{}, nil
+	var reply rpcSchema.ContainerUpdateReply
+	err := c.RPCClient.Call(ctx, "ContainerUpdate", args, &reply)
+	return reply, err
 }
 
 func (c *ContainerRepo) ContainerDelete(ctx context.Context, args rpcSchema.ContainerDeleteArgs) error {
