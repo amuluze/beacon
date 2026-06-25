@@ -36,14 +36,11 @@ func TestSafeJoinRejectsEscapes(t *testing.T) {
 }
 
 func TestBuildAgentInstallScriptUsesInstallTokenHeader(t *testing.T) {
-	script := buildAgentInstallScript("http://127.0.0.1:1443", "1", 18080, true)
+	script := buildAgentInstallScript("http://127.0.0.1:1443", "1")
 	if !strings.Contains(script, `X-Install-Token: $TOKEN`) {
 		t.Fatal("expected script downloads to use X-Install-Token header")
 	}
 	if !strings.Contains(script, `/api/v1/host/install/package?arch=$ARCH`) {
 		t.Fatal("expected script to download collia binary selected by arch")
-	}
-	if !strings.Contains(script, `/api/v1/host/install/certs?node=$NODE`) {
-		t.Fatal("expected script to download certs when TLS is enabled")
 	}
 }

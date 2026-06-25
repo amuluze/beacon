@@ -28,7 +28,7 @@ onMounted(async () => {
 })
 
 // 用户禁止操作
-function enableEdit(user: User) {
+function enableEdit(user: any) {
   console.log('......', user)
   return user.username === 'admin'
 }
@@ -80,11 +80,11 @@ const { t } = useI18n()
                 <el-table-column prop="created_at" label="创建时间" min-width="160" align="center" sortable />
                 <el-table-column label="操作" width="200" fixed="right" align="center">
                     <template #default="scope">
-                        <el-button type="primary" size="small" text :disabled="enableEdit(scope.row)" @click="editUser({ title: 'account.editAccount', entity: scope.row, update: search })">
+                        <el-button type="primary" size="small" text :disabled="enableEdit(scope.row as any)" @click="editUser({ title: 'account.editAccount', entity: scope.row as any, update: search })">
                             <svg-icon icon-class="edit" />
                             编辑
                         </el-button>
-                        <el-button type="danger" size="small" text :disabled="enableEdit(scope.row)" @click="deleteUser({ title: 'account.deleteAccount', ids: [scope.row.id], update: search })">
+                        <el-button type="danger" size="small" text :disabled="enableEdit(scope.row as any)" @click="deleteUser({ title: 'account.deleteAccount', ids: [(scope.row as any).id], update: search })">
                             <svg-icon icon-class="delete" />
                             删除
                         </el-button>

@@ -10,7 +10,7 @@ import (
 
 type Config struct {
 	Fiber        Fiber
-	Rpc          Rpc
+	Control      Control
 	Gorm         Gorm
 	DB           DB
 	Log          Log
@@ -45,26 +45,10 @@ type Fiber struct {
 	Prefork         bool
 }
 
-type Rpc struct {
-	Network        string
-	Address        string
+type Control struct {
+	Enable        bool
+	Address       string
 	DefaultAgentID string
-	TLS            TLS
-	Agents         []Agent
-}
-
-type Agent struct {
-	ID      string
-	Network string
-	Address string
-	TLS     TLS
-}
-
-type TLS struct {
-	Enable      bool
-	CertDir     string
-	ServerName  string
-	ClientNames []string
 }
 
 type Gorm struct {
@@ -87,10 +71,6 @@ type DB struct {
 	SSLMode  string
 }
 
-type Disk struct {
-	Devices []string
-}
-
 type Task struct {
 	Interval int
 }
@@ -100,13 +80,9 @@ type AgentInstall struct {
 	Token         string
 	PublicBaseURL string
 	PackageDir    string
-	RPCPort       int
+	ControlPort   int
 	TLSEnable     bool
 	CertDir       string
-}
-
-type Ethernet struct {
-	Names []string
 }
 
 type Log struct {

@@ -1,325 +1,135 @@
 <script setup lang="ts">
 import type { EChartsOption } from '@/components/Echarts/echarts.ts'
-import type { CPUTrendingArgs, DiskIO, DiskTrendingArgs, DiskUsage, MemTrendingArgs, NetIO, NetTrendingArgs, NetUsage } from '@/interface/host.ts'
+import type { DiskIO, DiskUsage, NetIO, NetUsage } from '@/interface/host.ts'
 
-import { queryCPUInfo, queryCPUUsage, queryDiskInfo, queryDiskUsage, queryMemInfo, queryMemUsage, queryNetworkUsage } from '@/api/host'
-import { cpuTrendingOption, diskTrendingOption, memTrendingOption, netTrendingOption } from '@/config/echarts.ts'
+import { queryCPUInfo, queryCPUUsage, queryDiskInfo, queryDiskUsage, queryMemInfo, queryMemUsage, queryNetworkUsage, queryAgentList } from '@/api/host'
+import { cpuTrendingOption, memTrendingOption, diskTrendingOption, netTrendingOption } from '@/config/echarts.ts'
 import { convertBytesToReadable } from '@/utils/convert.ts'
 import { dayjs } from 'element-plus'
 import { set } from 'lodash-es'
 import { useI18n } from 'vue-i18n'
 
-const loading = ref(false)
+// Agent switcher
+const agentList = ref<{ agent_id: string; hostname: string }[]>([])
+const currentAgent = ref('')
+function agentParams(): Record<string, string> {
+  return currentAgent.value ? { agent_id: currentAgent.value } : {}
+}
+async function loadAgents() {
+  try {
+    const { data } = await queryAgentList()
+    agentList.value = data || []
+    if (agentList.value.length > 0 && !currentAgent.value) {
+      currentAgent.value = agentList.value[0].agent_id
+    }
+  } catch {
+    agentList.value = [{ agent_id: 'default', hostname: 'default' }]
+    currentAgent.value = 'default'
+  }
+}
+watch(currentAgent, () => { refreshAll() })
 
-// 时间密度下拉框
+// Time density
 const timeDensity = ref(600)
 const options = [
-  {
-    value: 120,
-    label: '2分钟',
-  },
-  {
-    value: 300,
-    label: '5分钟',
-  },
-  {
-    value: 600,
-    label: '10分钟',
-  },
-  {
-    value: 1800,
-    label: '30分钟',
-  },
-  {
-    value: 3600,
-    label: '1 小时',
-  },
-  {
-    value: 43200,
-    label: '12小时',
-  },
-  {
-    value: 86400,
-    label: '24小时',
-  },
+  { value: 120, label: '2分钟' },
+  { value: 300, label: '5分钟' },
+  { value: 600, label: '10分钟' },
+  { value: 1800, label: '30分钟' },
+  { value: 3600, label: '1小时' },
+  { value: 43200, label: '12小时' },
+  { value: 86400, label: '24小时' },
 ]
-watch(
-  () => timeDensity.value,
-  () => {
-    renderCPUPercent()
-    renderCPU()
-    renderMemInfo()
-    renderMem()
-    renderDiskInfo()
-    renderDisk()
-    renderNet()
-  },
-)
+watch(timeDensity, () => { refreshAll() })
 
-// CPU 使用率
+// CPU
 const cpuPercent = ref('0.0%')
+const cpuOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(cpuTrendingOption)))
 async function renderCPUPercent() {
-  const { data } = await queryCPUInfo()
-  cpuPercent.value = `${data.percent.toFixed(2)}%`
+  const { data } = await queryCPUInfo({ ...agentParams() } as any)
+  cpuPercent.value = `${data.percent.toFixed(1)}%`
 }
-
-const cpuOption = reactive<EChartsOption>(cpuTrendingOption as EChartsOption)
 async function renderCPU() {
-  const param: CPUTrendingArgs = {
-    start_time: dayjs().unix() - timeDensity.value,
-    end_time: dayjs().unix(),
-  }
-
-  console.log(param)
-  const { data } = await queryCPUUsage(param)
+  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams() }
+  const { data } = await queryCPUUsage(param as any)
   const cpuData = data.data
-  console.log('cpu response:', cpuData)
-  // set(cpuOption, 'title', { text: 'CPU使用率' });
-  set(
-    cpuOption,
-    'xAxis.data',
-    cpuData.map(item => `${dayjs(item.timestamp * 1000).hour()}:${dayjs(item.timestamp * 1000).minute()}`),
-  )
-  set(cpuOption, 'legend.data', ['CPU使用率'])
-  set(cpuOption, 'series', [
-    {
-      name: 'CPU使用率',
-      data: cpuData.map(item => item.value.toFixed(2)),
-      type: 'line',
-      smooth: true,
-      showSymbol: false,
-    },
-  ])
-  console.log('cpu: ', cpuOption)
+  const labels = cpuData.map((item: any) => `${dayjs(item.timestamp * 1000).format('HH:mm')}`)
+  set(cpuOption, 'xAxis.data', labels)
+  set(cpuOption, 'legend.data', ['CPU 使用率'])
+  set(cpuOption, 'series', [{ name: 'CPU 使用率', data: cpuData.map((item: any) => item.value.toFixed(1)), type: 'line', smooth: true, showSymbol: false }])
 }
 
-// 内存使用率
-const memInfo = ref({
-  percent: '0%',
-  total: '0',
-  used: '0',
-})
+// Memory
+const memInfo = ref({ percent: '0%', total: '0', used: '0' })
+const memOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(memTrendingOption)))
 async function renderMemInfo() {
-  const { data } = await queryMemInfo()
-  memInfo.value.percent = `${data.percent.toFixed(2)}%`
+  const { data } = await queryMemInfo({ ...agentParams() } as any)
+  memInfo.value.percent = `${data.percent.toFixed(1)}%`
   memInfo.value.total = convertBytesToReadable(data.total)
   memInfo.value.used = convertBytesToReadable(data.used)
 }
-const memOption = reactive<EChartsOption>(memTrendingOption as EChartsOption)
 async function renderMem() {
-  const param: MemTrendingArgs = {
-    start_time: dayjs().unix() - timeDensity.value,
-    end_time: dayjs().unix(),
-  }
-  console.log(param)
-  const { data } = await queryMemUsage(param)
+  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams() }
+  const { data } = await queryMemUsage(param as any)
   const memData = data.data
-  console.log('mem response: ', memData)
-  // set(memOption, 'title', { text: '内存使用率' });
-  set(
-    memOption,
-    'xAxis.data',
-    memData.map(item => `${dayjs(item.timestamp * 1000).hour()}:${dayjs(item.timestamp * 1000).minute()}`),
-  )
+  const labels = memData.map((item: any) => `${dayjs(item.timestamp * 1000).format('HH:mm')}`)
+  set(memOption, 'xAxis.data', labels)
   set(memOption, 'legend.data', ['内存使用率'])
-  set(memOption, 'series', [
-    {
-      name: '内存使用率',
-      data: memData.map(item => item.value.toFixed(2)),
-      type: 'line',
-      smooth: true,
-      showSymbol: false,
-    },
-  ])
-  console.log('mem: ', memOption)
+  set(memOption, 'series', [{ name: '内存使用率', data: memData.map((item: any) => item.value.toFixed(1)), type: 'line', smooth: true, showSymbol: false }])
 }
 
-// 磁盘使用率
-const diskInfo = ref<
-  {
-    device: string
-    total: string
-    used: string
-    percent: string
-  }[]
->([])
+// Disk
+const diskInfo = ref<{ device: string; total: string; used: string; percent: string }[]>([])
+const diskOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(diskTrendingOption)))
 async function renderDiskInfo() {
-  const { data } = await queryDiskInfo()
-  console.log(data.info)
-  diskInfo.value = []
-  data.info.map((item) => {
-    diskInfo.value.push({
-      device: item.device,
-      total: convertBytesToReadable(item.total),
-      used: convertBytesToReadable(item.used),
-      percent: `${item.percent.toFixed(2)}%`,
-    })
-    return diskInfo
-  })
-}
-const diskOption = reactive<EChartsOption>(diskTrendingOption as EChartsOption)
-function generateDiskLegendData(data: DiskUsage[]) {
-  const options: string[] = ['Read', 'Write']
-  const res: string[] = []
-  options.forEach((item: string) => {
-    data.forEach((i: DiskUsage) => {
-      res.push(`${i.device}_${item}`)
-    })
-  })
-  return res
-}
-interface DiskSeriesData {
-  name: string
-  data: number[]
-  type: string
-  showSymbol: boolean
-  symbolSize: number
-  hoverAnimation: boolean
-  smooth: boolean
+  const { data } = await queryDiskInfo({ ...agentParams() } as any)
+  diskInfo.value = (data.info || []).map((item: any) => ({
+    device: item.device,
+    total: convertBytesToReadable(item.total),
+    used: convertBytesToReadable(item.used),
+    percent: `${item.percent.toFixed(1)}%`,
+  }))
 }
 function generateDiskSeriesData(data: DiskUsage[]) {
-  const options: string[] = ['Read', 'Write']
-  const series: DiskSeriesData[] = []
-  options.forEach((item: string) => {
-    data.forEach((i: DiskUsage) => {
-      if (item === 'Read') {
-        series.push({
-          name: `${i.device}_${item}`,
-          data: i.data.map((val: DiskIO) => val.io_read),
-          type: 'line',
-          smooth: true,
-          showSymbol: true,
-          symbolSize: 2,
-          hoverAnimation: true,
-        })
-      }
-      else {
-        series.push({
-          name: `${i.device}_${item}`,
-          data: i.data.map((val: DiskIO) => val.io_write),
-          type: 'line',
-          smooth: true,
-          showSymbol: true,
-          symbolSize: 2,
-          hoverAnimation: true,
-        })
-      }
-    })
+  const series: any[] = []
+  data.forEach((i: DiskUsage) => {
+    series.push({ name: `${i.device}_Read`, data: i.data.map((v: DiskIO) => v.io_read), type: 'line', smooth: true, showSymbol: false })
+    series.push({ name: `${i.device}_Write`, data: i.data.map((v: DiskIO) => v.io_write), type: 'line', smooth: true, showSymbol: false })
   })
   return series
 }
 async function renderDisk() {
-  const param: DiskTrendingArgs = {
-    start_time: dayjs().unix() - timeDensity.value,
-    end_time: dayjs().unix(),
-  }
-  console.log(param)
-  const { data } = await queryDiskUsage(param)
-  const diskData = data
-  console.log('********<<<<>>>>>>*****', diskData, diskData.usage)
-  // set(diskOption, 'title', { text: '磁盘使用率' });
-  set(
-    diskOption,
-    'xAxis.data',
-    diskData.usage[0].data.map((item: DiskIO) => `${dayjs(item.timestamp * 1000).hour()}:${dayjs(item.timestamp * 1000).minute()}`),
-  )
-  set(diskOption, 'legend.data', generateDiskLegendData(diskData.usage))
-  set(diskOption, 'series', generateDiskSeriesData(diskData.usage))
-  console.log('disk options: ', diskOption)
+  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams() }
+  const { data } = await queryDiskUsage(param as any)
+  if (!data.usage || data.usage.length === 0) return
+  const labels = data.usage[0].data.map((item: DiskIO) => `${dayjs(item.timestamp * 1000).format('HH:mm')}`)
+  set(diskOption, 'xAxis.data', labels)
+  set(diskOption, 'series', generateDiskSeriesData(data.usage))
 }
 
-// 流量使用率
-const netInfo = ref<
-  {
-    ethernet: string
-    read: string
-    write: string
-  }[]
->([])
-const netOption = reactive<EChartsOption>(netTrendingOption as EChartsOption)
-function generateNetLegendData(data: NetUsage[]) {
-  const options: string[] = ['Receive', 'Send']
-  const res: string[] = []
-  options.forEach((item: string) => {
-    data.forEach((i: NetUsage) => {
-      res.push(`${i.ethernet}_${item}`)
-    })
-  })
-  return res
-}
-interface NetSeriesData {
-  name: string
-  data: number[]
-  type: string
-  showSymbol: boolean
-  symbolSize: number
-  hoverAnimation: boolean
-  smooth: boolean
-}
-function generateNetSeriesData(data: NetUsage[]) {
-  const options: string[] = ['Receive', 'Send']
-  const series: NetSeriesData[] = []
-  options.forEach((item: string) => {
-    data.forEach((i: NetUsage) => {
-      if (item === 'Receive') {
-        series.push({
-          name: `${i.ethernet}_${item}`,
-          data: i.data.map((val: NetIO) => val.bytes_recv),
-          type: 'line',
-          showSymbol: true,
-          symbolSize: 2,
-          hoverAnimation: true,
-          smooth: true,
-        })
-      }
-      else {
-        series.push({
-          name: `${i.ethernet}_${item}`,
-          data: i.data.map((val: NetIO) => val.bytes_sent),
-          type: 'line',
-          showSymbol: true,
-          symbolSize: 2,
-          hoverAnimation: true,
-          smooth: true,
-        })
-      }
-    })
-  })
-  return series
-}
+// Network
+const netInfo = ref<{ ethernet: string; read: string; write: string }[]>([])
+const netOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(netTrendingOption)))
 async function renderNet() {
-  const param: NetTrendingArgs = {
-    start_time: dayjs().unix() - timeDensity.value,
-    end_time: dayjs().unix(),
-  }
-  console.log(param)
-  const { data } = await queryNetworkUsage(param)
-  const netData = data
-  netInfo.value = []
-  netData.usage.map((item) => {
-    netInfo.value.push({
-      ethernet: item.ethernet,
-      read: convertBytesToReadable(item.data[item.data.length - 1].bytes_recv),
-      write: convertBytesToReadable(item.data[item.data.length - 1].bytes_sent),
-    })
-    return netInfo
+  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams() }
+  const { data } = await queryNetworkUsage(param as any)
+  if (!data.usage || data.usage.length === 0) return
+  netInfo.value = data.usage.map((item: NetUsage) => ({
+    ethernet: item.ethernet,
+    read: convertBytesToReadable(item.data[item.data.length - 1].bytes_recv),
+    write: convertBytesToReadable(item.data[item.data.length - 1].bytes_sent),
+  }))
+  const labels = data.usage[0].data.map((item: NetIO) => `${dayjs(item.timestamp * 1000).format('HH:mm')}`)
+  set(netOption, 'xAxis.data', labels)
+  const series: any[] = []
+  data.usage.forEach((i: NetUsage) => {
+    series.push({ name: `${i.ethernet}_Receive`, data: i.data.map((v: NetIO) => v.bytes_recv), type: 'line', smooth: true, showSymbol: false })
+    series.push({ name: `${i.ethernet}_Send`, data: i.data.map((v: NetIO) => v.bytes_sent), type: 'line', smooth: true, showSymbol: false })
   })
-
-  console.log('net response: ', netData.usage)
-  set(
-    netOption,
-    'xAxis.data',
-    netData.usage[0].data.map((item: NetIO) => `${dayjs(item.timestamp * 1000).hour()}:${dayjs(item.timestamp * 1000).minute()}`),
-  )
-  set(netOption, 'legend.data', generateNetLegendData(netData.usage))
-  set(netOption, 'series', generateNetSeriesData(netData.usage))
-  console.log('net options: ', netOption)
+  set(netOption, 'series', series)
 }
 
-// 定时器
-const timer = ref()
-onMounted(() => {
-  console.log('mounted')
+function refreshAll() {
   renderCPUPercent()
   renderCPU()
   renderMemInfo()
@@ -327,123 +137,161 @@ onMounted(() => {
   renderDiskInfo()
   renderDisk()
   renderNet()
-  timer.value = setInterval(() => {
-    console.log('start interval')
-    renderCPUPercent()
-    renderCPU()
-    renderMemInfo()
-    renderMem()
-    renderDiskInfo()
-    renderDisk()
-    renderNet()
-  }, 5000)
-  console.log('timer: ', timer.value)
-})
+}
 
-onUnmounted(() => {
-  clearInterval(timer.value)
+const timer = ref()
+onMounted(() => {
+  loadAgents()
+  refreshAll()
+  timer.value = setInterval(refreshAll, 10000)
 })
+onUnmounted(() => { clearInterval(timer.value) })
 
 const { t } = useI18n()
 </script>
 
 <template>
-    <div class="am-density">
-        <el-card shadow="never">
-            <span>{{ t('monitor.timeDensity') }}：</span>
-            <el-select v-model="timeDensity" placeholder="Select" size="default" style="width: 120px">
-                <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
-        </el-card>
+  <!-- Host Section -->
+  <div class="am-section">
+    <div class="am-section-header">
+      <div class="am-section-title-group">
+        <span class="am-section-title">{{ t('monitor.hostMonitor') }}</span>
+        <el-select v-model="currentAgent" size="small" style="width: 160px" placeholder="选择主机">
+          <el-option
+            v-for="item in agentList"
+            :key="item.agent_id"
+            :label="item.hostname || item.agent_id"
+            :value="item.agent_id"
+          />
+        </el-select>
+      </div>
+      <div class="am-density-group">
+        <span class="am-density-label">{{ t('monitor.timeDensity') }}：</span>
+        <el-select v-model="timeDensity" size="small" style="width: 110px">
+          <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
+        </el-select>
+      </div>
     </div>
-    <div class="am-column">
-        <el-row>
-            <el-col :lg="12" :md="12" :sm="12" :xs="24">
-                <el-card shadow="never">
-                    <el-skeleton :loading="loading" animated>
-                        <div>{{ t('monitor.cpuPercent') }}</div>
-                        <div>{{ t('monitor.percent') }}： {{ cpuPercent }}</div>
-                        <div class="am-column-content">
-                            <echarts :option="cpuOption" />
-                        </div>
-                    </el-skeleton>
-                </el-card>
-            </el-col>
-            <el-col :lg="12" :md="12" :sm="12" :xs="24">
-                <el-card shadow="never">
-                    <el-skeleton :loading="loading" animated>
-                        <div>{{ t('monitor.memPercent') }}</div>
-                        <div>{{ t('monitor.total') }}：{{ memInfo.total }} {{ t('monitor.used') }}：{{ memInfo.used }} {{ t('monitor.percent') }}： {{ memInfo.percent }}</div>
-                        <div class="am-column-content">
-                            <echarts :option="memOption" />
-                        </div>
-                    </el-skeleton>
-                </el-card>
-            </el-col>
-            <el-col :lg="12" :md="12" :sm="12" :xs="24">
-                <el-card shadow="never">
-                    <el-skeleton :loading="loading" animated>
-                        <div>{{ t('monitor.diskPercent') }}</div>
-                        <div v-for="(item, index) in diskInfo" :key="index">
-                            {{ item.device }} {{ t('monitor.total') }}：{{ item.total }} {{ t('monitor.used') }}：{{ item.used }} {{ t('monitor.percent') }}：{{ item.percent }}
-                        </div>
-                        <div class="am-column-content">
-                            <echarts :option="diskOption" />
-                        </div>
-                    </el-skeleton>
-                </el-card>
-            </el-col>
-            <el-col :lg="12" :md="12" :sm="12" :xs="24">
-                <el-card shadow="never">
-                    <el-skeleton :loading="loading" animated>
-                        <div>{{ t('monitor.netLine') }}</div>
-                        <div v-for="(item, index) in netInfo" :key="index">
-                            {{ item.ethernet }} {{ t('monitor.receive') }}：{{ item.read }} {{ t('monitor.send') }}：{{ item.write }}
-                        </div>
-                        <div class="am-column-content">
-                            <echarts :option="netOption" />
-                        </div>
-                    </el-skeleton>
-                </el-card>
-            </el-col>
-        </el-row>
+
+    <div class="am-chart-grid">
+      <div class="am-chart-row">
+        <div class="am-chart-card">
+          <div class="am-chart-card-header">
+            <span class="am-chart-card-title">CPU 使用率</span>
+            <span class="am-chart-card-percent accent-primary">{{ cpuPercent }}</span>
+          </div>
+          <div class="am-chart-area">
+            <echarts :option="cpuOption" />
+          </div>
+        </div>
+        <div class="am-chart-card">
+          <div class="am-chart-card-header">
+            <span class="am-chart-card-title">内存使用率</span>
+            <span class="am-chart-card-percent accent-warning">{{ memInfo.percent }}</span>
+          </div>
+          <div class="am-chart-area">
+            <echarts :option="memOption" />
+          </div>
+        </div>
+      </div>
+      <div class="am-chart-row">
+        <div class="am-chart-card">
+          <div class="am-chart-card-header">
+            <span class="am-chart-card-title">磁盘 IO</span>
+            <span class="am-chart-card-percent accent-success" v-if="diskInfo.length > 0">{{ diskInfo[0].percent }}</span>
+          </div>
+          <div class="am-chart-area">
+            <echarts :option="diskOption" />
+          </div>
+        </div>
+        <div class="am-chart-card">
+          <div class="am-chart-card-header">
+            <span class="am-chart-card-title">网络流量</span>
+            <span class="am-chart-card-percent accent-primary" v-if="netInfo.length > 0">{{ netInfo[0].read }} / {{ netInfo[0].write }}</span>
+          </div>
+          <div class="am-chart-area">
+            <echarts :option="netOption" />
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 </template>
 
 <style scoped lang="scss">
-@include b(density) {
-  height: 48px;
-  width: 100%;
-
-  span {
-    font-size: 14px;
-  }
-
-  .el-card {
-    height: 100%;
-    :deep(.el-card__body) {
-      height: 100% !important;
-      padding: 0 16px 0 16px;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: flex-end;
-    }
-  }
-
-  border-radius: 4px;
-  margin-bottom: 4px;
-}
-
-@include b(column) {
+.am-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   height: 100%;
-  width: 100%;
-  font-size: 14px;
-  overflow-y: auto;
 }
-
-@include b(column-content) {
-  height: 260px;
-  width: 100%;
+.am-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+.am-section-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.am-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+.am-density-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.am-density-label {
+  font-size: 13px;
+  color: #666;
+}
+.am-chart-grid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 12px 12px;
+}
+.am-chart-row {
+  flex: 1;
+  display: flex;
+  gap: 12px;
+}
+.am-chart-card {
+  flex: 1;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.am-chart-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.am-chart-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+.am-chart-card-percent {
+  font-size: 12px;
+  font-family: 'Geist Mono', monospace;
+  font-weight: 500;
+}
+.accent-primary { color: #4f7cff; }
+.accent-warning { color: #f5a623; }
+.accent-success { color: #52c41a; }
+.am-chart-area {
+  flex: 1;
+  min-height: 180px;
 }
 </style>

@@ -17,16 +17,16 @@ import (
 )
 
 type LoggerHandler struct {
-	rpcClient *rpc.Client
+	rpcClient rpc.Caller
 }
 
-func NewLoggerHandler(client *rpc.Client) *LoggerHandler {
+func NewLoggerHandler(client rpc.Caller) *LoggerHandler {
 	return &LoggerHandler{rpcClient: client}
 }
 
 func (l *LoggerHandler) Handler(c *websocket.Conn) {
 	containerID := c.Params("id")
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 	agentID := c.Headers("X-Agent-ID")
 	if agentID == "" {
@@ -36,18 +36,18 @@ func (l *LoggerHandler) Handler(c *websocket.Conn) {
 		ctx = contextx.NewAgentID(ctx, agentID)
 	}
 
-	var reply rpcSchema.ContainerLogsReply
-	if err := l.rpcClient.Call(ctx, "ContainerLogs", rpcSchema.ContainerLogsArgs{ContainerID: containerID}, &reply); err != nil {
-		slog.Error("read container logs from agent failed", "container_id", containerID, "err", err)
+	chunkChan, err := l.rpcClient.StreamCall(ctx, "ContainerLogs", rpcSchema.ContainerLogsArgs{ContainerID: containerID})
+	if err != nil {
+		slog.Error("stream container logs from agent failed", "container_id", containerID, "err", err)
 		_ = c.WriteMessage(websocket.TextMessage, []byte(err.Error()))
 		return
 	}
 
-	if len(reply.Data) == 0 {
-		return
-	}
-	if err := c.WriteMessage(websocket.TextMessage, reply.Data); err != nil {
-		slog.Error("write container logs websocket message failed", "container_id", containerID, "err", err)
+	for chunk := range chunkChan {
+		if err := c.WriteMessage(websocket.TextMessage, chunk); err != nil {
+			slog.Debug("write container logs websocket message failed", "container_id", containerID, "err", err)
+			return
+		}
 	}
 }
 

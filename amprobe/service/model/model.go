@@ -23,6 +23,7 @@ func (a *Models) GetAllModels() []interface{} {
 		new(AlarmThreshold),
 		new(Mail),
 		new(License),
+		new(Agent),
 		new(MonitorHost),
 		new(MonitorCPU),
 		new(MonitorMemory),

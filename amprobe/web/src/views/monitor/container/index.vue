@@ -1,189 +1,250 @@
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
 import type { EChartsOption } from '@/components/Echarts/echarts.ts'
 import { containerCpuOption, containerMemOption } from '@/config/echarts.ts'
-import type { CPUTrendingArgs, Usage } from '@/interface/host.ts'
+import type { Usage } from '@/interface/host.ts'
 import { dayjs } from 'element-plus'
-import { queryContainersUsage } from '@/api/container'
+import { queryContainersUsage, queryAgentList } from '@/api/container'
 import { set } from 'lodash-es'
 
-const loading = ref(false)
+// Agent switcher
+const agentList = ref<{ agent_id: string; hostname: string }[]>([])
+const currentAgent = ref('')
+async function loadAgents() {
+  try {
+    const { data } = await queryAgentList()
+    agentList.value = data || []
+    if (agentList.value.length > 0 && !currentAgent.value) {
+      currentAgent.value = agentList.value[0].agent_id
+    }
+  } catch {
+    agentList.value = [{ agent_id: 'default', hostname: 'default' }]
+    currentAgent.value = 'default'
+  }
+}
+watch(currentAgent, () => { render() })
 
-// 时间密度下拉框
+// Time density
 const timeDensity = ref(600)
 const options = [
-  {
-    value: 600,
-    label: '10分钟',
-  },
-  {
-    value: 1800,
-    label: '30分钟',
-  },
-  {
-    value: 3600,
-    label: '1 小时',
-  },
-  {
-    value: 43200,
-    label: '12小时',
-  },
-  {
-    value: 86400,
-    label: '24小时',
-  },
+  { value: 600, label: '10分钟' },
+  { value: 1800, label: '30分钟' },
+  { value: 3600, label: '1小时' },
+  { value: 43200, label: '12小时' },
+  { value: 86400, label: '24小时' },
 ]
-watch(
-  () => timeDensity.value,
-  () => {
-    render()
-  },
-)
+watch(timeDensity, () => { render() })
 
-// CPU 使用率
-const cpuOption = reactive<EChartsOption>(containerCpuOption)
-const memOption = reactive<EChartsOption>(containerMemOption)
-interface Series {
-  name: string
-  type: string
-  smooth: boolean
-  data: string[]
-}
+// Charts
+const cpuOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(containerCpuOption)))
+const memOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(containerMemOption)))
+
+const containerNames = ref<string[]>([])
+
 async function render() {
-  const param: CPUTrendingArgs = {
-    start_time: dayjs().unix() - timeDensity.value,
-    end_time: dayjs().unix(),
-  }
-  const { data } = await queryContainersUsage(param)
+  const agentParams: Record<string, string> = currentAgent.value ? { agent_id: currentAgent.value } : {}
+  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams }
+  const { data } = await queryContainersUsage(param as any)
+  if (!data.names || data.names.length === 0) return
+
+  containerNames.value = data.names
+
   const cpuData = new Map<string, Usage[]>(Object.entries(data.cpu_usage))
   const memData = new Map<string, Usage[]>(Object.entries(data.mem_usage))
-  set(cpuOption, 'legend.data', data.names)
-  set(memOption, 'legend.data', data.names)
 
-  const couIterator = cpuData.keys()
-  const cpuDataFirstKey = couIterator.next().value
-  const memIterator = memData.keys()
-  const memDataFirstKey = memIterator.next().value
-  set(
-    cpuOption,
-    'xAxis.data',
-    cpuData.get(cpuDataFirstKey as string)?.map(item => `${dayjs(item.timestamp * 1000).hour()}:${dayjs(item.timestamp * 1000).minute()}`),
-  )
-  set(
-    memOption,
-    'xAxis.data',
-    memData.get(memDataFirstKey as string)?.map(item => `${dayjs(item.timestamp * 1000).hour()}:${dayjs(item.timestamp * 1000).minute()}`),
-  )
-  const cpuSeries = reactive<Series[]>([])
-  cpuData.forEach((value, key) => {
-    cpuSeries.push({
-      name: key,
-      type: 'line',
-      smooth: true,
-      data: value.map(item => item.value.toFixed(2)),
-    })
+  // Legend
+  const cpuLegendColors = ['#4f7cff', '#52c41a', '#f5a623', '#f56c6c']
+  set(cpuOption, 'legend.data', data.names.map((n: string, i: number) => ({ name: n, textStyle: { color: cpuLegendColors[i % 4] } })))
+  set(memOption, 'legend.data', data.names.map((n: string, i: number) => ({ name: n, textStyle: { color: cpuLegendColors[i % 4] } })))
+
+  // X axis from first container
+  const cpuFirstKey = cpuData.keys().next().value as string
+  const xLabels = cpuData.get(cpuFirstKey)?.map(item => `${dayjs(item.timestamp * 1000).format('HH:mm')}`) || []
+  set(cpuOption, 'xAxis.data', xLabels)
+  set(memOption, 'xAxis.data', xLabels)
+
+  // Series
+  const cpuSeries: any[] = []
+  data.names.forEach((name: string, i: number) => {
+    const values = cpuData.get(name)
+    if (values) {
+      cpuSeries.push({
+        name,
+        data: values.map(item => item.value.toFixed(1)),
+        type: 'line',
+        smooth: true,
+        showSymbol: false,
+        lineStyle: { width: 1.5, color: cpuLegendColors[i % 4] },
+        itemStyle: { color: cpuLegendColors[i % 4] },
+      })
+    }
   })
   set(cpuOption, 'series', cpuSeries)
-  const memSeries = reactive<Series[]>([])
-  memData.forEach((value, key) => {
-    memSeries.push({
-      name: key,
-      type: 'line',
-      smooth: true,
-      data: value.map(item => item.value.toFixed(2)),
-    })
+
+  const memSeries: any[] = []
+  data.names.forEach((name: string, i: number) => {
+    const values = memData.get(name)
+    if (values) {
+      memSeries.push({
+        name,
+        data: values.map(item => item.value.toFixed(1)),
+        type: 'line',
+        smooth: true,
+        showSymbol: false,
+        lineStyle: { width: 1.5, color: cpuLegendColors[i % 4] },
+        itemStyle: { color: cpuLegendColors[i % 4] },
+      })
+    }
   })
   set(memOption, 'series', memSeries)
-  console.log('cpuOption: ', cpuOption)
-  console.log('memOption: ', memOption)
 }
 
-// 定时器
 const timer = ref()
 onMounted(() => {
-  console.log('mounted')
+  loadAgents()
   render()
-  timer.value = setInterval(() => {
-    console.log('start interval')
-    render()
-  }, 5000)
-  console.log('timer: ', timer.value)
+  timer.value = setInterval(render, 10000)
 })
-
-onUnmounted(() => {
-  clearInterval(timer.value)
-})
-
-const { t } = useI18n()
+onUnmounted(() => { clearInterval(timer.value) })
 </script>
 
 <template>
-    <div class="am-density">
-        <el-card shadow="never">
-            <span>{{ t('monitor.timeDensity') }}：</span>
-            <el-select v-model="timeDensity" placeholder="Select" size="default" style="width: 120px">
-                <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
-        </el-card>
+  <div class="am-section">
+    <div class="am-section-header">
+      <div class="am-section-title-group">
+        <span class="am-section-title">容器监控</span>
+        <el-select v-model="currentAgent" size="small" style="width: 160px" placeholder="选择主机">
+          <el-option v-for="item in agentList" :key="item.agent_id" :label="item.hostname || item.agent_id" :value="item.agent_id" />
+        </el-select>
+      </div>
+      <div class="am-density-group">
+        <span class="am-density-label">时间密度：</span>
+        <el-select v-model="timeDensity" size="small" style="width: 110px">
+          <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
+        </el-select>
+      </div>
     </div>
-    <div class="am-column">
-        <el-row>
-            <el-col :lg="12" :md="12" :sm="12" :xs="24">
-                <el-card shadow="never">
-                    <el-skeleton :loading="loading" animated>
-                        <div class="am-column-content">
-                            <echarts :option="cpuOption" />
-                        </div>
-                    </el-skeleton>
-                </el-card>
-            </el-col>
-            <el-col :lg="12" :md="12" :sm="12" :xs="24">
-                <el-card shadow="never">
-                    <el-skeleton :loading="loading" animated>
-                        <div class="am-column-content">
-                            <echarts :option="memOption" />
-                        </div>
-                    </el-skeleton>
-                </el-card>
-            </el-col>
-        </el-row>
+
+    <div class="am-chart-grid">
+      <div class="am-chart-row">
+        <div class="am-chart-card">
+          <div class="am-chart-card-header">
+            <span class="am-chart-card-title">CPU 使用率</span>
+            <div class="am-chart-card-legend">
+              <div v-for="(name, i) in containerNames" :key="name" class="am-legend-item">
+                <span class="am-legend-dot" :style="{ background: ['#4f7cff','#52c41a','#f5a623','#f56c6c'][i % 4] }" />
+                <span class="am-legend-label">{{ name }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="am-chart-area">
+            <echarts :option="cpuOption" />
+          </div>
+        </div>
+        <div class="am-chart-card">
+          <div class="am-chart-card-header">
+            <span class="am-chart-card-title">内存使用率</span>
+            <div class="am-chart-card-legend">
+              <div v-for="(name, i) in containerNames" :key="name" class="am-legend-item">
+                <span class="am-legend-dot" :style="{ background: ['#4f7cff','#52c41a','#f5a623','#f56c6c'][i % 4] }" />
+                <span class="am-legend-label">{{ name }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="am-chart-area">
+            <echarts :option="memOption" />
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 </template>
 
 <style scoped lang="scss">
-@include b(density) {
-  height: 48px;
-  width: 100%;
-
-  span {
-    font-size: 14px;
-  }
-
-  .el-card {
-    height: 100%;
-    :deep(.el-card__body) {
-      height: 100% !important;
-      padding: 0 16px 0 16px;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: flex-end;
-    }
-  }
-
-  border-radius: 4px;
-  margin-bottom: 4px;
-}
-
-@include b(column) {
+.am-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   height: 100%;
-  width: 100%;
-  font-size: 14px;
-  overflow-y: auto;
 }
-
-@include b(column-content) {
-  height: 320px;
-  width: 100%;
+.am-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+.am-section-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.am-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+.am-density-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.am-density-label {
+  font-size: 13px;
+  color: #666;
+}
+.am-chart-grid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 12px 12px;
+}
+.am-chart-row {
+  flex: 1;
+  display: flex;
+  gap: 12px;
+}
+.am-chart-card {
+  flex: 1;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.am-chart-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.am-chart-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+.am-chart-card-legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.am-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.am-legend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.am-legend-label {
+  font-size: 11px;
+  color: #888;
+}
+.am-chart-area {
+  flex: 1;
+  min-height: 200px;
 }
 </style>

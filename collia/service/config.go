@@ -13,11 +13,11 @@ import (
 type Prefix string
 
 type Config struct {
-	prefix    Prefix    `yaml:"-"`
-	Rpc       Rpc       `yaml:"rpc"`
-	Log       Log       `yaml:"log"`
-	Task      Task      `yaml:"task"`
-	DB        DB        `yaml:"db"`
+	prefix    Prefix  `yaml:"-"`
+	Control   Control `yaml:"control"`
+	Log       Log     `yaml:"log"`
+	Task      Task    `yaml:"task"`
+	DB        DB      `yaml:"db"`
 	Variables Variables `yaml:"variables"`
 }
 
@@ -52,10 +52,10 @@ type Report struct {
 	AgentID string `yaml:"agent_id"`
 }
 
-type Rpc struct {
-	Network string `yaml:"network"`
-	Address string `yaml:"address"`
-	TLS     TLS    `yaml:"tls"`
+type Control struct {
+	Server    string `yaml:"server"`
+	AgentID   string `yaml:"agent_id"`
+	JoinToken string `yaml:"join_token"`
 }
 
 type TLS struct {

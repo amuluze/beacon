@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 
 	rpcSchema "common/rpc/schema"
+	tunnel "common/rpc/tunnel"
 
 	"collia/service/model"
 
@@ -91,27 +92,36 @@ func (s *Service) ContainerRestart(ctx context.Context, args rpcSchema.Container
 	return nil
 }
 
+
 func (s *Service) ContainerLogs(ctx context.Context, args rpcSchema.ContainerLogsArgs, reply *rpcSchema.ContainerLogsReply) error {
+	// Use streaming implementation for new pipeline; legacy stub kept for interface compliance
+	return nil
+}
+
+func (s *Service) ContainerLogsStream(ctx context.Context, args rpcSchema.ContainerLogsArgs, streamSender func(frame *tunnel.Frame)) error {
 	reader, err := s.Manager.ContainerLogs(ctx, args.ContainerID)
 	if err != nil {
 		return err
 	}
 	defer reader.Close()
 
-	var data []byte
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		line := scanner.Bytes()
 		if len(line) > 8 {
 			line = line[8:]
 		}
-		data = append(data, line...)
-		data = append(data, '\n')
+		// Send each line as a stream chunk
+		frame := &tunnel.Frame{
+			Payload: append(line, '\n'),
+		}
+		streamSender(frame)
 	}
 	if err := scanner.Err(); err != nil {
 		return err
 	}
-	reply.Data = data
+	// Signal end of stream
+	streamSender(&tunnel.Frame{Eos: true})
 	return nil
 }
 

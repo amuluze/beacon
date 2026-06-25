@@ -21,7 +21,7 @@ type TimedTask struct {
 	stopCh chan struct{}
 }
 
-func NewTimedTask(conf *Config, cli *rpc.Client, db *database.DB) *TimedTask {
+func NewTimedTask(conf *Config, cli rpc.Caller, db *database.DB) *TimedTask {
 	// 默认配置： 每 15s 执行一次
 	interval := conf.Task.Interval
 	tk := timex.NewTicker(time.Duration(interval) * time.Second)

@@ -7,6 +7,7 @@
 package service
 
 import (
+	"amprobe/service/agent"
 	api5 "amprobe/service/account/api"
 	repository5 "amprobe/service/account/repository"
 	service5 "amprobe/service/account/service"
@@ -88,6 +89,15 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	alarmRepository := repository7.NewAlarmRepository(db)
 	alarmService := service7.NewAlarmService(alarmRepository)
 	alarmAPI := api7.NewAlarmAPI(alarmService)
+
+	// Agent module
+	agentRepo := agent.NewAgentRepo(db)
+	agentSvc := agent.NewAgentService(agentRepo)
+	agentAPI := agent.NewAgentAPI(agentSvc)
+
+	// Wire agent lifecycle into tunnel
+	SetAgentLifecycle(agentSvc)
+
 	loggerHandler := NewLoggerHandler(client)
 	termHandler := NewTermHandler()
 	reportService := NewReportService(config, db)
@@ -102,6 +112,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		accountAPI:    accountAPI,
 		mailAPI:       mailAPI,
 		alarmAPI:      alarmAPI,
+		agentAPI:      agentAPI,
 		reportSvc:     reportService,
 		loggerHandler: loggerHandler,
 		termHandler:   termHandler,

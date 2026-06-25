@@ -5,6 +5,7 @@ package service
 
 import (
 	"amprobe/service/account"
+	"amprobe/service/agent"
 	"amprobe/service/alarm"
 	"amprobe/service/audit"
 	"amprobe/service/auth"
@@ -29,7 +30,8 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		InitCasbin,
 		container.Set,
 		host.Set,
-		model.Set,
+		agent.Set,
+			model.Set,
 		auth.Set,
 		audit.Set,
 		account.Set,

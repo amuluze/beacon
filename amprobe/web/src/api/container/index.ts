@@ -90,3 +90,7 @@ export async function getDockerRegistryMirrors() {
 export async function SetDockerRegistryMirrors(params: SetDockerRegistryMirrorsArgs) {
     return request.post('/api/v1/container/set_docker_registry_mirrors', params)
 }
+
+export async function queryAgentList() {
+    return request.get<{ agent_id: string; hostname: string }[]>('/api/v1/agent/list', {})
+}

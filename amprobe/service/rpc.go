@@ -5,70 +5,48 @@
 package service
 
 import (
+	"log/slog"
+
 	"amprobe/pkg/rpc"
-	transporttls "common/transport/tlsconfig"
+	"amprobe/service/agent"
+	tunnelpkg "common/rpc/tunnel"
 )
 
-func NewRPCClient(config *Config) (*rpc.Client, error) {
-	if len(config.Rpc.Agents) == 0 {
-		network := config.Rpc.Network
-		if network == "" {
-			network = rpc.DefaultNetwork
-		}
-		agent, err := buildAgent(rpc.DefaultAgentID, network, config.Rpc.Address, config.Rpc.TLS, TLS{})
-		if err != nil {
-			return nil, err
-		}
-		return rpc.NewMultiClient(rpc.DefaultAgentID, []rpc.Agent{agent})
-	}
-
-	agents := make([]rpc.Agent, 0, len(config.Rpc.Agents))
-	for _, agent := range config.Rpc.Agents {
-		network := agent.Network
-		if network == "" {
-			network = config.Rpc.Network
-		}
-		if network == "" {
-			network = rpc.DefaultNetwork
-		}
-		rpcAgent, err := buildAgent(agent.ID, network, agent.Address, config.Rpc.TLS, agent.TLS)
-		if err != nil {
-			return nil, err
-		}
-		agents = append(agents, rpcAgent)
-	}
-	return rpc.NewMultiClient(config.Rpc.DefaultAgentID, agents)
+// serverTunnelHolder holds the tunnel instance so other components can wire into it.
+type serverTunnelHolder struct {
+	tun *tunnelpkg.ServerTunnel
 }
 
-func buildAgent(id string, network string, address string, globalTLS TLS, agentTLS TLS) (rpc.Agent, error) {
-	tlsSettings := mergeTLS(globalTLS, agentTLS)
-	agent := rpc.Agent{
-		ID:      id,
-		Network: network,
-		Address: address,
-	}
-	if !tlsSettings.Enable {
-		return agent, nil
-	}
+var globalTunnel serverTunnelHolder
 
-	tlsConfig, err := transporttls.ClientConfig(tlsSettings.CertDir, tlsSettings.ServerName)
-	if err != nil {
-		return rpc.Agent{}, err
+// NewRPCClient creates the tunnel-based RPC client.
+// Server listens for reverse connections from Agents.
+func NewRPCClient(config *Config) (rpc.Caller, error) {
+	addr := config.Control.Address
+	if addr == "" {
+		addr = ":17000"
 	}
-	agent.TLSConfig = tlsConfig
-	return agent, nil
+	slog.Info("starting reverse tunnel server", "addr", addr)
+
+	tun := tunnelpkg.NewServerTunnel()
+	globalTunnel.tun = tun
+
+	go func() {
+		if err := tun.Start(addr); err != nil {
+			slog.Error("reverse tunnel server stopped", "err", err)
+		}
+	}()
+
+	defaultID := config.Control.DefaultAgentID
+	if defaultID == "" {
+		defaultID = rpc.DefaultAgentID
+	}
+	return rpc.NewTunnelClient(tun, defaultID), nil
 }
 
-func mergeTLS(globalTLS TLS, agentTLS TLS) TLS {
-	out := globalTLS
-	if agentTLS.Enable {
-		out.Enable = true
+// SetAgentLifecycle wires the agent service into the tunnel lifecycle hooks.
+func SetAgentLifecycle(svc *agent.Service) {
+	if globalTunnel.tun != nil {
+		svc.SetTunnel(globalTunnel.tun)
 	}
-	if agentTLS.CertDir != "" {
-		out.CertDir = agentTLS.CertDir
-	}
-	if agentTLS.ServerName != "" {
-		out.ServerName = agentTLS.ServerName
-	}
-	return out
 }
