@@ -56,18 +56,18 @@
 ## 开发命令
 
 ```bash
-cd amprobe && make amd64
-cd amprobe && make arm64
-cd amprobe && make bin
-cd amprobe && make build
-cd amprobe && make dev
-cd amprobe && make wire
-cd amprobe/web && make build
-cd amprobe/web && make dev
-cd amprobe/web && make install
-cd collia && make amd64
-cd collia && make arm64
-cd collia && make wire
+task amprobe:amd64
+task amprobe:arm64
+task amprobe:bin
+task amprobe:build
+task amprobe:dev
+task amprobe:wire
+task web:build
+task web:dev
+task web:install
+task collia:amd64
+task collia:arm64
+task collia:wire
 cd amprobe/web && npm run build
 ```
 

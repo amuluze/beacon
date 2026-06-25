@@ -1,0 +1,19 @@
+version: '3'
+
+includes:
+  amprobe:
+    taskfile: ./amprobe/Taskfile.yml
+    dir: ./amprobe
+  collia:
+    taskfile: ./collia/Taskfile.yml
+    dir: ./collia
+  web:
+    taskfile: ./amprobe/web/Taskfile.yml
+    dir: ./amprobe/web
+
+tasks:
+  default:
+    desc: List available tasks
+    silent: true
+    cmds:
+      - task --list

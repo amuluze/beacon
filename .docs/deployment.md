@@ -13,15 +13,15 @@
 ## 快速启动
 
 ```bash
-cd amprobe && make dev
-cd amprobe/web && make dev
+task amprobe:dev
+task web:dev
 cd amprobe/web && npm install && npm run dev
 docker compose -f compose.yaml up
 ```
 
 ## 部署方式
 
-- Makefile 承载模块内开发、构建、镜像或安装包命令。
+- Taskfile 承载模块内开发、构建、镜像或安装包命令。
 - 前端包通过 package scripts 运行本地开发、类型检查、lint 和构建。
 - `compose.yaml` 提供 Docker Compose 启动入口。
 - `amprobe/Dockerfile` 提供镜像构建上下文。
@@ -50,7 +50,7 @@ docker compose -f compose.yaml up
 |------|------|----------|
 | 运行时配置 | 配置文件、命令行参数、环境变量 | 记录名称和语义，不记录真实密钥 |
 | 凭据/Token | 本地配置或外部平台 | 不写入生成文档；只描述加载边界 |
-| 构建产物 | Makefile、Taskfile、Go build、前端 scripts | 记录命令和输出职责，不提交临时产物 |
+| 构建产物 | Taskfile、Go build、前端 scripts | 记录命令和输出职责，不提交临时产物 |
 
 ## 发布前检查
 
@@ -61,26 +61,30 @@ docker compose -f compose.yaml up
 - 当前 Go 模块验证入口是分模块执行：`cd amprobe && go test ./...`、`cd collia && go test ./...`、`cd common && go test ./...`。
 - 当前前端类型检查入口是 `cd amprobe/web && npm run ts`。`npm run lint` 已配置但存在存量格式/排序问题，启用为发布门禁前需要先收敛存量 lint。
 
-## Makefile Targets
+## Taskfile Tasks
 
-### `amprobe/Makefile`
+### `amprobe/Taskfile.yml`
 
-- `make amd64`: docker amd64 image
-- `make arm64`: docker arm64 image
-- `make bin`: build bin
-- `make build`
-- `make dev`: run dev
-- `make wire`: generate wire
-### `amprobe/web/Makefile`
+- `task amd64`: build linux/amd64 Docker image
+- `task arm64`: build linux/arm64 Docker image
+- `task bin`: build amprobe binary
+- `task build`: build and push multi-arch Docker image
+- `task dev`: run amprobe in development mode
+- `task wire`: generate Wire dependency injection code
+### `amprobe/web/Taskfile.yml`
 
-- `make build`
-- `make dev`
-- `make install`
-### `collia/Makefile`
+- `task build`: build frontend assets
+- `task dev`: run frontend development server
+- `task install`: install frontend dependencies
+- `task lint`: run frontend lint
+- `task lint:fix`: fix frontend lint issues
+- `task preview`: preview frontend production build
+- `task ts`: run frontend type check
+### `collia/Taskfile.yml`
 
-- `make amd64`: build amd64
-- `make arm64`: build arm64
-- `make wire`: generate wire
+- `task amd64`: build linux/amd64 collia binary
+- `task arm64`: build linux/arm64 collia binary
+- `task wire`: generate Wire dependency injection code
 
 ## Package Scripts
 
