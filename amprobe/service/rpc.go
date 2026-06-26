@@ -8,21 +8,20 @@ import (
 	"log/slog"
 
 	"amprobe/pkg/rpc"
-	"amprobe/service/agent"
 	tunnelpkg "common/rpc/tunnel"
 	transporttls "common/transport/tlsconfig"
 )
 
-// serverTunnelHolder holds the tunnel instance so other components can wire into it.
-type serverTunnelHolder struct {
-	tun *tunnelpkg.ServerTunnel
+// TunnelResult encapsulates both the RPC caller and the underlying tunnel instance,
+// enabling Wire to extract each as a separate dependency.
+type TunnelResult struct {
+	Caller rpc.Caller
+	Tunnel *tunnelpkg.ServerTunnel
 }
-
-var globalTunnel serverTunnelHolder
 
 // NewRPCClient creates the tunnel-based RPC client.
 // Server listens for reverse connections from Agents.
-func NewRPCClient(config *Config) (rpc.Caller, error) {
+func NewRPCClient(config *Config) (*TunnelResult, error) {
 	addr := config.Control.Address
 	if addr == "" {
 		addr = ":17000"
@@ -39,7 +38,6 @@ func NewRPCClient(config *Config) (rpc.Caller, error) {
 	}
 
 	tun := tunnelpkg.NewServerTunnel(opts...)
-	globalTunnel.tun = tun
 
 	go func() {
 		if err := tun.Start(addr); err != nil {
@@ -51,12 +49,19 @@ func NewRPCClient(config *Config) (rpc.Caller, error) {
 	if defaultID == "" {
 		defaultID = rpc.DefaultAgentID
 	}
-	return rpc.NewTunnelClient(tun, defaultID), nil
+
+	return &TunnelResult{
+		Caller: rpc.NewTunnelClient(tun, defaultID),
+		Tunnel: tun,
+	}, nil
 }
 
-// SetAgentLifecycle wires the agent service into the tunnel lifecycle hooks.
-func SetAgentLifecycle(svc *agent.Service) {
-	if globalTunnel.tun != nil {
-		svc.SetTunnel(globalTunnel.tun)
-	}
+// NewRPCCaller extracts the RPC Caller from TunnelResult for Wire injection.
+func NewRPCCaller(result *TunnelResult) rpc.Caller {
+	return result.Caller
+}
+
+// NewServerTunnelFromResult extracts the ServerTunnel from TunnelResult for Wire injection.
+func NewServerTunnelFromResult(result *TunnelResult) *tunnelpkg.ServerTunnel {
+	return result.Tunnel
 }

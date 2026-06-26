@@ -7,10 +7,10 @@
 package service
 
 import (
-	"amprobe/service/agent"
 	api5 "amprobe/service/account/api"
 	repository5 "amprobe/service/account/repository"
 	service5 "amprobe/service/account/service"
+	"amprobe/service/agent"
 	api7 "amprobe/service/alarm/api"
 	repository7 "amprobe/service/alarm/repository"
 	service7 "amprobe/service/alarm/service"
@@ -61,17 +61,18 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		cleanup()
 		return nil, nil, err
 	}
-	client, err := NewRPCClient(config)
+	tunnelResult, err := NewRPCClient(config)
 	if err != nil {
 		cleanup3()
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	containerRepo := repository.NewContainerRepo(client, db)
+	caller := NewRPCCaller(tunnelResult)
+	containerRepo := repository.NewContainerRepo(caller, db)
 	containerService := service.NewContainerService(containerRepo)
 	containerAPI := api.NewContainerAPI(containerService)
-	hostRepo := repository2.NewHostRepo(client, db)
+	hostRepo := repository2.NewHostRepo(caller, db)
 	hostService := service2.NewHostService(hostRepo)
 	hostAPI := api2.NewHostAPI(hostService)
 	authRepo := repository3.NewAuthRepo(db)
@@ -89,19 +90,14 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	alarmRepository := repository7.NewAlarmRepository(db)
 	alarmService := service7.NewAlarmService(alarmRepository)
 	alarmAPI := api7.NewAlarmAPI(alarmService)
-
-	// Agent module
-	agentRepo := agent.NewAgentRepo(db)
-	agentSvc := agent.NewAgentService(agentRepo)
-	agentAPI := agent.NewAgentAPI(agentSvc)
-
-	// Wire agent lifecycle into tunnel
-	SetAgentLifecycle(agentSvc)
-
-	loggerHandler := NewLoggerHandler(client)
-	terminalHandler := NewTerminalHandler(config, client, db)
-	termHandler := NewTermHandler(terminalHandler)
+	agentRepository := agent.NewAgentRepo(db)
+	serverTunnel := NewServerTunnelFromResult(tunnelResult)
+	agentService := agent.NewAgentService(agentRepository, serverTunnel)
+	agentAPI := agent.NewAgentAPI(agentService)
 	reportService := NewReportService(config, db)
+	loggerHandler := NewLoggerHandler(caller)
+	handler := NewTerminalHandler(config, caller, db)
+	termHandler := NewTermHandler(handler)
 	router := &Router{
 		config:        config,
 		auth:          auther,
@@ -123,7 +119,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		db:       db,
 		enforcer: syncedEnforcer,
 	}
-	timedTask := NewTimedTask(config, client, db)
+	timedTask := NewTimedTask(config, caller, db)
 	logger := NewLogger(config)
 	injector, err := NewInjector(app, router, prepare, config, timedTask, reportService, logger)
 	if err != nil {

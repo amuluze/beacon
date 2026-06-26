@@ -62,19 +62,14 @@ type Service struct {
 	tunnel *tunnelpkg.ServerTunnel
 }
 
-func NewAgentService(repo *Repository) *Service {
-	return &Service{repo: repo}
-}
-
-// SetTunnel registers the server tunnel for agent lifecycle hooks.
-func (s *Service) SetTunnel(tun *tunnelpkg.ServerTunnel) {
-	s.tunnel = tun
+func NewAgentService(repo *Repository, tun *tunnelpkg.ServerTunnel) *Service {
+	s := &Service{repo: repo, tunnel: tun}
 	tun.SetAgentLifecycle(s)
+	return s
 }
 
 // OnAgentConnect implements tunnel.AgentLifecycle.
 func (s *Service) OnAgentConnect(agentID string) {
-	slog.Info("agent connected", "agent_id", agentID)
 	agent := &model.Agent{
 		AgentID:  agentID,
 		Status:   "online",
@@ -87,7 +82,6 @@ func (s *Service) OnAgentConnect(agentID string) {
 
 // OnAgentDisconnect implements tunnel.AgentLifecycle.
 func (s *Service) OnAgentDisconnect(agentID string) {
-	slog.Info("agent disconnected", "agent_id", agentID)
 	if err := s.repo.UpdateStatus(agentID, "offline"); err != nil {
 		slog.Error("agent status update failed", "agent_id", agentID, "err", err)
 	}
