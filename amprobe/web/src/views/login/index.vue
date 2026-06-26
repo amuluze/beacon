@@ -6,8 +6,8 @@ import type { LoginForm } from '@/interface/auth'
 import { useI18n } from 'vue-i18n'
 
 const loginForm = reactive<LoginForm>({
-  username: 'amprobe',
-  password: '123456',
+  username: '',
+  password: '',
 })
 
 const loginFormRules = {
@@ -38,7 +38,6 @@ async function handleLogin() {
     await router.replace('/')
   }
   catch (error) {
-    console.log(error)
     if (error instanceof Error)
       ElMessage.error(error.message)
   }
