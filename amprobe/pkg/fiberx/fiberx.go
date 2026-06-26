@@ -5,10 +5,11 @@
 package fiberx
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
-	"amprobe/pkg/errors"
+	pkgerrors "amprobe/pkg/errors"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -34,7 +35,7 @@ type FailedResponse struct {
 }
 
 // Failure response.status = 400
-func Failure(c *fiber.Ctx, err errors.Error) error {
+func Failure(c *fiber.Ctx, err pkgerrors.Error) error {
 	return ReturnJson(c, err.Status, &FailedResponse{Err: err.Err, Msg: err.Msg})
 }
 
@@ -56,6 +57,17 @@ func Forbidden(c *fiber.Ctx) error {
 func ReturnJson(c *fiber.Ctx, status int, v interface{}) error {
 	c.Status(status)
 	return c.JSON(v)
+}
+
+// ServiceError wraps a service-layer error into an appropriate HTTP error.
+// If the error is already an errors.Error, it is returned as-is.
+// Otherwise it is treated as an internal server error.
+func ServiceError(err error) pkgerrors.Error {
+	var e pkgerrors.Error
+	if errors.As(err, &e) {
+		return e
+	}
+	return pkgerrors.New500Error(err.Error())
 }
 
 // ParseQuery Parse query parameter to struct

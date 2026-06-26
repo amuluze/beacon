@@ -5,6 +5,7 @@
 package repository
 
 import (
+	"amprobe/pkg/errors"
 	"amprobe/pkg/utils/hash"
 	"amprobe/pkg/utils/uuid"
 	"amprobe/service/model"
@@ -98,6 +99,9 @@ func (a *AccountRepository) UserCreate(ctx context.Context, args schema.UserCrea
 		u.Roles = roles
 	}
 	if err := a.DB.Create(&u).Error; err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return model.User{}, errors.New409Error("username already exists")
+		}
 		return model.User{}, err
 	}
 	return u, nil

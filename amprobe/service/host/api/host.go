@@ -30,7 +30,7 @@ func (a *HostAPI) HostInfo(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	uptime, err := a.HostService.HostInfo(c)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, uptime)
 }
@@ -39,7 +39,7 @@ func (a *HostAPI) CPUInfo(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	cpuInfo, err := a.HostService.CPUInfo(c)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, cpuInfo)
 }
@@ -55,7 +55,7 @@ func (a *HostAPI) CPUUsage(ctx *fiber.Ctx) error {
 	}
 	usage, err := a.HostService.CPUUsage(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, usage)
 }
@@ -64,7 +64,7 @@ func (a *HostAPI) MemInfo(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	memInfo, err := a.HostService.MemInfo(c)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, memInfo)
 }
@@ -80,7 +80,7 @@ func (a *HostAPI) MemUsage(ctx *fiber.Ctx) error {
 	}
 	usage, err := a.HostService.MemUsage(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, usage)
 }
@@ -89,7 +89,7 @@ func (a *HostAPI) DiskInfo(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	diskInfo, err := a.HostService.DiskInfo(c)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, diskInfo)
 }
@@ -105,7 +105,7 @@ func (a *HostAPI) DiskUsage(ctx *fiber.Ctx) error {
 	}
 	usage, err := a.HostService.DiskUsage(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, usage)
 }
@@ -121,7 +121,7 @@ func (a *HostAPI) NetUsage(ctx *fiber.Ctx) error {
 	}
 	usage, err := a.HostService.NetUsage(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, usage)
 }
@@ -137,7 +137,7 @@ func (a *HostAPI) FilesSearch(ctx *fiber.Ctx) error {
 	}
 	files, err := a.HostService.FilesSearch(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, files)
 }
@@ -164,7 +164,7 @@ func (a *HostAPI) FileUpload(ctx *fiber.Ctx) error {
 		Data:           data,
 	}
 	if err := a.HostService.FileUpload(c, args); err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -181,7 +181,7 @@ func (a *HostAPI) FileDownload(ctx *fiber.Ctx) error {
 
 	res, err := a.HostService.FileDownload(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	ctx.Attachment(res.FileName)
 	return ctx.Send(res.Data)
@@ -197,7 +197,7 @@ func (a *HostAPI) FileDelete(ctx *fiber.Ctx) error {
 	}
 	err := a.HostService.FileDelete(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -213,7 +213,7 @@ func (a *HostAPI) FileCreate(ctx *fiber.Ctx) error {
 	}
 	err := a.HostService.FileCreate(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -229,7 +229,7 @@ func (a *HostAPI) FolderCreate(ctx *fiber.Ctx) error {
 	}
 	err := a.HostService.FolderCreate(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -239,7 +239,7 @@ func (a *HostAPI) GetDNSSettings(ctx *fiber.Ctx) error {
 	args := schema.GetDNSSettingsArgs{}
 	settings, err := a.HostService.GetDNSSettings(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, settings)
 }
@@ -255,7 +255,7 @@ func (a *HostAPI) SetDNSSettings(ctx *fiber.Ctx) error {
 	}
 	err := a.HostService.SetDNSSettings(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -265,7 +265,7 @@ func (a *HostAPI) GetSystemTime(ctx *fiber.Ctx) error {
 	args := schema.GetSystemTimeArgs{}
 	time, err := a.HostService.GetSystemTime(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, time)
 }
@@ -281,7 +281,7 @@ func (a *HostAPI) SetSystemTime(ctx *fiber.Ctx) error {
 	}
 	err := a.HostService.SetSystemTime(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -291,7 +291,7 @@ func (a *HostAPI) GetSystemTimeZoneList(ctx *fiber.Ctx) error {
 	args := schema.GetSystemTimeZoneListArgs{}
 	list, err := a.HostService.GetSystemTimeZoneList(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, list)
 }
@@ -301,7 +301,7 @@ func (a *HostAPI) GetSystemTimeZone(ctx *fiber.Ctx) error {
 	args := schema.GetSystemTimeZoneArgs{}
 	zone, err := a.HostService.GetSystemTimeZone(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, zone)
 }
@@ -317,7 +317,7 @@ func (a *HostAPI) SetSystemTimeZone(ctx *fiber.Ctx) error {
 	}
 	err := a.HostService.SetSystemTimeZone(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -330,7 +330,7 @@ func (a *HostAPI) Reboot(ctx *fiber.Ctx) error {
 	}
 	err := a.HostService.Reboot(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -343,7 +343,7 @@ func (a *HostAPI) Shutdown(ctx *fiber.Ctx) error {
 	}
 	err := a.HostService.Shutdown(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }

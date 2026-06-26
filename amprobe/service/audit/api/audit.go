@@ -39,7 +39,7 @@ func (a *AuditAPI) AuditQuery(ctx *fiber.Ctx) error {
 
 	audits, err := a.AuditService.AuditQuery(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, audits)
 }
