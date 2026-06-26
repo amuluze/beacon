@@ -13,7 +13,7 @@ import (
 // EnsureDirExists 确保 filePath 存在，filePath 是一个绝对路径
 func EnsureDirExists(filePath string) error {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		err = os.MkdirAll(filePath, os.ModePerm)
+		err = os.MkdirAll(filePath, 0750)
 		if err != nil {
 			return fmt.Errorf("could not create directory %s: %v", filePath, err)
 		}

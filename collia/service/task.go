@@ -210,6 +210,8 @@ func (a *TimedTask) Run() {
 func (a *TimedTask) Stop() {
 	close(a.stopCh)
 	if a.reportClient != nil {
-		a.reportClient.Close()
+		if err := a.reportClient.Close(); err != nil {
+			slog.Error("close report client failed", "error", err)
+		}
 	}
 }

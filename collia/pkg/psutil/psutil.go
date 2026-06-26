@@ -7,6 +7,7 @@ package psutil
 import (
 	"context"
 	"log/slog"
+	"math"
 	"strings"
 	"time"
 
@@ -140,8 +141,12 @@ func GetSystemInfo() (*SystemInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	bootTime := int64(info.BootTime)
+	if info.BootTime > math.MaxInt64 {
+		bootTime = math.MaxInt64
+	}
 	systemInfo := &SystemInfo{
-		Uptime:          time.Unix(int64(info.BootTime), 0).Local().Format("2006-01-02 15:04:05"),
+		Uptime:          time.Unix(bootTime, 0).Local().Format("2006-01-02 15:04:05"),
 		Hostname:        info.Hostname,
 		Os:              info.OS,
 		Platform:        info.Platform,

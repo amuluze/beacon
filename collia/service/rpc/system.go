@@ -142,7 +142,7 @@ func (s *Service) SetDockerRegistryMirrors(ctx context.Context, args rpcSchema.S
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(DaemonJsonPath, setting, 0644); err != nil {
+		if err := os.WriteFile(DaemonJsonPath, setting, 0600); err != nil {
 			return err
 		}
 	} else {
@@ -159,7 +159,7 @@ func (s *Service) SetDockerRegistryMirrors(ctx context.Context, args rpcSchema.S
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(DaemonJsonPath, setting, 0644); err != nil {
+		if err := os.WriteFile(DaemonJsonPath, setting, 0600); err != nil {
 			return err
 		}
 	}

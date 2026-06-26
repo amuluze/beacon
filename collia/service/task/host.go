@@ -36,6 +36,7 @@ func (a *Task) DiskTask() []*DiskReport {
 	diskInfo, _ := psutil.GetDiskInfo(a.devices)
 	diskIOMap, _ := psutil.GetDiskIO(a.devices)
 	var reports []*DiskReport
+	interval := a.safeInterval()
 
 	for device, info := range diskInfo {
 		r := &DiskReport{
@@ -47,14 +48,14 @@ func (a *Task) DiskTask() []*DiskReport {
 		for dev, state := range diskIOMap {
 			if dev == device {
 				if latestReadBytes, ok := a.cache.Get(LatestDiskReadKey + device); ok {
-					r.DiskRead = float64((state.Read - latestReadBytes.(uint64)) / uint64(a.interval))
+					r.DiskRead = float64((state.Read - latestReadBytes.(uint64)) / interval)
 					a.cache.Set(LatestDiskReadKey+device, state.Read, 0)
 				} else {
 					a.cache.Set(LatestDiskReadKey+device, state.Read, 0)
 					r.DiskRead = 0
 				}
 				if latestWriteBytes, ok := a.cache.Get(LatestDisKWriteKey + device); ok {
-					r.DiskWrite = float64((state.Write - latestWriteBytes.(uint64)) / uint64(a.interval))
+					r.DiskWrite = float64((state.Write - latestWriteBytes.(uint64)) / interval)
 					a.cache.Set(LatestDisKWriteKey+device, state.Write, 0)
 				} else {
 					a.cache.Set(LatestDisKWriteKey+device, state.Write, 0)
@@ -70,17 +71,18 @@ func (a *Task) DiskTask() []*DiskReport {
 func (a *Task) NetTask() []*NetReport {
 	netMap, _ := psutil.GetNetworkIO(a.ethernet)
 	var reports []*NetReport
+	interval := a.safeInterval()
 	for eth, info := range netMap {
 		r := &NetReport{Ethernet: eth}
 		if LatestNetReceiveBytes, ok := a.cache.Get(LatestNetReceiveKey + eth); ok {
-			r.NetRecv = float64((info.Recv - LatestNetReceiveBytes.(uint64)) / uint64(a.interval))
+			r.NetRecv = float64((info.Recv - LatestNetReceiveBytes.(uint64)) / interval)
 			a.cache.Set(LatestNetReceiveKey+eth, info.Recv, 0)
 		} else {
 			a.cache.Set(LatestNetReceiveKey+eth, info.Recv, 0)
 			r.NetRecv = 0
 		}
 		if LatestNetSendBytes, ok := a.cache.Get(LatestNetSendKey + eth); ok {
-			r.NetSend = float64((info.Send - LatestNetSendBytes.(uint64)) / uint64(a.interval))
+			r.NetSend = float64((info.Send - LatestNetSendBytes.(uint64)) / interval)
 			a.cache.Set(LatestNetSendKey+eth, info.Send, 0)
 		} else {
 			a.cache.Set(LatestNetSendKey+eth, info.Send, 0)
@@ -89,4 +91,13 @@ func (a *Task) NetTask() []*NetReport {
 		reports = append(reports, r)
 	}
 	return reports
+}
+
+// safeInterval returns the configured interval as uint64, defaulting to 1
+// second when it is zero or negative to avoid divide-by-zero and overflow.
+func (a *Task) safeInterval() uint64 {
+	if a.interval <= 0 {
+		return 1
+	}
+	return uint64(a.interval)
 }
