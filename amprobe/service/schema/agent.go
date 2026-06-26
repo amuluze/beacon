@@ -23,7 +23,7 @@ type AgentQueryReply struct {
 // ── Join Token management ──
 
 type JoinTokenCreateArgs struct {
-	Description string `json:"description"`
+	Description string `json:"description" validate:"lte=256"`
 }
 
 type JoinTokenCreateReply struct {
@@ -33,5 +33,5 @@ type JoinTokenCreateReply struct {
 }
 
 type JoinTokenDeleteArgs struct {
-	Token string `json:"token" validate:"required"`
+	Token string `json:"token" validate:"required,gte=1,lte=128"`
 }

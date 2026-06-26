@@ -45,23 +45,23 @@ type UserQueryReply struct {
 }
 
 type UserCreateArgs struct {
-	Username string   `json:"username" validate:"required"`
-	Password string   `json:"password" validate:"required"`
-	Remark   string   `json:"remark,omitempty"`
-	Status   int      `json:"status" validate:"required"`
-	RoleIDs  []string `json:"role_ids" validate:"required"`
+	Username string   `json:"username" validate:"required,gte=1,lte=64"`
+	Password string   `json:"password" validate:"required,gte=1,lte=128"`
+	Remark   string   `json:"remark,omitempty" validate:"lte=256"`
+	Status   int      `json:"status" validate:"required,oneof=0 1"`
+	RoleIDs  []string `json:"role_ids" validate:"required,min=1,max=32"`
 }
 
 type UserUpdateArgs struct {
-	ID       string   `json:"id" validate:"required"`
-	Username string   `json:"username,omitempty"`
-	Remark   string   `json:"remark,omitempty"`
-	Status   int      `json:"status,omitempty"`
-	RoleIDs  []string `json:"role_ids,omitempty"`
+	ID       string   `json:"id" validate:"required,len=36"`
+	Username string   `json:"username,omitempty" validate:"lte=64"`
+	Remark   string   `json:"remark,omitempty" validate:"lte=256"`
+	Status   int      `json:"status,omitempty" validate:"omitempty,oneof=0 1"`
+	RoleIDs  []string `json:"role_ids,omitempty" validate:"max=32"`
 }
 
 type UserDeleteArgs struct {
-	IDs []string `json:"ids,omitempty"`
+	IDs []string `json:"ids,omitempty" validate:"max=32"`
 }
 
 type RoleQueryArgs struct {
@@ -78,22 +78,22 @@ type RoleQueryReply struct {
 }
 
 type RoleCreateArgs struct {
-	Name        string   `json:"name" validate:"required"`
-	Remark      string   `json:"remark,omitempty"`
-	Status      int      `json:"status" validate:"required"`
-	ResourceIDs []string `json:"resource_ids,omitempty"`
+	Name        string   `json:"name" validate:"required,gte=1,lte=64"`
+	Remark      string   `json:"remark,omitempty" validate:"lte=256"`
+	Status      int      `json:"status" validate:"required,oneof=0 1"`
+	ResourceIDs []string `json:"resource_ids,omitempty" validate:"max=64"`
 }
 
 type RoleUpdateArgs struct {
-	ID          string   `json:"id" validate:"required"`
-	Name        string   `json:"name,omitempty"`
-	Remark      string   `json:"remark,omitempty"`
-	Status      int      `json:"status,omitempty"`
-	ResourceIDs []string `json:"resource_ids,omitempty"`
+	ID          string   `json:"id" validate:"required,len=36"`
+	Name        string   `json:"name,omitempty" validate:"lte=64"`
+	Remark      string   `json:"remark,omitempty" validate:"lte=256"`
+	Status      int      `json:"status,omitempty" validate:"omitempty,oneof=0 1"`
+	ResourceIDs []string `json:"resource_ids,omitempty" validate:"max=64"`
 }
 
 type RoleDeleteArgs struct {
-	IDs []string `json:"ids,omitempty"`
+	IDs []string `json:"ids,omitempty" validate:"max=32"`
 }
 
 type ResourceQueryArgs struct {
