@@ -86,5 +86,5 @@ export async function downloadFile(params: FileDeleteArgs) {
 }
 
 export async function queryAgentList() {
-    return request.get<{ agent_id: string; hostname: string }[]>('/api/v1/agent/list', {})
+    return request.get<{ agent_id: string; hostname: string; version: string; os: string; arch: string; status: string }[]>('/api/v1/agent/list', {})
 }
