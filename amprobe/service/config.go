@@ -18,6 +18,7 @@ type Config struct {
 	Casbin       Casbin
 	Task         Task
 	AgentInstall AgentInstall
+	Session      Session
 }
 
 // NewConfig Load config file (toml/json/yaml)
@@ -108,4 +109,9 @@ type Casbin struct {
 	Debug            bool
 	AutoLoad         bool
 	AutoLoadInternal int
+}
+
+type Session struct {
+	Enabled   bool
+	Directory string
 }

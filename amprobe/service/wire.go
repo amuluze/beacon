@@ -38,6 +38,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		alarm.Set,
 		mail.Set,
 		NewLoggerHandler,
+		NewTerminalHandler,
 		NewTermHandler,
 		NewTimedTask,
 		RouterSet,
