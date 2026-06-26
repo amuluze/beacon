@@ -7,6 +7,7 @@ package service
 import (
 	"amprobe/pkg/auth"
 	"amprobe/pkg/contextx"
+	"amprobe/pkg/fiberx"
 	"amprobe/service/agent"
 	"amprobe/service/middleware"
 	"amprobe/service/report"
@@ -68,11 +69,26 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 	app.Use("ws", func(c *fiber.Ctx) error {
 		// IsWebSocketUpgrade returns true if the client
 		// requested upgrade to the WebSocket protocol.
-		if websocket.IsWebSocketUpgrade(c) {
-			c.Locals("allowed", true)
-			return c.Next()
+		if !websocket.IsWebSocketUpgrade(c) {
+			return fiber.ErrUpgradeRequired
 		}
-		return fiber.ErrUpgradeRequired
+		// 浏览器 WebSocket 握手无法携带 Authorization header，
+		// 因此从 query 参数取 token（兼容非浏览器客户端的 header 形式）。
+		// 终端/日志通道提供远程 shell，必须与 REST API 保持同等鉴权强度。
+		if a.config.Auth.Enable {
+			token := c.Query("token")
+			if token == "" {
+				token = fiberx.GetToken(c)
+			}
+			if token == "" {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "missing token"})
+			}
+			if _, _, err := a.auth.ParseToken(token, "access_token"); err != nil {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid token"})
+			}
+		}
+		c.Locals("allowed", true)
+		return c.Next()
 	})
 	app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))
 	app.Get("/ws/terminal", websocket.New(a.termHandler.Handler))
@@ -85,6 +101,9 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			middleware.AllowPathPrefixSkipper("/api/v1/auth/login"),
 			middleware.AllowPathPrefixSkipper("/api/v1/auth/token_update"),
 			middleware.AllowPathPrefixSkipper("/api/v1/host/install"),
+			// Agent 上报走独立的 install token 鉴权（见 report.Service.HandleReport），
+			// 不持有用户 JWT，必须跳过 JWT 中间件，否则会被 401 拦截。
+			middleware.AllowPathPrefixSkipper("/api/v1/host/report"),
 		))
 	}
 
@@ -95,6 +114,7 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			middleware.AllowPathPrefixSkipper("/api/v1/auth/login"),
 			middleware.AllowPathPrefixSkipper("/api/v1/auth/token_update"),
 			middleware.AllowPathPrefixSkipper("/api/v1/host/install"),
+			middleware.AllowPathPrefixSkipper("/api/v1/host/report"),
 		))
 	}
 	api := app.Group("/api")

@@ -2,6 +2,7 @@ package report
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -118,5 +119,43 @@ func TestStorePersistsReportBatch(t *testing.T) {
 		if got != tc.want {
 			t.Fatalf("count %s = %d, want %d", name, got, tc.want)
 		}
+	}
+}
+
+// TestIsValidAgentID 覆盖 agent_id 格式校验的边界。
+func TestIsValidAgentID(t *testing.T) {
+	tests := []struct {
+		id   string
+		want bool
+	}{
+		{"", false},
+		{"agent-a", true},
+		{"node_1.example", true},
+		{"HOST", true},
+		{"123", true},
+		// 畸形值：含空格、斜杠、特殊符号
+		{"agent a", false},
+		{"agent/../../etc", false},
+		{"agent;drop", false},
+		{"agent\x00null", false},
+		{"中文", false},
+		// 超长
+		{strings.Repeat("a", maxAgentIDLen), true},
+		{strings.Repeat("a", maxAgentIDLen+1), false},
+	}
+	for _, tc := range tests {
+		if got := isValidAgentID(tc.id); got != tc.want {
+			t.Errorf("isValidAgentID(%q) = %v, want %v", tc.id, got, tc.want)
+		}
+	}
+}
+
+// TestStore_RejectsInvalidAgentID 验证畸形 agent_id 被拒绝入库。
+func TestStore_RejectsInvalidAgentID(t *testing.T) {
+	db := newTestDB(t)
+	svc := &Service{DB: db, Token: "t"}
+	err := svc.Store(rpcSchema.MonitorReportArgs{AgentID: "agent/evil"})
+	if err == nil {
+		t.Fatal("expected error for invalid agent_id")
 	}
 }

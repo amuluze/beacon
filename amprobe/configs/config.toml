@@ -10,7 +10,7 @@ Prefork = false
 Enable = true          # 启用反向隧道（替代 rpcx）
 Address = ":17000"     # gRPC 控制端口
 DefaultAgentID = "default"
-JoinToken = ""         # Agent 注册鉴权 Token，空值跳过校验
+JoinToken = "change-me-please"  # Agent 注册鉴权 Token（必填，未配置将拒绝启动；可用环境变量 AMPROBE_CONTROL_JOINTOKEN 覆盖）
 
 [Gorm]
 Debug = true             # 是否开启调试模式
