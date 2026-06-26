@@ -7,6 +7,7 @@
  * Websocket 封装
  * @ url： 请求地址       类型： string     默认： ''      备注： 'web/msg'
  */
+import { useUserStore } from '@/store/modules/user'
 
 export class Websocket {
     url: string
@@ -23,6 +24,11 @@ export class Websocket {
         let location: Location = window.location
         url = location.host + '/' + url
         this.url = /https/.test(location.protocol) ? 'wss://' + url : 'ws://' + url
+        // 浏览器 ws 握手无法携带 Authorization header，统一把 access token 写入 query。
+        const token = useUserStore().token
+        if (token) {
+            this.url += `?token=${encodeURIComponent(token)}`
+        }
         this.ws = new WebSocket(this.url)
         this.close = (): void => {
             this.ws.close()

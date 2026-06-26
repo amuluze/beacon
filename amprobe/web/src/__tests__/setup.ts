@@ -1,5 +1,5 @@
-import { createPinia } from 'pinia'
-import { setActivePinia } from 'pinia'
+import { beforeEach } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 
 // Create a fresh Pinia instance for each test
 beforeEach(() => {

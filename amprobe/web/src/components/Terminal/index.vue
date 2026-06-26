@@ -4,6 +4,7 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
 import '@xterm/xterm/css/xterm.css'
+import { useUserStore } from '@/store/modules/user'
 
 interface Props {
   agentId: string
@@ -18,7 +19,10 @@ let ws: WebSocket | null = null
 
 function buildURL(agentId: string): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${protocol}//${window.location.host}/ws/terminal?agent_id=${encodeURIComponent(agentId)}`
+  // 浏览器 ws 握手无法携带 Authorization header，把 access token 写入 query 通过服务端鉴权。
+  const token = useUserStore().token
+  const tokenQuery = token ? `&token=${encodeURIComponent(token)}` : ''
+  return `${protocol}//${window.location.host}/ws/terminal?agent_id=${encodeURIComponent(agentId)}${tokenQuery}`
 }
 
 function sendMessage(type: string, data?: unknown): void {
