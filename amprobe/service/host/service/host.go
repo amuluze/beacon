@@ -7,6 +7,7 @@ package service
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"amprobe/service/host/repository"
 	"amprobe/service/schema"
@@ -46,12 +47,27 @@ type IHostService interface {
 	GetSystemTimeZoneList(context.Context, schema.GetSystemTimeZoneListArgs) (schema.GetSystemTimeZoneListReply, error)
 }
 
+// StalenessMinutes is the staleness threshold in minutes for monitoring data.
+type StalenessMinutes int
+
 type HostService struct {
-	HostRepo repository.IHostRepo
+	HostRepo         repository.IHostRepo
+	StalenessMinutes StalenessMinutes
 }
 
-func NewHostService(hostRepo repository.IHostRepo) *HostService {
-	return &HostService{HostRepo: hostRepo}
+func NewHostService(hostRepo repository.IHostRepo, staleness StalenessMinutes) *HostService {
+	if staleness <= 0 {
+		staleness = 5
+	}
+	return &HostService{HostRepo: hostRepo, StalenessMinutes: staleness}
+}
+
+// isStale checks if a unix timestamp is older than the staleness threshold.
+func (h *HostService) isStale(ts int64) bool {
+	if ts == 0 {
+		return true
+	}
+	return time.Since(time.Unix(ts, 0)) > time.Duration(h.StalenessMinutes)*time.Minute
 }
 
 func (h *HostService) HostInfo(ctx context.Context) (schema.HostInfoReply, error) {
@@ -68,6 +84,7 @@ func (h *HostService) HostInfo(ctx context.Context) (schema.HostInfoReply, error
 	reply.PlatformVersion = info.PlatformVersion
 	reply.Platform = info.Platform
 	reply.OS = info.OS
+	reply.Stale = h.isStale(info.Timestamp)
 	return reply, err
 }
 
@@ -78,6 +95,7 @@ func (h *HostService) CPUInfo(ctx context.Context) (schema.CPUInfoReply, error) 
 		return reply, err
 	}
 	reply.Percent = cpuInfo.Percent
+	reply.Stale = cpuInfo.Stale
 	return reply, nil
 }
 
@@ -113,6 +131,7 @@ func (h *HostService) MemInfo(ctx context.Context) (schema.MemoryInfoReply, erro
 	reply.Used = memInfo.Used
 	reply.Total = memInfo.Total
 	reply.Percent = memInfo.Percent
+	reply.Stale = memInfo.Stale
 	return reply, nil
 }
 

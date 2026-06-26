@@ -9,16 +9,18 @@ import (
 	"amprobe/service/task"
 	"common/database"
 	"context"
-	"fmt"
-	"github.com/amuluze/amutool/timex"
 	"log/slog"
 	"time"
+
+	"github.com/amuluze/amutool/timex"
 )
 
 type TimedTask struct {
-	task   task.ITask
-	ticker timex.Ticker
-	stopCh chan struct{}
+	task          task.ITask
+	cleanup       *task.CleanupTask
+	ticker        timex.Ticker
+	cleanupTicker timex.Ticker
+	stopCh        chan struct{}
 }
 
 func NewTimedTask(conf *Config, cli rpc.Caller, db *database.DB) *TimedTask {
@@ -26,12 +28,18 @@ func NewTimedTask(conf *Config, cli rpc.Caller, db *database.DB) *TimedTask {
 	interval := conf.Task.Interval
 	tk := timex.NewTicker(time.Duration(interval) * time.Second)
 
+	// Cleanup runs once per hour (3600 seconds)
+	cleanupTk := timex.NewTicker(3600 * time.Second)
+
 	newTask := task.NewTask(db)
+	cleanupTask := task.NewCleanupTask(db, conf.Retention.Days)
 
 	return &TimedTask{
-		task:   newTask,
-		ticker: tk,
-		stopCh: make(chan struct{}),
+		task:          newTask,
+		cleanup:       cleanupTask,
+		ticker:        tk,
+		cleanupTicker: cleanupTk,
+		stopCh:        make(chan struct{}),
 	}
 }
 
@@ -53,13 +61,22 @@ func (a *TimedTask) Execute() {
 	}
 }
 
+func (a *TimedTask) ExecuteCleanup() {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	if err := a.cleanup.Run(ctx); err != nil {
+		slog.Error("cleanup task failed", "error", err)
+	}
+}
+
 func (a *TimedTask) Run() {
 	for {
 		select {
 		case <-a.ticker.Chan():
 			go a.Execute()
+		case <-a.cleanupTicker.Chan():
+			go a.ExecuteCleanup()
 		case <-a.stopCh:
-			fmt.Println("task exit")
 			return
 		}
 	}

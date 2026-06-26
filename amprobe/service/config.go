@@ -5,6 +5,8 @@
 package service
 
 import (
+	hostservice "amprobe/service/host/service"
+
 	"github.com/spf13/viper"
 )
 
@@ -17,6 +19,7 @@ type Config struct {
 	Auth         Auth
 	Casbin       Casbin
 	Task         Task
+	Retention    Retention
 	AgentInstall AgentInstall
 	Session      Session
 }
@@ -115,4 +118,18 @@ type Casbin struct {
 type Session struct {
 	Enabled   bool
 	Directory string
+}
+
+type Retention struct {
+	Days      int
+	Staleness int
+}
+
+// NewStalenessMinutes extracts the staleness threshold as hostservice.StalenessMinutes.
+func NewStalenessMinutes(config *Config) hostservice.StalenessMinutes {
+	v := config.Retention.Staleness
+	if v <= 0 {
+		v = 5
+	}
+	return hostservice.StalenessMinutes(v)
 }
