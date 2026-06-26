@@ -156,6 +156,22 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 		go a.heartbeatLoop(heartbeatCtx, stream)
 
 		if err := a.processStream(heartbeatCtx, stream); err != nil {
+			if rej, ok := err.(*RegistrationRejectedError); ok {
+				slog.Error("agent tunnel: registration rejected", "reason", rej.Reason)
+				heartbeatCancel()
+				if closeErr := conn.Close(); closeErr != nil {
+					slog.Debug("agent tunnel: close connection failed", "err", closeErr)
+				}
+				if !a.reconnect {
+					return err
+				}
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(5 * time.Second):
+					continue
+				}
+			}
 			slog.Warn("agent tunnel: stream ended", "err", err)
 		}
 
@@ -203,12 +219,15 @@ func (a *AgentTunnel) processStream(ctx context.Context, stream grpc.BidiStreami
 			slog.Info("agent tunnel: received eos")
 			return nil
 		}
-		if frame.FrameType != FrameType_FRAME_REQUEST {
-			continue
-		}
 
-		// Dispatch the RPC call
-		go a.dispatch(ctx, stream, frame)
+		switch frame.FrameType {
+		case FrameType_FRAME_REGISTER_REJECTED:
+			return &RegistrationRejectedError{Reason: frame.Error}
+		case FrameType_FRAME_REQUEST:
+			go a.dispatch(ctx, stream, frame)
+		default:
+			// ignore other frame types
+		}
 	}
 }
 
@@ -275,6 +294,15 @@ func (a *AgentTunnel) Close() error {
 		return a.conn.Close()
 	}
 	return nil
+}
+
+// RegistrationRejectedError is returned when the server rejects agent registration.
+type RegistrationRejectedError struct {
+	Reason string
+}
+
+func (e *RegistrationRejectedError) Error() string {
+	return "registration rejected: " + e.Reason
 }
 
 // marshalArgs encodes the RPC arguments as JSON.

@@ -52,6 +52,7 @@ type Control struct {
 	DefaultAgentID string
 	TLSEnable      bool
 	TLSCertDir     string
+	JoinToken      string
 }
 
 type Gorm struct {
