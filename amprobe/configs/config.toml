@@ -52,6 +52,10 @@ AutoLoadInternal = 60 # 定期自动加载策略时间间隔（单位秒）
 [Task]
 Interval = 15
 
+[Retention]
+Days = 7          # 监控时序数据保留天数
+Staleness = 5     # 数据陈旧阈值（分钟）
+
 [AgentInstall]
 Enable = true
 Token = "change-me"
