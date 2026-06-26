@@ -359,6 +359,25 @@ func (d *Dispatcher) Call(ctx context.Context, method string, payload []byte, st
 		}
 		return json.Marshal(reply)
 
+	// ── Terminal operations ──
+	case "TerminalSession":
+		var args rpcSchema.TerminalSessionArgs
+		if err := json.Unmarshal(payload, &args); err != nil {
+			return nil, err
+		}
+		err := d.svc.TerminalSessionStream(ctx, args, streamSender)
+		return nil, err
+	case "ResizeTerminal":
+		var args rpcSchema.ResizeTerminalArgs
+		if err := json.Unmarshal(payload, &args); err != nil {
+			return nil, err
+		}
+		var reply rpcSchema.ResizeTerminalReply
+		if err := d.svc.ResizeTerminal(ctx, args, &reply); err != nil {
+			return nil, err
+		}
+		return json.Marshal(reply)
+
 	default:
 		return nil, &UnknownMethodError{Method: method}
 	}
