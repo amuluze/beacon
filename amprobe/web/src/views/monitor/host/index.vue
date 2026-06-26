@@ -8,6 +8,9 @@ import { convertBytesToReadable } from '@/utils/convert.ts'
 import { dayjs } from 'element-plus'
 import { set } from 'lodash-es'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 // Agent switcher
 const agentList = ref<{ agent_id: string; hostname: string }[]>([])
@@ -26,6 +29,11 @@ async function loadAgents() {
     agentList.value = [{ agent_id: 'default', hostname: 'default' }]
     currentAgent.value = 'default'
   }
+}
+function openTerminal(): void {
+  if (!currentAgent.value)
+    return
+  router.push({ path: '/terminal', query: { agent_id: currentAgent.value } })
 }
 watch(currentAgent, () => { refreshAll() })
 
@@ -164,6 +172,9 @@ const { t } = useI18n()
             :value="item.agent_id"
           />
         </el-select>
+        <el-button size="small" type="primary" plain @click="openTerminal">
+          打开终端
+        </el-button>
       </div>
       <div class="am-density-group">
         <span class="am-density-label">{{ t('monitor.timeDensity') }}：</span>
