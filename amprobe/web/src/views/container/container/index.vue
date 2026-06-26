@@ -32,7 +32,6 @@ function enableEdit(containerName: string) {
   return containerName === 'amprobe'
 }
 function handleSelectionChange(val: Container[]) {
-  console.log('selection: ', val)
   tableSelection.value = val
 }
 

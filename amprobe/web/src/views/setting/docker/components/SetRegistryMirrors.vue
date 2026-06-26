@@ -38,7 +38,6 @@ async function confirmEditDockerRegistryMirrors() {
   const params: SetDockerRegistryMirrorsArgs = {
     registry_mirrors: textarea.value.split('\n').map(item => item.trim()),
   }
-  console.log('set mirrors params: ', params)
   await SetDockerRegistryMirrors(params)
   drawerVisible.value = false
 }

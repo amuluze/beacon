@@ -69,9 +69,8 @@ const createNetworkLoading = ref(false)
 async function confirmCreateNetwork(formEl: FormInstance | undefined) {
   if (!formEl)
     return
-  await formEl?.validate((valid, fields) => {
+  await formEl?.validate((valid) => {
     if (!valid) {
-      console.log('error fields!', fields)
       error('请检查输入')
     }
     else {
@@ -89,11 +88,8 @@ async function confirmCreateNetwork(formEl: FormInstance | undefined) {
         network_gateway: networkCreateMode.networkGateway,
         labels: ls,
       }
-      console.log(params)
       createNetwork(params)
-        .then((res) => {
-          const { data } = res
-          console.log(data.network_id)
+        .then(() => {
           createNetworkLoading.value = false
           drawerVisible.value = false
           success('创建成功')

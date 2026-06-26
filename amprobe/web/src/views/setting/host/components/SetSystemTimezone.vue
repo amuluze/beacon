@@ -45,25 +45,19 @@ const timezoneOptions = ref<
 async function querySystemTimezoneOptions() {
   // 获取系统时区选项
   const { data } = await getSystemTimezoneList()
-  console.log(data)
-  console.log('zone list: ', data.system_timezone_list)
   data.system_timezone_list.forEach((item) => {
     timezoneOptions.value.push({
       label: item,
       value: item,
     })
   })
-  console.log(timezoneOptions.value)
 }
 
 async function confirmSystemTimezoneEdit() {
-  // 确定修改系统时区
-  console.log(systemTimezone.value)
   const args: SetSystemTimezoneArgs = {
     system_timezone: systemTimezone.value,
   }
-  const { data } = await setSystemTimezone(args)
-  console.log(data)
+  await setSystemTimezone(args)
   success('修改系统时区成功')
   drawerVisible.value = false
 }

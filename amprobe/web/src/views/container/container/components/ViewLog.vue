@@ -42,17 +42,12 @@ const logData = ref('')
 function viewLog(container_id: string): void {
   logData.value = ''
   dialogVisible.value = true
-  console.log('container_id', container_id)
-  console.log('host', location.host)
-  console.log('port', location.port)
 
-  const onOpen = (ws: Websocket, ev: Event) => {
-    console.log(ev)
+  const onOpen = (_ws: Websocket, _ev: Event) => {
     ws.send(container_id)
   }
 
-  const onMessage = (ws: Websocket, ev: MessageEvent) => {
-    console.log(ws)
+  const onMessage = (_ws: Websocket, ev: MessageEvent) => {
     logData.value = `${logData.value}\n${ev.data}`
   }
 
@@ -68,7 +63,6 @@ onUnmounted(() => {
 })
 
 function downloadLog() {
-  console.log(`${logData.value}`)
   const a = document.createElement('a')
   a.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(logData.value)}`)
   a.setAttribute('download', 'log.txt')

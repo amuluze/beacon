@@ -26,7 +26,6 @@ const tableRef = ref<TableInstance>()
 const tableSelection = ref<Image[]>([])
 const selectable = (row: Image) => !['1', '2'].includes(row.id)
 function handleSelectionChange(val: Image[]) {
-  console.log('selection: ', val)
   tableSelection.value = val
 }
 

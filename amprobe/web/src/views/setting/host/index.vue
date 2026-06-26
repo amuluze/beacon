@@ -8,24 +8,20 @@ import { useI18n } from 'vue-i18n'
 
 function rebootHost() {
   reboot()
-    .then((res) => {
-      console.log(res)
+    .then(() => {
       success('重启成功')
     })
-    .catch((err) => {
-      error('重启失败')
-      console.log(err)
+    .catch(() => {
+      error
     })
 }
 
 function shutdownHost() {
   shutdown()
-    .then((res) => {
-      console.log(res)
+    .then(() => {
       success('关机成功')
     })
-    .catch((err) => {
-      console.log(err)
+    .catch(() => {
       error('关机失败')
     })
 }

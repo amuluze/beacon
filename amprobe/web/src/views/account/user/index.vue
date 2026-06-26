@@ -17,7 +17,6 @@ const tableSelection = ref<User[]>([])
 const selectable = (row: User) => !['1', '2'].includes(row.id)
 
 function handleSelectionChange(val: User[]) {
-  console.log('selection: ', val)
   tableSelection.value = val
 }
 
@@ -29,7 +28,6 @@ onMounted(async () => {
 
 // 用户禁止操作
 function enableEdit(user: any) {
-  console.log('......', user)
   return user.username === 'admin'
 }
 

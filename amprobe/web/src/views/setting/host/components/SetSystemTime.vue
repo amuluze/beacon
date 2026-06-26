@@ -37,20 +37,16 @@ onMounted(() => {
 })
 
 function getClientTime() {
-  // 获取客户端时间
-  console.log(new Date().toLocaleString())
   systemTime.value = dayjs(new Date()).format('YYYY-MM-DD HH:mm:ss')
 }
 
 async function confirmSystemTimeEdit() {
   // 确定修改系统时间
   systemTime.value = dayjs(new Date()).format('YYYY-MM-DD HH:mm:ss')
-  console.log(systemTime.value)
   const args: SetSystemTimeArgs = {
     system_time: systemTime.value,
   }
-  const { data } = await setSystemTime(args)
-  console.log(data)
+  await setSystemTime(args)
   success('修改系统时间成功')
   drawerVisible.value = false
 }

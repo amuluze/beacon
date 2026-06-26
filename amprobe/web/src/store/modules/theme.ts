@@ -12,7 +12,6 @@ export const useThemeStore = defineStore('theme', {
     getters: {},
     actions: {
         setDark(val: boolean) {
-            console.log('set dark value: ', val)
             this.dark = val
         },
     },

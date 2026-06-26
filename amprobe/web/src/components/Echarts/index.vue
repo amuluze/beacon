@@ -25,7 +25,6 @@ const store = useStore()
 watch(
   () => props.option,
   (newVal) => {
-    console.log('echarts new val: ', newVal)
     let targetOptions: EChartsOption = {}
     targetOptions = { ...newVal }
     setOptions(targetOptions)
