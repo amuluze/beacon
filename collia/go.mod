@@ -4,7 +4,7 @@ go 1.21.10
 
 require (
 	github.com/amuluze/amutool/logger v0.0.0-20240821104128-caed9cc0d402
-	github.com/amuluze/amutool/timex v0.0.0-20240821104128-caed9cc0d402
+	github.com/amuluze/amutool/timex v0.0.0-20250508153823-fe9a5de55958
 	github.com/amuluze/docker v0.0.0-20240822095446-429928f7463e
 	github.com/creack/pty v1.1.24
 	github.com/docker/docker v27.2.1+incompatible
