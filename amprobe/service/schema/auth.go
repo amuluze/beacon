@@ -5,8 +5,8 @@
 package schema
 
 type LoginArgs struct {
-	Username string `json:"username" validate:"required,gte=1" description:"用户名"`
-	Password string `json:"password" validate:"required,gte=1" description:"用户密码"`
+	Username string `json:"username" validate:"required,gte=1,lte=64" description:"用户名"`
+	Password string `json:"password" validate:"required,gte=1,lte=128" description:"用户密码"`
 }
 
 type LoginResult struct {
@@ -15,9 +15,9 @@ type LoginResult struct {
 }
 
 type PasswordUpdateArgs struct {
-	Username    string `json:"username" validate:"required,gte=1" description:"用户名"`
-	OldPassword string `json:"old_password" validate:"required,gte=1"  description:"旧密码"`
-	NewPassword string `json:"new_password" validate:"required,gte=1"  description:"新密码"`
+	Username    string `json:"username" validate:"required,gte=1,lte=64" description:"用户名"`
+	OldPassword string `json:"old_password" validate:"required,gte=1,lte=128"  description:"旧密码"`
+	NewPassword string `json:"new_password" validate:"required,gte=1,lte=128"  description:"新密码"`
 }
 
 type UserInfo struct {

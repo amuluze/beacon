@@ -113,7 +113,7 @@ type NetworkUsageReply struct {
 }
 
 type FilesSearchArgs struct {
-	Path string `json:"path" validate:"required"`
+	Path string `json:"path" validate:"required,gte=1,lte=4096"`
 }
 type FileInfo struct {
 	Name    string `json:"name"`
@@ -135,7 +135,7 @@ type FileUploadArgs struct {
 type FileUploadReply struct{}
 
 type FileDownloadArgs struct {
-	Filepath string `json:"filepath" validate:"required"`
+	Filepath string `json:"filepath" validate:"required,gte=1,lte=4096"`
 }
 
 type FileRemoteDownloadArgs struct {
@@ -150,21 +150,21 @@ type FileDownloadReply struct {
 }
 
 type FileDeleteArgs struct {
-	Filepath string `json:"filepath" validate:"required"`
+	Filepath string `json:"filepath" validate:"required,gte=1,lte=4096"`
 }
 
 type FileDeleteReply struct{}
 
 type FileCreateArgs struct {
-	Path     string `json:"path" validate:"required"`
-	FileName string `json:"file_name" validate:"required"`
+	Path     string `json:"path" validate:"required,gte=1,lte=4096"`
+	FileName string `json:"file_name" validate:"required,gte=1,lte=256"`
 }
 
 type FileCreateReply struct{}
 
 type FolderCreateArgs struct {
-	Path       string `json:"path" validate:"required"`
-	FolderName string `json:"folder_name" validate:"required"`
+	Path       string `json:"path" validate:"required,gte=1,lte=4096"`
+	FolderName string `json:"folder_name" validate:"required,gte=1,lte=256"`
 }
 
 type FolderCreateReply struct{}
@@ -176,7 +176,7 @@ type GetDNSSettingsReply struct {
 }
 
 type SetDNSSettingsArgs struct {
-	DNS []string `json:"dns"`
+	DNS []string `json:"dns" validate:"max=8"`
 }
 
 type SetDNSSettingsReply struct{}
@@ -189,7 +189,7 @@ type GetSystemTimeReply struct {
 }
 
 type SetSystemTimeArgs struct {
-	SystemTime string `json:"system_time" validate:"required"`
+	SystemTime string `json:"system_time" validate:"required,gte=1,lte=64"`
 }
 
 type SetSystemTimeReply struct{}
@@ -208,7 +208,7 @@ type GetSystemTimeZoneReply struct {
 }
 
 type SetSystemTimeZoneArgs struct {
-	SystemTimeZone string `json:"system_timezone" validate:"required"`
+	SystemTimeZone string `json:"system_timezone" validate:"required,gte=1,lte=64"`
 }
 
 type SetSystemTimeZoneReply struct{}

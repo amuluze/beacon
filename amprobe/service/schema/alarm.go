@@ -17,7 +17,7 @@ type AlarmThresholdQueryReply struct {
 
 type AlarmThresholdUpdateArgs struct {
 	ID        uint   `json:"id" validate:"required"`
-	Type      string `json:"type"`
-	Duration  int    `json:"duration"`
-	Threshold int    `json:"threshold"`
+	Type      string `json:"type" validate:"lte=64"`
+	Duration  int    `json:"duration" validate:"gte=0"`
+	Threshold int    `json:"threshold" validate:"gte=0"`
 }

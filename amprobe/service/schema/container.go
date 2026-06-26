@@ -23,8 +23,8 @@ type Container struct {
 }
 
 type ContainerQueryArgs struct {
-	Page int `json:"page" validate:"required"`
-	Size int `json:"size" validate:"gte=0"`
+	Page int `json:"page" validate:"required,gte=1"`
+	Size int `json:"size" validate:"gte=0,lte=100"`
 }
 
 type QueryCountArgs struct{}
@@ -34,15 +34,15 @@ type QueryCountReply struct {
 }
 
 type ContainerCreateArgs struct {
-	ContainerName string            `json:"container_name" validate:"required"`
-	ImageName     string            `json:"image_name" validate:"required"`
-	NetworkMode   string            `json:"network_mode" validate:"required"`
-	NetworkID     string            `json:"network_id"`
-	NetworkName   string            `json:"network_name"`
-	Ports         []string          `json:"ports"`
-	Volumes       []string          `json:"volumes"`
-	Environments  []string          `json:"environments"`
-	Labels        map[string]string `json:"labels"`
+	ContainerName string            `json:"container_name" validate:"required,gte=1,lte=128"`
+	ImageName     string            `json:"image_name" validate:"required,gte=1,lte=256"`
+	NetworkMode   string            `json:"network_mode" validate:"required,oneof=bridge host none"`
+	NetworkID     string            `json:"network_id" validate:"omitempty,len=36"`
+	NetworkName   string            `json:"network_name" validate:"lte=128"`
+	Ports         []string          `json:"ports" validate:"max=64"`
+	Volumes       []string          `json:"volumes" validate:"max=64"`
+	Environments  []string          `json:"environments" validate:"max=64"`
+	Labels        map[string]string `json:"labels" validate:"max=32"`
 }
 
 type ContainerCreateReply struct {
@@ -50,14 +50,14 @@ type ContainerCreateReply struct {
 }
 
 type ContainerUpdateArgs struct {
-	ContainerID   string            `json:"container_id" validate:"required"`
-	ContainerName string            `json:"container_name,omitempty"`
-	ImageName     string            `json:"image_name,omitempty"`
-	NetworkName   string            `json:"network_name,omitempty"`
-	Ports         []string          `json:"ports,omitempty"`
-	Volumes       []string          `json:"volumes,omitempty"`
-	Environments  []string          `json:"environment,omitempty"`
-	Labels        map[string]string `json:"labels,omitempty"`
+	ContainerID   string            `json:"container_id" validate:"required,len=64"`
+	ContainerName string            `json:"container_name,omitempty" validate:"lte=128"`
+	ImageName     string            `json:"image_name,omitempty" validate:"lte=256"`
+	NetworkName   string            `json:"network_name,omitempty" validate:"lte=128"`
+	Ports         []string          `json:"ports,omitempty" validate:"max=64"`
+	Volumes       []string          `json:"volumes,omitempty" validate:"max=64"`
+	Environments  []string          `json:"environment,omitempty" validate:"max=64"`
+	Labels        map[string]string `json:"labels,omitempty" validate:"max=32"`
 }
 
 type ContainerUpdateReply struct {
@@ -103,8 +103,8 @@ type Image struct {
 }
 
 type ImageQueryArgs struct {
-	Page int `json:"page" validate:"required"`
-	Size int `json:"size" validate:"gt=0"`
+	Page int `json:"page" validate:"required,gte=1"`
+	Size int `json:"size" validate:"gt=0,lte=100"`
 }
 
 type ImageQueryReply struct {
@@ -120,7 +120,7 @@ type ImageTagArgs struct {
 }
 
 type ImagePullArgs struct {
-	ImageName string `json:"image_name" validate:"required"`
+	ImageName string `json:"image_name" validate:"required,gte=1,lte=256"`
 }
 
 type ImagePullReply struct{}
@@ -161,11 +161,11 @@ type ImageCountReply struct {
 }
 
 type NetworkCreateArgs struct {
-	Name    string            `json:"name" validate:"required"`
-	Driver  string            `json:"driver" validate:"required"`
-	Subnet  string            `json:"subnet" validate:"required"`
-	Gateway string            `json:"gateway" validate:"required"`
-	Labels  map[string]string `json:"labels"`
+	Name    string            `json:"name" validate:"required,gte=1,lte=128"`
+	Driver  string            `json:"driver" validate:"required,oneof=bridge host overlay macvlan none"`
+	Subnet  string            `json:"subnet" validate:"required,gte=1,lte=64"`
+	Gateway string            `json:"gateway" validate:"required,gte=1,lte=64"`
+	Labels  map[string]string `json:"labels" validate:"max=32"`
 }
 
 type NetworkCreateReply struct {
@@ -173,8 +173,8 @@ type NetworkCreateReply struct {
 }
 
 type NetworkQueryArgs struct {
-	Page int `json:"page" validate:"required"`
-	Size int `json:"size" validate:"gte=0"`
+	Page int `json:"page" validate:"required,gte=1"`
+	Size int `json:"size" validate:"gte=0,lte=100"`
 }
 
 type Network struct {
@@ -226,7 +226,7 @@ type GetDockerRegistryMirrorsReply struct {
 }
 
 type SetDockerRegistryMirrorsArgs struct {
-	Mirrors []string `json:"registry_mirrors" validate:"required"`
+	Mirrors []string `json:"registry_mirrors" validate:"required,max=8"`
 }
 
 type SetDockerRegistryMirrorsReply struct{}
