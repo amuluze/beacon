@@ -7,7 +7,7 @@ import { queryContainersUsage, queryAgentList } from '@/api/container'
 import { set } from 'lodash-es'
 
 // Agent switcher
-const agentList = ref<{ agent_id: string; hostname: string }[]>([])
+const agentList = ref<{ agent_id: string; hostname: string; version: string; os: string; arch: string; status: string }[]>([])
 const currentAgent = ref('')
 async function loadAgents() {
   try {
@@ -112,8 +112,11 @@ onUnmounted(() => { clearInterval(timer.value) })
     <div class="am-section-header">
       <div class="am-section-title-group">
         <span class="am-section-title">容器监控</span>
-        <el-select v-model="currentAgent" size="small" style="width: 160px" placeholder="选择主机">
-          <el-option v-for="item in agentList" :key="item.agent_id" :label="item.hostname || item.agent_id" :value="item.agent_id" />
+        <el-select v-model="currentAgent" size="small" style="width: 200px" placeholder="选择主机">
+          <el-option v-for="item in agentList" :key="item.agent_id" :label="item.hostname || item.agent_id" :value="item.agent_id">
+            <span>{{ item.hostname || item.agent_id }}</span>
+            <span style="float: right; color: var(--el-text-color-secondary); font-size: 12px">{{ item.version || 'unknown' }}</span>
+          </el-option>
         </el-select>
       </div>
       <div class="am-density-group">

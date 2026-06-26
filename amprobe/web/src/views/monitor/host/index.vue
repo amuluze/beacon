@@ -13,7 +13,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 // Agent switcher
-const agentList = ref<{ agent_id: string; hostname: string }[]>([])
+const agentList = ref<{ agent_id: string; hostname: string; version: string; os: string; arch: string; status: string }[]>([])
 const currentAgent = ref('')
 function agentParams(): Record<string, string> {
   return currentAgent.value ? { agent_id: currentAgent.value } : {}
@@ -164,13 +164,16 @@ const { t } = useI18n()
     <div class="am-section-header">
       <div class="am-section-title-group">
         <span class="am-section-title">{{ t('monitor.hostMonitor') }}</span>
-        <el-select v-model="currentAgent" size="small" style="width: 160px" placeholder="选择主机">
+        <el-select v-model="currentAgent" size="small" style="width: 200px" placeholder="选择主机">
           <el-option
             v-for="item in agentList"
             :key="item.agent_id"
             :label="item.hostname || item.agent_id"
             :value="item.agent_id"
-          />
+          >
+            <span>{{ item.hostname || item.agent_id }}</span>
+            <span style="float: right; color: var(--el-text-color-secondary); font-size: 12px">{{ item.version || 'unknown' }}</span>
+          </el-option>
         </el-select>
         <el-button size="small" type="primary" plain @click="openTerminal">
           打开终端
