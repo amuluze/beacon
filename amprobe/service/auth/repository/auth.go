@@ -41,7 +41,7 @@ func (a *AuthRepo) Login(ctx context.Context, args schema.LoginArgs) (model.User
 		if err := tx.Where("username = ?", args.Username).Where("status = ?", 1).First(&user).Error; err != nil {
 			return err
 		}
-		if user.Password != hash.SHA1String(args.Password) {
+		if err := hash.BcryptVerify(args.Password, user.Password); err != nil {
 			return errors.New("invalid password")
 		}
 
@@ -57,11 +57,16 @@ func (a *AuthRepo) PassUpdate(ctx context.Context, args schema.PasswordUpdateArg
 			return err
 		}
 
-		if user.Password != hash.SHA1String(args.OldPassword) {
+		if err := hash.BcryptVerify(args.OldPassword, user.Password); err != nil {
 			return errors.New("invalid password")
 		}
 
-		if err := tx.Model(&model.User{}).Where("username = ?", args.Username).Update("password", hash.SHA1String(args.NewPassword)).Error; err != nil {
+		hashed, err := hash.BcryptHash(args.NewPassword)
+		if err != nil {
+			return err
+		}
+
+		if err := tx.Model(&model.User{}).Where("username = ?", args.Username).Update("password", hashed).Error; err != nil {
 			return err
 		}
 		return nil

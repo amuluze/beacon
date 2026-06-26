@@ -5,32 +5,27 @@
 package hash
 
 import (
-	"crypto/md5"
-	"crypto/sha1"
-	"encoding/hex"
-	"fmt"
+	"crypto/subtle"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
-// MD5 MD5哈希值
-func MD5(b []byte) string {
-	h := md5.New()
-	_, _ = h.Write(b)
-	return hex.EncodeToString(h.Sum(nil))
+// BcryptHash generates a bcrypt hash from the given password.
+func BcryptHash(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
 }
 
-// MD5String MD5哈希值
-func MD5String(s string) string {
-	return MD5([]byte(s))
+// BcryptVerify compares a bcrypt hashed password with its possible plaintext equivalent.
+// Returns nil on success, or an error on failure.
+func BcryptVerify(password, hash string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 }
 
-// SHA1 SHA1哈希值
-func SHA1(b []byte) string {
-	h := sha1.New()
-	_, _ = h.Write(b)
-	return fmt.Sprintf("%x", h.Sum(nil))
-}
-
-// SHA1String SHA1哈希值
-func SHA1String(s string) string {
-	return SHA1([]byte(s))
+// ConstantTimeCompare compares two strings in constant time to prevent timing attacks.
+func ConstantTimeCompare(a, b string) bool {
+	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
 }

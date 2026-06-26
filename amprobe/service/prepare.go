@@ -50,7 +50,7 @@ var users = []*model.User{
 	{
 		ID:       uuid.MustUUID(),
 		Username: "admin",
-		Password: hash.SHA1String("admin123"), // hash.SHA1String(args.OldPassword)
+		Password: mustBcryptHash("admin123"),
 		Remark:   "管理员",
 		IsAdmin:  1,
 		Status:   1,
@@ -65,7 +65,7 @@ var users = []*model.User{
 	{
 		ID:       uuid.MustUUID(),
 		Username: "amprobe",
-		Password: hash.SHA1String("123456"),
+		Password: mustBcryptHash("123456"),
 		Remark:   "普通用户",
 		IsAdmin:  2,
 		Status:   1,
@@ -77,6 +77,14 @@ var users = []*model.User{
 			},
 		},
 	},
+}
+
+func mustBcryptHash(password string) string {
+	hashed, err := hash.BcryptHash(password)
+	if err != nil {
+		panic("failed to hash default password: " + err.Error())
+	}
+	return hashed
 }
 
 type Prepare struct {
@@ -136,20 +144,22 @@ func (a *Prepare) InitAccount(app *fiber.App) {
 	_ = a.db.RunInTransaction(func(tx *gorm.DB) error {
 		// 更新 resource
 		for _, resource := range adminResources {
-			if err := tx.Model(&model.Resource{}).FirstOrCreate(&resource).Error; err != nil {
+			r := resource
+			if err := tx.Model(&model.Resource{}).FirstOrCreate(&r).Error; err != nil {
 				slog.Error("search or create resource failed", "error", err)
 			}
 		}
 
 		// 更新 user role
 		for _, u := range users {
-			if u.Username == "admin" {
-				u.Roles[0].Resources = adminResources
+			user := u
+			if user.Username == "admin" {
+				user.Roles[0].Resources = adminResources
 			} else {
-				u.Roles[0].Resources = notAdminResources
+				user.Roles[0].Resources = notAdminResources
 			}
 			// 创建或更新
-			if err := tx.Model(&model.User{}).FirstOrCreate(&u).Error; err != nil {
+			if err := tx.Model(&model.User{}).FirstOrCreate(&user).Error; err != nil {
 				slog.Error("search or create user failed", "error", err)
 			}
 		}
@@ -159,7 +169,8 @@ func (a *Prepare) InitAccount(app *fiber.App) {
 
 func (a *Prepare) InitAlarmThreshold() {
 	for _, threshold := range thresholds {
-		if err := a.db.Model(&model.AlarmThreshold{}).FirstOrCreate(&threshold).Error; err != nil {
+		t := threshold
+		if err := a.db.Model(&model.AlarmThreshold{}).FirstOrCreate(&t).Error; err != nil {
 			slog.Error("alarm threshold exist", "error", err)
 		}
 	}
