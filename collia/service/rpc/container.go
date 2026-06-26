@@ -6,6 +6,7 @@ package rpc
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -231,4 +232,34 @@ func (s *Service) NetworkDelete(ctx context.Context, args rpcSchema.NetworkDelet
 		return err
 	}
 	return nil
+}
+
+// ── Registration ──
+
+func registerContainerHandlers(d *Dispatcher, svc *Service) {
+	// Container operations
+	RegisterUnary[rpcSchema.ContainerCreateArgs, rpcSchema.ContainerCreateReply](d, "ContainerCreate", svc.ContainerCreate)
+	RegisterUnary[rpcSchema.ContainerUpdateArgs, rpcSchema.ContainerUpdateReply](d, "ContainerUpdate", svc.ContainerUpdate)
+	RegisterUnary[rpcSchema.ContainerDeleteArgs, rpcSchema.ContainerDeleteReply](d, "ContainerDelete", svc.ContainerDelete)
+	RegisterUnary[rpcSchema.ContainerStartArgs, rpcSchema.ContainerStartReply](d, "ContainerStart", svc.ContainerStart)
+	RegisterUnary[rpcSchema.ContainerStopArgs, rpcSchema.ContainerStopReply](d, "ContainerStop", svc.ContainerStop)
+	RegisterUnary[rpcSchema.ContainerRestartArgs, rpcSchema.ContainerRestartReply](d, "ContainerRestart", svc.ContainerRestart)
+	RegisterStream[rpcSchema.ContainerLogsArgs](d, "ContainerLogs", svc.ContainerLogsStream)
+
+	// Image operations
+	RegisterUnary[rpcSchema.ImagePullArgs, rpcSchema.ImagePullReply](d, "ImagePull", svc.ImagePull)
+	RegisterUnary[rpcSchema.ImageTagArgs, rpcSchema.ImageTagReply](d, "ImageTag", svc.ImageTag)
+	RegisterUnary[rpcSchema.ImageDeleteArgs, rpcSchema.ImageDeleteReply](d, "ImageDelete", svc.ImageDelete)
+	d.Register("ImagesPrune", func(ctx context.Context, payload []byte, _ func(*tunnel.Frame)) ([]byte, error) {
+		if err := svc.ImagesPrune(ctx); err != nil {
+			return nil, err
+		}
+		return json.Marshal(struct{}{})
+	})
+	RegisterUnary[rpcSchema.ImageImportArgs, rpcSchema.ImageImportReply](d, "ImageImport", svc.ImageImport)
+	RegisterUnary[rpcSchema.ImageExportArgs, rpcSchema.ImageExportReply](d, "ImageExport", svc.ImageExport)
+
+	// Network operations
+	RegisterUnary[rpcSchema.NetworkCreateArgs, rpcSchema.NetworkCreateReply](d, "NetworkCreate", svc.NetworkCreate)
+	RegisterUnary[rpcSchema.NetworkDeleteArgs, rpcSchema.NetworkDeleteReply](d, "NetworkDelete", svc.NetworkDelete)
 }

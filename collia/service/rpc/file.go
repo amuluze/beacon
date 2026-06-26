@@ -113,3 +113,15 @@ func (s *Service) FileDownload(ctx context.Context, args rpcSchema.FileDownloadA
 	reply.FileName = filepath.Base(args.TargetFilePath)
 	return err
 }
+
+// ── Registration ──
+
+func registerFileHandlers(d *Dispatcher, svc *Service) {
+	RegisterUnary[rpcSchema.FilesSearchArgs, rpcSchema.FilesSearchReply](d, "FilesSearch", svc.FilesSearch)
+	RegisterUnary[rpcSchema.DirSizeArgs, rpcSchema.DirSizeReply](d, "DirSize", svc.DirSize)
+	RegisterUnary[rpcSchema.FileCreateArgs, rpcSchema.FileCreateReply](d, "FileCreate", svc.FileCreate)
+	RegisterUnary[rpcSchema.FileDeleteArgs, rpcSchema.FileDeleteReply](d, "FileDelete", svc.FileDelete)
+	RegisterUnary[rpcSchema.FileUploadArgs, rpcSchema.FileUploadReply](d, "FileUpload", svc.FileUpload)
+	RegisterUnary[rpcSchema.FileDownloadArgs, rpcSchema.FileDownloadReply](d, "FileDownload", svc.FileDownload)
+	RegisterUnary[rpcSchema.FolderCreateArgs, rpcSchema.FolderCreateReply](d, "FolderCreate", svc.FolderCreate)
+}

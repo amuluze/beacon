@@ -236,3 +236,12 @@ func (s *Service) TerminalClose(ctx context.Context, args rpcSchema.TerminalClos
 	deleteTerminalSession(args.SessionID)
 	return nil
 }
+
+// ── Registration ──
+
+func registerTerminalHandlers(d *Dispatcher, svc *Service) {
+	RegisterStream[rpcSchema.TerminalSessionArgs](d, "TerminalSession", svc.TerminalSessionStream)
+	RegisterUnary[rpcSchema.ResizeTerminalArgs, rpcSchema.ResizeTerminalReply](d, "ResizeTerminal", svc.ResizeTerminal)
+	RegisterUnary[rpcSchema.TerminalInputArgs, rpcSchema.TerminalInputReply](d, "TerminalInput", svc.TerminalInput)
+	RegisterUnary[rpcSchema.TerminalCloseArgs, rpcSchema.TerminalCloseReply](d, "TerminalClose", svc.TerminalClose)
+}
