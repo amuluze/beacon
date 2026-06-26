@@ -174,3 +174,19 @@ func (s *Service) SetDockerRegistryMirrors(ctx context.Context, args rpcSchema.S
 	}
 	return nil
 }
+
+// ── Registration ──
+
+func registerSystemHandlers(d *Dispatcher, svc *Service) {
+	RegisterUnary[rpcSchema.RebootArgs, rpcSchema.RebootReply](d, "Reboot", svc.Reboot)
+	RegisterUnary[rpcSchema.ShutdownArgs, rpcSchema.ShutdownReply](d, "Shutdown", svc.Shutdown)
+	RegisterUnary[rpcSchema.GetDNSArgs, rpcSchema.GetDNSReply](d, "GetDNS", svc.GetDNS)
+	RegisterUnary[rpcSchema.SetDNSArgs, rpcSchema.SetDNSReply](d, "SetDNS", svc.SetDNS)
+	RegisterUnary[rpcSchema.GetSystemTimeArgs, rpcSchema.GetSystemTimeReply](d, "GetSystemTime", svc.GetSystemTime)
+	RegisterUnary[rpcSchema.SetSystemTimeArgs, rpcSchema.SetSystemTimeReply](d, "SetSystemTime", svc.SetSystemTime)
+	RegisterUnary[rpcSchema.GetSystemTimeZoneArgs, rpcSchema.GetSystemTimeZoneReply](d, "GetSystemTimeZone", svc.GetSystemTimeZone)
+	RegisterUnary[rpcSchema.SetSystemTimeZoneArgs, rpcSchema.SetSystemTimeZoneReply](d, "SetSystemTimeZone", svc.SetSystemTimeZone)
+	RegisterUnary[rpcSchema.GetSystemTimeZoneListArgs, rpcSchema.GetSystemTimeZoneListReply](d, "GetSystemTimeZoneList", svc.GetSystemTimeZoneList)
+	RegisterUnary[rpcSchema.GetDockerRegistryMirrorsArgs, rpcSchema.GetDockerRegistryMirrorsReply](d, "GetDockerRegistryMirrors", svc.GetDockerRegistryMirrors)
+	RegisterUnary[rpcSchema.SetDockerRegistryMirrorsArgs, rpcSchema.SetDockerRegistryMirrorsReply](d, "SetDockerRegistryMirrors", svc.SetDockerRegistryMirrors)
+}
