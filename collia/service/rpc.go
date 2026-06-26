@@ -10,10 +10,12 @@ import (
 
 	"common/database"
 	rpctunnel "common/rpc/tunnel"
+	transporttls "common/transport/tlsconfig"
 
 	"collia/service/rpc"
 
 	"github.com/amuluze/docker"
+	"google.golang.org/grpc/credentials"
 )
 
 // Server manages the reverse tunnel connection to the Server.
@@ -35,8 +37,15 @@ func NewRPCServer(config *Config, db *database.DB) (*Server, error) {
 	}
 
 	tunnel := rpctunnel.NewAgentTunnel(config.Control.Server, agentID)
+	if config.Control.TLS.Enable {
+		tlsCfg, err := transporttls.ClientConfig(config.Control.TLS.CertDir, "amprobe/collia")
+		if err != nil {
+			return nil, err
+		}
+		tunnel = rpctunnel.NewAgentTunnel(config.Control.Server, agentID, rpctunnel.WithAgentTLS(credentials.NewTLS(tlsCfg)))
+	}
 	tunnel.SetHandler(buildRPCDispatcher(s))
-	slog.Info("reverse tunnel configured", "server", config.Control.Server, "agent_id", agentID)
+	slog.Info("reverse tunnel configured", "server", config.Control.Server, "agent_id", agentID, "tls", config.Control.TLS.Enable)
 
 	return &Server{
 		tunnel: tunnel,

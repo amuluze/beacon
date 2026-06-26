@@ -70,21 +70,27 @@ func loadMaterial(certDir string) (tls.Certificate, *x509.CertPool, error) {
 		return tls.Certificate{}, nil, fmt.Errorf("empty tls cert dir")
 	}
 
-	cert, err := tls.LoadX509KeyPair(
-		filepath.Join(certDir, TLSCertFile),
-		filepath.Join(certDir, TLSKeyFile),
-	)
+	cleanDir, err := filepath.Abs(filepath.Clean(certDir))
 	if err != nil {
 		return tls.Certificate{}, nil, err
 	}
 
-	caPEM, err := os.ReadFile(filepath.Join(certDir, CACertFile))
+	certPath := filepath.Join(cleanDir, TLSCertFile)
+	keyPath := filepath.Join(cleanDir, TLSKeyFile)
+	caPath := filepath.Join(cleanDir, CACertFile)
+
+	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
+	if err != nil {
+		return tls.Certificate{}, nil, err
+	}
+
+	caPEM, err := os.ReadFile(caPath) //#nosec G304 -- certDir is an admin-supplied configuration path
 	if err != nil {
 		return tls.Certificate{}, nil, err
 	}
 	caPool := x509.NewCertPool()
 	if !caPool.AppendCertsFromPEM(caPEM) {
-		return tls.Certificate{}, nil, fmt.Errorf("load ca cert from %s failed", filepath.Join(certDir, CACertFile))
+		return tls.Certificate{}, nil, fmt.Errorf("load ca cert from %s failed", caPath)
 	}
 
 	return cert, caPool, nil

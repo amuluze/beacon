@@ -46,9 +46,11 @@ type Fiber struct {
 }
 
 type Control struct {
-	Enable        bool
-	Address       string
+	Enable         bool
+	Address        string
 	DefaultAgentID string
+	TLSEnable      bool
+	TLSCertDir     string
 }
 
 type Gorm struct {
