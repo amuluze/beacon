@@ -59,3 +59,7 @@ PackageDir = "/app/downloads/collia"
 ControlPort = 17000
 TLSEnable = true
 CertDir = "/etc/collia/certs"
+
+[Session]
+Enabled = true
+Directory = "/app/sessions"

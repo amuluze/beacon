@@ -11,6 +11,8 @@ import (
 
 	"amprobe/pkg/contextx"
 	"amprobe/pkg/rpc"
+	"amprobe/service/terminal"
+	"common/database"
 	rpcSchema "common/rpc/schema"
 
 	"github.com/gofiber/contrib/websocket"
@@ -22,6 +24,11 @@ type LoggerHandler struct {
 
 func NewLoggerHandler(client rpc.Caller) *LoggerHandler {
 	return &LoggerHandler{rpcClient: client}
+}
+
+// NewTerminalHandler creates a terminal handler from service configuration.
+func NewTerminalHandler(config *Config, rpcClient rpc.Caller, db *database.DB) *terminal.Handler {
+	return terminal.NewHandler(rpcClient, db, config.Session.Directory, config.Session.Enabled)
 }
 
 func (l *LoggerHandler) Handler(c *websocket.Conn) {
@@ -51,14 +58,15 @@ func (l *LoggerHandler) Handler(c *websocket.Conn) {
 	}
 }
 
-type TermHandler struct{}
+type TermHandler struct {
+	handler *terminal.Handler
+}
 
-func NewTermHandler() *TermHandler {
-	return &TermHandler{}
+// NewTermHandler creates a legacy alias that delegates to terminal.Handler.
+func NewTermHandler(handler *terminal.Handler) *TermHandler {
+	return &TermHandler{handler: handler}
 }
 
 func (th *TermHandler) Handler(conn *websocket.Conn) {
-	const msg = "terminal sessions must be executed by collia agent; server-side ssh execution is disabled"
-	_ = conn.WriteMessage(websocket.TextMessage, []byte(msg))
-	_ = conn.WriteControl(websocket.CloseMessage, []byte{}, time.Now().Add(time.Second))
+	th.handler.Handle(conn)
 }

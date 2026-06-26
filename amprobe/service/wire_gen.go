@@ -99,7 +99,8 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	SetAgentLifecycle(agentSvc)
 
 	loggerHandler := NewLoggerHandler(client)
-	termHandler := NewTermHandler()
+	terminalHandler := NewTerminalHandler(config, client, db)
+	termHandler := NewTermHandler(terminalHandler)
 	reportService := NewReportService(config, db)
 	router := &Router{
 		config:        config,
