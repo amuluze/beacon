@@ -51,20 +51,28 @@ func (s *Service) DirSize(ctx context.Context, args rpcSchema.DirSizeArgs, reply
 
 func (s *Service) FileCreate(ctx context.Context, args rpcSchema.FileCreateArgs, reply *rpcSchema.FileCreateReply) error {
 	filePath := filepath.Join(args.Path, args.FileName)
+	filePath, err := utils.SanitizePath(filePath)
+	if err != nil {
+		return err
+	}
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		_, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, os.FileMode(0755))
+		f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0600) //#nosec G304 -- path sanitized by utils.SanitizePath
 		if err != nil {
 			return err
 		}
-		return nil
+		return f.Close()
 	}
 	return nil
 }
 
 func (s *Service) FolderCreate(ctx context.Context, args rpcSchema.FolderCreateArgs, reply *rpcSchema.FolderCreateReply) error {
 	folderPath := filepath.Join(args.Path, args.FolderName)
+	folderPath, err := utils.SanitizePath(folderPath)
+	if err != nil {
+		return err
+	}
 	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
-		return os.Mkdir(folderPath, os.FileMode(0755))
+		return os.Mkdir(folderPath, 0750)
 	}
 	return nil
 }
@@ -81,10 +89,10 @@ func (s *Service) FileDelete(ctx context.Context, args rpcSchema.FileDeleteArgs,
 
 func (s *Service) FileUpload(ctx context.Context, args rpcSchema.FileUploadArgs, reply *rpcSchema.FileUploadReply) error {
 	if len(args.Data) > 0 {
-		if err := os.MkdirAll(filepath.Dir(args.TargetFilePath), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(args.TargetFilePath), 0750); err != nil {
 			return err
 		}
-		return os.WriteFile(args.TargetFilePath, args.Data, 0644)
+		return os.WriteFile(args.TargetFilePath, args.Data, 0600)
 	}
 	return os.Rename(args.SourceFilePath, args.TargetFilePath)
 }

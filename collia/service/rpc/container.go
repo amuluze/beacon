@@ -14,6 +14,7 @@ import (
 	rpcSchema "common/rpc/schema"
 	tunnel "common/rpc/tunnel"
 
+	"collia/pkg/utils"
 	"collia/service/model"
 
 	"github.com/amuluze/docker"
@@ -197,7 +198,11 @@ func (s *Service) ImageExport(ctx context.Context, args rpcSchema.ImageExportArg
 	if err := s.Manager.ExportImage(ctx, args.ImageIDs, targetFile); err != nil {
 		return err
 	}
-	data, err := os.ReadFile(targetFile)
+	safeTarget, err := utils.SanitizePath(targetFile)
+	if err != nil {
+		return err
+	}
+	data, err := os.ReadFile(safeTarget) //#nosec G304 -- path sanitized by utils.SanitizePath
 	if err != nil && err != io.EOF {
 		return err
 	}
