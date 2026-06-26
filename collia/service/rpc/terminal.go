@@ -25,6 +25,7 @@ type ptySession struct {
 	id      string
 	ptyFile *os.File
 	cmd     *exec.Cmd
+	inputCh chan []byte
 	mu      sync.Mutex
 	closed  bool
 }
@@ -52,6 +53,20 @@ func (s *ptySession) Resize(rows, cols int) error {
 		return fmt.Errorf("session %s is closed", s.id)
 	}
 	return pty.Setsize(s.ptyFile, &pty.Winsize{Rows: uint16(rows), Cols: uint16(cols)})
+}
+
+func (s *ptySession) WriteInput(data []byte) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.closed {
+		return fmt.Errorf("session %s is closed", s.id)
+	}
+	select {
+	case s.inputCh <- data:
+		return nil
+	default:
+		return fmt.Errorf("session %s input channel full", s.id)
+	}
 }
 
 // terminalSessions tracks active PTY sessions keyed by Server-assigned session ID.
@@ -99,6 +114,7 @@ func (s *Service) TerminalSessionStream(ctx context.Context, args rpcSchema.Term
 		id:      args.SessionID,
 		ptyFile: ptty,
 		cmd:     cmd,
+		inputCh: make(chan []byte, 64),
 	}
 	putTerminalSession(args.SessionID, session)
 	defer func() {
@@ -109,6 +125,30 @@ func (s *Service) TerminalSessionStream(ctx context.Context, args rpcSchema.Term
 	if err := session.Resize(args.Rows, args.Cols); err != nil {
 		slog.Warn("terminal: initial resize failed", "session_id", args.SessionID, "err", err)
 	}
+
+	// Goroutine: write user input to PTY.
+	inputCtx, inputCancel := context.WithCancel(ctx)
+	defer inputCancel()
+	go func() {
+		defer func() {
+			// Closing the PTY signals EOF to the shell; do it only once.
+			_ = ptty.Close()
+		}()
+		for {
+			select {
+			case <-inputCtx.Done():
+				return
+			case data, ok := <-session.inputCh:
+				if !ok {
+					return
+				}
+				if _, err := ptty.Write(data); err != nil {
+					slog.Debug("terminal: write input to pty failed", "session_id", args.SessionID, "err", err)
+					return
+				}
+			}
+		}
+	}()
 
 	done := make(chan error, 1)
 	go func() {
@@ -168,6 +208,18 @@ func (s *Service) ResizeTerminal(ctx context.Context, args rpcSchema.ResizeTermi
 	}
 	if err := session.Resize(args.Rows, args.Cols); err != nil {
 		return fmt.Errorf("resize failed: %w", err)
+	}
+	return nil
+}
+
+// TerminalInput delivers user input to an active PTY session.
+func (s *Service) TerminalInput(ctx context.Context, args rpcSchema.TerminalInputArgs, reply *rpcSchema.TerminalInputReply) error {
+	session, ok := getTerminalSession(args.SessionID)
+	if !ok {
+		return fmt.Errorf("session %s not found", args.SessionID)
+	}
+	if err := session.WriteInput(args.Data); err != nil {
+		return fmt.Errorf("write input failed: %w", err)
 	}
 	return nil
 }
