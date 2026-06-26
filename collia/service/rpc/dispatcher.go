@@ -387,6 +387,16 @@ func (d *Dispatcher) Call(ctx context.Context, method string, payload []byte, st
 			return nil, err
 		}
 		return json.Marshal(reply)
+	case "TerminalClose":
+		var args rpcSchema.TerminalCloseArgs
+		if err := json.Unmarshal(payload, &args); err != nil {
+			return nil, err
+		}
+		var reply rpcSchema.TerminalCloseReply
+		if err := d.svc.TerminalClose(ctx, args, &reply); err != nil {
+			return nil, err
+		}
+		return json.Marshal(reply)
 
 	default:
 		return nil, &UnknownMethodError{Method: method}
