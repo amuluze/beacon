@@ -29,6 +29,9 @@ func NewRPCClient(config *Config) (*TunnelResult, error) {
 	slog.Info("starting reverse tunnel server", "addr", addr)
 
 	var opts []tunnelpkg.ServerOption
+	if config.Control.JoinToken != "" {
+		opts = append(opts, tunnelpkg.WithJoinToken(config.Control.JoinToken))
+	}
 	if config.Control.TLSEnable {
 		cfg, err := transporttls.ServerConfig(config.Control.TLSCertDir, nil)
 		if err != nil {

@@ -24,6 +24,14 @@ func WithServerTLS(cfg *tls.Config) ServerOption {
 	}
 }
 
+// WithJoinToken sets the expected join token for agent registration.
+// If empty (default), token validation is skipped for backward compatibility.
+func WithJoinToken(token string) ServerOption {
+	return func(s *ServerTunnel) {
+		s.joinToken = token
+	}
+}
+
 // AgentLifecycle is called when an agent connects or disconnects.
 type AgentLifecycle interface {
 	OnAgentConnect(agentID string)
@@ -48,6 +56,7 @@ type ServerTunnel struct {
 	grpcServer *grpc.Server
 	listener   net.Listener
 	tlsConfig  *tls.Config
+	joinToken  string
 	agents     sync.Map // map[string]*agentStream
 	pending    sync.Map // map[string]*pendingCall   (call_id -> pendingCall)
 	streams    sync.Map // map[string]*pendingStream (stream_id -> pendingStream)
@@ -87,7 +96,7 @@ func (s *ServerTunnel) Start(addr string) error {
 
 	s.grpcServer = grpc.NewServer()
 	RegisterReverseTunnelServer(s.grpcServer, s)
-	slog.Info("server tunnel: listening", "addr", addr, "tls", s.tlsConfig != nil)
+	slog.Info("server tunnel: listening", "addr", addr, "tls", s.tlsConfig != nil, "auth", s.joinToken != "")
 	return s.grpcServer.Serve(lis)
 }
 
@@ -112,6 +121,20 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 	}
 
 	agentID := frame.Method
+	token := string(frame.Payload)
+
+	// Validate join token if server has one configured.
+	// Empty joinToken on server means skip validation (backward compatible).
+	if s.joinToken != "" && token != s.joinToken {
+		slog.Warn("server tunnel: registration rejected", "agent_id", agentID)
+		rejFrame := &Frame{
+			FrameType: FrameType_FRAME_REGISTER_REJECTED,
+			Error:     "invalid join token",
+		}
+		_ = stream.Send(rejFrame)
+		return nil
+	}
+
 	slog.Info("server tunnel: agent registered", "agent_id", agentID)
 
 	as := &agentStream{
@@ -269,7 +292,7 @@ func (s *ServerTunnel) IsOnline(agentID string) bool {
 	return ok
 }
 
-// AgentInfo returns info about all connected agents.
+// AgentCount returns the number of connected agents.
 func (s *ServerTunnel) AgentCount() int {
 	count := 0
 	s.agents.Range(func(_, _ interface{}) bool {

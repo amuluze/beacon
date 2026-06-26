@@ -15,13 +15,14 @@ service ReverseTunnel {
 
 // FrameType distinguishes frame roles in the tunnel protocol.
 enum FrameType {
-  FRAME_UNSPECIFIED = 0;
-  FRAME_REQUEST     = 1;  // Server → Agent: RPC call request
-  FRAME_REPLY       = 2;  // Agent → Server: single response
-  FRAME_STREAM_DATA = 3;  // Agent → Server: streaming data chunk
-  FRAME_STREAM_END  = 4;  // Agent → Server: stream complete
-  FRAME_HEARTBEAT   = 5;  // Agent → Server: keep-alive ping
-  FRAME_REGISTER    = 6;  // Agent → Server: registration
+  FRAME_UNSPECIFIED       = 0;
+  FRAME_REQUEST           = 1;  // Server → Agent: RPC call request
+  FRAME_REPLY             = 2;  // Agent → Server: single response
+  FRAME_STREAM_DATA       = 3;  // Agent → Server: streaming data chunk
+  FRAME_STREAM_END        = 4;  // Agent → Server: stream complete
+  FRAME_HEARTBEAT         = 5;  // Agent → Server: keep-alive ping
+  FRAME_REGISTER          = 6;  // Agent → Server: registration
+  FRAME_REGISTER_REJECTED = 7;  // Server → Agent: registration rejected (bad token)
 }
 
 // Frame is a single message exchanged over the tunnel.
