@@ -377,6 +377,16 @@ func (d *Dispatcher) Call(ctx context.Context, method string, payload []byte, st
 			return nil, err
 		}
 		return json.Marshal(reply)
+	case "TerminalInput":
+		var args rpcSchema.TerminalInputArgs
+		if err := json.Unmarshal(payload, &args); err != nil {
+			return nil, err
+		}
+		var reply rpcSchema.TerminalInputReply
+		if err := d.svc.TerminalInput(ctx, args, &reply); err != nil {
+			return nil, err
+		}
+		return json.Marshal(reply)
 
 	default:
 		return nil, &UnknownMethodError{Method: method}

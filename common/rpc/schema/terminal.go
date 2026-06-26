@@ -19,5 +19,14 @@ type ResizeTerminalArgs struct {
 	Cols      int    `json:"cols"`
 }
 
+// TerminalInputArgs is sent from Server to Agent to deliver user input.
+type TerminalInputArgs struct {
+	SessionID string `json:"session_id"`
+	Data      []byte `json:"data"`
+}
+
 // ResizeTerminalReply is the response from Agent after resizing a PTY.
 type ResizeTerminalReply struct{}
+
+// TerminalInputReply is the response from Agent after writing input.
+type TerminalInputReply struct{}
