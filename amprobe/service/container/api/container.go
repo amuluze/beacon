@@ -29,7 +29,7 @@ func (a *ContainerAPI) Version(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	version, err := a.ContainerService.Version(c)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, version)
 }
@@ -46,7 +46,7 @@ func (a *ContainerAPI) ContainerCreate(ctx *fiber.Ctx) error {
 	}
 	container, err := a.ContainerService.ContainerCreate(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, container)
 }
@@ -64,7 +64,7 @@ func (a *ContainerAPI) Usage(ctx *fiber.Ctx) error {
 	}
 	usage, err := a.ContainerService.Usage(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, usage)
 }
@@ -83,7 +83,7 @@ func (a *ContainerAPI) ContainerList(ctx *fiber.Ctx) error {
 
 	container, err := a.ContainerService.ContainerList(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, container)
 }
@@ -100,7 +100,7 @@ func (a *ContainerAPI) ContainerStart(ctx *fiber.Ctx) error {
 	}
 	err := a.ContainerService.ContainerStart(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -118,7 +118,7 @@ func (a *ContainerAPI) ContainerStop(ctx *fiber.Ctx) error {
 	}
 	err := a.ContainerService.ContainerStop(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -135,7 +135,7 @@ func (a *ContainerAPI) ContainerRemove(ctx *fiber.Ctx) error {
 	}
 	err := a.ContainerService.ContainerDelete(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -152,7 +152,7 @@ func (a *ContainerAPI) ContainerRestart(ctx *fiber.Ctx) error {
 	}
 	err := a.ContainerService.ContainerRestart(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -170,7 +170,7 @@ func (a *ContainerAPI) ImageList(ctx *fiber.Ctx) error {
 	}
 	images, err := a.ContainerService.ImageList(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, images)
 }
@@ -187,7 +187,7 @@ func (a *ContainerAPI) ImagePull(ctx *fiber.Ctx) error {
 	}
 	err := a.ContainerService.ImagePull(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -214,7 +214,7 @@ func (a *ContainerAPI) ImageImport(ctx *fiber.Ctx) error {
 		Data:     data,
 	}
 	if err := a.ContainerService.ImageImport(c, args); err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -232,7 +232,7 @@ func (a *ContainerAPI) ImageExport(ctx *fiber.Ctx) error {
 	}
 	reply, err := a.ContainerService.ImageExport(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	ctx.Attachment(reply.FileName)
 	return ctx.Send(reply.Data)
@@ -250,7 +250,7 @@ func (a *ContainerAPI) ImageRemove(ctx *fiber.Ctx) error {
 	}
 	err := a.ContainerService.ImageDelete(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -259,7 +259,7 @@ func (a *ContainerAPI) ImagesPrune(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	err := a.ContainerService.ImagesPrune(c)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -276,7 +276,7 @@ func (a *ContainerAPI) NetworkList(ctx *fiber.Ctx) error {
 	}
 	networks, err := a.ContainerService.NetworkList(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, networks)
 }
@@ -292,7 +292,7 @@ func (a *ContainerAPI) NetworkDelete(ctx *fiber.Ctx) error {
 	}
 	err := a.ContainerService.NetworkDelete(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -308,7 +308,7 @@ func (a *ContainerAPI) NetworkCreate(ctx *fiber.Ctx) error {
 	}
 	reply, err := a.ContainerService.NetworkCreate(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, reply)
 }
@@ -318,7 +318,7 @@ func (a *ContainerAPI) GetDockerRegistryMirrors(ctx *fiber.Ctx) error {
 	args := schema.GetDockerRegistryMirrorsArgs{}
 	res, err := a.ContainerService.GetDockerRegistryMirrors(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, res)
 }
@@ -334,7 +334,7 @@ func (a *ContainerAPI) SetDockerRegistryMirrors(ctx *fiber.Ctx) error {
 	}
 	err := a.ContainerService.SetDockerRegistryMirrors(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }

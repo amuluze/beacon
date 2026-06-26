@@ -35,7 +35,7 @@ func (a *AccountAPI) UserQuery(ctx *fiber.Ctx) error {
 
 	users, err := a.AccountService.UserQuery(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, users)
 }
@@ -51,7 +51,7 @@ func (a *AccountAPI) UserCreate(ctx *fiber.Ctx) error {
 	}
 	err := a.AccountService.UserCreate(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -67,7 +67,7 @@ func (a *AccountAPI) UserUpdate(ctx *fiber.Ctx) error {
 	}
 	err := a.AccountService.UserUpdate(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -83,7 +83,7 @@ func (a *AccountAPI) UserDelete(ctx *fiber.Ctx) error {
 	}
 	err := a.AccountService.UserDelete(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -99,7 +99,7 @@ func (a *AccountAPI) RoleQuery(ctx *fiber.Ctx) error {
 	}
 	res, err := a.AccountService.RoleQuery(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, res)
 }
@@ -115,7 +115,7 @@ func (a *AccountAPI) RoleCreate(ctx *fiber.Ctx) error {
 	}
 	err := a.AccountService.RoleCreate(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -131,7 +131,7 @@ func (a *AccountAPI) RoleUpdate(ctx *fiber.Ctx) error {
 	}
 	err := a.AccountService.RoleUpdate(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -147,7 +147,7 @@ func (a *AccountAPI) RoleDelete(ctx *fiber.Ctx) error {
 	}
 	err := a.AccountService.RoleDelete(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -163,7 +163,7 @@ func (a *AccountAPI) ResourceQuery(ctx *fiber.Ctx) error {
 	}
 	res, err := a.AccountService.ResourceQuery(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, res)
 }

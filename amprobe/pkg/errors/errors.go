@@ -14,6 +14,7 @@ const (
 	TooManyRequests     = "too many requests"
 	Forbidden           = "forbidden"
 	BadRequest          = "bad request"
+	Conflict            = "conflict"
 )
 
 var (
@@ -38,6 +39,13 @@ type Error struct {
 	Status int    // 响应状态码
 }
 
+func (e Error) Error() string {
+	if e.Err != "" {
+		return e.Err
+	}
+	return e.Msg
+}
+
 func newError(status int, message string) Error {
 	return Error{
 		Msg:    message,
@@ -54,5 +62,23 @@ func New400Error(error string) Error {
 func New500Error(error string) Error {
 	err := newError(500, InternalServerError)
 	err.Err = error
+	return err
+}
+
+func New401Error(msg string) Error {
+	err := newError(401, InvalidToken)
+	err.Err = msg
+	return err
+}
+
+func New404Error(msg string) Error {
+	err := newError(404, NotFound)
+	err.Err = msg
+	return err
+}
+
+func New409Error(msg string) Error {
+	err := newError(409, Conflict)
+	err.Err = msg
 	return err
 }

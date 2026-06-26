@@ -39,10 +39,10 @@ func (a *AuthRepo) Login(ctx context.Context, args schema.LoginArgs) (model.User
 	var user model.User
 	err := a.DB.RunInTransaction(func(tx *gorm.DB) error {
 		if err := tx.Where("username = ?", args.Username).Where("status = ?", 1).First(&user).Error; err != nil {
-			return err
+			return errors.New401Error("invalid username or password")
 		}
 		if err := hash.BcryptVerify(args.Password, user.Password); err != nil {
-			return errors.New("invalid password")
+			return errors.New401Error("invalid username or password")
 		}
 
 		return nil
@@ -58,7 +58,7 @@ func (a *AuthRepo) PassUpdate(ctx context.Context, args schema.PasswordUpdateArg
 		}
 
 		if err := hash.BcryptVerify(args.OldPassword, user.Password); err != nil {
-			return errors.New("invalid password")
+			return errors.New401Error("invalid password")
 		}
 
 		hashed, err := hash.BcryptHash(args.NewPassword)

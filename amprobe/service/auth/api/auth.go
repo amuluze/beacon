@@ -36,7 +36,7 @@ func (a *AuthAPI) Login(ctx *fiber.Ctx) error {
 
 	res, err := a.AuthService.Login(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, res)
 }
@@ -46,7 +46,7 @@ func (a *AuthAPI) Logout(ctx *fiber.Ctx) error {
 	tokenString := fiberx.GetToken(ctx)
 
 	if err := a.AuthService.Logout(c, tokenString); err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 
 	return fiberx.NoContent(ctx)
@@ -65,7 +65,7 @@ func (a *AuthAPI) PassUpdate(ctx *fiber.Ctx) error {
 
 	err := a.AuthService.PassUpdate(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, nil)
 }
@@ -75,7 +75,7 @@ func (a *AuthAPI) TokenUpdate(ctx *fiber.Ctx) error {
 	tokenString := fiberx.GetToken(ctx)
 	res, err := a.AuthService.TokenUpdate(c, tokenString)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, res)
 }
@@ -85,7 +85,7 @@ func (a *AuthAPI) UserInfo(ctx *fiber.Ctx) error {
 	tokenString := fiberx.GetToken(ctx)
 	res, err := a.AuthService.UserInfo(c, tokenString)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, res)
 }

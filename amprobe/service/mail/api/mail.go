@@ -26,7 +26,7 @@ func (m *MailAPI) MailQuery(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	mail, err := m.MailService.MailQuery(c)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New500Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.Success(ctx, mail)
 }
@@ -42,7 +42,7 @@ func (m *MailAPI) MailCreate(ctx *fiber.Ctx) error {
 	}
 	err := m.MailService.MailCreate(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New500Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -58,7 +58,7 @@ func (m *MailAPI) MailUpdate(ctx *fiber.Ctx) error {
 	}
 	err := m.MailService.MailUpdate(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New500Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -74,7 +74,7 @@ func (m *MailAPI) MailDelete(ctx *fiber.Ctx) error {
 	}
 	err := m.MailService.MailDelete(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New500Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
@@ -90,7 +90,7 @@ func (m *MailAPI) MailTest(ctx *fiber.Ctx) error {
 	}
 	err := m.MailService.MailTest(c, args)
 	if err != nil {
-		return fiberx.Failure(ctx, errors.New500Error(err.Error()))
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
 	return fiberx.NoContent(ctx)
 }
