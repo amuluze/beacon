@@ -41,13 +41,12 @@
 ## 依赖
 
 - `github.com/amuluze/amutool/logger` `v0.0.0-20240821104128-caed9cc0d402`
-- `github.com/amuluze/amutool/timex` `v0.0.0-20240821104128-caed9cc0d402`
+- `github.com/amuluze/amutool/timex` `v0.0.0-20250508153823-fe9a5de55958`
 - `github.com/amuluze/docker` `v0.0.0-20240822095446-429928f7463e`
 - `github.com/docker/docker` `v27.2.1+incompatible`
 - `github.com/google/wire` `v0.6.0`
 - `github.com/patrickmn/go-cache` `v2.1.0+incompatible`
 - `github.com/shirou/gopsutil/v3` `v3.24.5`
-- `github.com/smallnest/rpcx` `v1.8.32`
 - `github.com/spf13/viper` `v1.19.0`
 - `github.com/takama/daemon` `v1.0.0`
 - `gorm.io/gorm` `v1.25.12`
