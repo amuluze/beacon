@@ -12,7 +12,7 @@ import (
 	"amprobe/service/model"
 	"common/database"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type JWTAuth struct {
@@ -31,12 +31,11 @@ func New(store Storer, db *database.DB, opts ...Option) *JWTAuth {
 
 func (a *JWTAuth) generateAccessToken(userID string, username string) (string, error) {
 	now := time.Now()
-	expiresAt := now.Add(time.Duration(a.opts.expired) * time.Second).Unix()
 
-	token := jwt.NewWithClaims(a.opts.signingMethod, &jwt.StandardClaims{
-		IssuedAt:  now.Unix(),
-		ExpiresAt: expiresAt,
-		NotBefore: now.Unix(),
+	token := jwt.NewWithClaims(a.opts.signingMethod, jwt.RegisteredClaims{
+		IssuedAt:  jwt.NewNumericDate(now),
+		ExpiresAt: jwt.NewNumericDate(now.Add(time.Duration(a.opts.expired) * time.Second)),
+		NotBefore: jwt.NewNumericDate(now),
 		Subject:   userID + "." + username,
 	})
 
@@ -56,12 +55,11 @@ func (a *JWTAuth) generateAccessToken(userID string, username string) (string, e
 
 func (a *JWTAuth) generateRefreshToken(userID string, username string) (string, error) {
 	now := time.Now()
-	expiresAt := now.Add(time.Duration(a.opts.refreshExpired) * time.Second).Unix()
 
-	token := jwt.NewWithClaims(a.opts.signingMethod, &jwt.StandardClaims{
-		IssuedAt:  now.Unix(),
-		ExpiresAt: expiresAt,
-		NotBefore: now.Unix(),
+	token := jwt.NewWithClaims(a.opts.signingMethod, jwt.RegisteredClaims{
+		IssuedAt:  jwt.NewNumericDate(now),
+		ExpiresAt: jwt.NewNumericDate(now.Add(time.Duration(a.opts.refreshExpired) * time.Second)),
+		NotBefore: jwt.NewNumericDate(now),
 		Subject:   username + "." + userID,
 	})
 
@@ -95,14 +93,14 @@ func (a *JWTAuth) GenerateToken(userID string, username string) (auth.TokenInfo,
 	return tokenInfo, nil
 }
 
-// parseToke 解析令牌
-func (a *JWTAuth) parseToken(tokenString string) (*jwt.StandardClaims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &jwt.StandardClaims{}, a.opts.keyfunc)
+// parseToken parses the token string and returns registered claims.
+func (a *JWTAuth) parseToken(tokenString string) (*jwt.RegisteredClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, a.opts.keyfunc)
 	if err != nil || !token.Valid {
 		return nil, auth.ErrInvalidToken
 	}
 
-	return token.Claims.(*jwt.StandardClaims), nil
+	return token.Claims.(*jwt.RegisteredClaims), nil
 }
 
 func (a *JWTAuth) callStore(fn func(Storer) error) error {

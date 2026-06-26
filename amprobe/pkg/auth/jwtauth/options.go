@@ -7,7 +7,7 @@ package jwtauth
 import (
 	"amprobe/pkg/auth"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const defaultKey = "amprobe"
