@@ -6,6 +6,7 @@ package rpc
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"amprobe/pkg/contextx"
@@ -16,6 +17,9 @@ const (
 	DefaultAgentID = "default"
 	DefaultNetwork = "tcp"
 )
+
+// ErrMissingAgentID is returned when a control call cannot resolve a target agent.
+var ErrMissingAgentID = errors.New("missing agent_id: unable to determine target agent")
 
 // Caller is the interface for making RPC calls to agents.
 type Caller interface {
@@ -46,7 +50,7 @@ func NewTunnelClient(tunnel *tunnelpkg.ServerTunnel, defaultAgentID string) *Tun
 func (tc *TunnelClient) Call(ctx context.Context, method string, args interface{}, reply interface{}) error {
 	agentID := contextx.FromAgentID(ctx)
 	if agentID == "" {
-		agentID = tc.defaultID
+		return ErrMissingAgentID
 	}
 	return tc.tunnel.Call(ctx, agentID, method, args, reply)
 }
@@ -55,7 +59,7 @@ func (tc *TunnelClient) Call(ctx context.Context, method string, args interface{
 func (tc *TunnelClient) StreamCall(ctx context.Context, method string, args interface{}) (<-chan []byte, error) {
 	agentID := contextx.FromAgentID(ctx)
 	if agentID == "" {
-		agentID = tc.defaultID
+		return nil, ErrMissingAgentID
 	}
 	chunkChan, err := tc.tunnel.StreamCall(ctx, agentID, method, args)
 	if err != nil {

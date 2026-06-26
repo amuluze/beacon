@@ -1,9 +1,11 @@
 import { createPinia } from 'pinia'
-import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+import { createPersistedState } from 'pinia-plugin-persistedstate'
 import type { App } from 'vue'
 
 const store = createPinia()
-store.use(piniaPluginPersistedstate)
+store.use(createPersistedState({
+  storage: sessionStorage,
+}))
 
 export function setupStore(app: App<Element>) {
     app.use(store)
