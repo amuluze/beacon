@@ -57,6 +57,16 @@ type pendingCall struct {
 // pendingStream represents an in-flight streaming RPC.
 type pendingStream struct {
 	chunkChan chan *Frame
+	done      chan struct{}
+	once      sync.Once
+}
+
+// close signals that the caller has stopped consuming (stream ended, ctx
+// cancelled, or caller abandoned). It is idempotent. After close, pending
+// inbound frames for this stream are discarded by the dispatch loop instead
+// of being buffered, which bounds memory for slow or abandoned consumers.
+func (ps *pendingStream) close() {
+	ps.once.Do(func() { close(ps.done) })
 }
 
 // ServerTunnel is the Server-side tunnel manager.
@@ -203,23 +213,27 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 				s.lifecycle.OnAgentHeartbeat(agentID)
 			}
 
-		case FrameType_FRAME_REPLY, FrameType_FRAME_STREAM_END:
+		case FrameType_FRAME_REPLY:
 			// Route single response to the waiting caller
 			if v, ok := s.pending.LoadAndDelete(frame.Id); ok {
 				pc := v.(*pendingCall)
 				pc.replyChan <- frame
 			}
 
-		case FrameType_FRAME_STREAM_DATA:
-			// Route streaming chunk
+		case FrameType_FRAME_STREAM_DATA, FrameType_FRAME_STREAM_END:
+			// Route streaming chunk / completion to the waiting caller.
+			// STREAM_END carries no payload but signals the caller to stop reading.
 			if v, ok := s.streams.Load(frame.Id); ok {
 				ps := v.(*pendingStream)
 				select {
 				case ps.chunkChan <- frame:
-				default:
+				case <-ps.done:
+					// Caller has stopped consuming; drop the frame to avoid
+					// blocking the agent's Recv loop or buffering unbounded data.
 				}
-				if frame.Eos {
+				if frame.FrameType == FrameType_FRAME_STREAM_END || frame.Eos {
 					s.streams.Delete(frame.Id)
+					ps.close()
 				}
 			}
 
@@ -292,19 +306,24 @@ func (s *ServerTunnel) StreamCall(ctx context.Context, agentID string, method st
 		return nil, &AgentOfflineError{AgentID: agentID}
 	}
 
-	ps := &pendingStream{chunkChan: make(chan *Frame, 64)}
+	ps := &pendingStream{
+		chunkChan: make(chan *Frame, 64),
+		done:      make(chan struct{}),
+	}
 	s.streams.Store(id, ps)
-	defer func() {
-		// If ctx done before stream ends, clean up
-		select {
-		case <-ctx.Done():
-			s.streams.Delete(id)
-		default:
+	// ctx 兜底：调用方未在 ctx 取消前读取完流（例如消费者泄漏或 agent 永不发 STREAM_END）时，
+	// 由该 goroutine 删除 streams 条目并关闭 done，防止 pendingStream 永久驻留。
+	// 正常结束路径（STREAM_END 到达）会先于 ctx.Done 删除条目，此处 LoadAndDelete 返回 false。
+	go func() {
+		<-ctx.Done()
+		if _, ok := s.streams.LoadAndDelete(id); ok {
+			ps.close()
 		}
 	}()
 
 	if err := as.(*agentStream).send(frame); err != nil {
 		s.streams.Delete(id)
+		ps.close()
 		return nil, err
 	}
 
