@@ -4,8 +4,8 @@ github.com/Microsoft/go-winio v0.4.14 h1:+hMXMk01us9KgxGb7ftKQt2Xpf5hH/yky+TDA+q
 github.com/Microsoft/go-winio v0.4.14/go.mod h1:qXqCSQ3Xa7+6tgxaGTIe4Kpcdsi+P8jBhyzoq1bpyYA=
 github.com/amuluze/amutool/logger v0.0.0-20240821104128-caed9cc0d402 h1:t3/vnWyOWbyY9UMen+vV1VczM5dAFTimDOfrrGGmI8E=
 github.com/amuluze/amutool/logger v0.0.0-20240821104128-caed9cc0d402/go.mod h1:NuTBHy/KcmWVEeC8ioqE3MzW2Sv4kUPxznJ5w+El9n4=
-github.com/amuluze/amutool/timex v0.0.0-20240821104128-caed9cc0d402 h1:1av1X8cMMFrzWowTscj0vm+GL7Enxwk4LwU67R3HMDY=
-github.com/amuluze/amutool/timex v0.0.0-20240821104128-caed9cc0d402/go.mod h1:i4gYDCtrLZRCopxiYdmmwmI5Da1nr6Pl/TMTUKTuIMw=
+github.com/amuluze/amutool/timex v0.0.0-20250508153823-fe9a5de55958 h1:yg0wSHs33q0Aid618Ce39jFKOY4DpYXZPUQ+utX4yuI=
+github.com/amuluze/amutool/timex v0.0.0-20250508153823-fe9a5de55958/go.mod h1:i4gYDCtrLZRCopxiYdmmwmI5Da1nr6Pl/TMTUKTuIMw=
 github.com/amuluze/docker v0.0.0-20240822095446-429928f7463e h1:7dFPsfO4rRdt27I0ulw0HdScs/9ZO95NC/zSAsfvwKM=
 github.com/amuluze/docker v0.0.0-20240822095446-429928f7463e/go.mod h1:QEk+9tXbBBAlcxwSxTDzBMbNvl6WvW9K9BvvexnFeoQ=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
