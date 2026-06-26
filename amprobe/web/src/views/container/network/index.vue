@@ -24,7 +24,6 @@ const tableRef = ref<TableInstance>()
 const tableSelection = ref<Network[]>([])
 const selectable = (row: Network) => !['1', '2'].includes(row.id)
 function handleSelectionChange(val: Network[]) {
-  console.log('selection: ', val)
   tableSelection.value = val
 }
 

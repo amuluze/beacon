@@ -75,7 +75,5 @@ export function getLightColor(color: string, level: number) {
         rgb[i] = Math.round(255 * level + rgb[i] * (1 - level))
     }
 
-    console.log(rgb)
-
     return rgbToHex(rgb[0], rgb[1], rgb[2])
 }

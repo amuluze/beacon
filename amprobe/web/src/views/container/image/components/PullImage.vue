@@ -34,8 +34,7 @@ async function confirmImagePull() {
   const params: PullImageArgs = {
     image_name: imageNameForPull.value,
   }
-  const { data } = await pullImage(params)
-  console.log(data)
+  await pullImage(params)
   imagePullLoading.value = false
   dialogVisible.value = false
   props.update && props.update()

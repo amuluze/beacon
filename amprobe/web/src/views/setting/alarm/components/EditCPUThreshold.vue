@@ -89,9 +89,7 @@ function confirmEditCPUThreshold() {
     duration: cpuThreshold.value.duration,
     threshold: Number(cpuThreshold.value.threshold),
   }
-  console.log(params)
-  updateAlarmThreshold(params).catch((err) => {
-    console.log(err)
+  updateAlarmThreshold(params).catch(() => {
   }).finally(() => {
     success('修改成功')
     drawerVisible.value = false

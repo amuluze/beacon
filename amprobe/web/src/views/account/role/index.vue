@@ -33,7 +33,6 @@ function generateTree(data: Resource[]) {
     label: '权限列表',
     children: child,
   }]
-  console.log('>>', tree)
   return tree
 }
 

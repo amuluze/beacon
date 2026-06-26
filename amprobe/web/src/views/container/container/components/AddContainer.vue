@@ -168,9 +168,8 @@ const createContainerLoading = ref(false)
 async function confirmCreateContainer(formEl: FormInstance | undefined) {
   if (!formEl)
     return
-  await formEl?.validate((valid, fields) => {
+  await formEl?.validate((valid) => {
     if (!valid) {
-      console.log('error submit!', fields)
       error('请检查表单')
     }
     else {
@@ -218,9 +217,7 @@ async function confirmCreateContainer(formEl: FormInstance | undefined) {
         labels: ls,
       }
       createContainer(params)
-        .then((res) => {
-          const data = res.data
-          console.log('container id: ', data.container_id)
+        .then(() => {
           createContainerLoading.value = false
           drawerVisible.value = false
           success('容器创建成功')

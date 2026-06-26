@@ -47,6 +47,5 @@ export async function useDownload(
         window.URL.revokeObjectURL(blobUrl)
     }
     catch (e) {
-        console.log(e)
     }
 }

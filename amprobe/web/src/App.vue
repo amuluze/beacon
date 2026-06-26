@@ -23,7 +23,6 @@ const locale = computed(() => {
 const { initTheme } = useTheme()
 
 onMounted(() => {
-  console.log('App.vue onMounted')
   const language = store.app.language ?? getBrowserLanguage()
   i18n.locale.value = language
   store.app.setLanguage(language)
