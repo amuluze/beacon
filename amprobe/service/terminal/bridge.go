@@ -15,17 +15,25 @@ import (
 	"github.com/gofiber/contrib/websocket"
 )
 
+// Connection abstracts the WebSocket methods the bridge needs, enabling tests
+// to inject a fake connection instead of relying on *websocket.Conn.
+type Connection interface {
+	ReadMessage() (messageType int, p []byte, err error)
+	WriteMessage(messageType int, data []byte) error
+	WriteControl(messageType int, data []byte, deadline time.Time) error
+}
+
 // bridge forwards data between a WebSocket connection and an Agent PTY stream.
 type bridge struct {
 	rpcClient rpc.Caller
-	conn      *websocket.Conn
+	conn      Connection
 	stream    <-chan []byte
 	recorder  *Recorder
 	sessionID string
 	agentID   string
 }
 
-func newBridge(rpcClient rpc.Caller, conn *websocket.Conn, stream <-chan []byte, recorder *Recorder, sessionID, agentID string) *bridge {
+func newBridge(rpcClient rpc.Caller, conn Connection, stream <-chan []byte, recorder *Recorder, sessionID, agentID string) *bridge {
 	return &bridge{
 		rpcClient: rpcClient,
 		conn:      conn,
@@ -38,7 +46,15 @@ func newBridge(rpcClient rpc.Caller, conn *websocket.Conn, stream <-chan []byte,
 
 func (b *bridge) run(ctx context.Context, rows, cols int) error {
 	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	defer func() {
+		cancel()
+		// Notify Agent to release PTY resources.
+		closeCtx, closeCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer closeCancel()
+		_ = b.rpcClient.Call(closeCtx, "TerminalClose", rpcSchema.TerminalCloseArgs{
+			SessionID: b.sessionID,
+		}, &rpcSchema.TerminalCloseReply{})
+	}()
 
 	var wg sync.WaitGroup
 	wg.Add(2)

@@ -145,7 +145,7 @@ func defaultTerminalSize(conn *websocket.Conn) (int, int) {
 	return r, c
 }
 
-func sendError(conn *websocket.Conn, msg string) error {
+func sendError(conn Connection, msg string) error {
 	m := NewErrorMessage(msg)
 	data, _ := json.Marshal(m)
 	return conn.WriteMessage(websocket.TextMessage, data)

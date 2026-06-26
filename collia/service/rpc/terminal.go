@@ -223,3 +223,16 @@ func (s *Service) TerminalInput(ctx context.Context, args rpcSchema.TerminalInpu
 	}
 	return nil
 }
+
+// TerminalClose closes an active PTY session.
+func (s *Service) TerminalClose(ctx context.Context, args rpcSchema.TerminalCloseArgs, reply *rpcSchema.TerminalCloseReply) error {
+	session, ok := getTerminalSession(args.SessionID)
+	if !ok {
+		return nil // idempotent: already closed
+	}
+	if err := session.Close(); err != nil {
+		return fmt.Errorf("close session failed: %w", err)
+	}
+	deleteTerminalSession(args.SessionID)
+	return nil
+}

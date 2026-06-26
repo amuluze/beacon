@@ -57,3 +57,26 @@ func TestTerminalSessionStream_ContextCancel(t *testing.T) {
 		t.Fatal("session should be removed after stream ends")
 	}
 }
+
+func TestTerminalInput_SessionNotFound(t *testing.T) {
+	svc := &Service{}
+	var reply rpcSchema.TerminalInputReply
+	err := svc.TerminalInput(context.Background(), rpcSchema.TerminalInputArgs{
+		SessionID: "missing-session",
+		Data:      []byte("hello"),
+	}, &reply)
+	if err == nil {
+		t.Fatal("expected error for missing session")
+	}
+}
+
+func TestTerminalClose_SessionNotFound(t *testing.T) {
+	svc := &Service{}
+	var reply rpcSchema.TerminalCloseReply
+	err := svc.TerminalClose(context.Background(), rpcSchema.TerminalCloseArgs{
+		SessionID: "missing-session",
+	}, &reply)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

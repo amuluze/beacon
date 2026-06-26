@@ -30,3 +30,11 @@ type ResizeTerminalReply struct{}
 
 // TerminalInputReply is the response from Agent after writing input.
 type TerminalInputReply struct{}
+
+// TerminalCloseArgs is sent from Server to Agent to close an active PTY session.
+type TerminalCloseArgs struct {
+	SessionID string `json:"session_id"`
+}
+
+// TerminalCloseReply is the response from Agent after closing a session.
+type TerminalCloseReply struct{}
