@@ -27,7 +27,7 @@ func CasbinMiddleware(enforcer *casbin.SyncedEnforcer, skippers ...SkipperFunc) 
 
 		slog.Debug("casbin middleware", "userID", userID, "path", path, "method", method)
 		if enforces, err := enforcer.Enforce(userID, path, method); err != nil {
-			return fiberx.Failure(c, errors.New400Error(err.Error()))
+			return fiberx.Failure(c, errors.New500Error(err.Error()))
 		} else if !enforces {
 			return fiberx.Forbidden(c)
 		}
