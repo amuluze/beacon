@@ -33,5 +33,6 @@ func (a *Models) GetAllModels() []interface{} {
 		new(MonitorContainer),
 		new(MonitorImage),
 		new(MonitorNetwork),
+		new(Session),
 	}
 }
