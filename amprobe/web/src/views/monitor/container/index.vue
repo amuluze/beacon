@@ -2,12 +2,14 @@
 import type { EChartsOption } from '@/components/Echarts/echarts.ts'
 import { containerCpuOption, containerMemOption } from '@/config/echarts.ts'
 import type { Usage } from '@/interface/host.ts'
+import type { AgentInfo } from '@/interface/agent.ts'
 import { dayjs } from 'element-plus'
 import { queryContainersUsage, queryAgentList } from '@/api/container'
 import { set } from 'lodash-es'
+import { createDefaultAgent } from '@/interface/agent.ts'
 
 // Agent switcher
-const agentList = ref<{ agent_id: string; hostname: string; version: string; os: string; arch: string; status: string }[]>([])
+const agentList = ref<AgentInfo[]>([])
 const currentAgent = ref('')
 async function loadAgents() {
   try {
@@ -17,7 +19,7 @@ async function loadAgents() {
       currentAgent.value = agentList.value[0].agent_id
     }
   } catch {
-    agentList.value = [{ agent_id: 'default', hostname: 'default' }]
+    agentList.value = [createDefaultAgent()]
     currentAgent.value = 'default'
   }
 }

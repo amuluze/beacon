@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { EChartsOption } from '@/components/Echarts/echarts.ts'
 import type { DiskIO, DiskUsage, NetIO, NetUsage } from '@/interface/host.ts'
+import type { AgentInfo } from '@/interface/agent.ts'
 
 import { queryCPUInfo, queryCPUUsage, queryDiskInfo, queryDiskUsage, queryMemInfo, queryMemUsage, queryNetworkUsage, queryAgentList } from '@/api/host'
 import { cpuTrendingOption, memTrendingOption, diskTrendingOption, netTrendingOption } from '@/config/echarts.ts'
 import { convertBytesToReadable } from '@/utils/convert.ts'
+import { createDefaultAgent } from '@/interface/agent.ts'
 import { dayjs } from 'element-plus'
 import { set } from 'lodash-es'
 import { useI18n } from 'vue-i18n'
@@ -13,7 +15,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 // Agent switcher
-const agentList = ref<{ agent_id: string; hostname: string; version: string; os: string; arch: string; status: string }[]>([])
+const agentList = ref<AgentInfo[]>([])
 const currentAgent = ref('')
 function agentParams(): Record<string, string> {
   return currentAgent.value ? { agent_id: currentAgent.value } : {}
@@ -26,7 +28,7 @@ async function loadAgents() {
       currentAgent.value = agentList.value[0].agent_id
     }
   } catch {
-    agentList.value = [{ agent_id: 'default', hostname: 'default' }]
+    agentList.value = [createDefaultAgent()]
     currentAgent.value = 'default'
   }
 }
