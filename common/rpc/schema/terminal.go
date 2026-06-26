@@ -6,15 +6,17 @@ package schema
 
 // TerminalSessionArgs is sent from Server to Agent to start a PTY shell session.
 type TerminalSessionArgs struct {
-	Shell string `json:"shell"`
-	Rows  int    `json:"rows"`
-	Cols  int    `json:"cols"`
+	SessionID string `json:"session_id"`
+	Shell     string `json:"shell"`
+	Rows      int    `json:"rows"`
+	Cols      int    `json:"cols"`
 }
 
 // ResizeTerminalArgs is sent from Server to Agent to resize an active PTY.
 type ResizeTerminalArgs struct {
-	Rows int `json:"rows"`
-	Cols int `json:"cols"`
+	SessionID string `json:"session_id"`
+	Rows      int    `json:"rows"`
+	Cols      int    `json:"cols"`
 }
 
 // ResizeTerminalReply is the response from Agent after resizing a PTY.
