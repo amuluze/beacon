@@ -12,7 +12,7 @@ import (
 
 // Injectors from wire.go:
 
-func BuildInjector(configFile string, prefix Prefix) (*Injector, func(), error) {
+func BuildInjector(configFile string, prefix Prefix, version string) (*Injector, func(), error) {
 	config, err := NewConfig(configFile, prefix)
 	if err != nil {
 		return nil, nil, err
@@ -22,8 +22,9 @@ func BuildInjector(configFile string, prefix Prefix) (*Injector, func(), error) 
 	if err != nil {
 		return nil, nil, err
 	}
+	v := NewVersion(version)
 	timedTask := NewTimedTask(config)
-	server, err := NewRPCServer(config, db)
+	server, err := NewRPCServer(config, db, v)
 	if err != nil {
 		return nil, nil, err
 	}

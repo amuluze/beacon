@@ -17,6 +17,7 @@ import (
 type Service struct {
 	configFile string
 	prefix     service.Prefix
+	version    string
 	daemon     daemon.Daemon
 }
 
@@ -29,7 +30,7 @@ func (s *Service) Start() {
 func (s *Service) Run() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
-	clearFunc, err := service.Run(s.configFile, s.prefix)
+	clearFunc, err := service.Run(s.configFile, s.prefix, s.version)
 	if err != nil {
 		return
 	}

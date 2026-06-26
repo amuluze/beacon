@@ -25,6 +25,7 @@ var dependencies = []string{""}
 var (
 	configFile string
 	prefix     string
+	Version    string // set via -ldflags at compile time
 )
 
 func usage() {
@@ -57,8 +58,8 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	service := &Service{daemon: src, configFile: configFile, prefix: service.Prefix(prefix)}
-	status, err := service.manager(args)
+	svc := &Service{daemon: src, configFile: configFile, prefix: service.Prefix(prefix), version: Version}
+	status, err := svc.manager(args)
 	if err != nil {
 		fmt.Println(status, "\nError: ", err)
 		os.Exit(1)

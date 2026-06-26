@@ -69,14 +69,17 @@ func NewAgentService(repo *Repository, tun *tunnelpkg.ServerTunnel) *Service {
 }
 
 // OnAgentConnect implements tunnel.AgentLifecycle.
-func (s *Service) OnAgentConnect(agentID string) {
+func (s *Service) OnAgentConnect(info tunnelpkg.AgentInfo) {
 	agent := &model.Agent{
-		AgentID:  agentID,
+		AgentID:  info.AgentID,
+		Version:  info.Version,
+		OS:       info.OS,
+		Arch:     info.Arch,
 		Status:   "online",
 		LastSeen: time.Now(),
 	}
 	if err := s.repo.Upsert(agent); err != nil {
-		slog.Error("agent upsert failed", "agent_id", agentID, "err", err)
+		slog.Error("agent upsert failed", "agent_id", info.AgentID, "err", err)
 	}
 }
 

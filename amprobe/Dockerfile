@@ -1,5 +1,6 @@
 FROM --platform=$BUILDPLATFORM golang:1.21 AS amprobe-builder
 ARG TARGETARCH
+ARG VERSION=dev
 
 WORKDIR /src
 COPY go.work ./
@@ -7,9 +8,10 @@ COPY common ./common
 COPY amprobe ./amprobe
 COPY collia ./collia
 WORKDIR /src/amprobe
-RUN GOARCH=$TARGETARCH go build -o /out/amprobe ./cmd/amprobe
+RUN GOARCH=$TARGETARCH go build -ldflags "-X main.Version=${VERSION}" -o /out/amprobe ./cmd/amprobe
 
 FROM --platform=$BUILDPLATFORM golang:1.21 AS collia-builder
+ARG VERSION=dev
 
 # collia 要下发到各种架构的 agent 机器，与 amprobe 自身架构无关，
 # 因此这里固定同时构建 amd64 和 arm64 两个裸二进制。
@@ -19,8 +21,8 @@ COPY common ./common
 COPY amprobe ./amprobe
 COPY collia ./collia
 WORKDIR /src/collia
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/collia-amd64 ./cmd/collia && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /out/collia-arm64 ./cmd/collia
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=${VERSION}" -o /out/collia-amd64 ./cmd/collia && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags "-X main.Version=${VERSION}" -o /out/collia-arm64 ./cmd/collia
 
 FROM ubuntu:22.04
 WORKDIR /app

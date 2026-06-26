@@ -5,6 +5,8 @@ package tunnel
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net"
 	"strconv"
@@ -32,9 +34,17 @@ func WithJoinToken(token string) ServerOption {
 	}
 }
 
+// AgentInfo carries the agent identity and metadata from the registration frame.
+type AgentInfo struct {
+	AgentID string
+	Version string
+	OS      string
+	Arch    string
+}
+
 // AgentLifecycle is called when an agent connects or disconnects.
 type AgentLifecycle interface {
-	OnAgentConnect(agentID string)
+	OnAgentConnect(info AgentInfo)
 	OnAgentDisconnect(agentID string)
 	OnAgentHeartbeat(agentID string)
 }
@@ -107,6 +117,16 @@ func (s *ServerTunnel) Stop() {
 	}
 }
 
+// parseRegistrationPayload parses the registration frame payload as JSON.
+// Break change: payload must be a valid RegistrationPayload JSON.
+func parseRegistrationPayload(payload []byte) (RegistrationPayload, error) {
+	var reg RegistrationPayload
+	if err := json.Unmarshal(payload, &reg); err != nil {
+		return reg, fmt.Errorf("invalid registration payload: %w", err)
+	}
+	return reg, nil
+}
+
 // Tunnel implements the ReverseTunnelServer interface.
 func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) error {
 	// Wait for the first frame — must be REGISTER
@@ -121,11 +141,20 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 	}
 
 	agentID := frame.Method
-	token := string(frame.Payload)
+	reg, err := parseRegistrationPayload(frame.Payload)
+	if err != nil {
+		slog.Warn("server tunnel: registration payload parse failed", "agent_id", agentID, "err", err)
+		rejFrame := &Frame{
+			FrameType: FrameType_FRAME_REGISTER_REJECTED,
+			Error:     err.Error(),
+		}
+		_ = stream.Send(rejFrame)
+		return nil
+	}
 
 	// Validate join token if server has one configured.
 	// Empty joinToken on server means skip validation (backward compatible).
-	if s.joinToken != "" && token != s.joinToken {
+	if s.joinToken != "" && reg.JoinToken != s.joinToken {
 		slog.Warn("server tunnel: registration rejected", "agent_id", agentID)
 		rejFrame := &Frame{
 			FrameType: FrameType_FRAME_REGISTER_REJECTED,
@@ -135,7 +164,13 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 		return nil
 	}
 
-	slog.Info("server tunnel: agent registered", "agent_id", agentID)
+	info := AgentInfo{
+		AgentID: agentID,
+		Version: reg.Version,
+		OS:      reg.OS,
+		Arch:    reg.Arch,
+	}
+	slog.Info("server tunnel: agent registered", "agent_id", agentID, "version", info.Version, "os", info.OS, "arch", info.Arch)
 
 	as := &agentStream{
 		agentID: agentID,
@@ -153,7 +188,7 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 	}()
 
 	if s.lifecycle != nil {
-		s.lifecycle.OnAgentConnect(agentID)
+		s.lifecycle.OnAgentConnect(info)
 	}
 
 	for {

@@ -13,10 +13,22 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+// Build metadata injected via -ldflags at compile time.
+var (
+	Version    string
+	BuildStamp string
+	GitHash    string
+	GitBranch  string
+)
+
 func main() {
 	ctx := context.TODO()
 	app := cli.NewApp()
-	app.Version = "0.0.1"
+	if Version != "" {
+		app.Version = Version
+	} else {
+		app.Version = "dev"
+	}
 	app.Usage = "resource monitor"
 	app.Commands = []*cli.Command{
 		monitorCmd(ctx),
