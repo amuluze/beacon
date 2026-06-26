@@ -5,6 +5,8 @@
 package service
 
 import (
+	"strings"
+
 	hostservice "amprobe/service/host/service"
 
 	"github.com/spf13/viper"
@@ -29,6 +31,17 @@ func NewConfig(configFile string) (*Config, error) {
 	config := &Config{}
 
 	viper.SetConfigFile(configFile)
+
+	// 允许通过环境变量覆盖配置（12-factor）。
+	// 敏感字段显式 BindEnv，确保 Unmarshal 能拾取（viper AutomaticEnv 对 Unmarshal 的已知坑）。
+	// 环境变量命名：前缀 AMPROBE_ + 结构体路径（. 替换为 _），如 AMPROBE_AUTH_SIGNINGKEY。
+	viper.SetEnvPrefix("AMPROBE")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.AutomaticEnv()
+	viper.BindEnv("Auth.SigningKey")
+	viper.BindEnv("DB.Password")
+	viper.BindEnv("Control.JoinToken")
+	viper.BindEnv("AgentInstall.Token")
 
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, err
