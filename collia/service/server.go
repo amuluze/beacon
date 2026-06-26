@@ -8,8 +8,8 @@ import (
 	"log/slog"
 )
 
-func Run(configFile string, prefix Prefix) (func(), error) {
-	injector, clearFunc, err := BuildInjector(configFile, prefix)
+func Run(configFile string, prefix Prefix, version string) (func(), error) {
+	injector, clearFunc, err := BuildInjector(configFile, prefix, version)
 	if err != nil {
 		slog.Error("build injector failed:", "err", err)
 		return nil, err

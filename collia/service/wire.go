@@ -9,12 +9,13 @@ import (
 	"github.com/google/wire"
 )
 
-func BuildInjector(configFile string, prefix Prefix) (*Injector, func(), error) {
+func BuildInjector(configFile string, prefix Prefix, version string) (*Injector, func(), error) {
 	wire.Build(
 		NewConfig,
 		NewLogger,
 		NewDB,
 		model.Set,
+		NewVersion,
 		NewRPCServer,
 		NewTimedTask,
 		InjectorSet,

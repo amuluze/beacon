@@ -17,6 +17,16 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
+// RegistrationPayload is the JSON payload sent in the FRAME_REGISTER frame.
+// It carries agent identity, version metadata, and the join token.
+type RegistrationPayload struct {
+	AgentID   string `json:"agent_id"`
+	Version   string `json:"version"`
+	OS        string `json:"os"`
+	Arch      string `json:"arch"`
+	JoinToken string `json:"join_token"`
+}
+
 // AgentOption configures an AgentTunnel.
 type AgentOption func(*AgentTunnel)
 
@@ -38,6 +48,9 @@ type AgentTunnel struct {
 	serverAddr     string
 	agentID        string
 	joinToken      string
+	version        string
+	osName         string
+	arch           string
 	conn           *grpc.ClientConn
 	client         ReverseTunnelClient
 	stream         grpc.BidiStreamingClient[Frame, Frame]
@@ -68,6 +81,13 @@ func NewAgentTunnel(serverAddr string, agentID string, opts ...AgentOption) *Age
 // SetJoinToken sets the join token for agent registration.
 func (a *AgentTunnel) SetJoinToken(token string) {
 	a.joinToken = token
+}
+
+// SetVersionInfo sets the agent version, OS, and architecture for registration.
+func (a *AgentTunnel) SetVersionInfo(version, osName, arch string) {
+	a.version = version
+	a.osName = osName
+	a.arch = arch
 }
 
 // SetHandler registers the RPC handler for incoming requests.
@@ -136,11 +156,19 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 		a.stream = stream
 		slog.Info("agent tunnel: connected to server", "tls", a.tlsCredentials != nil)
 
-		// Send registration frame
+		// Send registration frame with agent metadata
+		regPayload := RegistrationPayload{
+			AgentID:   a.agentID,
+			Version:   a.version,
+			OS:        a.osName,
+			Arch:      a.arch,
+			JoinToken: a.joinToken,
+		}
+		payloadBytes, _ := json.Marshal(regPayload)
 		regFrame := &Frame{
 			FrameType: FrameType_FRAME_REGISTER,
 			Method:    a.agentID,
-			Payload:   []byte(a.joinToken),
+			Payload:   payloadBytes,
 		}
 		if err := stream.Send(regFrame); err != nil {
 			slog.Error("agent tunnel: send registration failed", "err", err)

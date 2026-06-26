@@ -3,6 +3,8 @@ version: '3'
 vars:
   TARGET: collia
   SERVER: ./cmd/{{.TARGET}}
+  VERSION:
+    sh: cat VERSION
 
 tasks:
   wire:
@@ -17,7 +19,7 @@ tasks:
       GOOS: linux
       GOARCH: amd64
     cmds:
-      - go build -o {{.TARGET}} {{.SERVER}}
+      - go build -ldflags "-X main.Version={{.VERSION}}" -o {{.TARGET}} {{.SERVER}}
 
   arm64:
     desc: Build linux/arm64 collia binary
@@ -28,4 +30,4 @@ tasks:
       GOOS: linux
       GOARCH: arm64
     cmds:
-      - go build -o {{.TARGET}} {{.SERVER}}
+      - go build -ldflags "-X main.Version={{.VERSION}}" -o {{.TARGET}} {{.SERVER}}

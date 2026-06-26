@@ -7,6 +7,7 @@ package service
 import (
 	"context"
 	"log/slog"
+	"runtime"
 
 	"common/database"
 	rpctunnel "common/rpc/tunnel"
@@ -18,13 +19,24 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
+// Version carries the agent build version through the Wire dependency graph.
+type Version string
+
+// NewVersion creates a Version provider for Wire injection.
+func NewVersion(v string) Version {
+	if v == "" {
+		return Version("dev")
+	}
+	return Version(v)
+}
+
 // Server manages the reverse tunnel connection to the Server.
 type Server struct {
 	tunnel *rpctunnel.AgentTunnel
 }
 
 // NewRPCServer creates the tunnel connection to the Server.
-func NewRPCServer(config *Config, db *database.DB) (*Server, error) {
+func NewRPCServer(config *Config, db *database.DB, version Version) (*Server, error) {
 	manager, err := docker.NewManager()
 	if err != nil {
 		return nil, err
@@ -45,8 +57,9 @@ func NewRPCServer(config *Config, db *database.DB) (*Server, error) {
 		tunnel = rpctunnel.NewAgentTunnel(config.Control.Server, agentID, rpctunnel.WithAgentTLS(credentials.NewTLS(tlsCfg)))
 	}
 	tunnel.SetJoinToken(config.Control.JoinToken)
+	tunnel.SetVersionInfo(string(version), runtime.GOOS, runtime.GOARCH)
 	tunnel.SetHandler(buildRPCDispatcher(s))
-	slog.Info("reverse tunnel configured", "server", config.Control.Server, "agent_id", agentID, "tls", config.Control.TLS.Enable)
+	slog.Info("reverse tunnel configured", "server", config.Control.Server, "agent_id", agentID, "version", string(version), "os", runtime.GOOS, "arch", runtime.GOARCH, "tls", config.Control.TLS.Enable)
 
 	return &Server{
 		tunnel: tunnel,
