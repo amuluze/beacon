@@ -4,13 +4,25 @@ package tunnel
 
 import (
 	"context"
+	"crypto/tls"
 	"log/slog"
 	"net"
+	"strconv"
 	"sync"
 	"sync/atomic"
 
 	"google.golang.org/grpc"
 )
+
+// ServerOption configures a ServerTunnel.
+type ServerOption func(*ServerTunnel)
+
+// WithServerTLS enables TLS on the tunnel listener.
+func WithServerTLS(cfg *tls.Config) ServerOption {
+	return func(s *ServerTunnel) {
+		s.tlsConfig = cfg
+	}
+}
 
 // AgentLifecycle is called when an agent connects or disconnects.
 type AgentLifecycle interface {
@@ -35,6 +47,7 @@ type ServerTunnel struct {
 	UnimplementedReverseTunnelServer
 	grpcServer *grpc.Server
 	listener   net.Listener
+	tlsConfig  *tls.Config
 	agents     sync.Map // map[string]*agentStream
 	pending    sync.Map // map[string]*pendingCall   (call_id -> pendingCall)
 	streams    sync.Map // map[string]*pendingStream (stream_id -> pendingStream)
@@ -48,8 +61,12 @@ type agentStream struct {
 }
 
 // NewServerTunnel creates a new Server-side tunnel manager.
-func NewServerTunnel() *ServerTunnel {
-	return &ServerTunnel{}
+func NewServerTunnel(opts ...ServerOption) *ServerTunnel {
+	s := &ServerTunnel{}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
 }
 
 // SetAgentLifecycle registers lifecycle callbacks for agent connect/disconnect.
@@ -63,11 +80,14 @@ func (s *ServerTunnel) Start(addr string) error {
 	if err != nil {
 		return err
 	}
+	if s.tlsConfig != nil {
+		lis = tls.NewListener(lis, s.tlsConfig)
+	}
 	s.listener = lis
 
 	s.grpcServer = grpc.NewServer()
 	RegisterReverseTunnelServer(s.grpcServer, s)
-	slog.Info("server tunnel: listening", "addr", addr)
+	slog.Info("server tunnel: listening", "addr", addr, "tls", s.tlsConfig != nil)
 	return s.grpcServer.Serve(lis)
 }
 
@@ -260,7 +280,7 @@ func (s *ServerTunnel) AgentCount() int {
 }
 
 func (s *ServerTunnel) nextID() string {
-	return "rpc-" + itoa(int(s.callID.Add(1)))
+	return "rpc-" + strconv.FormatUint(s.callID.Add(1), 10)
 }
 
 // AgentOfflineError is returned when the target agent is not connected.
@@ -280,18 +300,4 @@ type RPCError struct {
 
 func (e *RPCError) Error() string {
 	return "rpc " + e.Method + " failed: " + e.Err
-}
-
-func itoa(n int) string {
-	if n == 0 {
-		return "0"
-	}
-	var buf [20]byte
-	i := len(buf)
-	for n > 0 {
-		i--
-		buf[i] = byte('0' + n%10)
-		n /= 10
-	}
-	return string(buf[i:])
 }

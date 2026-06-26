@@ -10,6 +10,7 @@ import (
 	"amprobe/pkg/rpc"
 	"amprobe/service/agent"
 	tunnelpkg "common/rpc/tunnel"
+	transporttls "common/transport/tlsconfig"
 )
 
 // serverTunnelHolder holds the tunnel instance so other components can wire into it.
@@ -28,7 +29,16 @@ func NewRPCClient(config *Config) (rpc.Caller, error) {
 	}
 	slog.Info("starting reverse tunnel server", "addr", addr)
 
-	tun := tunnelpkg.NewServerTunnel()
+	var opts []tunnelpkg.ServerOption
+	if config.Control.TLSEnable {
+		cfg, err := transporttls.ServerConfig(config.Control.TLSCertDir, nil)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, tunnelpkg.WithServerTLS(cfg))
+	}
+
+	tun := tunnelpkg.NewServerTunnel(opts...)
 	globalTunnel.tun = tun
 
 	go func() {

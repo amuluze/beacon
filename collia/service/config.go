@@ -56,6 +56,7 @@ type Control struct {
 	Server    string `yaml:"server"`
 	AgentID   string `yaml:"agent_id"`
 	JoinToken string `yaml:"join_token"`
+	TLS       TLS    `yaml:"tls"`
 }
 
 type TLS struct {

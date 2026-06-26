@@ -12,9 +12,20 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 )
+
+// AgentOption configures an AgentTunnel.
+type AgentOption func(*AgentTunnel)
+
+// WithAgentTLS enables TLS credentials for the agent connection.
+func WithAgentTLS(creds credentials.TransportCredentials) AgentOption {
+	return func(a *AgentTunnel) {
+		a.tlsCredentials = creds
+	}
+}
 
 // Handler is the callback type for processing incoming RPC calls.
 // The handler receives JSON-encoded args and returns JSON-encoded reply.
@@ -24,12 +35,13 @@ type Handler func(ctx context.Context, method string, payload []byte, streamSend
 // AgentTunnel is the Agent-side tunnel client.
 // It connects to the Server and waits for incoming RPC frames.
 type AgentTunnel struct {
-	serverAddr  string
-	agentID     string
-	joinToken   string
-	conn        *grpc.ClientConn
-	client      ReverseTunnelClient
-	stream      grpc.BidiStreamingClient[Frame, Frame]
+	serverAddr     string
+	agentID        string
+	joinToken      string
+	conn           *grpc.ClientConn
+	client         ReverseTunnelClient
+	stream         grpc.BidiStreamingClient[Frame, Frame]
+	tlsCredentials credentials.TransportCredentials
 
 	mu          sync.Mutex
 	handler     Handler
@@ -40,13 +52,17 @@ type AgentTunnel struct {
 
 // NewAgentTunnel creates a new Agent-side tunnel connection.
 // The agent will connect to serverAddr and identify as agentID.
-func NewAgentTunnel(serverAddr string, agentID string) *AgentTunnel {
-	return &AgentTunnel{
+func NewAgentTunnel(serverAddr string, agentID string, opts ...AgentOption) *AgentTunnel {
+	a := &AgentTunnel{
 		serverAddr:  serverAddr,
 		agentID:     agentID,
 		reconnect:   true,
 		heartbeatCh: make(chan struct{}, 1),
 	}
+	for _, opt := range opts {
+		opt(a)
+	}
+	return a
 }
 
 // SetJoinToken sets the join token for agent registration.
@@ -66,12 +82,20 @@ func (a *AgentTunnel) SetHandler(h Handler) {
 func (a *AgentTunnel) Start(ctx context.Context) error {
 	for {
 		if a.conn != nil {
-			a.conn.Close()
+			if err := a.conn.Close(); err != nil {
+				slog.Debug("agent tunnel: close previous connection", "err", err)
+			}
 		}
 
 		slog.Info("agent tunnel: connecting to server", "addr", a.serverAddr, "agent_id", a.agentID)
+
+		creds := a.tlsCredentials
+		if creds == nil {
+			creds = insecure.NewCredentials()
+		}
+
 		conn, err := grpc.NewClient(a.serverAddr,
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithTransportCredentials(creds),
 			grpc.WithKeepaliveParams(keepalive.ClientParameters{
 				Time:                30 * time.Second,
 				Timeout:             10 * time.Second,
@@ -96,7 +120,9 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 		stream, err := a.client.Tunnel(ctx)
 		if err != nil {
 			slog.Error("agent tunnel: create stream failed", "err", err)
-			conn.Close()
+			if closeErr := conn.Close(); closeErr != nil {
+				slog.Debug("agent tunnel: close connection failed", "err", closeErr)
+			}
 			if !a.reconnect {
 				return err
 			}
@@ -108,7 +134,7 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 			}
 		}
 		a.stream = stream
-		slog.Info("agent tunnel: connected to server")
+		slog.Info("agent tunnel: connected to server", "tls", a.tlsCredentials != nil)
 
 		// Send registration frame
 		regFrame := &Frame{
@@ -118,7 +144,9 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 		}
 		if err := stream.Send(regFrame); err != nil {
 			slog.Error("agent tunnel: send registration failed", "err", err)
-			conn.Close()
+			if closeErr := conn.Close(); closeErr != nil {
+				slog.Debug("agent tunnel: close connection failed", "err", closeErr)
+			}
 			continue
 		}
 		slog.Info("agent tunnel: registered as", "agent_id", a.agentID)
