@@ -13,6 +13,7 @@ import (
 )
 
 type Config struct {
+	App          App
 	Fiber        Fiber
 	Control      Control
 	Gorm         Gorm
@@ -24,6 +25,8 @@ type Config struct {
 	Retention    Retention
 	AgentInstall AgentInstall
 	Session      Session
+	CORS         CORS
+	RateLimit    RateLimit
 }
 
 // NewConfig Load config file (toml/json/yaml)
@@ -38,6 +41,7 @@ func NewConfig(configFile string) (*Config, error) {
 	viper.SetEnvPrefix("AMPROBE")
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
+	viper.BindEnv("App.Env")
 	viper.BindEnv("Auth.SigningKey")
 	viper.BindEnv("DB.Password")
 	viper.BindEnv("Control.JoinToken")
@@ -60,6 +64,28 @@ type Fiber struct {
 	SeverHeader     string
 	AppName         string
 	Prefork         bool
+}
+
+// App 承载进程级运行配置。
+// Env 标识运行模式：development（默认，宽松）或 production（严格，敏感字段缺失即拒绝启动）。
+type App struct {
+	Env string
+}
+
+// CORS 控制跨域资源共享策略。
+// AllowOrigins 为空时回退到本地开发域；生产部署应显式配置白名单。
+type CORS struct {
+	Enable       bool
+	AllowOrigins []string
+}
+
+// RateLimit 控制分层速率限制阈值（按 IP，每分钟）。
+// GlobalMax 是全路由兜底上限；LoginMax 针对 login/token_update 等敏感端点防爆破。
+// Max <= 0 时由中间件回退到内置默认值。
+type RateLimit struct {
+	Enable    bool
+	GlobalMax int
+	LoginMax  int
 }
 
 type Control struct {

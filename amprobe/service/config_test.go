@@ -59,17 +59,24 @@ JoinToken = "from-file"
 	}
 }
 
-// TestResolveSigningKey_EmptyGenerates 验证空密钥生成非空临时密钥。
+// TestResolveSigningKey_EmptyGenerates 验证非生产模式下空密钥生成非空临时密钥。
 func TestResolveSigningKey_EmptyGenerates(t *testing.T) {
-	k := resolveSigningKey("")
+	k, err := resolveSigningKey("", "development")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	if k == "" || k == "amprobe" {
 		t.Fatalf("expected generated non-weak key, got %q", k)
 	}
 }
 
-// TestResolveSigningKey_WeakDefaultPreserved 验证弱默认值保留（仅告警，不破坏现有部署）。
+// TestResolveSigningKey_WeakDefaultPreserved 验证非生产模式下弱默认值保留（仅告警，不破坏现有部署）。
 func TestResolveSigningKey_WeakDefaultPreserved(t *testing.T) {
-	if got := resolveSigningKey("amprobe"); got != "amprobe" {
+	got, err := resolveSigningKey("amprobe", "development")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != "amprobe" {
 		t.Fatalf("expected weak default preserved, got %q", got)
 	}
 }
@@ -77,7 +84,36 @@ func TestResolveSigningKey_WeakDefaultPreserved(t *testing.T) {
 // TestResolveSigningKey_CustomPreserved 验证用户自定义强密钥原样保留。
 func TestResolveSigningKey_CustomPreserved(t *testing.T) {
 	const custom = "a-very-long-random-production-secret-12345"
-	if got := resolveSigningKey(custom); got != custom {
+	got, err := resolveSigningKey(custom, "development")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != custom {
 		t.Fatalf("expected custom key preserved, got %q", got)
+	}
+}
+
+// TestResolveSigningKey_ProductionRejectsInsecure 验证生产模式下空/弱/短密钥一律拒绝。
+func TestResolveSigningKey_ProductionRejectsInsecure(t *testing.T) {
+	cases := []struct {
+		name    string
+		key     string
+		wantErr bool
+	}{
+		{"empty", "", true},
+		{"weak default", "amprobe", true},
+		{"too short", "short", true},
+		{"strong", "a-very-long-random-production-secret-12345", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := resolveSigningKey(tc.key, "production")
+			if tc.wantErr && err == nil {
+				t.Fatalf("expected error for %q in production, got nil", tc.key)
+			}
+			if !tc.wantErr && err != nil {
+				t.Fatalf("unexpected error for strong key in production: %v", err)
+			}
+		})
 	}
 }

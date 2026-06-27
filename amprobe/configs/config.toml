@@ -6,6 +6,11 @@ SeverHeader = "probe"
 AppName = "probe"
 Prefork = false
 
+[App]
+# 运行模式：development（默认，宽松）或 production（严格：JWT 弱密钥/空密钥将拒绝启动）。
+# 可用环境变量 AMPROBE_APP_ENV 覆盖。
+Env = "development"
+
 [Control]
 Enable = true          # 启用反向隧道（替代 rpcx）
 Address = ":17000"     # gRPC 控制端口
@@ -38,7 +43,7 @@ MaxAge = 7                     # 最多保留 7 天的日志
 [Auth]
 Enable = true           # 是否启用
 SigningMethod = "HS512" # 签名方式(支持：HS512/HS384/HS512)
-SigningKey = "amprobe"  # 签名key
+SigningKey = "amprobe"  # 签名key（生产模式 Env=production 下，弱默认/空/短于32字节将拒绝启动；可用环境变量 AMPROBE_AUTH_SIGNINGKEY 覆盖）
 Expired = 7200          # 过期时间（单位秒）
 RefreshExpired = 86400  # 刷新过期时间（单位秒）
 Prefix = "auth_"        # key 前缀
@@ -68,3 +73,15 @@ CertDir = "/etc/collia/certs"
 [Session]
 Enabled = true
 Directory = "/app/sessions"
+
+[CORS]
+# 跨域资源共享。生产部署应显式配置 AllowOrigins 白名单。
+# 留空时回退到本地开发域（localhost:5173/3000），仅适用于开发模式。
+Enable = true
+AllowOrigins = []
+
+[RateLimit]
+# 分层速率限制（按 IP，每分钟）。Enable=false 可整体关闭。
+Enable = true
+GlobalMax = 300  # /api/ 全路由每 IP 每分钟兜底上限
+LoginMax = 5     # login/token_update 每 IP 每分钟上限（防凭据爆破）
