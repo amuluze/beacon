@@ -94,6 +94,16 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 	app.Get("/ws/terminal", websocket.New(a.termHandler.Handler))
 	app.Get("/ws", websocket.New(a.termHandler.Handler))
 
+	// 登录类敏感端点严格限流（防凭据爆破），独立于全局兜底限流。
+	// 仅对 login/token_update 计数，其余路径直接放行。
+	if a.config.RateLimit.Enable {
+		app.Use(middleware.LoginRateLimitMiddleware(
+			a.config.RateLimit.LoginMax,
+			"/api/v1/auth/login",
+			"/api/v1/auth/token_update",
+		))
+	}
+
 	if a.config.Auth.Enable {
 		app.Use(middleware.UserAuthMiddleware(
 			a.auth,
