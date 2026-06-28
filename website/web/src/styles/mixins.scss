@@ -1,0 +1,145 @@
+@use 'sass:map';
+
+// 科技感色彩系统
+$colors: (
+    // 主色调 - 科技蓝
+    'primary': #0066ff,
+    'primary-light': #3385ff,
+    'primary-dark': #0052cc,
+
+    // 辅助色 - 渐变科技感
+    'secondary': #00d4ff,
+    'accent': #7c3aed,
+
+    // 中性色
+    'dark': #0a0e27,
+    'dark-light': #1a1f3a,
+    'gray': #64748b,
+    'light': #f8fafc,
+
+    // 功能色
+    'success': #10b981,
+    'warning': #f59e0b,
+    'error': #ef4444,
+);
+
+// 简化的背景色系统
+$bg-colors: (
+    // 主背景 - 现代浅色系统
+    'primary': #f8fafc,
+    'secondary': #f1f5f9,
+
+    // 深色背景（保留原有选项）
+    'primary-dark': #0a0e27,
+    'secondary-dark': #1a1f3a,
+
+    // 卡片背景 - 适配浅色主题
+    'card': rgba(255, 255, 255, 0.8),
+    'card-hover': rgba(255, 255, 255, 0.95),
+    'card-dark': rgba(255, 255, 255, 0.1),
+    'card-hover-dark': rgba(255, 255, 255, 0.15),
+
+    // 按钮背景
+    'btn-primary': #0066ff,
+    'btn-secondary': #1a56db,
+    'btn-accent': #7c3aed,
+
+    // 特殊背景
+    'glass': rgba(255, 255, 255, 0.6),
+    'glass-dark': rgba(255, 255, 255, 0.1),
+    'overlay': rgba(15, 43, 94, 0.8),
+);
+
+// 简化的渐变背景系统
+$gradients: (
+    // 主渐变 - 页面背景（优化为现代浅色渐变）
+    'primary': linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f1f5f9 100%),
+
+    // 深色主题渐变（保留原有深色背景选项）
+    'primary-dark': linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%),
+
+    // 按钮渐变
+    'btn-primary': linear-gradient(135deg, #0066ff, #3385ff),
+    'btn-secondary': linear-gradient(135deg, #1a56db, #3b82f6),
+    'btn-accent': linear-gradient(135deg, #7c3aed, #00d4ff),
+
+    // 卡片渐变（适配浅色主题）
+    'card': linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(248, 250, 252, 0.6)),
+    'card-dark': linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05)),
+
+    // 特效渐变
+    'glow': linear-gradient(90deg, transparent, rgba(0, 102, 255, 0.3), transparent),
+
+    // 新增浅色主题专用渐变
+    'light-accent': linear-gradient(135deg, rgba(0, 102, 255, 0.05), rgba(124, 58, 237, 0.03)),
+    'light-subtle': linear-gradient(135deg, #ffffff 0%, #f8fafc 100%),
+);
+
+// 玻璃态效果 mixin - 支持浅色和深色主题
+@mixin glass-effect($opacity: 0.6, $theme: 'light') {
+    @if $theme == 'light' {
+        background: rgba(255, 255, 255, $opacity);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(0, 102, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    } @else {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+}
+
+// 发光效果 mixin
+@mixin glow-effect($color: #0066ff, $intensity: 0.3) {
+    box-shadow: 0 0 20px rgba($color, $intensity);
+
+    &:hover {
+        box-shadow: 0 0 30px rgba($color, $intensity + 0.2);
+    }
+}
+
+// 背景色快捷 mixin
+@mixin bg($type: 'primary') {
+    @if map.has-key($bg-colors, $type) {
+        background: map.get($bg-colors, $type);
+    } @else {
+        background: $type;
+    }
+}
+
+// 渐变背景快捷 mixin
+@mixin bg-gradient($type: 'primary') {
+    @if map.has-key($gradients, $type) {
+        background: map.get($gradients, $type);
+    } @else {
+        background: $type;
+    }
+}
+
+// 响应式断点
+$breakpoints: (
+    'xs': 0px,
+    'sm': 768px,
+    'md': 992px,
+    'lg': 1200px,
+    'xl': 1920px,
+);
+
+// 响应式 mixin
+@mixin respond-to($breakpoint) {
+    @if map.has-key($breakpoints, $breakpoint) {
+        @media (min-width: map.get($breakpoints, $breakpoint)) {
+            @content;
+        }
+    }
+}
+
+// 移动端优先的响应式设计
+@mixin mobile-first($size) {
+    @media (max-width: $size) {
+        @content;
+    }
+}
+
+// BEM mixin 已在 bem.scss 中定义，此处不再重复定义

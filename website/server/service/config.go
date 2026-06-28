@@ -1,24 +1,16 @@
 // Package service
-// Date: 2024/3/6 11:08
+// Date: 2025/02/12 15:03:22
 // Author: Amu
 // Description:
 package service
 
-import (
-	"github.com/spf13/viper"
-)
+import "github.com/spf13/viper"
 
 type Config struct {
-	Fiber         Fiber
-	Control       Control
-	Gorm          Gorm
-	DB            DB
-	Log           Log
-	Auth          Auth
-	Casbin        Casbin
-	Task          Task
-	AgentInstall  AgentInstall
-	InstallReport InstallReport
+	Fiber Fiber
+	Gorm  Gorm
+	DB    DB
+	Log   Log
 }
 
 // NewConfig Load config file (toml/json/yaml)
@@ -46,12 +38,6 @@ type Fiber struct {
 	Prefork         bool
 }
 
-type Control struct {
-	Enable         bool
-	Address        string
-	DefaultAgentID string
-}
-
 type Gorm struct {
 	GenDoc            bool
 	Debug             bool
@@ -72,47 +58,9 @@ type DB struct {
 	SSLMode  string
 }
 
-type Task struct {
-	Interval int
-}
-
-type AgentInstall struct {
-	Enable        bool
-	Token         string
-	PublicBaseURL string
-	PackageDir    string
-	ControlPort   int
-	TLSEnable     bool
-	CertDir       string
-}
-
-type InstallReport struct {
-	Enable     bool
-	URL        string
-	InstallDir string
-	IDFile     string
-	Timeout    int
-}
-
 type Log struct {
 	Output   string
 	Level    string
 	Rotation int
 	MaxAge   int
-}
-
-type Auth struct {
-	Enable         bool
-	SigningMethod  string
-	SigningKey     string
-	Expired        int
-	RefreshExpired int
-	Prefix         string
-}
-
-type Casbin struct {
-	Enable           bool
-	Debug            bool
-	AutoLoad         bool
-	AutoLoadInternal int
 }

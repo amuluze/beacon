@@ -59,3 +59,10 @@ PackageDir = "/app/downloads/collia"
 ControlPort = 17000
 TLSEnable = true
 CertDir = "/etc/collia/certs"
+
+[InstallReport]
+Enable = true
+URL = "https://official.amprobe.amuluze.com/api/v1/install/report"
+InstallDir = "/data/amprobe"
+IDFile = "/app/data/install.id"
+Timeout = 5
