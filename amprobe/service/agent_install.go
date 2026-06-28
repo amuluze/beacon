@@ -129,7 +129,7 @@ func (a *Router) buildColliaConfig(node string) string {
 	return fmt.Sprintf(`control:
   server: %s
   agent_id: %s
-  join_token: ""
+  join_token: "%s"
 log:
   output: /data/amprobe/logs/collia/collia.log
   level: info
@@ -156,7 +156,7 @@ variables:
   host_prefix: /data/amprobe
   container_prefix: /
   node: %s
-`, controlServer, node, reportURL, a.config.AgentInstall.Token, node, node)
+`, controlServer, node, controlJoinToken(a.config), reportURL, a.config.AgentInstall.Token, node, node)
 }
 
 func (a *Router) agentInstallPackageDir() string {

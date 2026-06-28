@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import type { EChartsOption } from '@/components/Echarts/echarts.ts'
-import type { DiskIO, DiskUsage, NetIO, NetUsage } from '@/interface/host.ts'
+import type { DiskIO, DiskUsage, Freshness, NetIO, NetUsage } from '@/interface/host.ts'
 
 import { queryCPUInfo, queryCPUUsage, queryDiskInfo, queryDiskUsage, queryMemInfo, queryMemUsage, queryNetworkUsage, queryAgentList } from '@/api/host'
 import { cpuTrendingOption, memTrendingOption, diskTrendingOption, netTrendingOption } from '@/config/echarts.ts'
 import { convertBytesToReadable } from '@/utils/convert.ts'
+import { freshnessTagType, freshnessText, worstFreshness } from '@/utils/freshness'
 import useStore from '@/store'
 import { dayjs } from 'element-plus'
 import { set } from 'lodash-es'
@@ -40,12 +41,18 @@ const options = [
 ]
 watch(timeDensity, () => { refreshAll() })
 
+const cpuFreshness = ref<Freshness | null>(null)
+const memFreshness = ref<Freshness | null>(null)
+const diskFreshness = ref<Freshness | null>(null)
+const pageFreshness = computed(() => worstFreshness([cpuFreshness.value, memFreshness.value, diskFreshness.value]))
+
 // CPU
 const cpuPercent = ref('0.0%')
 const cpuOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(cpuTrendingOption)))
 async function renderCPUPercent() {
   const { data } = await queryCPUInfo()
   cpuPercent.value = `${data.percent.toFixed(1)}%`
+  cpuFreshness.value = data.freshness
 }
 async function renderCPU() {
   const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix() }
@@ -65,6 +72,7 @@ async function renderMemInfo() {
   memInfo.value.percent = `${data.percent.toFixed(1)}%`
   memInfo.value.total = convertBytesToReadable(data.total)
   memInfo.value.used = convertBytesToReadable(data.used)
+  memFreshness.value = data.freshness
 }
 async function renderMem() {
   const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix() }
@@ -87,6 +95,7 @@ async function renderDiskInfo() {
     used: convertBytesToReadable(item.used),
     percent: `${item.percent.toFixed(1)}%`,
   }))
+  diskFreshness.value = data.freshness
 }
 function generateDiskSeriesData(data: DiskUsage[]) {
   const series: any[] = []
@@ -162,6 +171,9 @@ const { t } = useI18n()
             :value="item.agent_id"
           />
         </el-select>
+        <el-tag size="small" :type="freshnessTagType(pageFreshness)">
+          {{ freshnessText(pageFreshness) }}
+        </el-tag>
       </div>
       <div class="am-density-group">
         <span class="am-density-label">{{ t('monitor.timeDensity') }}：</span>
@@ -233,6 +245,7 @@ const { t } = useI18n()
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 .am-section-title {
   font-size: 15px;

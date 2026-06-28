@@ -24,14 +24,15 @@ type Handler func(ctx context.Context, method string, payload []byte, streamSend
 // AgentTunnel is the Agent-side tunnel client.
 // It connects to the Server and waits for incoming RPC frames.
 type AgentTunnel struct {
-	serverAddr  string
-	agentID     string
-	joinToken   string
-	conn        *grpc.ClientConn
-	client      ReverseTunnelClient
-	stream      grpc.BidiStreamingClient[Frame, Frame]
+	serverAddr string
+	agentID    string
+	joinToken  string
+	conn       *grpc.ClientConn
+	client     ReverseTunnelClient
+	stream     grpc.BidiStreamingClient[Frame, Frame]
 
 	mu          sync.Mutex
+	sendMu      sync.Mutex
 	handler     Handler
 	closed      bool
 	reconnect   bool
@@ -116,7 +117,7 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 			Method:    a.agentID,
 			Payload:   []byte(a.joinToken),
 		}
-		if err := stream.Send(regFrame); err != nil {
+		if err := a.sendFrame(stream, regFrame); err != nil {
 			slog.Error("agent tunnel: send registration failed", "err", err)
 			conn.Close()
 			continue
@@ -157,7 +158,7 @@ func (a *AgentTunnel) heartbeatLoop(ctx context.Context, stream grpc.BidiStreami
 				FrameType: FrameType_FRAME_HEARTBEAT,
 				Method:    a.agentID,
 			}
-			if err := stream.Send(frame); err != nil {
+			if err := a.sendFrame(stream, frame); err != nil {
 				slog.Debug("agent tunnel: heartbeat send failed", "err", err)
 				return
 			}
@@ -195,7 +196,7 @@ func (a *AgentTunnel) dispatch(ctx context.Context, stream grpc.BidiStreamingCli
 			Error:     "no handler registered",
 			FrameType: FrameType_FRAME_REPLY,
 		}
-		_ = stream.Send(resp)
+		_ = a.sendFrame(stream, resp)
 		return
 	}
 
@@ -211,7 +212,7 @@ func (a *AgentTunnel) dispatch(ctx context.Context, stream grpc.BidiStreamingCli
 			f.FrameType = FrameType_FRAME_STREAM_END
 			streamEnd.set(true)
 		}
-		_ = stream.Send(f)
+		_ = a.sendFrame(stream, f)
 	}
 
 	replyPayload, err := handler(ctx, req.Method, req.Payload, streamSender)
@@ -232,9 +233,15 @@ func (a *AgentTunnel) dispatch(ctx context.Context, stream grpc.BidiStreamingCli
 		resp.Payload = replyPayload
 	}
 
-	if err := stream.Send(resp); err != nil {
+	if err := a.sendFrame(stream, resp); err != nil {
 		slog.Error("agent tunnel: send response failed", "id", req.Id, "method", req.Method, "err", err)
 	}
+}
+
+func (a *AgentTunnel) sendFrame(stream grpc.BidiStreamingClient[Frame, Frame], frame *Frame) error {
+	a.sendMu.Lock()
+	defer a.sendMu.Unlock()
+	return stream.Send(frame)
 }
 
 // Close stops the tunnel and disconnects.

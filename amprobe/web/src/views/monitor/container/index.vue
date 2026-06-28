@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type { EChartsOption } from '@/components/Echarts/echarts.ts'
 import { containerCpuOption, containerMemOption } from '@/config/echarts.ts'
-import type { Usage } from '@/interface/host.ts'
+import type { Freshness, Usage } from '@/interface/host.ts'
 import { dayjs } from 'element-plus'
 import { queryContainersUsage, queryAgentList } from '@/api/container'
 import { set } from 'lodash-es'
 import useStore from '@/store'
+import { freshnessTagType, freshnessText } from '@/utils/freshness'
 
 // Agent switcher
 const store = useStore()
@@ -40,10 +41,12 @@ const cpuOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(containerCpu
 const memOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(containerMemOption)))
 
 const containerNames = ref<string[]>([])
+const pageFreshness = ref<Freshness | null>(null)
 
 async function render() {
   const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix() }
   const { data } = await queryContainersUsage(param as any)
+  pageFreshness.value = data.freshness
   if (!data.names || data.names.length === 0) return
 
   containerNames.value = data.names
@@ -115,6 +118,9 @@ onUnmounted(() => { clearInterval(timer.value) })
         <el-select v-model="currentAgent" size="small" style="width: 160px" placeholder="选择主机">
           <el-option v-for="item in store.agent.agents" :key="item.agent_id" :label="item.hostname || item.agent_id" :value="item.agent_id" />
         </el-select>
+        <el-tag size="small" :type="freshnessTagType(pageFreshness)">
+          {{ freshnessText(pageFreshness) }}
+        </el-tag>
       </div>
       <div class="am-density-group">
         <span class="am-density-label">时间密度：</span>
@@ -176,6 +182,7 @@ onUnmounted(() => { clearInterval(timer.value) })
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 .am-section-title {
   font-size: 15px;

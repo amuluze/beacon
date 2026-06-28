@@ -57,6 +57,15 @@ func NewContainerService(containerRepo repository.IContainerRepo) *ContainerServ
 	return &ContainerService{ContainerRepo: containerRepo}
 }
 
+func mapFreshness(f rpcSchema.Freshness) schema.Freshness {
+	return schema.Freshness{
+		CollectedAt: f.CollectedAt,
+		AgeSeconds:  f.AgeSeconds,
+		Stale:       f.Stale,
+		Degraded:    f.Degraded,
+	}
+}
+
 func (a *ContainerService) Version(ctx context.Context) (schema.Docker, error) {
 	var args rpcSchema.DockerArgs
 	version, err := a.ContainerRepo.Version(ctx, args)
@@ -72,6 +81,7 @@ func (a *ContainerService) Version(ctx context.Context) (schema.Docker, error) {
 		GoVersion:     version.Data.GoVersion,
 		Os:            version.Data.Os,
 		Arch:          version.Data.Arch,
+		Freshness:     mapFreshness(version.Freshness),
 	}, nil
 }
 
@@ -110,6 +120,7 @@ func (a *ContainerService) ContainerList(ctx context.Context, args schema.Contai
 	reply.Total = countReply.Count
 	reply.Page = args.Page
 	reply.Size = args.Size
+	reply.Freshness = mapFreshness(rpcReply.Freshness)
 	return reply, nil
 }
 
@@ -148,6 +159,7 @@ func (a *ContainerService) Usage(ctx context.Context, args schema.ContainerUsage
 			})
 		}
 	}
+	reply.Freshness = mapFreshness(rpcReply.Freshness)
 	return reply, nil
 }
 
@@ -253,6 +265,7 @@ func (a *ContainerService) ImageList(ctx context.Context, args schema.ImageQuery
 	reply.Total = countReply.Count
 	reply.Page = args.Page
 	reply.Size = args.Size
+	reply.Freshness = mapFreshness(listReply.Freshness)
 	return reply, nil
 }
 
@@ -345,6 +358,7 @@ func (a *ContainerService) NetworkList(ctx context.Context, args schema.NetworkQ
 	reply.Total = countReply.Count
 	reply.Page = args.Page
 	reply.Size = args.Size
+	reply.Freshness = mapFreshness(rpcReply.Freshness)
 	return reply, nil
 }
 

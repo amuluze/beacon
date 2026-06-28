@@ -35,6 +35,7 @@ func NewRPCServer(config *Config, db *database.DB) (*Server, error) {
 	}
 
 	tunnel := rpctunnel.NewAgentTunnel(config.Control.Server, agentID)
+	tunnel.SetJoinToken(config.Control.JoinToken)
 	tunnel.SetHandler(buildRPCDispatcher(s))
 	slog.Info("reverse tunnel configured", "server", config.Control.Server, "agent_id", agentID)
 

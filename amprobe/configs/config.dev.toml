@@ -10,6 +10,7 @@ Prefork = false
 Enable = true
 Address = ":17000"
 DefaultAgentID = "default"
+JoinToken = ""
 
 [Gorm]
 Debug = true             # 是否开启调试模式
