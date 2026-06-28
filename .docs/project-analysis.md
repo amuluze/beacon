@@ -23,26 +23,31 @@
 | `common/` | shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型 |
 | `deploy/` | supporting project directory |
 
-## Makefile Targets
+## Taskfile Tasks
 
-### `amprobe/Makefile`
+### `Taskfile.yml`
 
-- `make amd64`: docker amd64 image
-- `make arm64`: docker arm64 image
-- `make bin`: build bin
-- `make build`
-- `make dev`: run dev
-- `make wire`: generate wire
-### `amprobe/web/Makefile`
-
-- `make build`
-- `make dev`
-- `make install`
-### `collia/Makefile`
-
-- `make amd64`: build amd64
-- `make arm64`: build arm64
-- `make wire`: generate wire
+- `task amprobe:amd64`: build linux/amd64 Amprobe Docker image
+- `task amprobe:arm64`: build linux/arm64 Amprobe Docker image
+- `task amprobe:bin`: build local Amprobe binary
+- `task amprobe:build`: build and push multi-platform Amprobe Docker image
+- `task amprobe:dev`: run Amprobe with development config
+- `task amprobe:wire`: generate Amprobe Wire injector code
+- `task amprobe-web:build`: build Amprobe web assets
+- `task amprobe-web:dev`: run Amprobe web dev server
+- `task amprobe-web:install`: install Amprobe web dependencies
+- `task collia:amd64`: build linux/amd64 Collia binary
+- `task collia:arm64`: build linux/arm64 Collia binary
+- `task collia:wire`: generate Collia Wire injector code
+- `task website:amd64`: build linux/amd64 website Docker image
+- `task website:arm64`: build linux/arm64 website Docker image
+- `task website:push`: build and push website Docker image
+- `task website-server:amd64`: build linux/amd64 website server binary
+- `task website-server:arm64`: build linux/arm64 website server binary
+- `task website-server:dev`: run website server with development config
+- `task website-web:build`: build website web assets
+- `task website-web:dev`: run website web dev server
+- `task website-web:install`: install website web dependencies
 
 ## Package Scripts
 

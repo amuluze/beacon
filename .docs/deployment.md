@@ -13,15 +13,15 @@
 ## 快速启动
 
 ```bash
-cd amprobe && make dev
-cd amprobe/web && make dev
+task amprobe:dev
+task amprobe-web:dev
 cd amprobe/web && npm install && npm run dev
 docker compose -f compose.yaml up
 ```
 
 ## 部署方式
 
-- Makefile 承载模块内开发、构建、镜像或安装包命令。
+- Taskfile 承载模块内开发、构建、镜像或安装包命令。
 - 前端包通过 package scripts 运行本地开发、类型检查、lint 和构建。
 - `compose.yaml` 提供 Docker Compose 启动入口。
 - `amprobe/Dockerfile` 提供镜像构建上下文。
@@ -50,7 +50,7 @@ docker compose -f compose.yaml up
 |------|------|----------|
 | 运行时配置 | 配置文件、命令行参数、环境变量 | 记录名称和语义，不记录真实密钥 |
 | 凭据/Token | 本地配置或外部平台 | 不写入生成文档；只描述加载边界 |
-| 构建产物 | Makefile、Taskfile、Go build、前端 scripts | 记录命令和输出职责，不提交临时产物 |
+| 构建产物 | Taskfile、Go build、前端 scripts | 记录命令和输出职责，不提交临时产物 |
 
 ## 发布前检查
 
@@ -61,26 +61,31 @@ docker compose -f compose.yaml up
 - 当前 Go 模块验证入口是分模块执行：`cd amprobe && go test ./...`、`cd collia && go test ./...`、`cd common && go test ./...`。
 - 当前前端类型检查入口是 `cd amprobe/web && npm run ts`。`npm run lint` 已配置但存在存量格式/排序问题，启用为发布门禁前需要先收敛存量 lint。
 
-## Makefile Targets
+## Taskfile Tasks
 
-### `amprobe/Makefile`
+### `Taskfile.yml`
 
-- `make amd64`: docker amd64 image
-- `make arm64`: docker arm64 image
-- `make bin`: build bin
-- `make build`
-- `make dev`: run dev
-- `make wire`: generate wire
-### `amprobe/web/Makefile`
-
-- `make build`
-- `make dev`
-- `make install`
-### `collia/Makefile`
-
-- `make amd64`: build amd64
-- `make arm64`: build arm64
-- `make wire`: generate wire
+- `task amprobe:amd64`: build linux/amd64 Amprobe Docker image
+- `task amprobe:arm64`: build linux/arm64 Amprobe Docker image
+- `task amprobe:bin`: build local Amprobe binary
+- `task amprobe:build`: build and push multi-platform Amprobe Docker image
+- `task amprobe:dev`: run Amprobe with development config
+- `task amprobe:wire`: generate Amprobe Wire injector code
+- `task amprobe-web:build`: build Amprobe web assets
+- `task amprobe-web:dev`: run Amprobe web dev server
+- `task amprobe-web:install`: install Amprobe web dependencies
+- `task collia:amd64`: build linux/amd64 Collia binary
+- `task collia:arm64`: build linux/arm64 Collia binary
+- `task collia:wire`: generate Collia Wire injector code
+- `task website:amd64`: build linux/amd64 website Docker image
+- `task website:arm64`: build linux/arm64 website Docker image
+- `task website:push`: build and push website Docker image
+- `task website-server:amd64`: build linux/amd64 website server binary
+- `task website-server:arm64`: build linux/arm64 website server binary
+- `task website-server:dev`: run website server with development config
+- `task website-web:build`: build website web assets
+- `task website-web:dev`: run website web dev server
+- `task website-web:install`: install website web dependencies
 
 ## Package Scripts
 

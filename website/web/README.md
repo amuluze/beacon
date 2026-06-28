@@ -5,8 +5,7 @@ amprobe 官网
 ```bash
 $ cd src
 $ npx prisma generate
-$ cd .. && make build
-$ make docker
+$ cd .. && task build
 ```
 
 ```bash
