@@ -12,6 +12,18 @@ export interface UserState {
     userInfo: UserInfo
 }
 
+export interface AgentInfo {
+    agent_id: string
+    hostname: string
+    status: string
+    last_seen: string
+}
+
+export interface AgentState {
+    currentAgentID: string
+    agents: AgentInfo[]
+}
+
 export interface AppState {
     isCollapse: boolean
     language: string

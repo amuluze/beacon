@@ -5,6 +5,7 @@
  */
 
 import request from '@/api'
+export { queryAgentList } from '@/api/agent'
 import type {
     CPUInfo,
     CPUTrending,
@@ -83,8 +84,4 @@ export async function deleteFolder(params: FolderDeleteArgs) {
 
 export async function downloadFile(params: FileDeleteArgs) {
     return request.post<FileDownloadResult>('/api/v1/host/file_download', params)
-}
-
-export async function queryAgentList() {
-    return request.get<{ agent_id: string; hostname: string }[]>('/api/v1/agent/list', {})
 }

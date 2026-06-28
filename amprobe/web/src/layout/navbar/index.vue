@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AgentSelect from '@/layout/navbar/AgentSelect.vue';
 import Avatar from '@/layout/navbar/Avatar.vue';
 import Language from '@/layout/navbar/Language.vue'; /* PartiallyEnd: #3632/scriptSetup.vue */
 import ThemeChange from '@/layout/navbar/ThemeChange.vue';
@@ -9,6 +10,7 @@ import Breadcrumb from './Breadcrumb.vue';
     <div class="am-navbar">
         <Breadcrumb style="cursor: pointer" />
         <div class="am-navbar__right">
+            <AgentSelect />
             <Language />
             <ThemeChange />
             <Avatar />

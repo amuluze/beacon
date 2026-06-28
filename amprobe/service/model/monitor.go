@@ -12,8 +12,8 @@ import (
 
 type MonitorHost struct {
 	gorm.Model
-	AgentID         string `gorm:"index"`
-	Timestamp       time.Time
+	AgentID         string    `gorm:"index;index:idx_m_host_agent_time,priority:1"`
+	Timestamp       time.Time `gorm:"index:idx_m_host_agent_time,priority:2"`
 	Uptime          string
 	Hostname        string
 	Os              string
@@ -29,8 +29,8 @@ func (MonitorHost) TableName() string { return "m_host" }
 
 type MonitorCPU struct {
 	gorm.Model
-	AgentID    string `gorm:"index"`
-	Timestamp  time.Time
+	AgentID    string    `gorm:"index;index:idx_m_cpu_agent_time,priority:1"`
+	Timestamp  time.Time `gorm:"index:idx_m_cpu_agent_time,priority:2"`
 	CPUPercent float64
 }
 
@@ -40,8 +40,8 @@ func (MonitorCPU) TableName() string { return "m_cpu" }
 
 type MonitorMemory struct {
 	gorm.Model
-	AgentID    string `gorm:"index"`
-	Timestamp  time.Time
+	AgentID    string    `gorm:"index;index:idx_m_memory_agent_time,priority:1"`
+	Timestamp  time.Time `gorm:"index:idx_m_memory_agent_time,priority:2"`
 	MemPercent float64
 	MemTotal   float64
 	MemUsed    float64
@@ -53,8 +53,8 @@ func (MonitorMemory) TableName() string { return "m_memory" }
 
 type MonitorDisk struct {
 	gorm.Model
-	AgentID     string `gorm:"index"`
-	Timestamp   time.Time
+	AgentID     string    `gorm:"index;index:idx_m_disk_agent_time,priority:1"`
+	Timestamp   time.Time `gorm:"index:idx_m_disk_agent_time,priority:2"`
 	Device      string
 	DiskPercent float64
 	DiskTotal   float64
@@ -69,8 +69,8 @@ func (MonitorDisk) TableName() string { return "m_disk" }
 
 type MonitorNet struct {
 	gorm.Model
-	AgentID   string `gorm:"index"`
-	Timestamp time.Time
+	AgentID   string    `gorm:"index;index:idx_m_net_agent_time,priority:1"`
+	Timestamp time.Time `gorm:"index:idx_m_net_agent_time,priority:2"`
 	Ethernet  string
 	NetRecv   float64
 	NetSend   float64
@@ -82,8 +82,8 @@ func (MonitorNet) TableName() string { return "m_net" }
 
 type MonitorDocker struct {
 	gorm.Model
-	AgentID       string `gorm:"index"`
-	Timestamp     time.Time
+	AgentID       string    `gorm:"index;index:idx_m_docker_agent_time,priority:1"`
+	Timestamp     time.Time `gorm:"index:idx_m_docker_agent_time,priority:2"`
 	DockerVersion string
 	APIVersion    string
 	MinAPIVersion string
@@ -99,8 +99,8 @@ func (MonitorDocker) TableName() string { return "m_docker" }
 
 type MonitorContainer struct {
 	gorm.Model
-	AgentID     string `gorm:"index"`
-	Timestamp   time.Time
+	AgentID     string    `gorm:"index;index:idx_m_container_agent_time,priority:1"`
+	Timestamp   time.Time `gorm:"index:idx_m_container_agent_time,priority:2"`
 	ContainerID string
 	Name        string
 	Image       string
@@ -121,8 +121,8 @@ func (MonitorContainer) TableName() string { return "m_container" }
 
 type MonitorImage struct {
 	gorm.Model
-	AgentID   string `gorm:"index"`
-	Timestamp time.Time
+	AgentID   string    `gorm:"index;index:idx_m_image_agent_time,priority:1"`
+	Timestamp time.Time `gorm:"index:idx_m_image_agent_time,priority:2"`
 	ImageID   string
 	Name      string
 	Tag       string
@@ -137,8 +137,8 @@ func (MonitorImage) TableName() string { return "m_image" }
 
 type MonitorNetwork struct {
 	gorm.Model
-	AgentID   string `gorm:"index"`
-	Timestamp time.Time
+	AgentID   string    `gorm:"index;index:idx_m_network_agent_time,priority:1"`
+	Timestamp time.Time `gorm:"index:idx_m_network_agent_time,priority:2"`
 	NetworkID string
 	Name      string
 	Driver    string

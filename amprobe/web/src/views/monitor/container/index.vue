@@ -5,20 +5,21 @@ import type { Usage } from '@/interface/host.ts'
 import { dayjs } from 'element-plus'
 import { queryContainersUsage, queryAgentList } from '@/api/container'
 import { set } from 'lodash-es'
+import useStore from '@/store'
 
 // Agent switcher
-const agentList = ref<{ agent_id: string; hostname: string }[]>([])
-const currentAgent = ref('')
+const store = useStore()
+const currentAgent = computed({
+  get: () => store.agent.currentAgentID,
+  set: (value: string) => store.agent.setCurrentAgent(value),
+})
 async function loadAgents() {
   try {
     const { data } = await queryAgentList()
-    agentList.value = data || []
-    if (agentList.value.length > 0 && !currentAgent.value) {
-      currentAgent.value = agentList.value[0].agent_id
-    }
-  } catch {
-    agentList.value = [{ agent_id: 'default', hostname: 'default' }]
-    currentAgent.value = 'default'
+    store.agent.setAgents(data || [])
+  }
+  catch {
+    store.agent.setAgents([])
   }
 }
 watch(currentAgent, () => { render() })
@@ -41,8 +42,7 @@ const memOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(containerMem
 const containerNames = ref<string[]>([])
 
 async function render() {
-  const agentParams: Record<string, string> = currentAgent.value ? { agent_id: currentAgent.value } : {}
-  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams }
+  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix() }
   const { data } = await queryContainersUsage(param as any)
   if (!data.names || data.names.length === 0) return
 
@@ -113,7 +113,7 @@ onUnmounted(() => { clearInterval(timer.value) })
       <div class="am-section-title-group">
         <span class="am-section-title">容器监控</span>
         <el-select v-model="currentAgent" size="small" style="width: 160px" placeholder="选择主机">
-          <el-option v-for="item in agentList" :key="item.agent_id" :label="item.hostname || item.agent_id" :value="item.agent_id" />
+          <el-option v-for="item in store.agent.agents" :key="item.agent_id" :label="item.hostname || item.agent_id" :value="item.agent_id" />
         </el-select>
       </div>
       <div class="am-density-group">

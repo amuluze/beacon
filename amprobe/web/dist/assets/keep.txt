@@ -1,0 +1,1 @@
+placeholder for Go embed before frontend build

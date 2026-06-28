@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { getDockerRegistryMirrors } from '@/api/container'
 import useCommandComponent from '@/hooks/useCommandComponent.ts'
+import useStore from '@/store'
 import SetRegistryMirrors from '@/views/setting/docker/components/SetRegistryMirrors.vue'
 import { useI18n } from 'vue-i18n'
 
+const store = useStore()
 const textarea = ref('')
 async function queryDockerRegistryMirrors() {
   const { data } = await getDockerRegistryMirrors()
@@ -11,6 +13,9 @@ async function queryDockerRegistryMirrors() {
 }
 
 onMounted(() => {
+  queryDockerRegistryMirrors()
+})
+watch(() => store.agent.currentAgentID, () => {
   queryDockerRegistryMirrors()
 })
 

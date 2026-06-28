@@ -2,9 +2,12 @@
 import { getSystemTime, getSystemTimezone, reboot, shutdown } from '@/api/system'
 import { error, success } from '@/components/Message/message.ts'
 import useCommandComponent from '@/hooks/useCommandComponent.ts'
+import useStore from '@/store'
 import SetSystemTime from '@/views/setting/host/components/SetSystemTime.vue'
 import SetSystemTimezone from '@/views/setting/host/components/SetSystemTimezone.vue'
 import { useI18n } from 'vue-i18n'
+
+const store = useStore()
 
 function rebootHost() {
   reboot()
@@ -46,6 +49,10 @@ async function querySystemTimezone() {
 }
 
 onMounted(() => {
+  querySystemTime()
+  querySystemTimezone()
+})
+watch(() => store.agent.currentAgentID, () => {
   querySystemTime()
   querySystemTimezone()
 })
