@@ -12,6 +12,11 @@ tasks:
     cmds:
       - wire ./service/
 
+  test:
+    desc: Run tests with race detector
+    cmds:
+      - go test -race -count=1 ./...
+
   amd64:
     desc: Build linux/amd64 collia binary
     env:

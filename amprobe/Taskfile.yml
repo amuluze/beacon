@@ -28,6 +28,11 @@ tasks:
     cmds:
       - wire ./service/
 
+  test:
+    desc: Run tests with race detector
+    cmds:
+      - go test -race -count=1 ./...
+
   bin:
     desc: Build amprobe binary
     cmds:
