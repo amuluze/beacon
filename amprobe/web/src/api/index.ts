@@ -98,6 +98,9 @@ class Request {
                 if (store.user.token !== '') {
                     config.headers.Authorization = `Bearer ${store.user.token}`
                 }
+                if (store.agent.currentAgentID !== '') {
+                    config.headers['X-Agent-ID'] = store.agent.currentAgentID
+                }
                 if (config.url?.endsWith('login')) {
                     config.headers['Content-Type'] = 'multipart/form-data;charset=UTF-8'
                     return config

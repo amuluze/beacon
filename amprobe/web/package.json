@@ -21,7 +21,7 @@
         "element-plus": "^2.9.3",
         "lodash-es": "^4.17.21",
         "path-browserify": "^1.0.1",
-        "pinia": "^2.3.0",
+        "pinia": "^3.0.4",
         "pinia-plugin-persistedstate": "^4.2.0",
         "vue": "^3.5.13",
         "vue-i18n": "^11.0.1",

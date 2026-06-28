@@ -88,6 +88,7 @@ export default defineConfig({
     },
     // 构建配置
     build: {
+        emptyOutDir: false,
         chunkSizeWarningLimit: 2000, // 消除打包大小超过500kb警告
         minify: 'terser', // Vite 2.6.x 以上需要配置 minify: "terser", terserOptions 才能生效
         terserOptions: {

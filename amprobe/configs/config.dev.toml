@@ -6,16 +6,10 @@ SeverHeader = "probe"
 AppName = "probe"
 Prefork = false
 
-[Rpc]
-Network = "unix"
-Address = "/app/collia.sock"
+[Control]
+Enable = true
+Address = ":17000"
 DefaultAgentID = "default"
-
-[Rpc.TLS]
-Enable = false
-CertDir = "/app/certs/collia"
-ServerName = ""
-ClientNames = []
 
 [Gorm]
 Debug = true             # 是否开启调试模式

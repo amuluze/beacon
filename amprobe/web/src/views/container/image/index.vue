@@ -37,6 +37,9 @@ const deleteImage = useCommandComponent(DeleteImage)
 
 const { t } = useI18n()
 const store = useStore()
+watch(() => store.agent.currentAgentID, () => {
+  search()
+})
 const locale = computed(() => {
   if (store.app.language === 'zh')
     return zhCn

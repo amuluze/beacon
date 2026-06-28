@@ -8,6 +8,8 @@
  * @ url： 请求地址       类型： string     默认： ''      备注： 'web/msg'
  */
 
+import useStore from '@/store'
+
 export class Websocket {
     url: string
     ws: WebSocket
@@ -21,6 +23,11 @@ export class Websocket {
         onClose: ((ws: Websocket, ev: Event) => any) | null = null
     ) {
         let location: Location = window.location
+        const store = useStore()
+        const agentID = store.agent.currentAgentID
+        if (agentID !== '' && !url.includes('agent_id=')) {
+            url = `${url}${url.includes('?') ? '&' : '?'}agent_id=${encodeURIComponent(agentID)}`
+        }
         url = location.host + '/' + url
         this.url = /https/.test(location.protocol) ? 'wss://' + url : 'ws://' + url
         // this.url = 'ws://101.42.246.113:8000/ws'

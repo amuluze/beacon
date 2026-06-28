@@ -45,6 +45,9 @@ const viewLog = useCommandComponent(ViewLog)
 
 const { t } = useI18n()
 const store = useStore()
+watch(() => store.agent.currentAgentID, () => {
+  search()
+})
 const locale = computed(() => {
   if (store.app.language === 'zh')
     return zhCn
@@ -57,6 +60,9 @@ const locale = computed(() => {
 <template>
     <div class="am-container">
         <div class="am-table-operator">
+            <el-select v-model="store.agent.currentAgentID" size="small" placeholder="Agent" style="width: 180px">
+                <el-option v-for="item in store.agent.agents" :key="item.agent_id" :label="item.hostname || item.agent_id" :value="item.agent_id" />
+            </el-select>
             <el-button type="primary" plain size="small" @click="addContainer({ title: 'container.addContainer', update: search })">
                 <svg-icon icon-class="add" />
                 {{ t('container.addContainer') }}

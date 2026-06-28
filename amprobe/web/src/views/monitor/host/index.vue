@@ -5,26 +5,24 @@ import type { DiskIO, DiskUsage, NetIO, NetUsage } from '@/interface/host.ts'
 import { queryCPUInfo, queryCPUUsage, queryDiskInfo, queryDiskUsage, queryMemInfo, queryMemUsage, queryNetworkUsage, queryAgentList } from '@/api/host'
 import { cpuTrendingOption, memTrendingOption, diskTrendingOption, netTrendingOption } from '@/config/echarts.ts'
 import { convertBytesToReadable } from '@/utils/convert.ts'
+import useStore from '@/store'
 import { dayjs } from 'element-plus'
 import { set } from 'lodash-es'
 import { useI18n } from 'vue-i18n'
 
 // Agent switcher
-const agentList = ref<{ agent_id: string; hostname: string }[]>([])
-const currentAgent = ref('')
-function agentParams(): Record<string, string> {
-  return currentAgent.value ? { agent_id: currentAgent.value } : {}
-}
+const store = useStore()
+const currentAgent = computed({
+  get: () => store.agent.currentAgentID,
+  set: (value: string) => store.agent.setCurrentAgent(value),
+})
 async function loadAgents() {
   try {
     const { data } = await queryAgentList()
-    agentList.value = data || []
-    if (agentList.value.length > 0 && !currentAgent.value) {
-      currentAgent.value = agentList.value[0].agent_id
-    }
-  } catch {
-    agentList.value = [{ agent_id: 'default', hostname: 'default' }]
-    currentAgent.value = 'default'
+    store.agent.setAgents(data || [])
+  }
+  catch {
+    store.agent.setAgents([])
   }
 }
 watch(currentAgent, () => { refreshAll() })
@@ -46,11 +44,11 @@ watch(timeDensity, () => { refreshAll() })
 const cpuPercent = ref('0.0%')
 const cpuOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(cpuTrendingOption)))
 async function renderCPUPercent() {
-  const { data } = await queryCPUInfo({ ...agentParams() } as any)
+  const { data } = await queryCPUInfo()
   cpuPercent.value = `${data.percent.toFixed(1)}%`
 }
 async function renderCPU() {
-  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams() }
+  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix() }
   const { data } = await queryCPUUsage(param as any)
   const cpuData = data.data
   const labels = cpuData.map((item: any) => `${dayjs(item.timestamp * 1000).format('HH:mm')}`)
@@ -63,13 +61,13 @@ async function renderCPU() {
 const memInfo = ref({ percent: '0%', total: '0', used: '0' })
 const memOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(memTrendingOption)))
 async function renderMemInfo() {
-  const { data } = await queryMemInfo({ ...agentParams() } as any)
+  const { data } = await queryMemInfo()
   memInfo.value.percent = `${data.percent.toFixed(1)}%`
   memInfo.value.total = convertBytesToReadable(data.total)
   memInfo.value.used = convertBytesToReadable(data.used)
 }
 async function renderMem() {
-  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams() }
+  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix() }
   const { data } = await queryMemUsage(param as any)
   const memData = data.data
   const labels = memData.map((item: any) => `${dayjs(item.timestamp * 1000).format('HH:mm')}`)
@@ -82,7 +80,7 @@ async function renderMem() {
 const diskInfo = ref<{ device: string; total: string; used: string; percent: string }[]>([])
 const diskOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(diskTrendingOption)))
 async function renderDiskInfo() {
-  const { data } = await queryDiskInfo({ ...agentParams() } as any)
+  const { data } = await queryDiskInfo()
   diskInfo.value = (data.info || []).map((item: any) => ({
     device: item.device,
     total: convertBytesToReadable(item.total),
@@ -99,7 +97,7 @@ function generateDiskSeriesData(data: DiskUsage[]) {
   return series
 }
 async function renderDisk() {
-  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams() }
+  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix() }
   const { data } = await queryDiskUsage(param as any)
   if (!data.usage || data.usage.length === 0) return
   const labels = data.usage[0].data.map((item: DiskIO) => `${dayjs(item.timestamp * 1000).format('HH:mm')}`)
@@ -111,7 +109,7 @@ async function renderDisk() {
 const netInfo = ref<{ ethernet: string; read: string; write: string }[]>([])
 const netOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(netTrendingOption)))
 async function renderNet() {
-  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams() }
+  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix() }
   const { data } = await queryNetworkUsage(param as any)
   if (!data.usage || data.usage.length === 0) return
   netInfo.value = data.usage.map((item: NetUsage) => ({
@@ -158,7 +156,7 @@ const { t } = useI18n()
         <span class="am-section-title">{{ t('monitor.hostMonitor') }}</span>
         <el-select v-model="currentAgent" size="small" style="width: 160px" placeholder="选择主机">
           <el-option
-            v-for="item in agentList"
+            v-for="item in store.agent.agents"
             :key="item.agent_id"
             :label="item.hostname || item.agent_id"
             :value="item.agent_id"

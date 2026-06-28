@@ -59,6 +59,9 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 		if agentID == "" {
 			agentID = c.Query("agent_id")
 		}
+		if agentID == "" {
+			agentID = a.config.Control.DefaultAgentID
+		}
 		if agentID != "" {
 			c.SetUserContext(contextx.NewAgentID(c.UserContext(), agentID))
 		}
