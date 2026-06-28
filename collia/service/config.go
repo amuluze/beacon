@@ -13,11 +13,11 @@ import (
 type Prefix string
 
 type Config struct {
-	prefix    Prefix  `yaml:"-"`
-	Control   Control `yaml:"control"`
-	Log       Log     `yaml:"log"`
-	Task      Task    `yaml:"task"`
-	DB        DB      `yaml:"db"`
+	prefix    Prefix    `yaml:"-"`
+	Control   Control   `yaml:"control"`
+	Log       Log       `yaml:"log"`
+	Task      Task      `yaml:"task"`
+	DB        DB        `yaml:"db"`
 	Variables Variables `yaml:"variables"`
 }
 
@@ -56,11 +56,13 @@ type Control struct {
 	Server    string `yaml:"server"`
 	AgentID   string `yaml:"agent_id"`
 	JoinToken string `yaml:"join_token"`
+	TLS       TLS    `yaml:"tls"`
 }
 
 type TLS struct {
 	Enable      bool     `yaml:"enable" mapstructure:"enable"`
 	CertDir     string   `yaml:"cert_dir" mapstructure:"cert_dir"`
+	ServerName  string   `yaml:"server_name" mapstructure:"server_name"`
 	ClientNames []string `yaml:"client_names" mapstructure:"client_names"`
 }
 

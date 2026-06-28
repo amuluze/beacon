@@ -5,6 +5,7 @@ package tunnel
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"log/slog"
 	"sync"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 )
@@ -30,6 +32,7 @@ type AgentTunnel struct {
 	conn       *grpc.ClientConn
 	client     ReverseTunnelClient
 	stream     grpc.BidiStreamingClient[Frame, Frame]
+	tlsConfig  *tls.Config
 
 	mu          sync.Mutex
 	sendMu      sync.Mutex
@@ -55,6 +58,11 @@ func (a *AgentTunnel) SetJoinToken(token string) {
 	a.joinToken = token
 }
 
+// SetTLSConfig configures optional TLS credentials for the gRPC client.
+func (a *AgentTunnel) SetTLSConfig(cfg *tls.Config) {
+	a.tlsConfig = cfg
+}
+
 // SetHandler registers the RPC handler for incoming requests.
 func (a *AgentTunnel) SetHandler(h Handler) {
 	a.mu.Lock()
@@ -71,8 +79,12 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 		}
 
 		slog.Info("agent tunnel: connecting to server", "addr", a.serverAddr, "agent_id", a.agentID)
+		transportCreds := insecure.NewCredentials()
+		if a.tlsConfig != nil {
+			transportCreds = credentials.NewTLS(a.tlsConfig)
+		}
 		conn, err := grpc.NewClient(a.serverAddr,
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithTransportCredentials(transportCreds),
 			grpc.WithKeepaliveParams(keepalive.ClientParameters{
 				Time:                30 * time.Second,
 				Timeout:             10 * time.Second,

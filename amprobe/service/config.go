@@ -67,6 +67,13 @@ type Control struct {
 	Address        string
 	DefaultAgentID string
 	JoinToken      string
+	TLS            ControlTLS
+}
+
+type ControlTLS struct {
+	Enable      bool
+	CertDir     string
+	ClientNames []string
 }
 
 type Gorm struct {

@@ -5,12 +5,14 @@ package tunnel
 import (
 	"context"
 	"crypto/subtle"
+	"crypto/tls"
 	"log/slog"
 	"net"
 	"sync"
 	"sync/atomic"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 // AgentLifecycle is called when an agent connects or disconnects.
@@ -42,6 +44,7 @@ type ServerTunnel struct {
 	callID     atomic.Uint64
 	lifecycle  AgentLifecycle
 	joinToken  string
+	tlsConfig  *tls.Config
 }
 
 type agentStream struct {
@@ -59,6 +62,11 @@ func (s *ServerTunnel) SetJoinToken(token string) {
 	s.joinToken = token
 }
 
+// SetTLSConfig configures optional TLS credentials for the gRPC server.
+func (s *ServerTunnel) SetTLSConfig(cfg *tls.Config) {
+	s.tlsConfig = cfg
+}
+
 // SetAgentLifecycle registers lifecycle callbacks for agent connect/disconnect.
 func (s *ServerTunnel) SetAgentLifecycle(l AgentLifecycle) {
 	s.lifecycle = l
@@ -72,7 +80,11 @@ func (s *ServerTunnel) Start(addr string) error {
 	}
 	s.listener = lis
 
-	s.grpcServer = grpc.NewServer()
+	var opts []grpc.ServerOption
+	if s.tlsConfig != nil {
+		opts = append(opts, grpc.Creds(credentials.NewTLS(s.tlsConfig)))
+	}
+	s.grpcServer = grpc.NewServer(opts...)
 	RegisterReverseTunnelServer(s.grpcServer, s)
 	slog.Info("server tunnel: listening", "addr", addr)
 	return s.grpcServer.Serve(lis)

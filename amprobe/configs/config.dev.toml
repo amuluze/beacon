@@ -12,6 +12,11 @@ Address = ":17000"
 DefaultAgentID = "default"
 JoinToken = ""
 
+[Control.TLS]
+Enable = false
+CertDir = "/etc/amprobe/control-certs"
+ClientNames = []
+
 [Gorm]
 Debug = true             # 是否开启调试模式
 DBType = "sqlite"        # 数据库类型(目前支持的数据库类型：postgres, sqlite)

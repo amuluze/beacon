@@ -36,12 +36,19 @@ func TestSafeJoinRejectsEscapes(t *testing.T) {
 }
 
 func TestBuildAgentInstallScriptUsesInstallTokenHeader(t *testing.T) {
-	script := buildAgentInstallScript("http://127.0.0.1:1443", "1")
+	script := buildAgentInstallScript("http://127.0.0.1:1443", "1", false)
 	if !strings.Contains(script, `X-Install-Token: $TOKEN`) {
 		t.Fatal("expected script downloads to use X-Install-Token header")
 	}
 	if !strings.Contains(script, `/api/v1/host/install/package?arch=$ARCH`) {
 		t.Fatal("expected script to download collia binary selected by arch")
+	}
+}
+
+func TestBuildAgentInstallScriptDownloadsCertsWhenTLSEnabled(t *testing.T) {
+	script := buildAgentInstallScript("http://127.0.0.1:1443", "agent-a", true)
+	if !strings.Contains(script, `/api/v1/host/install/certs?node=$NODE`) {
+		t.Fatal("expected script to download collia cert package when TLS is enabled")
 	}
 }
 
@@ -57,5 +64,20 @@ func TestBuildColliaConfigUsesControlJoinToken(t *testing.T) {
 	}
 	if !strings.Contains(config, `token: "install-secret"`) {
 		t.Fatalf("expected report/install token in config, got:\n%s", config)
+	}
+}
+
+func TestBuildColliaConfigUsesControlTLSFlag(t *testing.T) {
+	router := &Router{config: &Config{
+		Control:      Control{TLS: ControlTLS{Enable: true}},
+		AgentInstall: AgentInstall{CertDir: "/etc/collia/certs"},
+	}}
+
+	config := router.buildColliaConfig("agent-a")
+	if !strings.Contains(config, `enable: true`) {
+		t.Fatalf("expected TLS enable flag in config, got:\n%s", config)
+	}
+	if !strings.Contains(config, `cert_dir: /etc/collia/certs`) {
+		t.Fatalf("expected TLS cert dir in config, got:\n%s", config)
 	}
 }
