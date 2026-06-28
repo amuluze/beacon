@@ -4,11 +4,11 @@
 
 ```bash
 # install
-make install
+task install
 
 # build
-make build
+task build
 
 # dev
-make dev
+task dev
 ```

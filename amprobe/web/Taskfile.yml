@@ -1,0 +1,22 @@
+version: '3'
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
+  install:
+    desc: Install frontend dependencies
+    cmds:
+      - pnpm install
+
+  build:
+    desc: Build frontend assets
+    cmds:
+      - pnpm run build
+
+  dev:
+    desc: Run frontend dev server
+    cmds:
+      - pnpm run dev
