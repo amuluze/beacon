@@ -5,6 +5,10 @@ control:
   server: 127.0.0.1:17000
   agent_id: default
   join_token: "change-me"
+  tls:
+    enable: false
+    cert_dir: /etc/collia/certs
+    server_name: amprobe/collia
 
 log:
   output: /data/amprobe/logs/collia/collia.log

@@ -10,6 +10,7 @@ import (
 
 	"common/database"
 	rpctunnel "common/rpc/tunnel"
+	transporttls "common/transport/tlsconfig"
 
 	"collia/service/rpc"
 
@@ -36,6 +37,18 @@ func NewRPCServer(config *Config, db *database.DB) (*Server, error) {
 
 	tunnel := rpctunnel.NewAgentTunnel(config.Control.Server, agentID)
 	tunnel.SetJoinToken(config.Control.JoinToken)
+	if config.Control.TLS.Enable {
+		serverName := config.Control.TLS.ServerName
+		if serverName == "" {
+			serverName = "amprobe/collia"
+		}
+		tlsCfg, err := transporttls.ClientConfig(config.Control.TLS.CertDir, serverName)
+		if err != nil {
+			return nil, err
+		}
+		tunnel.SetTLSConfig(tlsCfg)
+		slog.Info("reverse tunnel tls enabled", "cert_dir", config.Control.TLS.CertDir, "server_name", serverName)
+	}
 	tunnel.SetHandler(buildRPCDispatcher(s))
 	slog.Info("reverse tunnel configured", "server", config.Control.Server, "agent_id", agentID)
 

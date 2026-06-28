@@ -37,7 +37,7 @@ func (a *Router) AgentInstallScript(ctx *fiber.Ctx) error {
 	}
 
 	ctx.Type("sh")
-	return ctx.SendString(buildAgentInstallScript(baseURL, node))
+	return ctx.SendString(buildAgentInstallScript(baseURL, node, a.config.Control.TLS.Enable))
 }
 
 func (a *Router) AgentInstallPackage(ctx *fiber.Ctx) error {
@@ -130,6 +130,10 @@ func (a *Router) buildColliaConfig(node string) string {
   server: %s
   agent_id: %s
   join_token: "%s"
+  tls:
+    enable: %t
+    cert_dir: %s
+    server_name: amprobe/collia
 log:
   output: /data/amprobe/logs/collia/collia.log
   level: info
@@ -156,7 +160,7 @@ variables:
   host_prefix: /data/amprobe
   container_prefix: /
   node: %s
-`, controlServer, node, controlJoinToken(a.config), reportURL, a.config.AgentInstall.Token, node, node)
+`, controlServer, node, controlJoinToken(a.config), a.config.Control.TLS.Enable, a.config.AgentInstall.CertDir, reportURL, a.config.AgentInstall.Token, node, node)
 }
 
 func (a *Router) agentInstallPackageDir() string {
@@ -178,7 +182,15 @@ func requestBaseURL(ctx *fiber.Ctx) string {
 	return strings.TrimRight(scheme+"://"+host, "/")
 }
 
-func buildAgentInstallScript(baseURL string, node string) string {
+func buildAgentInstallScript(baseURL string, node string, tlsEnable bool) string {
+	certInstall := ""
+	if tlsEnable {
+		certInstall = `
+mkdir -p /etc/collia/certs
+download "$BASE_URL/api/v1/host/install/certs?node=$NODE" "$WORKDIR/certs.tar.gz"
+tar -xzf "$WORKDIR/certs.tar.gz" -C /etc/collia/certs
+`
+	}
 	return fmt.Sprintf(`#!/bin/sh
 set -eu
 
@@ -220,6 +232,7 @@ mkdir -p /etc/collia /data/amprobe/resources/collia/storage /data/amprobe/logs/c
 
 download "$BASE_URL/api/v1/host/install/package?arch=$ARCH" "$WORKDIR/collia"
 download "$BASE_URL/api/v1/host/install/config?node=$NODE" "$WORKDIR/config.yml"
+%s
 
 install -m 0755 "$WORKDIR/collia" /usr/sbin/collia
 install -m 0644 "$WORKDIR/config.yml" /etc/collia/config.yml
@@ -229,7 +242,7 @@ collia stop || true
 collia start
 
 echo "collia installed and started, reverse tunnel -> $BASE_URL"
-`, shellQuote(baseURL), shellQuote(node))
+`, shellQuote(baseURL), shellQuote(node), certInstall)
 }
 
 func isSafeInstallName(s string) bool {
