@@ -10,6 +10,7 @@ Prefork = false
 Enable = true          # 启用反向隧道（替代 rpcx）
 Address = ":17000"     # gRPC 控制端口
 DefaultAgentID = "default"
+JoinToken = ""          # Agent 反向隧道注册令牌；为空时复用 AgentInstall.Token
 
 [Gorm]
 Debug = true             # 是否开启调试模式

@@ -24,20 +24,22 @@ type DiskIO struct {
 type HostArgs struct{}
 
 type HostInfoReply struct {
-	Timestamp       int64  `json:"timestamp"`
-	Uptime          string `json:"uptime"`
-	Hostname        string `json:"hostname"`
-	OS              string `json:"os"`
-	Platform        string `json:"platform"`
-	PlatformVersion string `json:"platform_version"`
-	KernelVersion   string `json:"kernel_version"`
-	KernelArch      string `json:"kernel_arch"`
+	Timestamp       int64     `json:"timestamp"`
+	Uptime          string    `json:"uptime"`
+	Hostname        string    `json:"hostname"`
+	OS              string    `json:"os"`
+	Platform        string    `json:"platform"`
+	PlatformVersion string    `json:"platform_version"`
+	KernelVersion   string    `json:"kernel_version"`
+	KernelArch      string    `json:"kernel_arch"`
+	Freshness       Freshness `json:"freshness"`
 }
 
 type CPUArgs struct{}
 
 type CPUInfoReply struct {
-	Percent float64 `json:"percent"`
+	Percent   float64   `json:"percent"`
+	Freshness Freshness `json:"freshness"`
 }
 
 type CPUUsageArgs struct {
@@ -52,9 +54,10 @@ type CPUUsageReply struct {
 type MemoryArgs struct{}
 
 type MemoryInfoReply struct {
-	Percent float64 `json:"percent"`
-	Total   float64 `json:"total"`
-	Used    float64 `json:"used"`
+	Percent   float64   `json:"percent"`
+	Total     float64   `json:"total"`
+	Used      float64   `json:"used"`
+	Freshness Freshness `json:"freshness"`
 }
 
 type MemoryUsageArgs struct {
@@ -86,7 +89,8 @@ type NetUsage struct {
 }
 
 type DiskInfoReply struct {
-	Info []DiskInfo `json:"info"`
+	Info      []DiskInfo `json:"info"`
+	Freshness Freshness  `json:"freshness"`
 }
 
 type DiskUsageArgs struct {

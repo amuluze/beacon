@@ -4,6 +4,7 @@ package tunnel
 
 import (
 	"context"
+	"crypto/subtle"
 	"log/slog"
 	"net"
 	"sync"
@@ -40,6 +41,7 @@ type ServerTunnel struct {
 	streams    sync.Map // map[string]*pendingStream (stream_id -> pendingStream)
 	callID     atomic.Uint64
 	lifecycle  AgentLifecycle
+	joinToken  string
 }
 
 type agentStream struct {
@@ -50,6 +52,11 @@ type agentStream struct {
 // NewServerTunnel creates a new Server-side tunnel manager.
 func NewServerTunnel() *ServerTunnel {
 	return &ServerTunnel{}
+}
+
+// SetJoinToken configures the optional registration token required from Agents.
+func (s *ServerTunnel) SetJoinToken(token string) {
+	s.joinToken = token
 }
 
 // SetAgentLifecycle registers lifecycle callbacks for agent connect/disconnect.
@@ -92,7 +99,16 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 	}
 
 	agentID := frame.Method
-	slog.Info("server tunnel: agent registered", "agent_id", agentID)
+	if agentID == "" {
+		err := &InvalidAgentIDError{}
+		slog.Warn("server tunnel: empty agent id rejected")
+		return err
+	}
+	if !s.validJoinToken(frame.Payload) {
+		err := &AgentUnauthorizedError{AgentID: agentID}
+		slog.Warn("server tunnel: agent registration rejected", "agent_id", agentID)
+		return err
+	}
 
 	as := &agentStream{
 		agentID: agentID,
@@ -100,7 +116,12 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 			return stream.Send(f)
 		},
 	}
-	s.agents.Store(agentID, as)
+	if _, loaded := s.agents.LoadOrStore(agentID, as); loaded {
+		err := &DuplicateAgentError{AgentID: agentID}
+		slog.Warn("server tunnel: duplicate agent rejected", "agent_id", agentID)
+		return err
+	}
+	slog.Info("server tunnel: agent registered", "agent_id", agentID)
 	defer func() {
 		s.agents.Delete(agentID)
 		if s.lifecycle != nil {
@@ -153,6 +174,16 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 			}
 		}
 	}
+}
+
+func (s *ServerTunnel) validJoinToken(token []byte) bool {
+	if s.joinToken == "" {
+		return true
+	}
+	if len(token) != len(s.joinToken) {
+		return false
+	}
+	return subtle.ConstantTimeCompare(token, []byte(s.joinToken)) == 1
 }
 
 // Call dispatches an RPC call to an agent and waits for the response.
@@ -270,6 +301,31 @@ type AgentOfflineError struct {
 
 func (e *AgentOfflineError) Error() string {
 	return "agent " + e.AgentID + " is offline"
+}
+
+// InvalidAgentIDError is returned when an Agent registers without an identity.
+type InvalidAgentIDError struct{}
+
+func (e *InvalidAgentIDError) Error() string {
+	return "agent id is required"
+}
+
+// AgentUnauthorizedError is returned when an Agent registration token is invalid.
+type AgentUnauthorizedError struct {
+	AgentID string
+}
+
+func (e *AgentUnauthorizedError) Error() string {
+	return "agent " + e.AgentID + " is unauthorized"
+}
+
+// DuplicateAgentError is returned when an Agent ID is already connected.
+type DuplicateAgentError struct {
+	AgentID string
+}
+
+func (e *DuplicateAgentError) Error() string {
+	return "agent " + e.AgentID + " is already connected"
 }
 
 // RPCError is returned when the agent returns an RPC error.

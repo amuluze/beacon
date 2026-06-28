@@ -1,4 +1,4 @@
-import type { Usage } from '@/interface/host.ts'
+import type { Freshness, Usage } from '@/interface/host.ts'
 
 /**
  * @Author     : Amu
@@ -143,4 +143,5 @@ export interface ContainerTrending {
     names: string[]
     cpu_usage: Map<string, Usage[]>
     mem_usage: Map<string, Usage[]>
+    freshness: Freshness
 }

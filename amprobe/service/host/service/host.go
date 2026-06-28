@@ -54,6 +54,15 @@ func NewHostService(hostRepo repository.IHostRepo) *HostService {
 	return &HostService{HostRepo: hostRepo}
 }
 
+func mapFreshness(f rpcSchema.Freshness) schema.Freshness {
+	return schema.Freshness{
+		CollectedAt: f.CollectedAt,
+		AgeSeconds:  f.AgeSeconds,
+		Stale:       f.Stale,
+		Degraded:    f.Degraded,
+	}
+}
+
 func (h *HostService) HostInfo(ctx context.Context) (schema.HostInfoReply, error) {
 	var reply schema.HostInfoReply
 	info, err := h.HostRepo.HostInfo(ctx, rpcSchema.HostInfoArgs{})
@@ -68,6 +77,7 @@ func (h *HostService) HostInfo(ctx context.Context) (schema.HostInfoReply, error
 	reply.PlatformVersion = info.PlatformVersion
 	reply.Platform = info.Platform
 	reply.OS = info.OS
+	reply.Freshness = mapFreshness(info.Freshness)
 	return reply, err
 }
 
@@ -78,6 +88,7 @@ func (h *HostService) CPUInfo(ctx context.Context) (schema.CPUInfoReply, error) 
 		return reply, err
 	}
 	reply.Percent = cpuInfo.Percent
+	reply.Freshness = mapFreshness(cpuInfo.Freshness)
 	return reply, nil
 }
 
@@ -113,6 +124,7 @@ func (h *HostService) MemInfo(ctx context.Context) (schema.MemoryInfoReply, erro
 	reply.Used = memInfo.Used
 	reply.Total = memInfo.Total
 	reply.Percent = memInfo.Percent
+	reply.Freshness = mapFreshness(memInfo.Freshness)
 	return reply, nil
 }
 
@@ -154,6 +166,7 @@ func (h *HostService) DiskInfo(ctx context.Context) (schema.DiskInfoReply, error
 		})
 	}
 	reply.Info = list
+	reply.Freshness = mapFreshness(rpcReply.Freshness)
 	return reply, err
 }
 

@@ -5,6 +5,8 @@
 package service
 
 import (
+	"log/slog"
+
 	"github.com/spf13/viper"
 )
 
@@ -34,7 +36,21 @@ func NewConfig(configFile string) (*Config, error) {
 		return nil, err
 	}
 
+	warnInsecureDefaults(config)
+
 	return config, nil
+}
+
+func warnInsecureDefaults(config *Config) {
+	if config.Auth.Enable && config.Auth.SigningKey == "amprobe" {
+		slog.Warn("auth signing key uses default development value")
+	}
+	if config.AgentInstall.Enable && config.AgentInstall.Token == "change-me" {
+		slog.Warn("agent install token uses default development value")
+	}
+	if config.Control.Enable && config.Control.JoinToken == "" && config.AgentInstall.Token == "" {
+		slog.Warn("control join token is empty")
+	}
 }
 
 type Fiber struct {
@@ -50,6 +66,7 @@ type Control struct {
 	Enable         bool
 	Address        string
 	DefaultAgentID string
+	JoinToken      string
 }
 
 type Gorm struct {

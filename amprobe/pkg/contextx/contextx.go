@@ -4,7 +4,12 @@
 // Description:
 package contextx
 
-import "context"
+import (
+	"context"
+	"errors"
+)
+
+var ErrAgentIDRequired = errors.New("agent id is required")
 
 type (
 	userIDCtx   struct{}
@@ -52,4 +57,12 @@ func FromAgentID(ctx context.Context) string {
 		}
 	}
 	return ""
+}
+
+func RequireAgentID(ctx context.Context) (string, error) {
+	agentID := FromAgentID(ctx)
+	if agentID == "" {
+		return "", ErrAgentIDRequired
+	}
+	return agentID, nil
 }

@@ -13,6 +13,14 @@ export interface HostInfo {
     platform_version: string
     kernel_version: string
     kernel_arch: string
+    freshness: Freshness
+}
+
+export interface Freshness {
+    collected_at: number
+    age_seconds: number
+    stale: boolean
+    degraded: boolean
 }
 
 export interface Usage {
@@ -52,12 +60,14 @@ export interface NetUsageResult {
 
 export interface CPUInfo {
     percent: number
+    freshness: Freshness
 }
 
 export interface MemInfo {
     percent: number
     total: number
     used: number
+    freshness: Freshness
 }
 export interface DiskInfo {
     device: string
@@ -67,6 +77,7 @@ export interface DiskInfo {
 }
 export interface DiskInfoResult {
     info: DiskInfo[]
+    freshness: Freshness
 }
 
 export interface CPUTrendingArgs {

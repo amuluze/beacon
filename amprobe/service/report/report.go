@@ -3,6 +3,7 @@
 package report
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -19,6 +20,8 @@ type Service struct {
 	DB    *database.DB
 	Token string
 }
+
+var ErrMissingAgentID = errors.New("missing agent_id")
 
 func NewService(db *database.DB, token string) *Service {
 	return &Service{DB: db, Token: token}
@@ -40,6 +43,9 @@ func (s *Service) HandleReport(c *fiber.Ctx) error {
 	}
 
 	if err := s.Store(args); err != nil {
+		if errors.Is(err, ErrMissingAgentID) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		}
 		slog.Error("report store failed", "agent", args.AgentID, "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "store failed"})
 	}
@@ -51,7 +57,7 @@ func (s *Service) HandleReport(c *fiber.Ctx) error {
 func (s *Service) Store(args rpcSchema.MonitorReportArgs) error {
 	agentID := args.AgentID
 	if agentID == "" {
-		return fmt.Errorf("missing agent_id")
+		return ErrMissingAgentID
 	}
 
 	if err := s.DB.RunInTransaction(func(tx *gorm.DB) error {

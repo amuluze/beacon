@@ -1,6 +1,7 @@
 package report
 
 import (
+	"errors"
 	"path/filepath"
 	"testing"
 	"time"
@@ -38,8 +39,8 @@ func newTestDB(t *testing.T) *database.DB {
 func TestStoreRejectsMissingAgentID(t *testing.T) {
 	svc := NewService(newTestDB(t), "")
 
-	if err := svc.Store(rpcSchema.MonitorReportArgs{}); err == nil {
-		t.Fatal("expected missing agent_id error")
+	if err := svc.Store(rpcSchema.MonitorReportArgs{}); !errors.Is(err, ErrMissingAgentID) {
+		t.Fatalf("error = %v, want ErrMissingAgentID", err)
 	}
 }
 

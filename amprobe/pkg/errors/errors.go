@@ -4,7 +4,15 @@
 // Description:
 package errors
 
-import "github.com/pkg/errors"
+import (
+	"amprobe/pkg/contextx"
+	stderrors "errors"
+	"net/http"
+
+	tunnel "common/rpc/tunnel"
+
+	pkgerrors "github.com/pkg/errors"
+)
 
 const (
 	InternalServerError = "Internal server error"
@@ -17,11 +25,11 @@ const (
 )
 
 var (
-	Is          = errors.Is
-	New         = errors.New
-	Wrap        = errors.Wrap
-	WithStack   = errors.WithStack
-	WithMessage = errors.WithMessage
+	Is          = pkgerrors.Is
+	New         = pkgerrors.New
+	Wrap        = pkgerrors.Wrap
+	WithStack   = pkgerrors.WithStack
+	WithMessage = pkgerrors.WithMessage
 )
 
 var (
@@ -55,4 +63,46 @@ func New500Error(error string) Error {
 	err := newError(500, InternalServerError)
 	err.Err = error
 	return err
+}
+
+func FromError(err error) Error {
+	if err == nil {
+		return Error{}
+	}
+
+	if stderrors.Is(err, contextx.ErrAgentIDRequired) {
+		e := newError(http.StatusBadRequest, "agent id is required")
+		e.Err = err.Error()
+		return e
+	}
+
+	var offline *tunnel.AgentOfflineError
+	if stderrors.As(err, &offline) {
+		e := newError(http.StatusServiceUnavailable, "agent offline")
+		e.Err = err.Error()
+		return e
+	}
+
+	var unauthorized *tunnel.AgentUnauthorizedError
+	if stderrors.As(err, &unauthorized) {
+		e := newError(http.StatusUnauthorized, "agent unauthorized")
+		e.Err = err.Error()
+		return e
+	}
+
+	var duplicate *tunnel.DuplicateAgentError
+	if stderrors.As(err, &duplicate) {
+		e := newError(http.StatusConflict, "agent already connected")
+		e.Err = err.Error()
+		return e
+	}
+
+	var invalidAgent *tunnel.InvalidAgentIDError
+	if stderrors.As(err, &invalidAgent) {
+		e := newError(http.StatusBadRequest, "invalid agent")
+		e.Err = err.Error()
+		return e
+	}
+
+	return New400Error(err.Error())
 }

@@ -87,10 +87,11 @@ type ContainerRestartArgs struct {
 type ContainerRestartReply struct{}
 
 type ContainerQueryRely struct {
-	Data  []Container `json:"data"`
-	Total int         `json:"total"`
-	Page  int         `json:"page"`
-	Size  int         `json:"size"`
+	Data      []Container `json:"data"`
+	Total     int         `json:"total"`
+	Page      int         `json:"page"`
+	Size      int         `json:"size"`
+	Freshness Freshness   `json:"freshness"`
 }
 
 type Image struct {
@@ -108,10 +109,11 @@ type ImageQueryArgs struct {
 }
 
 type ImageQueryReply struct {
-	Data  []Image `json:"data"`
-	Total int     `json:"total"`
-	Page  int     `json:"page"`
-	Size  int     `json:"size"`
+	Data      []Image   `json:"data"`
+	Total     int       `json:"total"`
+	Page      int       `json:"page"`
+	Size      int       `json:"size"`
+	Freshness Freshness `json:"freshness"`
 }
 
 type ImageTagArgs struct {
@@ -188,10 +190,11 @@ type Network struct {
 }
 
 type NetworkQueryReply struct {
-	Data  []Network `json:"data"`
-	Total int       `json:"total"`
-	Page  int       `json:"page"`
-	Size  int       `json:"size"`
+	Data      []Network `json:"data"`
+	Total     int       `json:"total"`
+	Page      int       `json:"page"`
+	Size      int       `json:"size"`
+	Freshness Freshness `json:"freshness"`
 }
 
 type NetworkCountArgs struct{}
@@ -209,13 +212,14 @@ type NetworkDeleteReply struct {
 
 type Docker struct {
 	Timestamp     time.Time
-	DockerVersion string `json:"docker_version"`
-	APIVersion    string `json:"api_version"`
-	MinAPIVersion string `json:"min_api_version"`
-	GitCommit     string `json:"git_commit"`
-	GoVersion     string `json:"go_version"`
-	Os            string `json:"os"`
-	Arch          string `json:"arch"`
+	DockerVersion string    `json:"docker_version"`
+	APIVersion    string    `json:"api_version"`
+	MinAPIVersion string    `json:"min_api_version"`
+	GitCommit     string    `json:"git_commit"`
+	GoVersion     string    `json:"go_version"`
+	Os            string    `json:"os"`
+	Arch          string    `json:"arch"`
+	Freshness     Freshness `json:"freshness"`
 }
 
 type GetDockerRegistryMirrorsArgs struct {
@@ -237,7 +241,8 @@ type ContainerUsageArgs struct {
 }
 
 type ContainerUsageReply struct {
-	Names    []string           `json:"names"`
-	CPUUsage map[string][]Usage `json:"cpu_usage"`
-	MemUsage map[string][]Usage `json:"mem_usage"`
+	Names     []string           `json:"names"`
+	CPUUsage  map[string][]Usage `json:"cpu_usage"`
+	MemUsage  map[string][]Usage `json:"mem_usage"`
+	Freshness Freshness          `json:"freshness"`
 }

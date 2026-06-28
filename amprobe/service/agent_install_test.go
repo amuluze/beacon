@@ -44,3 +44,18 @@ func TestBuildAgentInstallScriptUsesInstallTokenHeader(t *testing.T) {
 		t.Fatal("expected script to download collia binary selected by arch")
 	}
 }
+
+func TestBuildColliaConfigUsesControlJoinToken(t *testing.T) {
+	router := &Router{config: &Config{
+		Control:      Control{JoinToken: "control-secret"},
+		AgentInstall: AgentInstall{Token: "install-secret"},
+	}}
+
+	config := router.buildColliaConfig("agent-a")
+	if !strings.Contains(config, `join_token: "control-secret"`) {
+		t.Fatalf("expected control join token in config, got:\n%s", config)
+	}
+	if !strings.Contains(config, `token: "install-secret"`) {
+		t.Fatalf("expected report/install token in config, got:\n%s", config)
+	}
+}

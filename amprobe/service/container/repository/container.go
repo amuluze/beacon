@@ -15,6 +15,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const freshnessStaleAfter = 2 * time.Minute
+
 var ContainerServiceSet = wire.NewSet(NewContainerRepo, wire.Bind(new(IContainerRepo), new(*ContainerRepo)))
 
 var _ IContainerRepo = (*ContainerRepo)(nil)
@@ -61,20 +63,40 @@ func NewContainerRepo(client rpc.Caller, db *database.DB) *ContainerRepo {
 	return &ContainerRepo{RPCClient: client, DB: db}
 }
 
-func (c *ContainerRepo) agentDB(ctx context.Context) *gorm.DB {
-	agentID := contextx.FromAgentID(ctx)
-	db := c.DB.DB
-	if agentID != "" {
-		return db.Where("agent_id = ?", agentID)
+func (c *ContainerRepo) agentDB(ctx context.Context) (*gorm.DB, error) {
+	agentID, err := contextx.RequireAgentID(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return db
+	return c.DB.DB.Where("agent_id = ?", agentID), nil
+}
+
+func freshness(ts time.Time) rpcSchema.Freshness {
+	if ts.IsZero() {
+		return rpcSchema.Freshness{Stale: true, Degraded: true}
+	}
+	age := time.Since(ts)
+	if age < 0 {
+		age = 0
+	}
+	stale := age > freshnessStaleAfter
+	return rpcSchema.Freshness{
+		CollectedAt: ts.Unix(),
+		AgeSeconds:  int64(age.Seconds()),
+		Stale:       stale,
+		Degraded:    stale,
+	}
 }
 
 // ── Monitoring queries (local DB) ──
 
 func (c *ContainerRepo) Version(ctx context.Context, args rpcSchema.DockerArgs) (rpcSchema.DockerReply, error) {
 	var result model.MonitorDocker
-	if err := c.agentDB(ctx).Model(&model.MonitorDocker{}).First(&result).Error; err != nil {
+	db, err := c.agentDB(ctx)
+	if err != nil {
+		return rpcSchema.DockerReply{}, err
+	}
+	if err := db.Model(&model.MonitorDocker{}).First(&result).Error; err != nil {
 		return rpcSchema.DockerReply{}, err
 	}
 	return rpcSchema.DockerReply{
@@ -88,18 +110,36 @@ func (c *ContainerRepo) Version(ctx context.Context, args rpcSchema.DockerArgs) 
 			Os:            result.Os,
 			Arch:          result.Arch,
 		},
+		Freshness: freshness(result.Timestamp),
 	}, nil
 }
 
 func (c *ContainerRepo) ContainerList(ctx context.Context, args rpcSchema.ContainerQueryArgs) (rpcSchema.ContainerQueryReply, error) {
 	var containers []model.MonitorContainer
-	if err := c.agentDB(ctx).Model(&model.MonitorContainer{}).
-		Where("ports != ?", "").Group("name").
+	agentID, err := contextx.RequireAgentID(ctx)
+	if err != nil {
+		return rpcSchema.ContainerQueryReply{}, err
+	}
+	latest := c.DB.DB.Model(&model.MonitorContainer{}).
+		Where("ports != ?", "").
+		Where("agent_id = ?", agentID).
+		Select("agent_id, name, MAX(timestamp) AS timestamp").
+		Group("agent_id, name")
+	query := c.DB.DB.Model(&model.MonitorContainer{}).
+		Where("m_container.ports != ?", "").
+		Where("m_container.agent_id = ?", agentID)
+	if err := query.
+		Joins("JOIN (?) latest ON latest.agent_id = m_container.agent_id AND latest.name = m_container.name AND latest.timestamp = m_container.timestamp", latest).
+		Order("m_container.name asc").
 		Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&containers).Error; err != nil {
 		return rpcSchema.ContainerQueryReply{}, err
 	}
 	var results []rpcSchema.Container
+	var latestTimestamp time.Time
 	for _, container := range containers {
+		if container.Timestamp.After(latestTimestamp) {
+			latestTimestamp = container.Timestamp
+		}
 		results = append(results, rpcSchema.Container{
 			Timestamp:   container.Timestamp,
 			ContainerID: container.ContainerID,
@@ -116,12 +156,16 @@ func (c *ContainerRepo) ContainerList(ctx context.Context, args rpcSchema.Contai
 			Labels:      container.Labels,
 		})
 	}
-	return rpcSchema.ContainerQueryReply{Data: results}, nil
+	return rpcSchema.ContainerQueryReply{Data: results, Freshness: freshness(latestTimestamp)}, nil
 }
 
 func (c *ContainerRepo) Usage(ctx context.Context, args rpcSchema.ContainerUsageArgs) (rpcSchema.ContainerUsageReply, error) {
 	var containers []model.MonitorContainer
-	if err := c.agentDB(ctx).Model(&model.MonitorContainer{}).
+	db, err := c.agentDB(ctx)
+	if err != nil {
+		return rpcSchema.ContainerUsageReply{}, err
+	}
+	if err := db.Model(&model.MonitorContainer{}).
 		Order("timestamp asc").
 		Where("timestamp > ?", time.Unix(args.StartTime, 0)).Find(&containers).Error; err != nil {
 		return rpcSchema.ContainerUsageReply{}, err
@@ -131,7 +175,11 @@ func (c *ContainerRepo) Usage(ctx context.Context, args rpcSchema.ContainerUsage
 		CPUUsage: make(map[string][]rpcSchema.Usage),
 		MemUsage: make(map[string][]rpcSchema.Usage),
 	}
+	var latestTimestamp time.Time
 	for _, item := range containers {
+		if item.Timestamp.After(latestTimestamp) {
+			latestTimestamp = item.Timestamp
+		}
 		if _, ok := reply.CPUUsage[item.Name]; !ok {
 			reply.Names = append(reply.Names, item.Name)
 			reply.CPUUsage[item.Name] = make([]rpcSchema.Usage, 0)
@@ -144,12 +192,22 @@ func (c *ContainerRepo) Usage(ctx context.Context, args rpcSchema.ContainerUsage
 			Timestamp: item.Timestamp.Unix(), Value: item.MemUsage,
 		})
 	}
+	reply.Freshness = freshness(latestTimestamp)
 	return reply, nil
 }
 
 func (c *ContainerRepo) ContainersByImage(ctx context.Context, image string) (num int, err error) {
 	var count int64
-	if err := c.agentDB(ctx).Model(&model.MonitorContainer{}).Where("image = ?", image).Group("name").Count(&count).Error; err != nil {
+	agentID, err := contextx.RequireAgentID(ctx)
+	if err != nil {
+		return 0, err
+	}
+	distinctContainers := c.DB.DB.Model(&model.MonitorContainer{}).
+		Where("image = ?", image).
+		Where("agent_id = ?", agentID).
+		Select("agent_id, name").
+		Group("agent_id, name")
+	if err := c.DB.Table("(?) as containers", distinctContainers).Count(&count).Error; err != nil {
 		return 0, err
 	}
 	return int(count), nil
@@ -157,7 +215,16 @@ func (c *ContainerRepo) ContainersByImage(ctx context.Context, image string) (nu
 
 func (c *ContainerRepo) ContainerCount(ctx context.Context, args rpcSchema.ContainerCountArgs) (rpcSchema.ContainerCountReply, error) {
 	var count int64
-	if err := c.agentDB(ctx).Model(&model.MonitorContainer{}).Group("name").Count(&count).Error; err != nil {
+	agentID, err := contextx.RequireAgentID(ctx)
+	if err != nil {
+		return rpcSchema.ContainerCountReply{}, err
+	}
+	distinctContainers := c.DB.DB.Model(&model.MonitorContainer{}).
+		Where("ports != ?", "").
+		Where("agent_id = ?", agentID).
+		Select("agent_id, name").
+		Group("agent_id, name")
+	if err := c.DB.Table("(?) as containers", distinctContainers).Count(&count).Error; err != nil {
 		return rpcSchema.ContainerCountReply{}, err
 	}
 	return rpcSchema.ContainerCountReply{Count: int(count)}, nil
@@ -165,12 +232,20 @@ func (c *ContainerRepo) ContainerCount(ctx context.Context, args rpcSchema.Conta
 
 func (c *ContainerRepo) ImageList(ctx context.Context, args rpcSchema.ImageQueryArgs) (rpcSchema.ImageQueryReply, error) {
 	var results []model.MonitorImage
-	if err := c.agentDB(ctx).Model(&model.MonitorImage{}).
+	db, err := c.agentDB(ctx)
+	if err != nil {
+		return rpcSchema.ImageQueryReply{}, err
+	}
+	if err := db.Model(&model.MonitorImage{}).
 		Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&results).Error; err != nil {
 		return rpcSchema.ImageQueryReply{}, err
 	}
 	var list []rpcSchema.Image
+	var latestTimestamp time.Time
 	for _, result := range results {
+		if result.Timestamp.After(latestTimestamp) {
+			latestTimestamp = result.Timestamp
+		}
 		list = append(list, rpcSchema.Image{
 			Timestamp: result.Timestamp,
 			ImageID:   result.ImageID,
@@ -180,12 +255,16 @@ func (c *ContainerRepo) ImageList(ctx context.Context, args rpcSchema.ImageQuery
 			Size:      result.Size,
 		})
 	}
-	return rpcSchema.ImageQueryReply{Data: list}, nil
+	return rpcSchema.ImageQueryReply{Data: list, Freshness: freshness(latestTimestamp)}, nil
 }
 
 func (c *ContainerRepo) ImageCount(ctx context.Context, args rpcSchema.ImageCountArgs) (rpcSchema.ImageCountReply, error) {
 	var total int64
-	if err := c.agentDB(ctx).Model(&model.MonitorImage{}).Order("created_at desc").Count(&total).Error; err != nil {
+	db, err := c.agentDB(ctx)
+	if err != nil {
+		return rpcSchema.ImageCountReply{}, err
+	}
+	if err := db.Model(&model.MonitorImage{}).Order("created_at desc").Count(&total).Error; err != nil {
 		return rpcSchema.ImageCountReply{}, err
 	}
 	return rpcSchema.ImageCountReply{Count: int(total)}, nil
@@ -193,12 +272,20 @@ func (c *ContainerRepo) ImageCount(ctx context.Context, args rpcSchema.ImageCoun
 
 func (c *ContainerRepo) NetworkList(ctx context.Context, args rpcSchema.NetworkQueryArgs) (rpcSchema.NetworkQueryReply, error) {
 	var networks []model.MonitorNetwork
-	if err := c.agentDB(ctx).Model(&model.MonitorNetwork{}).
+	db, err := c.agentDB(ctx)
+	if err != nil {
+		return rpcSchema.NetworkQueryReply{}, err
+	}
+	if err := db.Model(&model.MonitorNetwork{}).
 		Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&networks).Error; err != nil {
 		return rpcSchema.NetworkQueryReply{}, err
 	}
 	var list []rpcSchema.Network
+	var latestTimestamp time.Time
 	for _, n := range networks {
+		if n.Timestamp.After(latestTimestamp) {
+			latestTimestamp = n.Timestamp
+		}
 		list = append(list, rpcSchema.Network{
 			Timestamp: n.Timestamp,
 			NetworkID: n.NetworkID,
@@ -212,12 +299,16 @@ func (c *ContainerRepo) NetworkList(ctx context.Context, args rpcSchema.NetworkQ
 			Labels:    n.Labels,
 		})
 	}
-	return rpcSchema.NetworkQueryReply{Data: list}, nil
+	return rpcSchema.NetworkQueryReply{Data: list, Freshness: freshness(latestTimestamp)}, nil
 }
 
 func (c *ContainerRepo) NetworkCount(ctx context.Context, args rpcSchema.NetworkCountArgs) (rpcSchema.NetworkCountReply, error) {
 	var total int64
-	if err := c.agentDB(ctx).Model(&model.MonitorNetwork{}).Order("created_at desc").Count(&total).Error; err != nil {
+	db, err := c.agentDB(ctx)
+	if err != nil {
+		return rpcSchema.NetworkCountReply{}, err
+	}
+	if err := db.Model(&model.MonitorNetwork{}).Order("created_at desc").Count(&total).Error; err != nil {
 		return rpcSchema.NetworkCountReply{}, err
 	}
 	return rpcSchema.NetworkCountReply{Count: int(total)}, nil

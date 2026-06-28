@@ -76,19 +76,21 @@ type NetUsage struct {
 
 type HostInfoArgs struct{}
 type HostInfoReply struct {
-	Timestamp       int64  `json:"timestamp"`
-	Uptime          string `json:"uptime"`
-	Hostname        string `json:"hostname"`
-	OS              string `json:"os"`
-	Platform        string `json:"platform"`
-	PlatformVersion string `json:"platform_version"`
-	KernelVersion   string `json:"kernel_version"`
-	KernelArch      string `json:"kernel_arch"`
+	Timestamp       int64     `json:"timestamp"`
+	Uptime          string    `json:"uptime"`
+	Hostname        string    `json:"hostname"`
+	OS              string    `json:"os"`
+	Platform        string    `json:"platform"`
+	PlatformVersion string    `json:"platform_version"`
+	KernelVersion   string    `json:"kernel_version"`
+	KernelArch      string    `json:"kernel_arch"`
+	Freshness       Freshness `json:"freshness"`
 }
 
 type CPUInfoArgs struct{}
 type CPUInfoReply struct {
-	Percent float64 `json:"percent"`
+	Percent   float64   `json:"percent"`
+	Freshness Freshness `json:"freshness"`
 }
 
 type CPUUsageArgs struct {
@@ -101,9 +103,10 @@ type CPUUsageReply struct {
 
 type MemoryInfoArgs struct{}
 type MemoryInfoReply struct {
-	Percent float64 `json:"percent"`
-	Total   float64 `json:"total"`
-	Used    float64 `json:"used"`
+	Percent   float64   `json:"percent"`
+	Total     float64   `json:"total"`
+	Used      float64   `json:"used"`
+	Freshness Freshness `json:"freshness"`
 }
 
 type MemoryUsageArgs struct {
@@ -116,7 +119,8 @@ type MemoryUsageReply struct {
 
 type DiskInfoArgs struct{}
 type DiskInfoReply struct {
-	Info []Disk `json:"info"`
+	Info      []Disk    `json:"info"`
+	Freshness Freshness `json:"freshness"`
 }
 
 type DiskUsageArgs struct {
@@ -140,7 +144,8 @@ type ContainerUsageArgs struct {
 	EndTime   int64 `json:"end_time"`
 }
 type ContainerUsageReply struct {
-	Names    []string           `json:"names"`
-	CPUUsage map[string][]Usage `json:"cpu_usage"`
-	MemUsage map[string][]Usage `json:"mem_usage"`
+	Names     []string           `json:"names"`
+	CPUUsage  map[string][]Usage `json:"cpu_usage"`
+	MemUsage  map[string][]Usage `json:"mem_usage"`
+	Freshness Freshness          `json:"freshness"`
 }

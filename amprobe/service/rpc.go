@@ -29,6 +29,7 @@ func NewRPCClient(config *Config) (rpc.Caller, error) {
 	slog.Info("starting reverse tunnel server", "addr", addr)
 
 	tun := tunnelpkg.NewServerTunnel()
+	tun.SetJoinToken(controlJoinToken(config))
 	globalTunnel.tun = tun
 
 	go func() {
@@ -42,6 +43,13 @@ func NewRPCClient(config *Config) (rpc.Caller, error) {
 		defaultID = rpc.DefaultAgentID
 	}
 	return rpc.NewTunnelClient(tun, defaultID), nil
+}
+
+func controlJoinToken(config *Config) string {
+	if config.Control.JoinToken != "" {
+		return config.Control.JoinToken
+	}
+	return config.AgentInstall.Token
 }
 
 // SetAgentLifecycle wires the agent service into the tunnel lifecycle hooks.
