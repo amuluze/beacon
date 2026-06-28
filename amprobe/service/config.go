@@ -9,15 +9,16 @@ import (
 )
 
 type Config struct {
-	Fiber        Fiber
-	Control      Control
-	Gorm         Gorm
-	DB           DB
-	Log          Log
-	Auth         Auth
-	Casbin       Casbin
-	Task         Task
-	AgentInstall AgentInstall
+	Fiber         Fiber
+	Control       Control
+	Gorm          Gorm
+	DB            DB
+	Log           Log
+	Auth          Auth
+	Casbin        Casbin
+	Task          Task
+	AgentInstall  AgentInstall
+	InstallReport InstallReport
 }
 
 // NewConfig Load config file (toml/json/yaml)
@@ -46,8 +47,8 @@ type Fiber struct {
 }
 
 type Control struct {
-	Enable        bool
-	Address       string
+	Enable         bool
+	Address        string
 	DefaultAgentID string
 }
 
@@ -83,6 +84,14 @@ type AgentInstall struct {
 	ControlPort   int
 	TLSEnable     bool
 	CertDir       string
+}
+
+type InstallReport struct {
+	Enable     bool
+	URL        string
+	InstallDir string
+	IDFile     string
+	Timeout    int
 }
 
 type Log struct {
