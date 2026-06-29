@@ -70,7 +70,9 @@
 
 本节只列出静态发现的测试入口；Domain Spec 中的验收方式是建议验证路径，不代表这些测试已经证明约束成立。
 
-- Test files discovered: 9
+> 注：以下清单为基线快照，未随每次提交全量刷新。完整测试入口以各模块 `go test ./...` 实际收集为准；安全加固与 Agent 隔离相关新增测试已在末尾标注。
+
+- Test files discovered: 9（基线快照，实际更多）
 - `amprobe/pkg/fiberx/fiberx_test.go`
 - `amprobe/service/agent_install_test.go`
 - `amprobe/service/container/repository/container_test.go`
@@ -80,6 +82,12 @@
 - `collia/pkg/timectl/timectl_test.go`
 - `collia/service/report/client_test.go`
 - `common/transport/tlsconfig/tlsconfig_test.go`
+- 新增（凭据强校验 / Agent 隔离）：
+  - `amprobe/pkg/contextx/contextx_test.go`（`ResolveAgentID`/`IsValidAgentID` 边界）
+  - `amprobe/pkg/rpc/rpc_test.go`（`TunnelClient` 缺失/非法 `agent_id` 拒绝）
+  - `amprobe/service/config_test.go` 扩展（`resolveControlToken`/`resolveInstallToken` 生产强校验）
+  - `amprobe/service/host/repository/host_test.go` 扩展（8 查询拒绝缺失 `agent_id` + 非法 + Agent 隔离）
+  - `amprobe/service/container/repository/container_test.go` 扩展（9 查询拒绝缺失 `agent_id` + 非法 + Agent 隔离）
 
 ### Domain Spec Evidence Notes
 
@@ -91,10 +99,10 @@
 
 | Domain Ref | Evidence | Last Verified | Notes |
 |------------|----------|---------------|-------|
-| `monitoring-platform/I001` | `TestContainerUpdateCallsAgentRPC`; `cd amprobe && go test ./...` | working tree validation | 覆盖控制调用不在 Server 本地伪成功；仍需补多 Agent 集成测试。 |
+| `monitoring-platform/I001` | `TestContainerUpdateCallsAgentRPC`; `TestTunnelClientCallRejectsMissingAgentID`; `TestHostQueriesRejectMissingAgentID`; `TestContainerQueriesRejectMissingAgentID`; `cd amprobe && go test ./...` | working tree validation | 覆盖控制调用不在 Server 本地伪成功，且读/写路径缺失 `agent_id` 统一返回 `ErrMissingAgentID`；Agent 隔离由 `TestHostQueriesScopedByAgentID`/`TestContainerQueriesScopedByAgentID` 覆盖。 |
 | `monitoring-platform/I005` | `TestStorePersistsReportBatch`; `TestStoreRejectsMissingAgentID`; `cd amprobe && go test ./...` | working tree validation | 覆盖成功批次和缺失 Agent 拒绝；仍需补真实 DB 写入失败回滚测试。 |
-| `monitoring-platform/R001` | `TestNetUsageReturnsDBError`; `cd amprobe && go test ./...` | working tree validation | 覆盖监控查询 DB 错误不降级为空成功；仍需补 API 层错误表现。 |
-| `monitoring-platform/R005` | `TestStoreRejectsMissingAgentID`; `cd amprobe && go test ./...` | working tree validation | 覆盖缺失 Agent 上报拒绝。 |
+| `monitoring-platform/R001` | `TestNetUsageReturnsDBError`; `TestHostQueriesRejectMissingAgentID`/`TestContainerQueriesRejectMissingAgentID`; `cd amprobe && go test ./...` | working tree validation | 覆盖监控查询 DB 错误不降级为空成功，且缺失 `agent_id` 不再静默全表回退；仍需补 API 层错误表现。 |
+| `monitoring-platform/R005` | `TestStoreRejectsMissingAgentID`; `TestStore_RejectsInvalidAgentID`; `cd amprobe && go test ./...` | working tree validation | 覆盖缺失与格式非法 Agent 上报拒绝。 |
 | `monitoring-platform/R006` | `TestContainerUpdateCallsAgentRPC`; Agent `ContainerUpdate` 返回未实现错误 | working tree validation | 覆盖 Server 不再本地假成功；仍需补端到端 API/RPC 契约测试。 |
 
 ## Domain Specs

@@ -102,3 +102,5 @@ cd amprobe/web && npm run build
 - 不在文档中写入真实密钥、Token、内部凭据或不可公开的环境值。
 - 根目录不是 Go module；Go 验证需进入 `amprobe`、`collia`、`common` 分别执行。
 - 监控查询、监控上报和控制调用是三条不同路径；新增接口或修复 Bug 时必须明确所属路径和 Agent 选择语义。
+- Agent 选择必须由请求方显式提供 `X-Agent-ID`/`agent_id`；监控查询读路径与控制调用写路径在缺失或格式非法时统一返回错误（`ErrMissingAgentID`/`ErrInvalidAgentID`），禁止回退默认节点或全表查询。`Control.DefaultAgentID` 已废弃。
+- 敏感凭据（`Auth.SigningKey`、`Control.JoinToken`、`AgentInstall.Token`）在 `App.Env = production` 下，空值、已知弱默认值或长度不足一律拒绝启动；可用对应环境变量覆盖。
