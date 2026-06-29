@@ -8,6 +8,7 @@ import (
 	"amprobe/service/middleware"
 	"amprobe/web"
 	"net/http"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
@@ -34,7 +35,11 @@ func NewFiberApp(config *Config, r IRouter) *fiber.App {
 		app.Use(middleware.GlobalRateLimitMiddleware(config.RateLimit.GlobalMax))
 	}
 	app.Use(compress.New())
-	app.Use(pprof.New())
+	// pprof 暴露运行时内存/goroutine/profile，可泄漏密钥或被用于 DoS。
+	// 仅在非生产模式启用；生产模式禁用，避免 /debug/pprof/* 无鉴权暴露。
+	if !strings.EqualFold(config.App.Env, productionEnv) {
+		app.Use(pprof.New())
+	}
 	app.Use(middleware.PanicMiddleware())
 	app.Use(middleware.StackMiddleware)
 
@@ -73,10 +78,10 @@ func buildCORSConfig(cfg CORS) cors.Config {
 		origins = devAllowOrigins
 	}
 	return cors.Config{
-		AllowOrigins:  joinComma(origins),
-		AllowMethods:  "GET,POST,PUT,DELETE,OPTIONS,PATCH",
-		AllowHeaders:  "Origin,Content-Type,Accept,Authorization,X-Agent-ID,X-Install-Token",
-		ExposeHeaders: "Content-Disposition,X-Agent-ID",
+		AllowOrigins:     joinComma(origins),
+		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS,PATCH",
+		AllowHeaders:     "Origin,Content-Type,Accept,Authorization,X-Agent-ID,X-Install-Token",
+		ExposeHeaders:    "Content-Disposition,X-Agent-ID",
 		AllowCredentials: true,
 		MaxAge:           300,
 	}

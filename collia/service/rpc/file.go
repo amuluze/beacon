@@ -6,13 +6,19 @@ package rpc
 
 import (
 	"collia/pkg/utils"
-	rpcSchema "common/rpc/schema"
 	"context"
 	"os"
 	"path/filepath"
+
+	rpcSchema "common/rpc/schema"
 )
 
+// FilesSearch 列出指定目录下的文件。path 必须位于沙箱根目录内，
+// 防止越界列举系统目录。
 func (s *Service) FilesSearch(ctx context.Context, args rpcSchema.FilesSearchArgs, reply *rpcSchema.FilesSearchReply) error {
+	if _, err := utils.SanitizePathWithin(args.Path, s.rootDir); err != nil {
+		return err
+	}
 	files, err := os.ReadDir(args.Path)
 	if err != nil {
 		return err
@@ -32,7 +38,11 @@ func (s *Service) FilesSearch(ctx context.Context, args rpcSchema.FilesSearchArg
 	return nil
 }
 
+// DirSize 计算目录大小。path 必须位于沙箱内。
 func (s *Service) DirSize(ctx context.Context, args rpcSchema.DirSizeArgs, reply *rpcSchema.DirSizeReply) error {
+	if _, err := utils.SanitizePathWithin(args.Path, s.rootDir); err != nil {
+		return err
+	}
 	var size int64
 	if err := filepath.Walk(args.Path, func(_ string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -49,14 +59,14 @@ func (s *Service) DirSize(ctx context.Context, args rpcSchema.DirSizeArgs, reply
 	return nil
 }
 
+// FileCreate 创建空文件。路径必须位于沙箱内。
 func (s *Service) FileCreate(ctx context.Context, args rpcSchema.FileCreateArgs, reply *rpcSchema.FileCreateReply) error {
 	filePath := filepath.Join(args.Path, args.FileName)
-	filePath, err := utils.SanitizePath(filePath)
-	if err != nil {
+	if _, err := utils.SanitizePathWithin(filePath, s.rootDir); err != nil {
 		return err
 	}
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0600) //#nosec G304 -- path sanitized by utils.SanitizePath
+		f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0600) //#nosec G304 -- path sanitized by utils.SanitizePathWithin
 		if err != nil {
 			return err
 		}
@@ -65,10 +75,10 @@ func (s *Service) FileCreate(ctx context.Context, args rpcSchema.FileCreateArgs,
 	return nil
 }
 
+// FolderCreate 创建目录。路径必须位于沙箱内。
 func (s *Service) FolderCreate(ctx context.Context, args rpcSchema.FolderCreateArgs, reply *rpcSchema.FolderCreateReply) error {
 	folderPath := filepath.Join(args.Path, args.FolderName)
-	folderPath, err := utils.SanitizePath(folderPath)
-	if err != nil {
+	if _, err := utils.SanitizePathWithin(folderPath, s.rootDir); err != nil {
 		return err
 	}
 	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
@@ -77,7 +87,12 @@ func (s *Service) FolderCreate(ctx context.Context, args rpcSchema.FolderCreateA
 	return nil
 }
 
+// FileDelete 删除文件或目录。filepath 必须位于沙箱内，
+// 防止越界删除系统文件（原实现可 rm -rf 任意路径）。
 func (s *Service) FileDelete(ctx context.Context, args rpcSchema.FileDeleteArgs, reply *rpcSchema.FileDeleteReply) error {
+	if _, err := utils.SanitizePathWithin(args.Filepath, s.rootDir); err != nil {
+		return err
+	}
 	if info, err := os.Stat(args.Filepath); err != nil {
 		return err
 	} else if info.IsDir() {
@@ -87,19 +102,33 @@ func (s *Service) FileDelete(ctx context.Context, args rpcSchema.FileDeleteArgs,
 	}
 }
 
+// FileUpload 上传或移动文件。source 与 target 路径都必须位于沙箱内，
+// 防止越界写入或覆盖系统文件。
 func (s *Service) FileUpload(ctx context.Context, args rpcSchema.FileUploadArgs, reply *rpcSchema.FileUploadReply) error {
+	if _, err := utils.SanitizePathWithin(args.TargetFilePath, s.rootDir); err != nil {
+		return err
+	}
 	if len(args.Data) > 0 {
 		if err := os.MkdirAll(filepath.Dir(args.TargetFilePath), 0750); err != nil {
 			return err
 		}
-		return os.WriteFile(args.TargetFilePath, args.Data, 0600)
+		return os.WriteFile(args.TargetFilePath, args.Data, 0600) //#nosec G304 -- path sanitized
+	}
+	// Rename 分支：源路径同样必须位于沙箱内。
+	if _, err := utils.SanitizePathWithin(args.SourceFilePath, s.rootDir); err != nil {
+		return err
 	}
 	return os.Rename(args.SourceFilePath, args.TargetFilePath)
 }
 
+// FileDownload 下载文件。source 必须位于沙箱内，防止越界读取
+// /etc/shadow、私钥等敏感文件；target（服务端拷贝）同样校验。
 func (s *Service) FileDownload(ctx context.Context, args rpcSchema.FileDownloadArgs, reply *rpcSchema.FileDownloadReply) error {
+	if _, err := utils.SanitizePathWithin(args.SourceFilePath, s.rootDir); err != nil {
+		return err
+	}
 	if args.TargetFilePath == "" {
-		data, err := os.ReadFile(args.SourceFilePath)
+		data, err := os.ReadFile(args.SourceFilePath) //#nosec G304 -- path sanitized
 		if err != nil {
 			return err
 		}
@@ -107,6 +136,10 @@ func (s *Service) FileDownload(ctx context.Context, args rpcSchema.FileDownloadA
 		reply.FileName = filepath.Base(args.SourceFilePath)
 		reply.Data = data
 		return nil
+	}
+	// CopyFile 内部对 src/dst 已做 SanitizePath 校验；这里额外约束沙箱根目录。
+	if _, err := utils.SanitizePathWithin(args.TargetFilePath, s.rootDir); err != nil {
+		return err
 	}
 	_, err := utils.CopyFile(args.SourceFilePath, args.TargetFilePath)
 	reply.Filepath = args.TargetFilePath

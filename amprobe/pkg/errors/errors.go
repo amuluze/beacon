@@ -15,6 +15,8 @@ const (
 	Forbidden           = "forbidden"
 	BadRequest          = "bad request"
 	Conflict            = "conflict"
+	ServiceUnavailable  = "service unavailable"
+	GatewayTimeout      = "gateway timeout"
 )
 
 var (
@@ -79,6 +81,20 @@ func New404Error(msg string) Error {
 
 func New409Error(msg string) Error {
 	err := newError(409, Conflict)
+	err.Err = msg
+	return err
+}
+
+// New503Error 表示服务暂不可用（如目标 Agent 离线），用于把领域错误映射为可区分状态码。
+func New503Error(msg string) Error {
+	err := newError(503, ServiceUnavailable)
+	err.Err = msg
+	return err
+}
+
+// New504Error 表示网关超时（如 RPC 调用超时）。
+func New504Error(msg string) Error {
+	err := newError(504, GatewayTimeout)
 	err.Err = msg
 	return err
 }

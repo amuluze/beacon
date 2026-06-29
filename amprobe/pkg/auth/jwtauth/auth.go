@@ -5,7 +5,6 @@
 package jwtauth
 
 import (
-	"strings"
 	"time"
 
 	"amprobe/pkg/auth"
@@ -14,6 +13,26 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 )
+
+// accessTokenType / refreshTokenType 标识 token 类型，存放在 userClaims.TokenType 中，
+// 取代历史上用 Subject 字段顺序（access: uid.name / refresh: name.uid）区分的脆弱设计。
+const (
+	accessTokenType  = "access"
+	refreshTokenType = "refresh"
+)
+
+// userClaims 是 JWT 的自定义 claims，内嵌标准 RegisteredClaims，
+// 用结构化字段携带 UserID/Username/TokenType。
+// 相比旧的 "userID + \".\" + username" 字符串拼接 Subject：
+//   - 消除 username 含 "." 时的身份错乱（旧实现 strings.Split 会取错分段）；
+//   - 消除越界 panic 风险（旧实现无长度校验）；
+//   - TokenType 显式区分 access/refresh，不依赖 Subject 字段顺序。
+type userClaims struct {
+	jwt.RegisteredClaims
+	UserID    string `json:"uid"`
+	Username  string `json:"uname"`
+	TokenType string `json:"ttype"`
+}
 
 type JWTAuth struct {
 	opts  *options
@@ -32,12 +51,18 @@ func New(store Storer, db *database.DB, opts ...Option) *JWTAuth {
 func (a *JWTAuth) generateAccessToken(userID string, username string) (string, error) {
 	now := time.Now()
 
-	token := jwt.NewWithClaims(a.opts.signingMethod, jwt.RegisteredClaims{
-		IssuedAt:  jwt.NewNumericDate(now),
-		ExpiresAt: jwt.NewNumericDate(now.Add(time.Duration(a.opts.expired) * time.Second)),
-		NotBefore: jwt.NewNumericDate(now),
-		Subject:   userID + "." + username,
-	})
+	claims := userClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			IssuedAt:  jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(now.Add(time.Duration(a.opts.expired) * time.Second)),
+			NotBefore: jwt.NewNumericDate(now),
+		},
+		UserID:    userID,
+		Username:  username,
+		TokenType: accessTokenType,
+	}
+
+	token := jwt.NewWithClaims(a.opts.signingMethod, claims)
 
 	tokenString, err := token.SignedString(a.opts.signingKey)
 	if err != nil {
@@ -56,12 +81,18 @@ func (a *JWTAuth) generateAccessToken(userID string, username string) (string, e
 func (a *JWTAuth) generateRefreshToken(userID string, username string) (string, error) {
 	now := time.Now()
 
-	token := jwt.NewWithClaims(a.opts.signingMethod, jwt.RegisteredClaims{
-		IssuedAt:  jwt.NewNumericDate(now),
-		ExpiresAt: jwt.NewNumericDate(now.Add(time.Duration(a.opts.refreshExpired) * time.Second)),
-		NotBefore: jwt.NewNumericDate(now),
-		Subject:   username + "." + userID,
-	})
+	claims := userClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			IssuedAt:  jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(now.Add(time.Duration(a.opts.refreshExpired) * time.Second)),
+			NotBefore: jwt.NewNumericDate(now),
+		},
+		UserID:    userID,
+		Username:  username,
+		TokenType: refreshTokenType,
+	}
+
+	token := jwt.NewWithClaims(a.opts.signingMethod, claims)
 
 	tokenString, err := token.SignedString(a.opts.signingKey)
 	if err != nil {
@@ -93,14 +124,16 @@ func (a *JWTAuth) GenerateToken(userID string, username string) (auth.TokenInfo,
 	return tokenInfo, nil
 }
 
-// parseToken parses the token string and returns registered claims.
-func (a *JWTAuth) parseToken(tokenString string) (*jwt.RegisteredClaims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, a.opts.keyfunc)
+// parseToken 解析 token 字符串并返回自定义 claims。
+// 用结构化 userClaims 直接读取 UserID/Username/TokenType，
+// 不再依赖 Subject 字符串拼接与 strings.Split。
+func (a *JWTAuth) parseToken(tokenString string) (*userClaims, error) {
+	claims := &userClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, a.opts.keyfunc)
 	if err != nil || !token.Valid {
 		return nil, auth.ErrInvalidToken
 	}
-
-	return token.Claims.(*jwt.RegisteredClaims), nil
+	return claims, nil
 }
 
 func (a *JWTAuth) callStore(fn func(Storer) error) error {
@@ -117,7 +150,10 @@ func (a *JWTAuth) DestroyToken(tokenString string) error {
 	})
 }
 
-// ParseToken 解析用户 ID, username
+// ParseToken 解析用户 ID, username。
+// 根据 claims 的 TokenType 字段校验与请求的 tokenType 一致，
+// 防止 refresh token 被当作 access token 使用（或反之）。
+// 空字段或类型不匹配返回 ErrInvalidToken，不再有越界 panic 风险。
 func (a *JWTAuth) ParseToken(tokenString string, tokenType string) (string, string, error) {
 	if tokenString == "" {
 		return "", "", auth.ErrInvalidToken
@@ -140,15 +176,24 @@ func (a *JWTAuth) ParseToken(tokenString string, tokenType string) (string, stri
 	if err != nil {
 		return "", "", err
 	}
+	if claims.UserID == "" || claims.Username == "" || claims.TokenType == "" {
+		return "", "", auth.ErrInvalidToken
+	}
 
+	var wantType string
 	switch tokenType {
 	case "access_token":
-		return strings.Split(claims.Subject, ".")[0], strings.Split(claims.Subject, ".")[1], nil
+		wantType = accessTokenType
 	case "refresh_token":
-		return strings.Split(claims.Subject, ".")[1], strings.Split(claims.Subject, ".")[0], nil
+		wantType = refreshTokenType
 	default:
 		return "", "", auth.ErrInvalidToken
 	}
+	if claims.TokenType != wantType {
+		return "", "", auth.ErrInvalidToken
+	}
+
+	return claims.UserID, claims.Username, nil
 }
 
 // Release 释放资源

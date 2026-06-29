@@ -7,6 +7,8 @@ package contextx
 import (
 	"context"
 	"errors"
+
+	"gorm.io/gorm"
 )
 
 // ErrMissingAgentID 表示请求无法解析出目标 Agent 标识。
@@ -59,6 +61,17 @@ func ResolveAgentID(ctx context.Context) (string, error) {
 		return "", ErrInvalidAgentID
 	}
 	return agentID, nil
+}
+
+// AgentScopedDB 返回按 context 中 agent_id 过滤后的 DB 查询对象。
+// 监控查询读路径应统一使用该 helper，保持与控制调用写路径一致：
+// 缺失或格式非法的 agent_id 返回明确错误，不回退默认节点或全表查询。
+func AgentScopedDB(ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
+	agentID, err := ResolveAgentID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return db.Where("agent_id = ?", agentID), nil
 }
 
 type (

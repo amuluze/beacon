@@ -189,12 +189,60 @@ func TestParseToken_RefreshToken(t *testing.T) {
 		t.Fatalf("ParseToken failed: %v", err)
 	}
 
-	// refresh_token subject order: username.userID
+	// refresh_token 通过结构化 claims 携带 user_id/username，不再依赖 Subject 顺序。
 	if userID != "user-3" {
 		t.Errorf("userID = %q, want %q", userID, "user-3")
 	}
 	if username != "guest" {
 		t.Errorf("username = %q, want %q", username, "guest")
+	}
+}
+
+// TestParseToken_UsernameWithDot 验证 username 含点号时不会再因 Subject 字符串拼接
+// 与 strings.Split 造成身份错乱。结构化 claims 应原样返回 username。
+func TestParseToken_UsernameWithDot(t *testing.T) {
+	store := newFakeStore()
+	a := newTestJWTAuth(store)
+
+	tokenInfo, err := a.GenerateToken("user-dot", "john.doe")
+	if err != nil {
+		t.Fatalf("GenerateToken failed: %v", err)
+	}
+	userID, username, err := a.ParseToken(tokenInfo.GetAccessToken(), "access_token")
+	if err != nil {
+		t.Fatalf("ParseToken access failed: %v", err)
+	}
+	if userID != "user-dot" || username != "john.doe" {
+		t.Fatalf("access parsed (%q, %q), want (user-dot, john.doe)", userID, username)
+	}
+
+	userID, username, err = a.ParseToken(tokenInfo.GetRefreshToken(), "refresh_token")
+	if err != nil {
+		t.Fatalf("ParseToken refresh failed: %v", err)
+	}
+	if userID != "user-dot" || username != "john.doe" {
+		t.Fatalf("refresh parsed (%q, %q), want (user-dot, john.doe)", userID, username)
+	}
+}
+
+// TestParseToken_MalformedClaims 验证旧格式/畸形 claims 返回 ErrInvalidToken，且不会 panic。
+func TestParseToken_MalformedClaims(t *testing.T) {
+	store := newFakeStore()
+	a := newTestJWTAuth(store)
+
+	legacy := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		Subject: "user.legacy",
+	})
+	token, err := legacy.SignedString([]byte("test-key"))
+	if err != nil {
+		t.Fatalf("sign legacy token: %v", err)
+	}
+	if err := store.Set(token, time.Hour); err != nil {
+		t.Fatalf("store legacy token: %v", err)
+	}
+
+	if _, _, err := a.ParseToken(token, "access_token"); err != auth.ErrInvalidToken {
+		t.Fatalf("ParseToken legacy claims err = %v, want ErrInvalidToken", err)
 	}
 }
 

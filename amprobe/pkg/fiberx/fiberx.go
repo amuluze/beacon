@@ -5,12 +5,17 @@
 package fiberx
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strings"
 
+	"amprobe/pkg/contextx"
 	pkgerrors "amprobe/pkg/errors"
+	tunnelpkg "common/rpc/tunnel"
+
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 )
 
 // GetToken Get jwt token from header (Authorization: Bearer xxx)
@@ -60,12 +65,35 @@ func ReturnJson(c *fiber.Ctx, status int, v interface{}) error {
 }
 
 // ServiceError wraps a service-layer error into an appropriate HTTP error.
-// If the error is already an errors.Error, it is returned as-is.
-// Otherwise it is treated as an internal server error.
+// 优先识别领域错误并映射为语义化状态码（满足 Domain R001：Agent 不可达/未实现
+// 必须返回可区分错误，禁止降级为成功空结果或统一 500）：
+//   - 已是 errors.Error：原样返回；
+//   - Agent 离线（*tunnel.AgentOfflineError）：503；
+//   - agent_id 缺失或格式非法：400；
+//   - 记录不存在（gorm.ErrRecordNotFound）：404；
+//   - 调用超时（context.DeadlineExceeded）：504；
+//   - 其他：500。
 func ServiceError(err error) pkgerrors.Error {
 	var e pkgerrors.Error
 	if errors.As(err, &e) {
 		return e
+	}
+	// 目标 Agent 离线：503，便于前端区分"服务故障"与"Agent 不可达"。
+	var offlineErr *tunnelpkg.AgentOfflineError
+	if errors.As(err, &offlineErr) {
+		return pkgerrors.New503Error(offlineErr.Error())
+	}
+	// agent_id 缺失或格式非法：400（客户端输入问题）。
+	if errors.Is(err, contextx.ErrMissingAgentID) || errors.Is(err, contextx.ErrInvalidAgentID) {
+		return pkgerrors.New400Error(err.Error())
+	}
+	// 记录不存在：404（如某 Agent 从未上报数据）。
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return pkgerrors.New404Error(err.Error())
+	}
+	// RPC/调用超时：504。
+	if errors.Is(err, context.DeadlineExceeded) {
+		return pkgerrors.New504Error(err.Error())
 	}
 	return pkgerrors.New500Error(err.Error())
 }

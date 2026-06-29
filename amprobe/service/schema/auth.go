@@ -5,7 +5,7 @@
 package schema
 
 type LoginArgs struct {
-	Username string `json:"username" validate:"required,gte=1,lte=64" description:"用户名"`
+	Username string `json:"username" validate:"required,alphanum,gte=1,lte=64" description:"用户名"`
 	Password string `json:"password" validate:"required,gte=1,lte=128" description:"用户密码"`
 }
 

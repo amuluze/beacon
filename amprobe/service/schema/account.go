@@ -45,7 +45,7 @@ type UserQueryReply struct {
 }
 
 type UserCreateArgs struct {
-	Username string   `json:"username" validate:"required,gte=1,lte=64"`
+	Username string   `json:"username" validate:"required,alphanum,gte=1,lte=64"`
 	Password string   `json:"password" validate:"required,gte=1,lte=128"`
 	Remark   string   `json:"remark,omitempty" validate:"lte=256"`
 	Status   int      `json:"status" validate:"required,oneof=0 1"`
@@ -54,7 +54,7 @@ type UserCreateArgs struct {
 
 type UserUpdateArgs struct {
 	ID       string   `json:"id" validate:"required,len=36"`
-	Username string   `json:"username,omitempty" validate:"lte=64"`
+	Username string   `json:"username,omitempty" validate:"omitempty,alphanum,lte=64"`
 	Remark   string   `json:"remark,omitempty" validate:"lte=256"`
 	Status   int      `json:"status,omitempty" validate:"omitempty,oneof=0 1"`
 	RoleIDs  []string `json:"role_ids,omitempty" validate:"max=32"`
