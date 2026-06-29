@@ -3,8 +3,8 @@ import type { EChartsOption } from '@/components/Echarts/echarts.ts'
 import type { DiskIO, DiskUsage, NetIO, NetUsage } from '@/interface/host.ts'
 import type { AgentInfo } from '@/interface/agent.ts'
 
-import { queryCPUInfo, queryCPUUsage, queryDiskInfo, queryDiskUsage, queryMemInfo, queryMemUsage, queryNetworkUsage, queryAgentList } from '@/api/host'
-import { cpuTrendingOption, memTrendingOption, diskTrendingOption, netTrendingOption } from '@/config/echarts.ts'
+import { queryAgentList, queryCPUInfo, queryCPUUsage, queryDiskInfo, queryDiskUsage, queryMemInfo, queryMemUsage, queryNetworkUsage } from '@/api/host'
+import { cpuTrendingOption, diskTrendingOption, memTrendingOption, netTrendingOption } from '@/config/echarts.ts'
 import { convertBytesToReadable } from '@/utils/convert.ts'
 import { createDefaultAgent } from '@/interface/agent.ts'
 import { dayjs } from 'element-plus'
@@ -27,7 +27,8 @@ async function loadAgents() {
     if (agentList.value.length > 0 && !currentAgent.value) {
       currentAgent.value = agentList.value[0].agent_id
     }
-  } catch {
+  }
+  catch {
     agentList.value = [createDefaultAgent()]
     currentAgent.value = 'default'
   }
@@ -37,7 +38,9 @@ function openTerminal(): void {
     return
   router.push({ path: '/terminal', query: { agent_id: currentAgent.value } })
 }
-watch(currentAgent, () => { refreshAll() })
+watch(currentAgent, () => {
+  refreshAll()
+})
 
 // Time density
 const timeDensity = ref(600)
@@ -50,7 +53,9 @@ const options = [
   { value: 43200, label: '12小时' },
   { value: 86400, label: '24小时' },
 ]
-watch(timeDensity, () => { refreshAll() })
+watch(timeDensity, () => {
+  refreshAll()
+})
 
 // CPU
 const cpuPercent = ref('0.0%')
@@ -89,7 +94,7 @@ async function renderMem() {
 }
 
 // Disk
-const diskInfo = ref<{ device: string; total: string; used: string; percent: string }[]>([])
+const diskInfo = ref<{ device: string, total: string, used: string, percent: string }[]>([])
 const diskOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(diskTrendingOption)))
 async function renderDiskInfo() {
   const { data } = await queryDiskInfo({ ...agentParams() } as any)
@@ -111,19 +116,21 @@ function generateDiskSeriesData(data: DiskUsage[]) {
 async function renderDisk() {
   const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams() }
   const { data } = await queryDiskUsage(param as any)
-  if (!data.usage || data.usage.length === 0) return
+  if (!data.usage || data.usage.length === 0)
+    return
   const labels = data.usage[0].data.map((item: DiskIO) => `${dayjs(item.timestamp * 1000).format('HH:mm')}`)
   set(diskOption, 'xAxis.data', labels)
   set(diskOption, 'series', generateDiskSeriesData(data.usage))
 }
 
 // Network
-const netInfo = ref<{ ethernet: string; read: string; write: string }[]>([])
+const netInfo = ref<{ ethernet: string, read: string, write: string }[]>([])
 const netOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(netTrendingOption)))
 async function renderNet() {
   const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams() }
   const { data } = await queryNetworkUsage(param as any)
-  if (!data.usage || data.usage.length === 0) return
+  if (!data.usage || data.usage.length === 0)
+    return
   netInfo.value = data.usage.map((item: NetUsage) => ({
     ethernet: item.ethernet,
     read: convertBytesToReadable(item.data[item.data.length - 1].bytes_recv),
@@ -155,83 +162,85 @@ onMounted(() => {
   refreshAll()
   timer.value = setInterval(refreshAll, 10000)
 })
-onUnmounted(() => { clearInterval(timer.value) })
+onUnmounted(() => {
+  clearInterval(timer.value)
+})
 
 const { t } = useI18n()
 </script>
 
 <template>
-  <!-- Host Section -->
-  <div class="am-section">
-    <div class="am-section-header">
-      <div class="am-section-title-group">
-        <span class="am-section-title">{{ t('monitor.hostMonitor') }}</span>
-        <el-select v-model="currentAgent" size="small" style="width: 200px" placeholder="选择主机">
-          <el-option
-            v-for="item in agentList"
-            :key="item.agent_id"
-            :label="item.hostname || item.agent_id"
-            :value="item.agent_id"
-          >
-            <span>{{ item.hostname || item.agent_id }}</span>
-            <span style="float: right; color: var(--el-text-color-secondary); font-size: 12px">{{ item.version || 'unknown' }}</span>
-          </el-option>
-        </el-select>
-        <el-button size="small" type="primary" plain @click="openTerminal">
-          打开终端
-        </el-button>
-      </div>
-      <div class="am-density-group">
-        <span class="am-density-label">{{ t('monitor.timeDensity') }}：</span>
-        <el-select v-model="timeDensity" size="small" style="width: 110px">
-          <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
-        </el-select>
-      </div>
-    </div>
+    <!-- Host Section -->
+    <div class="am-section">
+        <div class="am-section-header">
+            <div class="am-section-title-group">
+                <span class="am-section-title">{{ t('monitor.hostMonitor') }}</span>
+                <el-select v-model="currentAgent" size="small" style="width: 200px" placeholder="选择主机">
+                    <el-option
+                        v-for="item in agentList"
+                        :key="item.agent_id"
+                        :label="item.hostname || item.agent_id"
+                        :value="item.agent_id"
+                    >
+                        <span>{{ item.hostname || item.agent_id }}</span>
+                        <span style="float: right; color: var(--el-text-color-secondary); font-size: 12px">{{ item.version || 'unknown' }}</span>
+                    </el-option>
+                </el-select>
+                <el-button size="small" type="primary" plain @click="openTerminal">
+                    打开终端
+                </el-button>
+            </div>
+            <div class="am-density-group">
+                <span class="am-density-label">{{ t('monitor.timeDensity') }}：</span>
+                <el-select v-model="timeDensity" size="small" style="width: 110px">
+                    <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
+                </el-select>
+            </div>
+        </div>
 
-    <div class="am-chart-grid">
-      <div class="am-chart-row">
-        <div class="am-chart-card">
-          <div class="am-chart-card-header">
-            <span class="am-chart-card-title">CPU 使用率</span>
-            <span class="am-chart-card-percent accent-primary">{{ cpuPercent }}</span>
-          </div>
-          <div class="am-chart-area">
-            <echarts :option="cpuOption" />
-          </div>
+        <div class="am-chart-grid">
+            <div class="am-chart-row">
+                <div class="am-chart-card">
+                    <div class="am-chart-card-header">
+                        <span class="am-chart-card-title">CPU 使用率</span>
+                        <span class="am-chart-card-percent accent-primary">{{ cpuPercent }}</span>
+                    </div>
+                    <div class="am-chart-area">
+                        <echarts :option="cpuOption" />
+                    </div>
+                </div>
+                <div class="am-chart-card">
+                    <div class="am-chart-card-header">
+                        <span class="am-chart-card-title">内存使用率</span>
+                        <span class="am-chart-card-percent accent-warning">{{ memInfo.percent }}</span>
+                    </div>
+                    <div class="am-chart-area">
+                        <echarts :option="memOption" />
+                    </div>
+                </div>
+            </div>
+            <div class="am-chart-row">
+                <div class="am-chart-card">
+                    <div class="am-chart-card-header">
+                        <span class="am-chart-card-title">磁盘 IO</span>
+                        <span v-if="diskInfo.length > 0" class="am-chart-card-percent accent-success">{{ diskInfo[0].percent }}</span>
+                    </div>
+                    <div class="am-chart-area">
+                        <echarts :option="diskOption" />
+                    </div>
+                </div>
+                <div class="am-chart-card">
+                    <div class="am-chart-card-header">
+                        <span class="am-chart-card-title">网络流量</span>
+                        <span v-if="netInfo.length > 0" class="am-chart-card-percent accent-primary">{{ netInfo[0].read }} / {{ netInfo[0].write }}</span>
+                    </div>
+                    <div class="am-chart-area">
+                        <echarts :option="netOption" />
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="am-chart-card">
-          <div class="am-chart-card-header">
-            <span class="am-chart-card-title">内存使用率</span>
-            <span class="am-chart-card-percent accent-warning">{{ memInfo.percent }}</span>
-          </div>
-          <div class="am-chart-area">
-            <echarts :option="memOption" />
-          </div>
-        </div>
-      </div>
-      <div class="am-chart-row">
-        <div class="am-chart-card">
-          <div class="am-chart-card-header">
-            <span class="am-chart-card-title">磁盘 IO</span>
-            <span class="am-chart-card-percent accent-success" v-if="diskInfo.length > 0">{{ diskInfo[0].percent }}</span>
-          </div>
-          <div class="am-chart-area">
-            <echarts :option="diskOption" />
-          </div>
-        </div>
-        <div class="am-chart-card">
-          <div class="am-chart-card-header">
-            <span class="am-chart-card-title">网络流量</span>
-            <span class="am-chart-card-percent accent-primary" v-if="netInfo.length > 0">{{ netInfo[0].read }} / {{ netInfo[0].write }}</span>
-          </div>
-          <div class="am-chart-area">
-            <echarts :option="netOption" />
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
 </template>
 
 <style scoped lang="scss">
@@ -282,7 +291,7 @@ const { t } = useI18n()
   flex: 1;
   background: #fff;
   border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -303,9 +312,15 @@ const { t } = useI18n()
   font-family: 'Geist Mono', monospace;
   font-weight: 500;
 }
-.accent-primary { color: #4f7cff; }
-.accent-warning { color: #f5a623; }
-.accent-success { color: #52c41a; }
+.accent-primary {
+  color: #4f7cff;
+}
+.accent-warning {
+  color: #f5a623;
+}
+.accent-success {
+  color: #52c41a;
+}
 .am-chart-area {
   flex: 1;
   min-height: 180px;

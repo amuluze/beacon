@@ -66,7 +66,7 @@ async function confirmUserCreate(formEl: FormInstance | undefined) {
     return
   await formEl.validate((valid) => {
     if (valid) {
-      userCreateLoading.value
+      userCreateLoading.value = true
       const params = {
         username: userCreateMode.value.username,
         password: userCreateMode.value.password,

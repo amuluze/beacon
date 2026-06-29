@@ -24,12 +24,12 @@
 
 ## 关键目录
 
-| 目录/文件 | 职责 |
-|-----------|------|
-| `amprobe/web/` | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 |
-| `amprobe/web/public/` | static assets or embedded resources |
-| `amprobe/web/src/` | application source code |
-| `amprobe/web/types/` | supporting project directory |
+| 目录/文件             | 职责                                                                            |
+| --------------------- | ------------------------------------------------------------------------------- |
+| `amprobe/web/`        | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 |
+| `amprobe/web/public/` | static assets or embedded resources                                             |
+| `amprobe/web/src/`    | application source code                                                         |
+| `amprobe/web/types/`  | supporting project directory                                                    |
 
 ## 依赖
 

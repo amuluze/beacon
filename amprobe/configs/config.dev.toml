@@ -6,16 +6,16 @@ SeverHeader = "probe"
 AppName = "probe"
 Prefork = false
 
-[Rpc]
-Network = "unix"
-Address = "/app/collia.sock"
-DefaultAgentID = "default"
+[App]
+# 运行模式：development（默认，宽松）或 production（严格：JWT/JoinToken 弱值将拒绝启动）。
+# 可用环境变量 AMPROBE_APP_ENV 覆盖。
+Env = "development"
 
-[Rpc.TLS]
-Enable = false
-CertDir = "/app/certs/collia"
-ServerName = ""
-ClientNames = []
+[Control]
+Enable = true          # 启用反向隧道
+Address = ":17000"     # gRPC 控制端口
+DefaultAgentID = "default"  # 已废弃（保留向后兼容），控制调用不再回退默认 Agent
+JoinToken = "change-me-please"  # Agent 注册鉴权 Token（可用环境变量 AMPROBE_CONTROL_JOINTOKEN 覆盖）
 
 [Gorm]
 Debug = true             # 是否开启调试模式
@@ -57,11 +57,29 @@ AutoLoadInternal = 60 # 定期自动加载策略时间间隔（单位秒）
 [Task]
 Interval = 15
 
+[Retention]
+Days = 7          # 监控时序数据保留天数
+Staleness = 5     # 数据陈旧阈值（分钟）
+
 [AgentInstall]
 Enable = true
 Token = "change-me"
 PublicBaseURL = ""
 PackageDir = "/app/downloads/collia"
-RPCPort = 18080
+ControlPort = 17000
 TLSEnable = true
 CertDir = "/etc/collia/certs"
+
+[Session]
+Enabled = true
+Directory = "/app/sessions"
+
+[CORS]
+# 跨域资源共享。生产部署应显式配置 AllowOrigins 白名单。
+# 留空时回退到本地开发域（localhost:5173/3000），仅适用于开发模式。
+Enable = true
+
+[RateLimit]
+Enable = true
+GlobalMax = 300  # 全局每 IP 每分钟兜底上限
+LoginMax = 5     # 登录类敏感端点每 IP 每分钟上限

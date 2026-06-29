@@ -42,14 +42,14 @@ const { t } = useI18n()
 <template>
     <el-dialog v-model="dialogVisible" :title="t(props.title as string)" width="50%">
         <el-upload
-            drag
+
             action="/api/v1/container/image_import"
             :headers="{
                 Authorization: `Bearer ${store.user.token}`,
             }"
             :limit="1"
             :loading="imageImportLoading"
-            multiple
+            multiple drag
             :on-success="onSuccess"
         >
             <svg-icon icon-class="upload" />

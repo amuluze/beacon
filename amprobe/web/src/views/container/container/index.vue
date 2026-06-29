@@ -73,7 +73,7 @@ const locale = computed(() => {
                 @selection-change="handleSelectionChange"
             >
                 <el-table-column type="selection" :selection="selectable" width="55" />
-                <el-table-column prop="name" :label="t('container.containerName')" align="center" min-width="180" show-overflow-tooltip fixed sortable />
+                <el-table-column prop="name" :label="t('container.containerName')" align="center" min-width="180" show-overflow-tooltip sortable fixed />
                 <el-table-column prop="image" :label="t('container.imageName')" align="center" min-width="180" show-overflow-tooltip sortable />
                 <el-table-column prop="ip" :label="t('container.containerIP')" align="center" min-width="120" show-overflow-tooltip />
                 <el-table-column prop="ports" :label="t('container.containerPort')" align="center" min-width="140" show-overflow-tooltip />

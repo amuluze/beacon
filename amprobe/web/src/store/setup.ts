@@ -4,7 +4,7 @@ import type { App } from 'vue'
 
 const store = createPinia()
 store.use(createPersistedState({
-  storage: sessionStorage,
+    storage: sessionStorage,
 }))
 
 export function setupStore(app: App<Element>) {

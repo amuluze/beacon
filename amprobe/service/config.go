@@ -89,8 +89,11 @@ type RateLimit struct {
 }
 
 type Control struct {
-	Enable         bool
-	Address        string
+	Enable bool
+	Address string
+	// DefaultAgentID 已废弃：保留仅为配置文件向后兼容。
+	// 控制调用（rpc.Call）要求请求方显式选择目标 Agent，缺失时返回 ErrMissingAgentID，
+	// 不再回退到默认节点；监控查询（agentDB）同样要求显式 agent_id。
 	DefaultAgentID string
 	TLSEnable      bool
 	TLSCertDir     string
