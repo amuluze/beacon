@@ -37,10 +37,11 @@ docker compose -f compose.yaml up
 | `collia/config.yml` | 运行时配置文件；检测到键/段：`agent_id`, `control`, `disk`, `interval`, `join_token`, `level`, `log`, `max_age` |
 
 - 本节只列运行/构建配置文件；源码中的 Args/Reply/schema 类型不作为运行时配置项输出。
-- Agent 选择应以请求头、查询参数或配置中的 agent 标识为准；缺省目标必须有清晰回退语义。
-- `amprobe` 的 `[Control] Address` 是 Agent 反向连接的 tunnel 监听地址；`DefaultAgentID` 是未显式选择 Agent 时的控制调用回退目标。
+- Agent 选择必须由请求头 `X-Agent-ID` 或查询参数 `agent_id` 显式提供；缺失时监控查询与控制调用都返回明确错误，不再回退到默认节点（`Control.DefaultAgentID` 字段保留仅为配置兼容，已废弃）。
+- `amprobe` 的 `[Control] Address` 是 Agent 反向连接的 tunnel 监听地址；`Control.JoinToken` 是 Agent 注册鉴权凭据。
 - `collia` 的 `control.server` / `control.agent_id` 用于建立反向 tunnel；`task.report.url` / `task.report.agent_id` 用于 HTTP 监控上报。两处 Agent 标识必须保持同一节点语义，避免监控查询和控制调用指向不同节点。
 - `AgentInstall.Token` 与 `task.report.token` 属于敏感凭据，只记录语义，不在文档中写入真实值。
+- 敏感凭据生产模式强校验：当 `App.Env = production` 时，`Auth.SigningKey`、`Control.JoinToken`、`AgentInstall.Token` 在空值、已知弱默认值（如 `amprobe`/`change-me`）或长度不足时一律拒绝启动；可用环境变量 `AMPROBE_AUTH_SIGNINGKEY`、`AMPROBE_CONTROL_JOINTOKEN`、`AMPROBE_AGENTINSTALL_TOKEN` 覆盖。
 - 数据库配置必须说明驱动、地址、库名、凭据加载边界和迁移策略。
 - 容器运行时操作配置必须说明运行权限、运行时访问方式和失败回滚语义。
 
@@ -59,7 +60,7 @@ docker compose -f compose.yaml up
 - 确认 Domain Spec 没有混入文件路径、技术选型或伪代码。
 - 确认构建、测试和质量门禁命令在目标环境可重复执行。
 - 当前 Go 模块验证入口是分模块执行：`cd amprobe && go test ./...`、`cd collia && go test ./...`、`cd common && go test ./...`。
-- 当前前端类型检查入口是 `cd amprobe/web && npm run ts`。`npm run lint` 已配置但存在存量格式/排序问题，启用为发布门禁前需要先收敛存量 lint。
+- 当前前端类型检查入口是 `cd amprobe/web && npm run ts`。`npm run lint` 已收敛存量并可作为发布门禁（exit 0 视为通过）。
 
 ## Taskfile Tasks
 

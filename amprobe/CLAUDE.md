@@ -71,6 +71,8 @@
 - 若模块承载长期领域语义，相关约束应在 `.specs/domain/` 中可追踪。
 - 监控查询读取 Server 本地监控表；Agent 上报通过 HTTP report 入口写入；控制操作通过反向 tunnel 调用 Agent。
 - 新增控制调用时必须明确 Agent 选择来源，并禁止未实现操作返回成功空结果。
+- Agent 标识解析与校验由 `amprobe/pkg/contextx` 统一持有；监控查询读路径与控制调用写路径行为一致：缺失或非法 `agent_id` 返回明确错误（`ErrMissingAgentID`/`ErrInvalidAgentID`），不再回退默认节点或全表查询。`Control.DefaultAgentID` 已废弃。
+- 敏感凭据启动期强校验：`App.Env = production` 时 `Auth.SigningKey`、`Control.JoinToken`、`AgentInstall.Token` 在空值、已知弱默认值或长度不足时拒绝启动。
 
 ## 开发命令
 
