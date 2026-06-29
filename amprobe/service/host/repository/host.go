@@ -62,11 +62,7 @@ func NewHostRepo(client rpc.Caller, db *database.DB) *HostRepo {
 // 与控制调用（rpc.Call）保持一致：agentID 缺失或格式非法时返回错误，
 // 不再静默回退为全表查询，避免跨 Agent 数据聚合泄漏。
 func (h *HostRepo) agentDB(ctx context.Context) (*gorm.DB, error) {
-	agentID, err := contextx.ResolveAgentID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return h.DB.DB.Where("agent_id = ?", agentID), nil
+	return contextx.AgentScopedDB(ctx, h.DB.DB)
 }
 
 // ── Monitoring queries (local DB) ──

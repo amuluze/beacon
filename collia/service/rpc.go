@@ -41,7 +41,7 @@ func NewRPCServer(config *Config, db *database.DB, version Version) (*Server, er
 	if err != nil {
 		return nil, err
 	}
-	s := rpc.NewService(db, manager)
+	s := rpc.NewService(db, manager, config.Variables.HostPrefix)
 
 	agentID := config.Control.AgentID
 	if agentID == "" {
