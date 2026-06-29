@@ -5,7 +5,6 @@
 package service
 
 import (
-	"fmt"
 	"log/slog"
 
 	"amprobe/pkg/rpc"
@@ -29,10 +28,12 @@ func NewRPCClient(config *Config) (*TunnelResult, error) {
 	}
 
 	// 控制通道承载远程 shell 等高危调用，agent 注册必须强鉴权。
-	// 不允许 JoinToken 为空的默认开放模式；未配置则拒绝启动。
-	// 可通过环境变量 AMPROBE_CONTROL_JOINTOKEN 注入。
-	if config.Control.Enable && config.Control.JoinToken == "" {
-		return nil, fmt.Errorf("control JoinToken is not configured; set Control.JoinToken or AMPROBE_CONTROL_JOINTOKEN before enabling the reverse tunnel")
+	// 未启用 control 时不校验；启用后，token 必须通过生产模式强校验
+	// （拒绝空/弱默认/过短），可通过环境变量 AMPROBE_CONTROL_JOINTOKEN 注入。
+	if config.Control.Enable {
+		if _, err := resolveControlToken(config.Control.JoinToken, config.App.Env); err != nil {
+			return nil, err
+		}
 	}
 
 	slog.Info("starting reverse tunnel server", "addr", addr, "auth", true)
@@ -55,13 +56,8 @@ func NewRPCClient(config *Config) (*TunnelResult, error) {
 		}
 	}()
 
-	defaultID := config.Control.DefaultAgentID
-	if defaultID == "" {
-		defaultID = rpc.DefaultAgentID
-	}
-
 	return &TunnelResult{
-		Caller: rpc.NewTunnelClient(tun, defaultID),
+		Caller: rpc.NewTunnelClient(tun),
 		Tunnel: tun,
 	}, nil
 }

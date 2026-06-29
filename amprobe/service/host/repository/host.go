@@ -59,20 +59,25 @@ func NewHostRepo(client rpc.Caller, db *database.DB) *HostRepo {
 }
 
 // agentDB returns a scoped DB query filtered by the agent in context.
-func (h *HostRepo) agentDB(ctx context.Context) *gorm.DB {
-	agentID := contextx.FromAgentID(ctx)
-	db := h.DB.DB
-	if agentID != "" {
-		return db.Where("agent_id = ?", agentID)
+// 与控制调用（rpc.Call）保持一致：agentID 缺失或格式非法时返回错误，
+// 不再静默回退为全表查询，避免跨 Agent 数据聚合泄漏。
+func (h *HostRepo) agentDB(ctx context.Context) (*gorm.DB, error) {
+	agentID, err := contextx.ResolveAgentID(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return db
+	return h.DB.DB.Where("agent_id = ?", agentID), nil
 }
 
 // ── Monitoring queries (local DB) ──
 
 func (h *HostRepo) HostInfo(ctx context.Context, args rpcSchema.HostInfoArgs) (rpcSchema.HostInfoReply, error) {
+	q, err := h.agentDB(ctx)
+	if err != nil {
+		return rpcSchema.HostInfoReply{}, err
+	}
 	var info model.MonitorHost
-	if err := h.agentDB(ctx).Model(&model.MonitorHost{}).Order("timestamp desc").First(&info).Error; err != nil {
+	if err := q.Model(&model.MonitorHost{}).Order("timestamp desc").First(&info).Error; err != nil {
 		return rpcSchema.HostInfoReply{}, err
 	}
 	return rpcSchema.HostInfoReply{
@@ -88,16 +93,24 @@ func (h *HostRepo) HostInfo(ctx context.Context, args rpcSchema.HostInfoArgs) (r
 }
 
 func (h *HostRepo) CPUInfo(ctx context.Context, args rpcSchema.CPUInfoArgs) (rpcSchema.CPUInfoReply, error) {
+	q, err := h.agentDB(ctx)
+	if err != nil {
+		return rpcSchema.CPUInfoReply{}, err
+	}
 	var info model.MonitorCPU
-	if err := h.agentDB(ctx).Model(&model.MonitorCPU{}).Order("timestamp desc").First(&info).Error; err != nil {
+	if err := q.Model(&model.MonitorCPU{}).Order("timestamp desc").First(&info).Error; err != nil {
 		return rpcSchema.CPUInfoReply{}, err
 	}
 	return rpcSchema.CPUInfoReply{Percent: info.CPUPercent}, nil
 }
 
 func (h *HostRepo) CPUUsage(ctx context.Context, args rpcSchema.CPUUsageArgs) (rpcSchema.CPUUsageReply, error) {
+	q, err := h.agentDB(ctx)
+	if err != nil {
+		return rpcSchema.CPUUsageReply{}, err
+	}
 	var results []model.MonitorCPU
-	if err := h.agentDB(ctx).Model(&model.MonitorCPU{}).
+	if err := q.Model(&model.MonitorCPU{}).
 		Where("timestamp > ?", time.Unix(args.StartTime, 0)).
 		Order("timestamp asc").Find(&results).Error; err != nil {
 		return rpcSchema.CPUUsageReply{}, err
@@ -110,16 +123,24 @@ func (h *HostRepo) CPUUsage(ctx context.Context, args rpcSchema.CPUUsageArgs) (r
 }
 
 func (h *HostRepo) MemInfo(ctx context.Context, args rpcSchema.MemoryInfoArgs) (rpcSchema.MemoryInfoReply, error) {
+	q, err := h.agentDB(ctx)
+	if err != nil {
+		return rpcSchema.MemoryInfoReply{}, err
+	}
 	var info model.MonitorMemory
-	if err := h.agentDB(ctx).Model(&model.MonitorMemory{}).Order("timestamp desc").First(&info).Error; err != nil {
+	if err := q.Model(&model.MonitorMemory{}).Order("timestamp desc").First(&info).Error; err != nil {
 		return rpcSchema.MemoryInfoReply{}, err
 	}
 	return rpcSchema.MemoryInfoReply{Percent: info.MemPercent, Total: info.MemTotal, Used: info.MemUsed}, nil
 }
 
 func (h *HostRepo) MemUsage(ctx context.Context, args rpcSchema.MemoryUsageArgs) (rpcSchema.MemoryUsageReply, error) {
+	q, err := h.agentDB(ctx)
+	if err != nil {
+		return rpcSchema.MemoryUsageReply{}, err
+	}
 	var results []model.MonitorMemory
-	if err := h.agentDB(ctx).Model(&model.MonitorMemory{}).
+	if err := q.Model(&model.MonitorMemory{}).
 		Where("timestamp > ?", time.Unix(args.StartTime, 0)).
 		Order("timestamp asc").Find(&results).Error; err != nil {
 		return rpcSchema.MemoryUsageReply{}, err
@@ -132,8 +153,12 @@ func (h *HostRepo) MemUsage(ctx context.Context, args rpcSchema.MemoryUsageArgs)
 }
 
 func (h *HostRepo) DiskInfo(ctx context.Context, args rpcSchema.DiskInfoArgs) (rpcSchema.DiskInfoReply, error) {
+	q, err := h.agentDB(ctx)
+	if err != nil {
+		return rpcSchema.DiskInfoReply{}, err
+	}
 	var infos []model.MonitorDisk
-	if err := h.agentDB(ctx).Model(&model.MonitorDisk{}).Group("device").Order("timestamp desc").Find(&infos).Error; err != nil {
+	if err := q.Model(&model.MonitorDisk{}).Group("device").Order("timestamp desc").Find(&infos).Error; err != nil {
 		return rpcSchema.DiskInfoReply{}, err
 	}
 	var list []rpcSchema.Disk
@@ -149,8 +174,12 @@ func (h *HostRepo) DiskInfo(ctx context.Context, args rpcSchema.DiskInfoArgs) (r
 }
 
 func (h *HostRepo) DiskUsage(ctx context.Context, args rpcSchema.DiskUsageArgs) (rpcSchema.DiskUsageReply, error) {
+	q, err := h.agentDB(ctx)
+	if err != nil {
+		return rpcSchema.DiskUsageReply{}, err
+	}
 	var results []model.MonitorDisk
-	if err := h.agentDB(ctx).Model(&model.MonitorDisk{}).
+	if err := q.Model(&model.MonitorDisk{}).
 		Where("timestamp > ?", time.Unix(args.StartTime, 0)).
 		Order("timestamp asc").Find(&results).Error; err != nil {
 		return rpcSchema.DiskUsageReply{}, err
@@ -169,8 +198,12 @@ func (h *HostRepo) DiskUsage(ctx context.Context, args rpcSchema.DiskUsageArgs) 
 }
 
 func (h *HostRepo) NetUsage(ctx context.Context, args rpcSchema.NetUsageArgs) (rpcSchema.NetUsageReply, error) {
+	q, err := h.agentDB(ctx)
+	if err != nil {
+		return rpcSchema.NetUsageReply{}, err
+	}
 	var results []model.MonitorNet
-	if err := h.agentDB(ctx).Model(&model.MonitorNet{}).
+	if err := q.Model(&model.MonitorNet{}).
 		Where("timestamp > ?", time.Unix(args.StartTime, 0)).
 		Order("timestamp asc").Find(&results).Error; err != nil {
 		return rpcSchema.NetUsageReply{}, err

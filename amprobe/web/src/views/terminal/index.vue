@@ -13,26 +13,26 @@ function handleAgentChange(value: string): void {
 </script>
 
 <template>
-  <div class="am-terminal-page">
-    <ContentWrap title="Web Terminal" message="选择 Agent 并打开远程终端">
-      <div class="am-terminal-page__toolbar">
-        <span class="am-terminal-page__label">Agent:</span>
-        <ElInput
-          v-model="selectedAgent"
-          placeholder="请输入 Agent ID"
-          clearable
-          style="width: 240px"
-          @change="handleAgentChange"
-        />
-      </div>
-      <div class="am-terminal-page__container">
-        <Terminal v-if="agentId" :agent-id="agentId" />
-        <div v-else class="am-terminal-page__empty">
-          请选择或输入 Agent ID
-        </div>
-      </div>
-    </ContentWrap>
-  </div>
+    <div class="am-terminal-page">
+        <ContentWrap title="Web Terminal" message="选择 Agent 并打开远程终端">
+            <div class="am-terminal-page__toolbar">
+                <span class="am-terminal-page__label">Agent:</span>
+                <ElInput
+                    v-model="selectedAgent"
+                    placeholder="请输入 Agent ID"
+                    clearable
+                    style="width: 240px"
+                    @change="handleAgentChange"
+                />
+            </div>
+            <div class="am-terminal-page__container">
+                <Terminal v-if="agentId" :agent-id="agentId" />
+                <div v-else class="am-terminal-page__empty">
+                    请选择或输入 Agent ID
+                </div>
+            </div>
+        </ContentWrap>
+    </div>
 </template>
 
 <style scoped lang="scss">

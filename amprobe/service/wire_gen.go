@@ -95,7 +95,13 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	serverTunnel := NewServerTunnelFromResult(tunnelResult)
 	agentService := agent.NewAgentService(agentRepository, serverTunnel)
 	agentAPI := agent.NewAgentAPI(agentService)
-	reportService := NewReportService(config, db)
+	reportService, err := NewReportService(config, db)
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
 	loggerHandler := NewLoggerHandler(caller)
 	handler := NewTerminalHandler(config, caller, db)
 	termHandler := NewTermHandler(handler)

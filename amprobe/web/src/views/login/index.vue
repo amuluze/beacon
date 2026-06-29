@@ -58,70 +58,72 @@ function changeLanguage(lang: string) {
 </script>
 
 <template>
-  <div class="am-login">
-    <!-- Left Brand Panel -->
-    <div class="am-login-left">
-      <div class="am-login-left__inner">
-        <div class="am-login-left__logo-row">
-          <div class="am-login-left__logo-icon" />
-          <span class="am-login-left__app-name">Amprobe</span>
-        </div>
-        <p class="am-login-left__desc">轻量级 Docker 容器管理平台</p>
-        <div class="am-login-left__features">
-          <span>· 实时监控主机与容器资源</span>
-          <span>· 可视化容器生命周期管理</span>
-          <span>· 镜像仓库与网络配置</span>
-          <span>· 多维度告警与审计日志</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Right Login Card -->
-    <div class="am-login-right">
-      <div class="am-login-right__card">
-        <div class="am-login-right__lang">
-          <el-dropdown trigger="click" @command="changeLanguage">
-            <span class="am-login-right__lang-text">{{ language === 'zh' ? '简体中文' : 'English' }} ▼</span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item
-                  v-for="item in languageList"
-                  :key="item.value"
-                  :command="item.value"
-                  :disabled="language === item.value"
-                >
-                  {{ item.label }}
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </div>
-
-        <div class="am-login-right__title-row">
-          <span class="am-login-right__title">登录</span>
-          <span class="am-login-right__version">v3.0.0</span>
-        </div>
-
-        <el-form :model="loginForm" :rules="loginFormRules" class="am-login-right__form">
-          <el-form-item prop="username">
-            <div class="am-login-right__field">
-              <span class="am-login-right__field-icon">👤</span>
-              <el-input v-model="loginForm.username" size="large" placeholder="请输入用户名" />
+    <div class="am-login">
+        <!-- Left Brand Panel -->
+        <div class="am-login-left">
+            <div class="am-login-left__inner">
+                <div class="am-login-left__logo-row">
+                    <div class="am-login-left__logo-icon" />
+                    <span class="am-login-left__app-name">Amprobe</span>
+                </div>
+                <p class="am-login-left__desc">
+                    轻量级 Docker 容器管理平台
+                </p>
+                <div class="am-login-left__features">
+                    <span>· 实时监控主机与容器资源</span>
+                    <span>· 可视化容器生命周期管理</span>
+                    <span>· 镜像仓库与网络配置</span>
+                    <span>· 多维度告警与审计日志</span>
+                </div>
             </div>
-          </el-form-item>
-          <el-form-item prop="password">
-            <div class="am-login-right__field">
-              <span class="am-login-right__field-icon">🔒</span>
-              <el-input v-model="loginForm.password" size="large" type="password" placeholder="请输入密码" show-password />
+        </div>
+
+        <!-- Right Login Card -->
+        <div class="am-login-right">
+            <div class="am-login-right__card">
+                <div class="am-login-right__lang">
+                    <el-dropdown trigger="click" @command="changeLanguage">
+                        <span class="am-login-right__lang-text">{{ language === 'zh' ? '简体中文' : 'English' }} ▼</span>
+                        <template #dropdown>
+                            <el-dropdown-menu>
+                                <el-dropdown-item
+                                    v-for="item in languageList"
+                                    :key="item.value"
+                                    :command="item.value"
+                                    :disabled="language === item.value"
+                                >
+                                    {{ item.label }}
+                                </el-dropdown-item>
+                            </el-dropdown-menu>
+                        </template>
+                    </el-dropdown>
+                </div>
+
+                <div class="am-login-right__title-row">
+                    <span class="am-login-right__title">登录</span>
+                    <span class="am-login-right__version">v3.0.0</span>
+                </div>
+
+                <el-form :model="loginForm" :rules="loginFormRules" class="am-login-right__form">
+                    <el-form-item prop="username">
+                        <div class="am-login-right__field">
+                            <span class="am-login-right__field-icon">👤</span>
+                            <el-input v-model="loginForm.username" size="large" placeholder="请输入用户名" />
+                        </div>
+                    </el-form-item>
+                    <el-form-item prop="password">
+                        <div class="am-login-right__field">
+                            <span class="am-login-right__field-icon">🔒</span>
+                            <el-input v-model="loginForm.password" size="large" type="password" placeholder="请输入密码" show-password />
+                        </div>
+                    </el-form-item>
+                    <el-button class="am-login-right__btn" size="large" type="primary" @click.prevent="handleLogin">
+                        登 录
+                    </el-button>
+                </el-form>
             </div>
-          </el-form-item>
-          <el-button class="am-login-right__btn" size="large" type="primary" @click.prevent="handleLogin">
-            登 录
-          </el-button>
-        </el-form>
-      </div>
+        </div>
     </div>
-  </div>
 </template>
 
 <style scoped lang="scss">

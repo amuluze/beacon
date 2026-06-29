@@ -6,7 +6,6 @@ package rpc
 
 import (
 	"context"
-	"errors"
 	"sync"
 
 	"amprobe/pkg/contextx"
@@ -18,8 +17,10 @@ const (
 	DefaultNetwork = "tcp"
 )
 
-// ErrMissingAgentID is returned when a control call cannot resolve a target agent.
-var ErrMissingAgentID = errors.New("missing agent_id: unable to determine target agent")
+// ErrMissingAgentID 在控制调用无法解析出目标 Agent 时返回。
+// 权威定义在 contextx.ErrMissingAgentID，此处保留为兼容别名，
+// 避免破坏已有的包外引用（如 repository、terminal 等）。
+var ErrMissingAgentID = contextx.ErrMissingAgentID
 
 // Caller is the interface for making RPC calls to agents.
 type Caller interface {
@@ -30,36 +31,33 @@ type Caller interface {
 
 // TunnelClient wraps ServerTunnel to implement the Caller interface.
 type TunnelClient struct {
-	tunnel    *tunnelpkg.ServerTunnel
-	defaultID string
-	mu        sync.Mutex
-	started   bool
+	tunnel  *tunnelpkg.ServerTunnel
+	mu      sync.Mutex
+	started bool
 }
 
 // NewTunnelClient creates a new tunnel-based RPC caller.
-func NewTunnelClient(tunnel *tunnelpkg.ServerTunnel, defaultAgentID string) *TunnelClient {
-	if defaultAgentID == "" {
-		defaultAgentID = DefaultAgentID
-	}
-	return &TunnelClient{
-		tunnel:    tunnel,
-		defaultID: defaultAgentID,
-	}
+//
+// 历史上本函数接受一个 defaultAgentID 参数用于在 context 缺失 agentID 时回退，
+// 但该回退语义已废弃：控制调用要求请求方显式选择目标 Agent，缺失时返回
+// ErrMissingAgentID，不再静默指向默认节点。DefaultAgentID 常量仅为向后兼容保留。
+func NewTunnelClient(tunnel *tunnelpkg.ServerTunnel) *TunnelClient {
+	return &TunnelClient{tunnel: tunnel}
 }
 
 func (tc *TunnelClient) Call(ctx context.Context, method string, args interface{}, reply interface{}) error {
-	agentID := contextx.FromAgentID(ctx)
-	if agentID == "" {
-		return ErrMissingAgentID
+	agentID, err := contextx.ResolveAgentID(ctx)
+	if err != nil {
+		return err
 	}
 	return tc.tunnel.Call(ctx, agentID, method, args, reply)
 }
 
 // StreamCall sends an RPC call and returns a channel of response chunks.
 func (tc *TunnelClient) StreamCall(ctx context.Context, method string, args interface{}) (<-chan []byte, error) {
-	agentID := contextx.FromAgentID(ctx)
-	if agentID == "" {
-		return nil, ErrMissingAgentID
+	agentID, err := contextx.ResolveAgentID(ctx)
+	if err != nil {
+		return nil, err
 	}
 	chunkChan, err := tc.tunnel.StreamCall(ctx, agentID, method, args)
 	if err != nil {

@@ -4,7 +4,7 @@ import { containerCpuOption, containerMemOption } from '@/config/echarts.ts'
 import type { Usage } from '@/interface/host.ts'
 import type { AgentInfo } from '@/interface/agent.ts'
 import { dayjs } from 'element-plus'
-import { queryContainersUsage, queryAgentList } from '@/api/container'
+import { queryAgentList, queryContainersUsage } from '@/api/container'
 import { set } from 'lodash-es'
 import { createDefaultAgent } from '@/interface/agent.ts'
 
@@ -18,12 +18,15 @@ async function loadAgents() {
     if (agentList.value.length > 0 && !currentAgent.value) {
       currentAgent.value = agentList.value[0].agent_id
     }
-  } catch {
+  }
+  catch {
     agentList.value = [createDefaultAgent()]
     currentAgent.value = 'default'
   }
 }
-watch(currentAgent, () => { render() })
+watch(currentAgent, () => {
+  render()
+})
 
 // Time density
 const timeDensity = ref(600)
@@ -34,7 +37,9 @@ const options = [
   { value: 43200, label: '12小时' },
   { value: 86400, label: '24小时' },
 ]
-watch(timeDensity, () => { render() })
+watch(timeDensity, () => {
+  render()
+})
 
 // Charts
 const cpuOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(containerCpuOption)))
@@ -46,7 +51,8 @@ async function render() {
   const agentParams: Record<string, string> = currentAgent.value ? { agent_id: currentAgent.value } : {}
   const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams }
   const { data } = await queryContainersUsage(param as any)
-  if (!data.names || data.names.length === 0) return
+  if (!data.names || data.names.length === 0)
+    return
 
   containerNames.value = data.names
 
@@ -106,62 +112,64 @@ onMounted(() => {
   render()
   timer.value = setInterval(render, 10000)
 })
-onUnmounted(() => { clearInterval(timer.value) })
+onUnmounted(() => {
+  clearInterval(timer.value)
+})
 </script>
 
 <template>
-  <div class="am-section">
-    <div class="am-section-header">
-      <div class="am-section-title-group">
-        <span class="am-section-title">容器监控</span>
-        <el-select v-model="currentAgent" size="small" style="width: 200px" placeholder="选择主机">
-          <el-option v-for="item in agentList" :key="item.agent_id" :label="item.hostname || item.agent_id" :value="item.agent_id">
-            <span>{{ item.hostname || item.agent_id }}</span>
-            <span style="float: right; color: var(--el-text-color-secondary); font-size: 12px">{{ item.version || 'unknown' }}</span>
-          </el-option>
-        </el-select>
-      </div>
-      <div class="am-density-group">
-        <span class="am-density-label">时间密度：</span>
-        <el-select v-model="timeDensity" size="small" style="width: 110px">
-          <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
-        </el-select>
-      </div>
-    </div>
+    <div class="am-section">
+        <div class="am-section-header">
+            <div class="am-section-title-group">
+                <span class="am-section-title">容器监控</span>
+                <el-select v-model="currentAgent" size="small" style="width: 200px" placeholder="选择主机">
+                    <el-option v-for="item in agentList" :key="item.agent_id" :label="item.hostname || item.agent_id" :value="item.agent_id">
+                        <span>{{ item.hostname || item.agent_id }}</span>
+                        <span style="float: right; color: var(--el-text-color-secondary); font-size: 12px">{{ item.version || 'unknown' }}</span>
+                    </el-option>
+                </el-select>
+            </div>
+            <div class="am-density-group">
+                <span class="am-density-label">时间密度：</span>
+                <el-select v-model="timeDensity" size="small" style="width: 110px">
+                    <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
+                </el-select>
+            </div>
+        </div>
 
-    <div class="am-chart-grid">
-      <div class="am-chart-row">
-        <div class="am-chart-card">
-          <div class="am-chart-card-header">
-            <span class="am-chart-card-title">CPU 使用率</span>
-            <div class="am-chart-card-legend">
-              <div v-for="(name, i) in containerNames" :key="name" class="am-legend-item">
-                <span class="am-legend-dot" :style="{ background: ['#4f7cff','#52c41a','#f5a623','#f56c6c'][i % 4] }" />
-                <span class="am-legend-label">{{ name }}</span>
-              </div>
+        <div class="am-chart-grid">
+            <div class="am-chart-row">
+                <div class="am-chart-card">
+                    <div class="am-chart-card-header">
+                        <span class="am-chart-card-title">CPU 使用率</span>
+                        <div class="am-chart-card-legend">
+                            <div v-for="(name, i) in containerNames" :key="name" class="am-legend-item">
+                                <span class="am-legend-dot" :style="{ background: ['#4f7cff', '#52c41a', '#f5a623', '#f56c6c'][i % 4] }" />
+                                <span class="am-legend-label">{{ name }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="am-chart-area">
+                        <echarts :option="cpuOption" />
+                    </div>
+                </div>
+                <div class="am-chart-card">
+                    <div class="am-chart-card-header">
+                        <span class="am-chart-card-title">内存使用率</span>
+                        <div class="am-chart-card-legend">
+                            <div v-for="(name, i) in containerNames" :key="name" class="am-legend-item">
+                                <span class="am-legend-dot" :style="{ background: ['#4f7cff', '#52c41a', '#f5a623', '#f56c6c'][i % 4] }" />
+                                <span class="am-legend-label">{{ name }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="am-chart-area">
+                        <echarts :option="memOption" />
+                    </div>
+                </div>
             </div>
-          </div>
-          <div class="am-chart-area">
-            <echarts :option="cpuOption" />
-          </div>
         </div>
-        <div class="am-chart-card">
-          <div class="am-chart-card-header">
-            <span class="am-chart-card-title">内存使用率</span>
-            <div class="am-chart-card-legend">
-              <div v-for="(name, i) in containerNames" :key="name" class="am-legend-item">
-                <span class="am-legend-dot" :style="{ background: ['#4f7cff','#52c41a','#f5a623','#f56c6c'][i % 4] }" />
-                <span class="am-legend-label">{{ name }}</span>
-              </div>
-            </div>
-          </div>
-          <div class="am-chart-area">
-            <echarts :option="memOption" />
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
 </template>
 
 <style scoped lang="scss">
@@ -212,7 +220,7 @@ onUnmounted(() => { clearInterval(timer.value) })
   flex: 1;
   background: #fff;
   border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   padding: 16px;
   display: flex;
   flex-direction: column;

@@ -2,7 +2,7 @@ import type { UserInfo, UserState } from '@/interface/store'
 import { defineStore } from 'pinia'
 
 export const useUserStore = defineStore('user', {
-    state: (): UserState => <UserState>({
+    state: (): UserState => ({
         token: '',
         refresh: '',
         userInfo: {} as UserInfo,

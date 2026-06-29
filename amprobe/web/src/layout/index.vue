@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import Content from '@/layout/content/index.vue';
-import Navbar from '@/layout/navbar/index.vue';
-import Sidebar from '@/layout/sidebar/index.vue';
+import Content from '@/layout/content/index.vue'
+import Navbar from '@/layout/navbar/index.vue'
+import Sidebar from '@/layout/sidebar/index.vue'
 </script>
 
 <template>

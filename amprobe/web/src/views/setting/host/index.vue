@@ -12,7 +12,7 @@ function rebootHost() {
       success('重启成功')
     })
     .catch(() => {
-      error
+      error('重启失败')
     })
 }
 

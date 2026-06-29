@@ -1,15 +1,9 @@
 <script setup lang="ts">
-import { Websocket } from '@/components/Websocket';
-import { useI18n } from 'vue-i18n';
+import { Websocket } from '@/components/Websocket'
+import { useI18n } from 'vue-i18n'
 
-import Codemirror from "codemirror-editor-vue3";
-import "codemirror/mode/javascript/javascript.js";
-
-const cmOptions = {
-  mode: "log",
-  theme: "default",
-
-}
+import Codemirror from 'codemirror-editor-vue3'
+import 'codemirror/mode/javascript/javascript.js'
 
 const props = defineProps<{
   visible: boolean
@@ -22,6 +16,12 @@ const emits = defineEmits<{
   (e: 'update:visible', visible: boolean): void
   (e: 'close'): void
 }>()
+
+const cmOptions = {
+  mode: 'log',
+  theme: 'default',
+
+}
 
 const dialogVisible = computed<boolean>({
   get() {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"amprobe/pkg/contextx"
 	"amprobe/service/model"
 	"common/database"
 	rpcSchema "common/rpc/schema"
@@ -13,28 +14,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
-
-// maxAgentIDLen 限制 agent_id 长度，避免超长值入库。
-const maxAgentIDLen = 64
-
-// isValidAgentID 校验 agent_id 仅含安全字符（字母、数字、-、_、.），且长度合理。
-// 注意：这是格式校验，不验证身份；身份绑定需 per-agent 凭证（架构演进）。
-func isValidAgentID(id string) bool {
-	if len(id) == 0 || len(id) > maxAgentIDLen {
-		return false
-	}
-	for _, r := range id {
-		switch {
-		case r >= 'a' && r <= 'z',
-			r >= 'A' && r <= 'Z',
-			r >= '0' && r <= '9',
-			r == '-', r == '_', r == '.':
-		default:
-			return false
-		}
-	}
-	return true
-}
 
 // Service stores monitoring data pushed from Agents.
 type Service struct {
@@ -79,13 +58,13 @@ func (s *Service) HandleReport(c *fiber.Ctx) error {
 func (s *Service) Store(args rpcSchema.MonitorReportArgs) error {
 	agentID := args.AgentID
 	if agentID == "" {
-		return fmt.Errorf("missing agent_id")
+		return fmt.Errorf("missing agent_id: %w", contextx.ErrMissingAgentID)
 	}
-	if !isValidAgentID(agentID) {
+	if !contextx.IsValidAgentID(agentID) {
 		// 防御性校验：当前 install token 为全局共享，无法按身份区分 agent；
 		// 至少拒绝畸形 agent_id，防止垃圾数据/覆盖攻击面扩大。
 		// 完整的 per-agent 凭证绑定见架构演进建议（tunnel 注册态与 report 凭证统一）。
-		return fmt.Errorf("invalid agent_id: %q", agentID)
+		return fmt.Errorf("invalid agent_id %q: %w", agentID, contextx.ErrInvalidAgentID)
 	}
 
 	if err := s.DB.RunInTransaction(func(tx *gorm.DB) error {

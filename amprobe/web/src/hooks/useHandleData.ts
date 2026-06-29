@@ -9,7 +9,7 @@
  * @param {Function} api 操作数据接口的 api（必传）
  * @param {object} params 携带的操作数据参数 {id,params} （必传）
  * @param {string} message 提示信息（必传）
- * @returns {Promise}
+ * @returns {Promise} 操作结果：成功 resolve(true)，失败 reject
  */
 export async function useHandleData(
     api: (params: any) => Promise<any>,

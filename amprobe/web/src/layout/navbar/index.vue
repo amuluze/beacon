@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import Avatar from '@/layout/navbar/Avatar.vue';
-import Language from '@/layout/navbar/Language.vue'; /* PartiallyEnd: #3632/scriptSetup.vue */
-import ThemeChange from '@/layout/navbar/ThemeChange.vue';
-import Breadcrumb from './Breadcrumb.vue';
+import Avatar from '@/layout/navbar/Avatar.vue'
+import Language from '@/layout/navbar/Language.vue' /* PartiallyEnd: #3632/scriptSetup.vue */
+import ThemeChange from '@/layout/navbar/ThemeChange.vue'
+import Breadcrumb from './Breadcrumb.vue'
 </script>
 
 <template>

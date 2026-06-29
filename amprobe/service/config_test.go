@@ -117,3 +117,92 @@ func TestResolveSigningKey_ProductionRejectsInsecure(t *testing.T) {
 		})
 	}
 }
+
+// TestResolveControlToken_ProductionRejectsInsecure 验证控制通道 JoinToken 在生产模式下
+// 空/弱默认/过短一律拒绝，强 token 通过。
+func TestResolveControlToken_ProductionRejectsInsecure(t *testing.T) {
+	cases := []struct {
+		name    string
+		token   string
+		wantErr bool
+	}{
+		{"empty", "", true},
+		{"weak change-me", "change-me", true},
+		{"weak change-me-please", "change-me-please", true},
+		{"weak token", "token", true},
+		{"too short", "short-token", true},
+		{"strong", "a-strong-random-join-token-12345", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := resolveControlToken(tc.token, "production")
+			if tc.wantErr && err == nil {
+				t.Fatalf("expected error for %q in production, got nil", tc.token)
+			}
+			if !tc.wantErr && err != nil {
+				t.Fatalf("unexpected error for strong token in production: %v", err)
+			}
+		})
+	}
+}
+
+// TestResolveControlToken_NonProductionPreserves 验证非生产模式下空/弱默认保留（仅告警）。
+func TestResolveControlToken_NonProductionPreserves(t *testing.T) {
+	cases := []struct {
+		name  string
+		token string
+	}{
+		{"empty", ""},
+		{"weak default", "change-me"},
+		{"custom", "my-dev-token"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := resolveControlToken(tc.token, "development")
+			if err != nil {
+				t.Fatalf("unexpected error in development: %v", err)
+			}
+			if got != tc.token {
+				t.Fatalf("expected %q preserved, got %q", tc.token, got)
+			}
+		})
+	}
+}
+
+// TestResolveInstallToken_ProductionRejectsInsecure 验证 installToken 在生产模式下
+// 空/弱默认/过短一律拒绝，强 token 通过。
+func TestResolveInstallToken_ProductionRejectsInsecure(t *testing.T) {
+	cases := []struct {
+		name    string
+		token   string
+		wantErr bool
+	}{
+		{"empty", "", true},
+		{"weak change-me", "change-me", true},
+		{"weak amprobe", "amprobe", true},
+		{"too short", "short-token", true},
+		{"strong", "a-strong-random-install-token-12345", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := resolveInstallToken(tc.token, "production")
+			if tc.wantErr && err == nil {
+				t.Fatalf("expected error for %q in production, got nil", tc.token)
+			}
+			if !tc.wantErr && err != nil {
+				t.Fatalf("unexpected error for strong token in production: %v", err)
+			}
+		})
+	}
+}
+
+// TestResolveInstallToken_NonProductionPreserves 验证非生产模式下空/弱默认保留（仅告警）。
+func TestResolveInstallToken_NonProductionPreserves(t *testing.T) {
+	got, err := resolveInstallToken("change-me", "development")
+	if err != nil {
+		t.Fatalf("unexpected error in development: %v", err)
+	}
+	if got != "change-me" {
+		t.Fatalf("expected weak default preserved, got %q", got)
+	}
+}

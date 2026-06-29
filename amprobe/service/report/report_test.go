@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"amprobe/pkg/contextx"
 	"amprobe/service/model"
 	"common/database"
 	rpcSchema "common/rpc/schema"
@@ -123,6 +124,7 @@ func TestStorePersistsReportBatch(t *testing.T) {
 }
 
 // TestIsValidAgentID 覆盖 agent_id 格式校验的边界。
+// 校验函数的权威定义在 contextx.IsValidAgentID，report 包直接复用。
 func TestIsValidAgentID(t *testing.T) {
 	tests := []struct {
 		id   string
@@ -140,12 +142,12 @@ func TestIsValidAgentID(t *testing.T) {
 		{"agent\x00null", false},
 		{"中文", false},
 		// 超长
-		{strings.Repeat("a", maxAgentIDLen), true},
-		{strings.Repeat("a", maxAgentIDLen+1), false},
+		{strings.Repeat("a", contextx.MaxAgentIDLen()), true},
+		{strings.Repeat("a", contextx.MaxAgentIDLen()+1), false},
 	}
 	for _, tc := range tests {
-		if got := isValidAgentID(tc.id); got != tc.want {
-			t.Errorf("isValidAgentID(%q) = %v, want %v", tc.id, got, tc.want)
+		if got := contextx.IsValidAgentID(tc.id); got != tc.want {
+			t.Errorf("IsValidAgentID(%q) = %v, want %v", tc.id, got, tc.want)
 		}
 	}
 }

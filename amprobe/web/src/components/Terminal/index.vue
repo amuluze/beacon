@@ -136,7 +136,7 @@ watch(() => props.agentId, () => {
 </script>
 
 <template>
-  <div ref="terminalRef" class="am-terminal" />
+    <div ref="terminalRef" class="am-terminal" />
 </template>
 
 <style scoped lang="scss">

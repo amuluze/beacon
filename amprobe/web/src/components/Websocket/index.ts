@@ -19,11 +19,11 @@ export class Websocket {
         onOpen: ((ws: Websocket, ev: Event) => any) | null = null,
         onMessage: ((ws: Websocket, ev: MessageEvent) => any) | null = null,
         onError: ((ws: Websocket, ev: Event) => any) | null = null,
-        onClose: ((ws: Websocket, ev: Event) => any) | null = null
+        onClose: ((ws: Websocket, ev: Event) => any) | null = null,
     ) {
-        let location: Location = window.location
-        url = location.host + '/' + url
-        this.url = /https/.test(location.protocol) ? 'wss://' + url : 'ws://' + url
+        const location: Location = window.location
+        url = `${location.host}/${url}`
+        this.url = /https/.test(location.protocol) ? `wss://${url}` : `ws://${url}`
         // 浏览器 ws 握手无法携带 Authorization header，统一把 access token 写入 query。
         const token = useUserStore().token
         if (token) {
