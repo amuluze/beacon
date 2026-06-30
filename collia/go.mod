@@ -1,6 +1,6 @@
 module collia
 
-go 1.21.10
+go 1.25.0
 
 require (
 	github.com/amuluze/amutool/logger v0.0.0-20240821104128-caed9cc0d402
