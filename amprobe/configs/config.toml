@@ -43,6 +43,8 @@ MaxAge = 7                     # 最多保留 7 天的日志
 [Auth]
 Enable = true           # 是否启用
 SigningMethod = "HS512" # 签名方式(支持：HS512/HS384/HS512)
+# ⚠️ 生产环境必须通过环境变量 AMPROBE_AUTH_SIGNING_KEY 设置强随机密钥，
+# 或替换下方默认值。保留 "amprobe" 会在启动时发出 WARN 日志。
 SigningKey = "amprobe"  # 签名key
 Expired = 7200          # 过期时间（单位秒）
 RefreshExpired = 86400  # 刷新过期时间（单位秒）
@@ -59,6 +61,8 @@ Interval = 15
 
 [AgentInstall]
 Enable = true
+# ⚠️ 生产环境必须通过环境变量 AMPROBE_AGENT_INSTALL_TOKEN 设置，
+# 或替换下方默认值。保留 "change-me" 会在启动时发出 WARN 日志。
 Token = "change-me"
 PublicBaseURL = ""
 PackageDir = "/app/downloads/collia"

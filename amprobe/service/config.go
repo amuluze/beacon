@@ -6,6 +6,7 @@ package service
 
 import (
 	"log/slog"
+	"os"
 
 	"github.com/spf13/viper"
 )
@@ -36,20 +37,35 @@ func NewConfig(configFile string) (*Config, error) {
 		return nil, err
 	}
 
+	overrideFromEnv(config)
 	warnInsecureDefaults(config)
 
 	return config, nil
 }
 
+// overrideFromEnv overrides sensitive config values from environment variables
+// to prevent hard-coded secrets in production deployments.
+func overrideFromEnv(config *Config) {
+	if v := os.Getenv("AMPROBE_AUTH_SIGNING_KEY"); v != "" {
+		config.Auth.SigningKey = v
+	}
+	if v := os.Getenv("AMPROBE_AGENT_INSTALL_TOKEN"); v != "" {
+		config.AgentInstall.Token = v
+	}
+	if v := os.Getenv("AMPROBE_CONTROL_JOIN_TOKEN"); v != "" {
+		config.Control.JoinToken = v
+	}
+}
+
 func warnInsecureDefaults(config *Config) {
 	if config.Auth.Enable && config.Auth.SigningKey == "amprobe" {
-		slog.Warn("auth signing key uses default development value")
+		slog.Warn("auth signing key uses default development value; set AMPROBE_AUTH_SIGNING_KEY to override")
 	}
 	if config.AgentInstall.Enable && config.AgentInstall.Token == "change-me" {
-		slog.Warn("agent install token uses default development value")
+		slog.Warn("agent install token uses default development value; set AMPROBE_AGENT_INSTALL_TOKEN to override")
 	}
 	if config.Control.Enable && config.Control.JoinToken == "" && config.AgentInstall.Token == "" {
-		slog.Warn("control join token is empty")
+		slog.Warn("control join token is empty; set AMPROBE_CONTROL_JOIN_TOKEN or AgentInstall.Token")
 	}
 }
 

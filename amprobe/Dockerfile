@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.21 AS amprobe-builder
+FROM --platform=$BUILDPLATFORM golang:1.25 AS amprobe-builder
 ARG TARGETARCH
 
 WORKDIR /src
@@ -9,7 +9,7 @@ COPY collia ./collia
 WORKDIR /src/amprobe
 RUN GOARCH=$TARGETARCH go build -o /out/amprobe ./cmd/amprobe
 
-FROM --platform=$BUILDPLATFORM golang:1.21 AS collia-builder
+FROM --platform=$BUILDPLATFORM golang:1.25 AS collia-builder
 
 # collia 要下发到各种架构的 agent 机器，与 amprobe 自身架构无关，
 # 因此这里固定同时构建 amd64 和 arm64 两个裸二进制。

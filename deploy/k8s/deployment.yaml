@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: amprobe-server
+  namespace: amprobe
+  labels:
+    app: amprobe-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: amprobe-server
+  template:
+    metadata:
+      labels:
+        app: amprobe-server
+    spec:
+      containers:
+        - name: amprobe
+          image: amuluze/amprobe:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: http
+            - containerPort: 17000
+              name: control
+          env:
+            - name: AMPROBE_AUTH_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: amprobe-secrets
+                  key: auth-signing-key
+            - name: AMPROBE_AGENT_INSTALL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: amprobe-secrets
+                  key: agent-install-token
+            - name: AMPROBE_CONTROL_JOIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: amprobe-secrets
+                  key: control-join-token
+          volumeMounts:
+            - name: config
+              mountPath: /app/configs
+              readOnly: true
+            - name: data
+              mountPath: /app/data
+            - name: logs
+              mountPath: /app/logs
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: amprobe-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: amprobe-data
+        - name: logs
+          persistentVolumeClaim:
+            claimName: amprobe-logs

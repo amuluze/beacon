@@ -1,0 +1,154 @@
+openapi: 3.0.3
+info:
+  title: Amprobe API
+  description: |
+    Amprobe Server-Agent monitoring platform API.
+    All monitoring queries require an `X-Agent-ID` header or `agent_id` query parameter.
+    Control operations are dispatched to the target Agent via a reverse gRPC tunnel.
+  version: 0.0.1
+  contact:
+    name: Amprobe
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+paths:
+  /health:
+    get:
+      summary: Liveness probe
+      description: Returns HTTP 200 if the process is running. No authentication required.
+      operationId: liveness
+      responses:
+        '200':
+          description: Server is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /ready:
+    get:
+      summary: Readiness probe
+      description: Returns HTTP 200 when all dependencies are healthy; HTTP 503 when DB or tunnel is down. No authentication required.
+      operationId: readiness
+      responses:
+        '200':
+          description: Server is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Server is not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /api/v1/auth/login:
+    post:
+      summary: User login
+      description: Authenticate with username and password. Returns JWT access and refresh tokens.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+        '429':
+          description: Too many requests (rate limited)
+  /api/v1/agent/list:
+    get:
+      summary: List known Agents
+      description: Returns the list of Agents known to the Server with their lifecycle state.
+      operationId: listAgents
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Agent list
+  /api/v1/host/report:
+    post:
+      summary: Agent monitoring report
+      description: |
+        Receives a monitoring data batch from an Agent and persists it atomically.
+        Must include `X-Agent-ID` or `agent_id` in the request. Must include `X-Install-Token` or `token` if configured.
+      operationId: report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Batch stored successfully
+        '400':
+          description: Missing Agent ID or malformed batch
+        '401':
+          description: Invalid install token
+        '429':
+          description: Too many requests (rate limited)
+  /api/v1/host/host_info:
+    get:
+      summary: Get host information
+      description: Returns the latest host info for the selected Agent.
+      operationId: hostInfo
+      parameters:
+        - in: header
+          name: X-Agent-ID
+          schema:
+            type: string
+          required: true
+          description: Target Agent identifier
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Host info with freshness metadata
+        '400':
+          description: Missing Agent ID
+  /api/v1/container/containers:
+    get:
+      summary: List containers
+      description: Returns the latest container list for the selected Agent.
+      operationId: containerList
+      parameters:
+        - in: header
+          name: X-Agent-ID
+          schema:
+            type: string
+          required: true
+          description: Target Agent identifier
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Container list with freshness metadata
+        '400':
+          description: Missing Agent ID
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: alive
+        uptime:
+          type: number
+          example: 120.5
+        timestamp:
+          type: string
+          format: date-time
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

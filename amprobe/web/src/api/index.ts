@@ -20,8 +20,8 @@ import axios from 'axios'
 const config = {
     // 默认地址请求地址，可在 .env.*** 文件中修改
     baseURL: '/',
-    // 设置超时时间
-    timeout: 600000,
+    // 设置超时时间：默认 60s；文件上传/下载等长操作在调用处单独覆盖
+    timeout: 60000,
     // 设置默认请求头
     headers: { 'Content-Type': 'application/json;charset=utf-8' },
     // 跨域时候允许携带凭证

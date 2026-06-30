@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  amprobe:
+    build:
+      context: .
+      dockerfile: amprobe/Dockerfile
+    container_name: amprobe-server
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+      - "17000:17000"
+    volumes:
+      - amprobe-data:/app/data
+      - amprobe-logs:/app/logs
+      - ./amprobe/configs:/app/configs:ro
+    environment:
+      # ⚠️ 生产环境必须替换以下默认值
+      - AMPROBE_AUTH_SIGNING_KEY=${AMPROBE_AUTH_SIGNING_KEY:-amprobe}
+      - AMPROBE_AGENT_INSTALL_TOKEN=${AMPROBE_AGENT_INSTALL_TOKEN:-change-me}
+      - AMPROBE_CONTROL_JOIN_TOKEN=${AMPROBE_CONTROL_JOIN_TOKEN:-}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - amprobe-net
+
+  # Example Agent (collia) — enable this after generating an install script from the Server UI
+  # collia:
+  #   image: ubuntu:22.04
+  #   container_name: amprobe-agent-example
+  #   restart: unless-stopped
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #   command: >
+  #     sh -c "apt-get update && apt-get install -y ca-certificates curl &&
+  #            curl -fsSL http://amprobe:8000/api/v1/host/install?node=example | sh"
+  #   depends_on:
+  #     amprobe:
+  #       condition: service_healthy
+  #   networks:
+  #     - amprobe-net
+
+volumes:
+  amprobe-data:
+  amprobe-logs:
+
+networks:
+  amprobe-net:
+    driver: bridge

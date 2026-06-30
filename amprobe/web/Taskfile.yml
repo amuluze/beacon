@@ -16,6 +16,11 @@ tasks:
     cmds:
       - pnpm run build
 
+  test:
+    desc: Run frontend unit tests
+    cmds:
+      - pnpm run test
+
   dev:
     desc: Run frontend dev server
     cmds:

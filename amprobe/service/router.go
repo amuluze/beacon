@@ -5,19 +5,22 @@
 package service
 
 import (
+	"time"
+
 	"amprobe/pkg/auth"
 	"amprobe/pkg/contextx"
 	"amprobe/service/agent"
+	"amprobe/service/health"
 	"amprobe/service/middleware"
 	"amprobe/service/report"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/google/wire"
 
 	accountAPI "amprobe/service/account/api"
-	alarmAPI "amprobe/service/alarm/api"
 	auditAPI "amprobe/service/audit/api"
 	authAPI "amprobe/service/auth/api"
 	containerAPI "amprobe/service/container/api"
@@ -51,17 +54,54 @@ type Router struct {
 
 	loggerHandler *LoggerHandler
 	termHandler   *TermHandler
+
+	healthProbe *health.Probe
 }
 
 func (a *Router) RegisterAPI(app *fiber.App) {
+	// Health probes — no auth required, must be placed before auth middleware.
+	if a.healthProbe == nil {
+		a.healthProbe = health.NewProbe()
+	}
+	app.Get("/health", a.healthProbe.Liveness)
+	app.Get("/ready", a.healthProbe.Readiness)
+
+	// Rate limiting for authentication and Agent reporting endpoints.
+	app.Use("/api/v1/auth/login", limiter.New(limiter.Config{
+		Max:        10,
+		Expiration: 60 * time.Second,
+		KeyGenerator: func(c *fiber.Ctx) string {
+			return c.IP()
+		},
+		LimitReached: func(c *fiber.Ctx) error {
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{"error": "too many requests"})
+		},
+	}))
+	app.Use("/api/v1/host/report", limiter.New(limiter.Config{
+		Max:        60,
+		Expiration: 60 * time.Second,
+		KeyGenerator: func(c *fiber.Ctx) string {
+			agentID := c.Get("X-Agent-ID")
+			if agentID == "" {
+				agentID = c.Query("agent_id")
+			}
+			if agentID != "" {
+				return agentID
+			}
+			return c.IP()
+		},
+		LimitReached: func(c *fiber.Ctx) error {
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{"error": "too many requests"})
+		},
+	}))
+
 	app.Use(func(c *fiber.Ctx) error {
 		agentID := c.Get("X-Agent-ID")
 		if agentID == "" {
 			agentID = c.Query("agent_id")
 		}
-		if agentID == "" {
-			agentID = a.config.Control.DefaultAgentID
-		}
+		// Do NOT fall back to DefaultAgentID; let repository RequireAgentID
+		// reject requests that truly need an agent scope with a 400 Bad Request.
 		if agentID != "" {
 			c.SetUserContext(contextx.NewAgentID(c.UserContext(), agentID))
 		}
