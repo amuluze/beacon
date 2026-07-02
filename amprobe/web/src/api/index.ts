@@ -17,6 +17,34 @@ import type { AxiosError, AxiosInstance, AxiosRequestConfig, InternalAxiosReques
 import useStore from '@/store'
 import axios from 'axios'
 
+const agentScopedPrefixes = [
+    '/api/v1/host/',
+    '/api/v1/container/',
+]
+
+const agentScopedExcludes = [
+    '/api/v1/host/install',
+    '/api/v1/host/report',
+]
+
+function requestPath(url?: string): string {
+    if (!url)
+        return ''
+    try {
+        return new URL(url, window.location.origin).pathname
+    }
+    catch {
+        return url.split('?')[0]
+    }
+}
+
+function requiresAgent(url?: string): boolean {
+    const path = requestPath(url)
+    if (agentScopedExcludes.some(prefix => path.startsWith(prefix)))
+        return false
+    return agentScopedPrefixes.some(prefix => path.startsWith(prefix))
+}
+
 const config = {
     // 默认地址请求地址，可在 .env.*** 文件中修改
     baseURL: '/',
@@ -97,6 +125,9 @@ class Request {
                 const store = useStore()
                 if (store.user.token !== '') {
                     config.headers.Authorization = `Bearer ${store.user.token}`
+                }
+                if (requiresAgent(config.url) && store.agent.selectedAgentID) {
+                    config.headers['X-Agent-ID'] = store.agent.selectedAgentID
                 }
                 if (config.url?.endsWith('login')) {
                     config.headers['Content-Type'] = 'multipart/form-data;charset=UTF-8'

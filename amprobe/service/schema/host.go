@@ -38,8 +38,9 @@ type HostInfoReply struct {
 type CPUArgs struct{}
 
 type CPUInfoReply struct {
-	Stale   bool    `json:"stale,omitempty"`
-	Percent float64 `json:"percent"`
+	Stale     bool    `json:"stale,omitempty"`
+	Timestamp int64   `json:"timestamp"`
+	Percent   float64 `json:"percent"`
 }
 
 type CPUUsageArgs struct {
@@ -48,17 +49,18 @@ type CPUUsageArgs struct {
 }
 
 type CPUUsageReply struct {
-	Stale bool   `json:"stale,omitempty"`
+	Stale bool    `json:"stale,omitempty"`
 	Data  []Usage `json:"data"`
 }
 
 type MemoryArgs struct{}
 
 type MemoryInfoReply struct {
-	Stale   bool    `json:"stale,omitempty"`
-	Percent float64 `json:"percent"`
-	Total   float64 `json:"total"`
-	Used    float64 `json:"used"`
+	Stale     bool    `json:"stale,omitempty"`
+	Timestamp int64   `json:"timestamp"`
+	Percent   float64 `json:"percent"`
+	Total     float64 `json:"total"`
+	Used      float64 `json:"used"`
 }
 
 type MemoryUsageArgs struct {
@@ -67,17 +69,19 @@ type MemoryUsageArgs struct {
 }
 
 type MemoryUsageReply struct {
-	Stale bool   `json:"stale,omitempty"`
+	Stale bool    `json:"stale,omitempty"`
 	Data  []Usage `json:"data"`
 }
 
 type DiskArgs struct{}
 
 type DiskInfo struct {
-	Device  string  `json:"device"`
-	Percent float64 `json:"percent"`
-	Total   float64 `json:"total"`
-	Used    float64 `json:"used"`
+	Stale     bool    `json:"stale,omitempty"`
+	Timestamp int64   `json:"timestamp"`
+	Device    string  `json:"device"`
+	Percent   float64 `json:"percent"`
+	Total     float64 `json:"total"`
+	Used      float64 `json:"used"`
 }
 
 type DiskUsage struct {

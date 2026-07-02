@@ -94,8 +94,9 @@ func (h *HostService) CPUInfo(ctx context.Context) (schema.CPUInfoReply, error) 
 	if err != nil {
 		return reply, err
 	}
+	reply.Timestamp = cpuInfo.Timestamp
 	reply.Percent = cpuInfo.Percent
-	reply.Stale = cpuInfo.Stale
+	reply.Stale = h.isStale(cpuInfo.Timestamp)
 	return reply, nil
 }
 
@@ -128,10 +129,11 @@ func (h *HostService) MemInfo(ctx context.Context) (schema.MemoryInfoReply, erro
 	if err != nil {
 		return reply, err
 	}
+	reply.Timestamp = memInfo.Timestamp
 	reply.Used = memInfo.Used
 	reply.Total = memInfo.Total
 	reply.Percent = memInfo.Percent
-	reply.Stale = memInfo.Stale
+	reply.Stale = h.isStale(memInfo.Timestamp)
 	return reply, nil
 }
 
@@ -166,10 +168,12 @@ func (h *HostService) DiskInfo(ctx context.Context) (schema.DiskInfoReply, error
 	var list []schema.DiskInfo
 	for _, di := range rpcReply.Info {
 		list = append(list, schema.DiskInfo{
-			Device:  di.Device,
-			Percent: di.DiskPercent,
-			Total:   di.DiskTotal,
-			Used:    di.DiskUsed,
+			Timestamp: di.Timestamp.Unix(),
+			Stale:     h.isStale(di.Timestamp.Unix()),
+			Device:    di.Device,
+			Percent:   di.DiskPercent,
+			Total:     di.DiskTotal,
+			Used:      di.DiskUsed,
 		})
 	}
 	reply.Info = list

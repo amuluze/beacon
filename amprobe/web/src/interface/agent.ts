@@ -7,15 +7,3 @@ export interface AgentInfo {
     arch: string
     status: string
 }
-
-// 构造一个填充默认值的 Agent，用于前端兜底场景（如 agent 列表查询失败）。
-export function createDefaultAgent(agent_id = 'default', hostname = 'default'): AgentInfo {
-    return {
-        agent_id,
-        hostname,
-        version: '',
-        os: '',
-        arch: '',
-        status: 'offline',
-    }
-}

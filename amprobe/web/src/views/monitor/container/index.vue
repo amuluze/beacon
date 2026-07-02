@@ -1,29 +1,17 @@
 <script setup lang="ts">
 import type { EChartsOption } from '@/components/Echarts/echarts.ts'
+import AgentEmptyState from '@/components/Agent/AgentEmptyState.vue'
 import { containerCpuOption, containerMemOption } from '@/config/echarts.ts'
 import type { Usage } from '@/interface/host.ts'
-import type { AgentInfo } from '@/interface/agent.ts'
 import { dayjs } from 'element-plus'
-import { queryAgentList, queryContainersUsage } from '@/api/container'
+import { queryContainersUsage } from '@/api/container'
 import { set } from 'lodash-es'
-import { createDefaultAgent } from '@/interface/agent.ts'
+import { useAgentSelection } from '@/hooks/useAgentSelection'
+import { useI18n } from 'vue-i18n'
 
 // Agent switcher
-const agentList = ref<AgentInfo[]>([])
-const currentAgent = ref('')
-async function loadAgents() {
-  try {
-    const { data } = await queryAgentList()
-    agentList.value = data || []
-    if (agentList.value.length > 0 && !currentAgent.value) {
-      currentAgent.value = agentList.value[0].agent_id
-    }
-  }
-  catch {
-    agentList.value = [createDefaultAgent()]
-    currentAgent.value = 'default'
-  }
-}
+const { agentList, selectedAgentID: currentAgent, loading: agentLoading, isAgentEmpty, agentParams, ensureSelectedAgent, loadAgents } = useAgentSelection({ immediate: false })
+const { t } = useI18n()
 watch(currentAgent, () => {
   render()
 })
@@ -48,8 +36,9 @@ const memOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(containerMem
 const containerNames = ref<string[]>([])
 
 async function render() {
-  const agentParams: Record<string, string> = currentAgent.value ? { agent_id: currentAgent.value } : {}
-  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams }
+  if (!currentAgent.value)
+    return
+  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams.value }
   const { data } = await queryContainersUsage(param as any)
   if (!data.names || data.names.length === 0)
     return
@@ -106,9 +95,14 @@ async function render() {
   set(memOption, 'series', memSeries)
 }
 
+async function refreshAgents() {
+  await loadAgents()
+  await render()
+}
+
 const timer = ref()
-onMounted(() => {
-  loadAgents()
+onMounted(async () => {
+  await ensureSelectedAgent()
   render()
   timer.value = setInterval(render, 10000)
 })
@@ -121,8 +115,8 @@ onUnmounted(() => {
     <div class="am-section">
         <div class="am-section-header">
             <div class="am-section-title-group">
-                <span class="am-section-title">容器监控</span>
-                <el-select v-model="currentAgent" size="small" style="width: 200px" placeholder="选择主机">
+                <span class="am-section-title">{{ t('menu.containerMonitor') }}</span>
+                <el-select v-model="currentAgent" :loading="agentLoading" :disabled="isAgentEmpty" :no-data-text="t('agent.noData')" size="small" style="width: 200px" :placeholder="t('agent.selectHost')">
                     <el-option v-for="item in agentList" :key="item.agent_id" :label="item.hostname || item.agent_id" :value="item.agent_id">
                         <span>{{ item.hostname || item.agent_id }}</span>
                         <span style="float: right; color: var(--el-text-color-secondary); font-size: 12px">{{ item.version || 'unknown' }}</span>
@@ -137,7 +131,8 @@ onUnmounted(() => {
             </div>
         </div>
 
-        <div class="am-chart-grid">
+        <AgentEmptyState v-if="isAgentEmpty" @refresh="refreshAgents" />
+        <div v-else class="am-chart-grid">
             <div class="am-chart-row">
                 <div class="am-chart-card">
                     <div class="am-chart-card-header">

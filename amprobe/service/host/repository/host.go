@@ -97,7 +97,7 @@ func (h *HostRepo) CPUInfo(ctx context.Context, args rpcSchema.CPUInfoArgs) (rpc
 	if err := q.Model(&model.MonitorCPU{}).Order("timestamp desc").First(&info).Error; err != nil {
 		return rpcSchema.CPUInfoReply{}, err
 	}
-	return rpcSchema.CPUInfoReply{Percent: info.CPUPercent}, nil
+	return rpcSchema.CPUInfoReply{Timestamp: info.Timestamp.Unix(), Percent: info.CPUPercent}, nil
 }
 
 func (h *HostRepo) CPUUsage(ctx context.Context, args rpcSchema.CPUUsageArgs) (rpcSchema.CPUUsageReply, error) {
@@ -127,7 +127,7 @@ func (h *HostRepo) MemInfo(ctx context.Context, args rpcSchema.MemoryInfoArgs) (
 	if err := q.Model(&model.MonitorMemory{}).Order("timestamp desc").First(&info).Error; err != nil {
 		return rpcSchema.MemoryInfoReply{}, err
 	}
-	return rpcSchema.MemoryInfoReply{Percent: info.MemPercent, Total: info.MemTotal, Used: info.MemUsed}, nil
+	return rpcSchema.MemoryInfoReply{Timestamp: info.Timestamp.Unix(), Percent: info.MemPercent, Total: info.MemTotal, Used: info.MemUsed}, nil
 }
 
 func (h *HostRepo) MemUsage(ctx context.Context, args rpcSchema.MemoryUsageArgs) (rpcSchema.MemoryUsageReply, error) {
@@ -154,12 +154,18 @@ func (h *HostRepo) DiskInfo(ctx context.Context, args rpcSchema.DiskInfoArgs) (r
 		return rpcSchema.DiskInfoReply{}, err
 	}
 	var infos []model.MonitorDisk
-	if err := q.Model(&model.MonitorDisk{}).Group("device").Order("timestamp desc").Find(&infos).Error; err != nil {
+	if err := q.Model(&model.MonitorDisk{}).Order("timestamp desc").Find(&infos).Error; err != nil {
 		return rpcSchema.DiskInfoReply{}, err
 	}
 	var list []rpcSchema.Disk
+	seen := make(map[string]struct{})
 	for _, info := range infos {
+		if _, ok := seen[info.Device]; ok {
+			continue
+		}
+		seen[info.Device] = struct{}{}
 		list = append(list, rpcSchema.Disk{
+			Timestamp:   info.Timestamp,
 			Device:      info.Device,
 			DiskPercent: info.DiskPercent,
 			DiskTotal:   info.DiskTotal,

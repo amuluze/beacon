@@ -111,7 +111,6 @@ export default defineConfig({
             'path-browserify',
             'element-plus/es',
             'element-plus/es/components/base/style/css',
-            'element-plus/es/components/overview/style/css',
             'element-plus/es/components/main/style/css',
             'element-plus/es/components/header/style/css',
             'element-plus/es/components/aside/style/css',

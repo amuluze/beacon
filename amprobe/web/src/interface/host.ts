@@ -6,6 +6,7 @@
 
 export interface HostInfo {
     timestamp: number
+    stale?: boolean
     uptime: string
     hostname: string
     os: string
@@ -51,15 +52,21 @@ export interface NetUsageResult {
 }
 
 export interface CPUInfo {
+    timestamp: number
+    stale?: boolean
     percent: number
 }
 
 export interface MemInfo {
+    timestamp: number
+    stale?: boolean
     percent: number
     total: number
     used: number
 }
 export interface DiskInfo {
+    timestamp: number
+    stale?: boolean
     device: string
     percent: number
     total: number

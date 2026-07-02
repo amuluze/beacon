@@ -8,6 +8,13 @@
  * @ url： 请求地址       类型： string     默认： ''      备注： 'web/msg'
  */
 import { useUserStore } from '@/store/modules/user'
+import { useAgentStore } from '@/store/modules/agent'
+
+interface WebsocketOptions {
+    agentScoped?: boolean
+    agentID?: string
+    query?: Record<string, string | undefined>
+}
 
 export class Websocket {
     url: string
@@ -20,14 +27,30 @@ export class Websocket {
         onMessage: ((ws: Websocket, ev: MessageEvent) => any) | null = null,
         onError: ((ws: Websocket, ev: Event) => any) | null = null,
         onClose: ((ws: Websocket, ev: Event) => any) | null = null,
+        options: WebsocketOptions = {},
     ) {
         const location: Location = window.location
         url = `${location.host}/${url}`
         this.url = /https/.test(location.protocol) ? `wss://${url}` : `ws://${url}`
         // 浏览器 ws 握手无法携带 Authorization header，统一把 access token 写入 query。
+        const params = new URLSearchParams()
         const token = useUserStore().token
         if (token) {
-            this.url += `?token=${encodeURIComponent(token)}`
+            params.set('token', token)
+        }
+        const agentScoped = options.agentScoped ?? true
+        const agentID = options.agentID || useAgentStore().selectedAgentID
+        if (agentScoped && agentID) {
+            params.set('agent_id', agentID)
+        }
+        Object.entries(options.query || {}).forEach(([key, value]) => {
+            if (value) {
+                params.set(key, value)
+            }
+        })
+        const query = params.toString()
+        if (query) {
+            this.url += `?${query}`
         }
         this.ws = new WebSocket(this.url)
         this.close = (): void => {

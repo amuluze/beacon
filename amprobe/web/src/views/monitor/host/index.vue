@@ -1,38 +1,22 @@
 <script setup lang="ts">
 import type { EChartsOption } from '@/components/Echarts/echarts.ts'
 import type { DiskIO, DiskUsage, NetIO, NetUsage } from '@/interface/host.ts'
-import type { AgentInfo } from '@/interface/agent.ts'
 
-import { queryAgentList, queryCPUInfo, queryCPUUsage, queryDiskInfo, queryDiskUsage, queryMemInfo, queryMemUsage, queryNetworkUsage } from '@/api/host'
+import { queryCPUInfo, queryCPUUsage, queryDiskInfo, queryDiskUsage, queryMemInfo, queryMemUsage, queryNetworkUsage } from '@/api/host'
+import AgentEmptyState from '@/components/Agent/AgentEmptyState.vue'
+import DataStaleTag from '@/components/Agent/DataStaleTag.vue'
 import { cpuTrendingOption, diskTrendingOption, memTrendingOption, netTrendingOption } from '@/config/echarts.ts'
 import { convertBytesToReadable } from '@/utils/convert.ts'
-import { createDefaultAgent } from '@/interface/agent.ts'
 import { dayjs } from 'element-plus'
 import { set } from 'lodash-es'
+import { useAgentSelection } from '@/hooks/useAgentSelection'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
 // Agent switcher
-const agentList = ref<AgentInfo[]>([])
-const currentAgent = ref('')
-function agentParams(): Record<string, string> {
-  return currentAgent.value ? { agent_id: currentAgent.value } : {}
-}
-async function loadAgents() {
-  try {
-    const { data } = await queryAgentList()
-    agentList.value = data || []
-    if (agentList.value.length > 0 && !currentAgent.value) {
-      currentAgent.value = agentList.value[0].agent_id
-    }
-  }
-  catch {
-    agentList.value = [createDefaultAgent()]
-    currentAgent.value = 'default'
-  }
-}
+const { agentList, selectedAgentID: currentAgent, loading: agentLoading, isAgentEmpty, agentParams, ensureSelectedAgent, loadAgents } = useAgentSelection({ immediate: false })
 function openTerminal(): void {
   if (!currentAgent.value)
     return
@@ -59,13 +43,17 @@ watch(timeDensity, () => {
 
 // CPU
 const cpuPercent = ref('0.0%')
+const cpuStale = ref(false)
+const cpuTimestamp = ref(0)
 const cpuOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(cpuTrendingOption)))
 async function renderCPUPercent() {
-  const { data } = await queryCPUInfo({ ...agentParams() } as any)
+  const { data } = await queryCPUInfo({ ...agentParams.value } as any)
   cpuPercent.value = `${data.percent.toFixed(1)}%`
+  cpuStale.value = Boolean(data.stale)
+  cpuTimestamp.value = data.timestamp
 }
 async function renderCPU() {
-  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams() }
+  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams.value }
   const { data } = await queryCPUUsage(param as any)
   const cpuData = data.data
   const labels = cpuData.map((item: any) => `${dayjs(item.timestamp * 1000).format('HH:mm')}`)
@@ -75,16 +63,18 @@ async function renderCPU() {
 }
 
 // Memory
-const memInfo = ref({ percent: '0%', total: '0', used: '0' })
+const memInfo = ref({ percent: '0%', total: '0', used: '0', stale: false, timestamp: 0 })
 const memOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(memTrendingOption)))
 async function renderMemInfo() {
-  const { data } = await queryMemInfo({ ...agentParams() } as any)
+  const { data } = await queryMemInfo({ ...agentParams.value } as any)
   memInfo.value.percent = `${data.percent.toFixed(1)}%`
   memInfo.value.total = convertBytesToReadable(data.total)
   memInfo.value.used = convertBytesToReadable(data.used)
+  memInfo.value.stale = Boolean(data.stale)
+  memInfo.value.timestamp = data.timestamp
 }
 async function renderMem() {
-  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams() }
+  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams.value }
   const { data } = await queryMemUsage(param as any)
   const memData = data.data
   const labels = memData.map((item: any) => `${dayjs(item.timestamp * 1000).format('HH:mm')}`)
@@ -94,15 +84,19 @@ async function renderMem() {
 }
 
 // Disk
-const diskInfo = ref<{ device: string, total: string, used: string, percent: string }[]>([])
+const diskInfo = ref<{ device: string, total: string, used: string, percent: string, stale?: boolean, timestamp?: number }[]>([])
+const diskStale = computed(() => diskInfo.value.some(item => item.stale))
+const diskTimestamp = computed(() => diskInfo.value.find(item => item.stale)?.timestamp || diskInfo.value[0]?.timestamp || 0)
 const diskOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(diskTrendingOption)))
 async function renderDiskInfo() {
-  const { data } = await queryDiskInfo({ ...agentParams() } as any)
+  const { data } = await queryDiskInfo({ ...agentParams.value } as any)
   diskInfo.value = (data.info || []).map((item: any) => ({
     device: item.device,
     total: convertBytesToReadable(item.total),
     used: convertBytesToReadable(item.used),
     percent: `${item.percent.toFixed(1)}%`,
+    stale: Boolean(item.stale),
+    timestamp: item.timestamp,
   }))
 }
 function generateDiskSeriesData(data: DiskUsage[]) {
@@ -114,7 +108,7 @@ function generateDiskSeriesData(data: DiskUsage[]) {
   return series
 }
 async function renderDisk() {
-  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams() }
+  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams.value }
   const { data } = await queryDiskUsage(param as any)
   if (!data.usage || data.usage.length === 0)
     return
@@ -127,7 +121,7 @@ async function renderDisk() {
 const netInfo = ref<{ ethernet: string, read: string, write: string }[]>([])
 const netOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(netTrendingOption)))
 async function renderNet() {
-  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams() }
+  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams.value }
   const { data } = await queryNetworkUsage(param as any)
   if (!data.usage || data.usage.length === 0)
     return
@@ -147,6 +141,8 @@ async function renderNet() {
 }
 
 function refreshAll() {
+  if (!currentAgent.value)
+    return
   renderCPUPercent()
   renderCPU()
   renderMemInfo()
@@ -156,9 +152,14 @@ function refreshAll() {
   renderNet()
 }
 
+async function refreshAgents() {
+  await loadAgents()
+  refreshAll()
+}
+
 const timer = ref()
-onMounted(() => {
-  loadAgents()
+onMounted(async () => {
+  await ensureSelectedAgent()
   refreshAll()
   timer.value = setInterval(refreshAll, 10000)
 })
@@ -174,8 +175,8 @@ const { t } = useI18n()
     <div class="am-section">
         <div class="am-section-header">
             <div class="am-section-title-group">
-                <span class="am-section-title">{{ t('monitor.hostMonitor') }}</span>
-                <el-select v-model="currentAgent" size="small" style="width: 200px" placeholder="选择主机">
+                <span class="am-section-title">{{ t('menu.hostMonitor') }}</span>
+                <el-select v-model="currentAgent" :loading="agentLoading" :disabled="isAgentEmpty" :no-data-text="t('agent.noData')" size="small" style="width: 200px" :placeholder="t('agent.selectHost')">
                     <el-option
                         v-for="item in agentList"
                         :key="item.agent_id"
@@ -186,8 +187,8 @@ const { t } = useI18n()
                         <span style="float: right; color: var(--el-text-color-secondary); font-size: 12px">{{ item.version || 'unknown' }}</span>
                     </el-option>
                 </el-select>
-                <el-button size="small" type="primary" plain @click="openTerminal">
-                    打开终端
+                <el-button size="small" type="primary" plain :disabled="!currentAgent" @click="openTerminal">
+                    {{ t('agent.openTerminal') }}
                 </el-button>
             </div>
             <div class="am-density-group">
@@ -198,11 +199,15 @@ const { t } = useI18n()
             </div>
         </div>
 
-        <div class="am-chart-grid">
+        <AgentEmptyState v-if="isAgentEmpty" @refresh="refreshAgents" />
+        <div v-else class="am-chart-grid">
             <div class="am-chart-row">
                 <div class="am-chart-card">
                     <div class="am-chart-card-header">
-                        <span class="am-chart-card-title">CPU 使用率</span>
+                        <div class="am-chart-card-title-row">
+                            <span class="am-chart-card-title">CPU 使用率</span>
+                            <DataStaleTag :stale="cpuStale" :timestamp="cpuTimestamp" />
+                        </div>
                         <span class="am-chart-card-percent accent-primary">{{ cpuPercent }}</span>
                     </div>
                     <div class="am-chart-area">
@@ -211,7 +216,10 @@ const { t } = useI18n()
                 </div>
                 <div class="am-chart-card">
                     <div class="am-chart-card-header">
-                        <span class="am-chart-card-title">内存使用率</span>
+                        <div class="am-chart-card-title-row">
+                            <span class="am-chart-card-title">内存使用率</span>
+                            <DataStaleTag :stale="memInfo.stale" :timestamp="memInfo.timestamp" />
+                        </div>
                         <span class="am-chart-card-percent accent-warning">{{ memInfo.percent }}</span>
                     </div>
                     <div class="am-chart-area">
@@ -222,7 +230,10 @@ const { t } = useI18n()
             <div class="am-chart-row">
                 <div class="am-chart-card">
                     <div class="am-chart-card-header">
-                        <span class="am-chart-card-title">磁盘 IO</span>
+                        <div class="am-chart-card-title-row">
+                            <span class="am-chart-card-title">磁盘 IO</span>
+                            <DataStaleTag :stale="diskStale" :timestamp="diskTimestamp" />
+                        </div>
                         <span v-if="diskInfo.length > 0" class="am-chart-card-percent accent-success">{{ diskInfo[0].percent }}</span>
                     </div>
                     <div class="am-chart-area">
@@ -301,6 +312,11 @@ const { t } = useI18n()
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+.am-chart-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .am-chart-card-title {
   font-size: 14px;

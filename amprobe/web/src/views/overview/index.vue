@@ -5,14 +5,19 @@ import type { EChartsOption } from '@/components/Echarts/echarts.ts'
 
 import { queryContainers, queryDockerInfo, queryImages } from '@/api/container'
 import { queryCPUInfo, queryDiskInfo, queryHostInfo, queryMemInfo } from '@/api/host'
+import AgentEmptyState from '@/components/Agent/AgentEmptyState.vue'
+import DataStaleTag from '@/components/Agent/DataStaleTag.vue'
 import { cpuOption, diskOption, memOption } from '@/config/echarts.ts'
 
 import { useI18n } from 'vue-i18n'
+import { useAgentSelection } from '@/hooks/useAgentSelection'
 import { set } from 'lodash-es'
 import type { Pagination } from '@/interface/pagination.ts'
 
 const loading = ref(true)
 const { t } = useI18n()
+const { selectedAgentID, isAgentEmpty, ensureSelectedAgent, loadAgents } = useAgentSelection({ immediate: false })
+const initialized = ref(false)
 
 const hostInfo = ref<HostInfo>()
 async function getHostInfo() {
@@ -48,40 +53,80 @@ async function statisticImage() {
 }
 
 const cpuOptionData: EChartsOption = reactive<EChartsOption>(cpuOption) as EChartsOption
+const cpuStale = ref(false)
+const cpuTimestamp = ref(0)
 async function renderCPU() {
   const { data } = await queryCPUInfo()
+  cpuStale.value = Boolean(data.stale)
+  cpuTimestamp.value = data.timestamp
   set(cpuOption, 'title.text', 'CPU')
   set(cpuOption, 'series[0].data', [Math.round(data.percent) / 100])
 }
 
 const memOptionData: EChartsOption = reactive<EChartsOption>(memOption) as EChartsOption
+const memStale = ref(false)
+const memTimestamp = ref(0)
 async function renderMem() {
   const { data } = await queryMemInfo()
+  memStale.value = Boolean(data.stale)
+  memTimestamp.value = data.timestamp
   set(memOption, 'title.text', 'Mem')
   set(memOption, 'series[0].data', [Math.round(data.percent) / 100])
 }
 
 const diskOptionData: EChartsOption = reactive<EChartsOption>(diskOption) as EChartsOption
+const diskStale = ref(false)
+const diskTimestamp = ref(0)
 async function renderDisk() {
   const { data } = await queryDiskInfo()
+  const staleDisk = data.info?.find(item => item.stale)
+  diskStale.value = Boolean(staleDisk)
+  diskTimestamp.value = staleDisk?.timestamp || data.info?.[0]?.timestamp || 0
   set(diskOption, 'title.text', 'Disk')
-  set(diskOption, 'series[0].data', [Math.round(data.info[0].percent) / 100])
+  set(diskOption, 'series[0].data', [data.info?.[0] ? Math.round(data.info[0].percent) / 100 : 0])
+}
+
+async function refreshAgents() {
+  await loadAgents()
+  if (selectedAgentID.value) {
+    await refreshOverview()
+  }
+}
+
+async function refreshOverview() {
+  loading.value = true
+  try {
+    const agentID = await ensureSelectedAgent()
+    if (!agentID)
+      return
+    await getHostInfo()
+    await getDockerInfo()
+    await statisticContainer()
+    await statisticImage()
+    await renderCPU()
+    await renderMem()
+    await renderDisk()
+  }
+  finally {
+    loading.value = false
+  }
 }
 
 onMounted(async () => {
-  await getHostInfo()
-  await getDockerInfo()
-  await statisticContainer()
-  await statisticImage()
-  await renderCPU()
-  await renderMem()
-  await renderDisk()
-  loading.value = false
+  await refreshOverview()
+  initialized.value = true
+})
+
+watch(selectedAgentID, () => {
+  if (initialized.value) {
+    refreshOverview()
+  }
 })
 </script>
 
 <template>
-    <el-row class="am-overview" :gutter="8" justify="space-between">
+    <AgentEmptyState v-if="isAgentEmpty" @refresh="refreshAgents" />
+    <el-row v-else class="am-overview" :gutter="8" justify="space-between">
         <el-col :span="16">
             <el-row :gutter="8">
                 <el-col :xl="12" :lg="12" :md="12" :sm="12" :xs="24">
@@ -126,6 +171,7 @@ onMounted(async () => {
                     <div class="am-chart">
                         <el-card shadow="never">
                             <el-skeleton :loading="loading" animated>
+                                <DataStaleTag :stale="cpuStale" :timestamp="cpuTimestamp" />
                                 <Echarts :option="cpuOptionData" />
                             </el-skeleton>
                         </el-card>
@@ -135,6 +181,7 @@ onMounted(async () => {
                     <div class="am-chart">
                         <el-card shadow="never">
                             <el-skeleton :loading="loading" animated>
+                                <DataStaleTag :stale="memStale" :timestamp="memTimestamp" />
                                 <Echarts :option="memOptionData" />
                             </el-skeleton>
                         </el-card>
@@ -144,6 +191,7 @@ onMounted(async () => {
                     <div class="am-chart">
                         <el-card shadow="never">
                             <el-skeleton :loading="loading" animated>
+                                <DataStaleTag :stale="diskStale" :timestamp="diskTimestamp" />
                                 <Echarts :option="diskOptionData" />
                             </el-skeleton>
                         </el-card>
@@ -154,6 +202,7 @@ onMounted(async () => {
         <el-col :span="8">
             <content-wrap :style="{ 'margin-bottom': '8px', 'height': '250px' }" :title="t('content.hostInfo')" :message="t('content.hostInfo')">
                 <el-skeleton :loading="loading" animated>
+                    <DataStaleTag :stale="hostInfo?.stale" :timestamp="hostInfo?.timestamp" />
                     <p>
                         {{ t('content.hostName') }}：<el-tag>{{ hostInfo?.hostname }}</el-tag>
                     </p>

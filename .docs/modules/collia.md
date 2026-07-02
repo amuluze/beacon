@@ -21,7 +21,7 @@
 ## 模块事实
 
 - 模块路径：`collia`
-- Go 版本：`1.21.10`
+- Go 版本：`1.25.0`
 - Go 源码文件：29
 - Go 测试文件：3
 - 包名：`conn`, `main`, `model`, `psutil`, `report`, `resources`, `rpc`, `service`, `task`, `timectl`, `utils`

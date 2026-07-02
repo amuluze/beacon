@@ -4,6 +4,7 @@ package task
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -38,22 +39,32 @@ func NewTask(db *database.DB) *Task {
 }
 
 func (t *Task) CPUAlarmTask(ctx context.Context) error {
-	var threshold model.AlarmThreshold
-	if err := t.db.Model(&model.AlarmThreshold{}).First(&threshold).Error; err != nil {
+	threshold, err := t.alarmThreshold(ctx, "cpu")
+	if err != nil {
 		return err
 	}
 
-	// Read host info from local DB
-	var hostInfo model.MonitorHost
-	var hostname string
-	if err := t.db.Model(&model.MonitorHost{}).Order("timestamp desc").First(&hostInfo).Error; err == nil {
-		hostname = hostInfo.Hostname
+	agentIDs, err := t.agentIDs(ctx, &model.MonitorCPU{})
+	if err != nil {
+		return err
 	}
 
+	for _, agentID := range agentIDs {
+		if err := t.cpuAlarmTaskForAgent(ctx, agentID, threshold); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (t *Task) cpuAlarmTaskForAgent(ctx context.Context, agentID string, threshold model.AlarmThreshold) error {
 	// Read CPU data from local DB
-	startTime := time.Now().Add(-time.Duration(threshold.Duration) * time.Minute).Unix()
+	startTime := time.Now().Add(-time.Duration(threshold.Duration) * time.Minute)
 	var cpuData []model.MonitorCPU
-	if err := t.db.Model(&model.MonitorCPU{}).Where("timestamp > ?", time.Unix(startTime, 0)).Order("timestamp asc").Find(&cpuData).Error; err != nil {
+	if err := t.db.WithContext(ctx).Model(&model.MonitorCPU{}).
+		Where("agent_id = ? AND timestamp > ?", agentID, startTime).
+		Order("timestamp asc").
+		Find(&cpuData).Error; err != nil {
 		return err
 	}
 
@@ -62,26 +73,40 @@ func (t *Task) CPUAlarmTask(ctx context.Context) error {
 		total += item.CPUPercent
 	}
 	if len(cpuData) > 0 && int(utils.Decimal(total/float64(len(cpuData)))*100) > threshold.Threshold {
-		return t.triggerAlarm("cpu", fmt.Sprintf("%s CPU 使用率连续 %d 分钟超过 %d%%", hostname, threshold.Duration, threshold.Threshold))
+		return t.triggerAlarm(
+			alarmCacheKey(agentID, "cpu"),
+			fmt.Sprintf("%s CPU 使用率连续 %d 分钟超过 %d%%", t.agentLabel(ctx, agentID), threshold.Duration, threshold.Threshold),
+		)
 	}
 	return nil
 }
 
 func (t *Task) MemoryAlarmTask(ctx context.Context) error {
-	var threshold model.AlarmThreshold
-	if err := t.db.Model(&model.AlarmThreshold{}).First(&threshold).Error; err != nil {
+	threshold, err := t.alarmThreshold(ctx, "memory")
+	if err != nil {
 		return err
 	}
 
-	var hostInfo model.MonitorHost
-	var hostname string
-	if err := t.db.Model(&model.MonitorHost{}).Order("timestamp desc").First(&hostInfo).Error; err == nil {
-		hostname = hostInfo.Hostname
+	agentIDs, err := t.agentIDs(ctx, &model.MonitorMemory{})
+	if err != nil {
+		return err
 	}
 
-	startTime := time.Now().Add(-time.Duration(threshold.Duration) * time.Minute).Unix()
+	for _, agentID := range agentIDs {
+		if err := t.memoryAlarmTaskForAgent(ctx, agentID, threshold); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (t *Task) memoryAlarmTaskForAgent(ctx context.Context, agentID string, threshold model.AlarmThreshold) error {
+	startTime := time.Now().Add(-time.Duration(threshold.Duration) * time.Minute)
 	var memData []model.MonitorMemory
-	if err := t.db.Model(&model.MonitorMemory{}).Where("timestamp > ?", time.Unix(startTime, 0)).Order("timestamp asc").Find(&memData).Error; err != nil {
+	if err := t.db.WithContext(ctx).Model(&model.MonitorMemory{}).
+		Where("agent_id = ? AND timestamp > ?", agentID, startTime).
+		Order("timestamp asc").
+		Find(&memData).Error; err != nil {
 		return err
 	}
 
@@ -90,26 +115,40 @@ func (t *Task) MemoryAlarmTask(ctx context.Context) error {
 		total += item.MemPercent
 	}
 	if len(memData) > 0 && int(utils.Decimal(total/float64(len(memData)))*100) > threshold.Threshold {
-		return t.triggerAlarm("memory", fmt.Sprintf("%s 内存使用率连续 %d 分钟超过 %d%%", hostname, threshold.Duration, threshold.Threshold))
+		return t.triggerAlarm(
+			alarmCacheKey(agentID, "memory"),
+			fmt.Sprintf("%s 内存使用率连续 %d 分钟超过 %d%%", t.agentLabel(ctx, agentID), threshold.Duration, threshold.Threshold),
+		)
 	}
 	return nil
 }
 
 func (t *Task) DiskAlarmTask(ctx context.Context) error {
-	var threshold model.AlarmThreshold
-	if err := t.db.Model(&model.AlarmThreshold{}).First(&threshold).Error; err != nil {
+	threshold, err := t.alarmThreshold(ctx, "disk")
+	if err != nil {
 		return err
 	}
 
-	var hostInfo model.MonitorHost
-	var hostname string
-	if err := t.db.Model(&model.MonitorHost{}).Order("timestamp desc").First(&hostInfo).Error; err == nil {
-		hostname = hostInfo.Hostname
+	agentIDs, err := t.agentIDs(ctx, &model.MonitorDisk{})
+	if err != nil {
+		return err
 	}
 
+	for _, agentID := range agentIDs {
+		if err := t.diskAlarmTaskForAgent(ctx, agentID, threshold); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (t *Task) diskAlarmTaskForAgent(ctx context.Context, agentID string, threshold model.AlarmThreshold) error {
 	// Get latest disk info by device
 	var diskData []model.MonitorDisk
-	if err := t.db.Model(&model.MonitorDisk{}).Group("device").Order("timestamp desc").Find(&diskData).Error; err != nil {
+	if err := t.db.WithContext(ctx).Model(&model.MonitorDisk{}).
+		Where("agent_id = ?", agentID).
+		Order("timestamp desc").
+		Find(&diskData).Error; err != nil {
 		return err
 	}
 
@@ -120,7 +159,10 @@ func (t *Task) DiskAlarmTask(ctx context.Context) error {
 		}
 		diskMap[item.Device] = struct{}{}
 		if int(utils.Decimal(item.DiskPercent)*100) > threshold.Threshold {
-			return t.triggerAlarm("disk", fmt.Sprintf("%s 磁盘 %s 使用率超过 %d%%", hostname, item.Device, threshold.Threshold))
+			return t.triggerAlarm(
+				alarmCacheKey(agentID, "disk", item.Device),
+				fmt.Sprintf("%s 磁盘 %s 使用率超过 %d%%", t.agentLabel(ctx, agentID), item.Device, threshold.Threshold),
+			)
 		}
 	}
 	return nil
@@ -129,42 +171,74 @@ func (t *Task) DiskAlarmTask(ctx context.Context) error {
 func (t *Task) ServiceTask(ctx context.Context) error {
 	// Read latest container states from local DB
 	var containers []model.MonitorContainer
-	if err := t.db.Model(&model.MonitorContainer{}).Order("created_at desc").Find(&containers).Error; err != nil {
+	if err := t.db.WithContext(ctx).Model(&model.MonitorContainer{}).Order("agent_id asc, name asc, timestamp desc").Find(&containers).Error; err != nil {
 		return err
 	}
 
 	for _, item := range containers {
-		if containerStateBytes, ok := t.cache.Get(item.Name); ok {
+		if item.AgentID == "" {
+			continue
+		}
+		stateKey := alarmCacheKey(item.AgentID, "service-state", item.Name)
+		if containerStateBytes, ok := t.cache.Get(stateKey); ok {
 			if containerStateBytes.(string) != item.State {
-				msg := fmt.Sprintf("容器 %s 的状态由 %s 变为 %s", item.Name, containerStateBytes.(string), item.State)
-				if err := t.sendAlarmAudit(msg); err != nil {
+				msg := fmt.Sprintf("%s 容器 %s 的状态由 %s 变为 %s", t.agentLabel(ctx, item.AgentID), item.Name, containerStateBytes.(string), item.State)
+				if err := t.triggerAlarm(alarmCacheKey(item.AgentID, "service", item.Name), msg); err != nil {
 					return err
 				}
 			}
 		}
-		t.cache.Set(item.Name, item.State, 0)
+		t.cache.Set(stateKey, item.State, 0)
 	}
 	return nil
 }
 
+func (t *Task) alarmThreshold(ctx context.Context, alarmType string) (model.AlarmThreshold, error) {
+	var threshold model.AlarmThreshold
+	err := t.db.WithContext(ctx).Model(&model.AlarmThreshold{}).Where("type = ?", alarmType).First(&threshold).Error
+	return threshold, err
+}
+
+func (t *Task) agentIDs(ctx context.Context, model interface{}) ([]string, error) {
+	var agentIDs []string
+	if err := t.db.WithContext(ctx).Model(model).
+		Distinct("agent_id").
+		Where("agent_id <> ?", "").
+		Order("agent_id asc").
+		Pluck("agent_id", &agentIDs).Error; err != nil {
+		return nil, err
+	}
+	return agentIDs, nil
+}
+
+func (t *Task) agentLabel(ctx context.Context, agentID string) string {
+	var hostInfo model.MonitorHost
+	if err := t.db.WithContext(ctx).Model(&model.MonitorHost{}).
+		Where("agent_id = ?", agentID).
+		Order("timestamp desc").
+		First(&hostInfo).Error; err == nil && hostInfo.Hostname != "" {
+		return fmt.Sprintf("Agent %s(%s)", agentID, hostInfo.Hostname)
+	}
+	return fmt.Sprintf("Agent %s", agentID)
+}
+
+func alarmCacheKey(parts ...string) string {
+	return strings.Join(parts, ":")
+}
+
 func (t *Task) triggerAlarm(key string, msg string) error {
-	return t.db.RunInTransaction(func(tx *gorm.DB) error {
-		operateLog := model.Audit{
-			Username: "system",
-			Operate:  msg,
-		}
-		if err := tx.Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
-			return err
-		}
-		if _, ok := t.cache.Get(key); ok {
-			return nil
-		}
-		if err := t.sendMail(msg); err != nil {
-			return err
-		}
-		t.cache.Set(key, "true", 10*time.Minute)
+	if err := t.sendAlarmAudit(msg); err != nil {
+		return err
+	}
+	if _, ok := t.cache.Get(key); ok {
 		return nil
-	})
+	}
+	if err := t.sendMail(msg); err != nil {
+		slog.Error("send alarm mail failed", "key", key, "error", err)
+		return nil
+	}
+	t.cache.Set(key, "true", 10*time.Minute)
+	return nil
 }
 
 func (t *Task) sendAlarmAudit(msg string) error {
@@ -174,9 +248,6 @@ func (t *Task) sendAlarmAudit(msg string) error {
 			Operate:  msg,
 		}
 		if err := tx.Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
-			return err
-		}
-		if err := t.sendMail(msg); err != nil {
 			return err
 		}
 		return nil
