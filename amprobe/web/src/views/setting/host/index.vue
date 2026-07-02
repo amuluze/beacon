@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import { getSystemTime, getSystemTimezone, reboot, shutdown } from '@/api/system'
+import AgentEmptyState from '@/components/Agent/AgentEmptyState.vue'
 import { error, success } from '@/components/Message/message.ts'
 import useCommandComponent from '@/hooks/useCommandComponent.ts'
+import { useAgentSelection } from '@/hooks/useAgentSelection'
 import SetSystemTime from '@/views/setting/host/components/SetSystemTime.vue'
 import SetSystemTimezone from '@/views/setting/host/components/SetSystemTimezone.vue'
 import { useI18n } from 'vue-i18n'
 
+const { selectedAgentID, isAgentEmpty, ensureSelectedAgent, loadAgents } = useAgentSelection({ immediate: false })
+const initialized = ref(false)
+
 function rebootHost() {
+  if (!selectedAgentID.value)
+    return
   reboot()
     .then(() => {
       success('重启成功')
@@ -17,6 +24,8 @@ function rebootHost() {
 }
 
 function shutdownHost() {
+  if (!selectedAgentID.value)
+    return
   shutdown()
     .then(() => {
       success('关机成功')
@@ -41,9 +50,27 @@ async function querySystemTimezone() {
   systemTimezone.value = data.system_timezone
 }
 
-onMounted(() => {
-  querySystemTime()
-  querySystemTimezone()
+async function refreshSystemSettings() {
+  const agentID = await ensureSelectedAgent()
+  if (!agentID)
+    return
+  await querySystemTime()
+  await querySystemTimezone()
+}
+async function refreshAgents() {
+  await loadAgents()
+  await refreshSystemSettings()
+}
+
+onMounted(async () => {
+  await refreshSystemSettings()
+  initialized.value = true
+})
+
+watch(selectedAgentID, async () => {
+  if (initialized.value && selectedAgentID.value) {
+    await refreshSystemSettings()
+  }
 })
 
 const editSystemTime = useCommandComponent(SetSystemTime)
@@ -53,38 +80,41 @@ const { t } = useI18n()
 </script>
 
 <template>
-    <div class="am-system">
-        <el-card shadow="never">
-            <el-button type="warning" plain size="small" @click="rebootHost">
-                {{ t('setting.reboot') }}
-            </el-button>
-            <el-button type="danger" plain size="small" @click="shutdownHost">
-                {{ t('setting.shutdown') }}
-            </el-button>
-        </el-card>
-    </div>
-    <el-row :gutter="4">
-        <el-col :span="12">
+    <AgentEmptyState v-if="isAgentEmpty" @refresh="refreshAgents" />
+    <template v-else>
+        <div class="am-system">
             <el-card shadow="never">
-                <h4>{{ t('setting.systemTimezone') }}</h4>
-                <span>{{ t('setting.systemTimezone') }}：</span>
-                <span style="margin-right: 4px">
-                    <el-tag>{{ systemTimezone }}</el-tag>
-                </span>
-                <svg-icon icon-class="edit" style="cursor: pointer" @click="editSystemTimezone({ title: 'setting.systemTimezone', systemTimezone })" />
+                <el-button type="warning" plain size="small" :disabled="!selectedAgentID" @click="rebootHost">
+                    {{ t('setting.reboot') }}
+                </el-button>
+                <el-button type="danger" plain size="small" :disabled="!selectedAgentID" @click="shutdownHost">
+                    {{ t('setting.shutdown') }}
+                </el-button>
             </el-card>
-        </el-col>
-        <el-col :span="12">
-            <el-card shadow="never">
-                <h4>{{ t('setting.systemTime') }}</h4>
-                <span>{{ t('setting.systemTime') }}：</span>
-                <span style="margin-right: 4px">
-                    <el-tag>{{ systemTime }}</el-tag>
-                </span>
-                <svg-icon icon-class="edit" style="cursor: pointer" @click="editSystemTime({ title: 'setting.systemTime', systemTime })" />
-            </el-card>
-        </el-col>
-    </el-row>
+        </div>
+        <el-row :gutter="4">
+            <el-col :span="12">
+                <el-card shadow="never">
+                    <h4>{{ t('setting.systemTimezone') }}</h4>
+                    <span>{{ t('setting.systemTimezone') }}：</span>
+                    <span style="margin-right: 4px">
+                        <el-tag>{{ systemTimezone }}</el-tag>
+                    </span>
+                    <svg-icon icon-class="edit" style="cursor: pointer" @click="editSystemTimezone({ title: 'setting.systemTimezone', systemTimezone })" />
+                </el-card>
+            </el-col>
+            <el-col :span="12">
+                <el-card shadow="never">
+                    <h4>{{ t('setting.systemTime') }}</h4>
+                    <span>{{ t('setting.systemTime') }}：</span>
+                    <span style="margin-right: 4px">
+                        <el-tag>{{ systemTime }}</el-tag>
+                    </span>
+                    <svg-icon icon-class="edit" style="cursor: pointer" @click="editSystemTime({ title: 'setting.systemTime', systemTime })" />
+                </el-card>
+            </el-col>
+        </el-row>
+    </template>
 </template>
 
 <style scoped lang="scss">

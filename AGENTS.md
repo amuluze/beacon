@@ -52,6 +52,7 @@
 ## Domain Specs
 
 - [.specs/domain/monitoring-platform.md](.specs/domain/monitoring-platform.md)
+- [.specs/domain/agent-lifecycle-update.md](.specs/domain/agent-lifecycle-update.md) — Agent 版本上报、远程更新推送、自更新与卸载的领域约束
 
 ## 开发命令
 

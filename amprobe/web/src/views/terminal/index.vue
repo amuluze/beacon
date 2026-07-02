@@ -1,34 +1,64 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import AgentEmptyState from '@/components/Agent/AgentEmptyState.vue'
+import { computed, onMounted } from 'vue'
+import { useAgentSelection } from '@/hooks/useAgentSelection'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
-const selectedAgent = ref((route.query.agent_id as string) || '')
+const { agentList, selectedAgentID, loading, isAgentEmpty, loadAgents, ensureSelectedAgent } = useAgentSelection({ immediate: false })
+const routeAgentID = computed(() => route.query.agent_id as string | undefined)
+const { t } = useI18n()
 
+const selectedAgent = computed({
+  get: () => selectedAgentID.value,
+  set: (value: string) => selectedAgentID.value = value,
+})
 const agentId = computed(() => selectedAgent.value)
 
 function handleAgentChange(value: string): void {
   selectedAgent.value = value
 }
+
+onMounted(async () => {
+  await loadAgents()
+  if (routeAgentID.value) {
+    selectedAgent.value = routeAgentID.value
+  }
+  else {
+    await ensureSelectedAgent()
+  }
+})
 </script>
 
 <template>
     <div class="am-terminal-page">
-        <ContentWrap title="Web Terminal" message="选择 Agent 并打开远程终端">
+        <ContentWrap :title="t('agent.terminalTitle')" :message="t('agent.terminalMessage')">
             <div class="am-terminal-page__toolbar">
                 <span class="am-terminal-page__label">Agent:</span>
-                <ElInput
+                <ElSelect
                     v-model="selectedAgent"
-                    placeholder="请输入 Agent ID"
-                    clearable
+                    :disabled="isAgentEmpty"
+                    :loading="loading"
+                    :placeholder="t('agent.selectAgent')"
+                    :no-data-text="t('agent.noData')"
+                    filterable
                     style="width: 240px"
                     @change="handleAgentChange"
-                />
+                >
+                    <ElOption
+                        v-for="item in agentList"
+                        :key="item.agent_id"
+                        :label="item.hostname || item.agent_id"
+                        :value="item.agent_id"
+                    />
+                </ElSelect>
             </div>
             <div class="am-terminal-page__container">
-                <Terminal v-if="agentId" :agent-id="agentId" />
+                <Terminal v-if="agentId && !isAgentEmpty" :agent-id="agentId" />
+                <AgentEmptyState v-else-if="isAgentEmpty" min-height="360px" @refresh="loadAgents" />
                 <div v-else class="am-terminal-page__empty">
-                    请选择或输入 Agent ID
+                    {{ t('agent.terminalSelectRequired') }}
                 </div>
             </div>
         </ContentWrap>

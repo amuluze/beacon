@@ -4,7 +4,9 @@ import type { TableInstance } from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
 import { queryContainers } from '@/api/container'
+import AgentEmptyState from '@/components/Agent/AgentEmptyState.vue'
 import { useTable } from '@/hooks/useTable.ts'
+import { useAgentSelection } from '@/hooks/useAgentSelection'
 
 import useCommandComponent from '@/hooks/useCommandComponent.ts'
 import AddContainer from '@/views/container/container/components/AddContainer.vue'
@@ -20,8 +22,17 @@ import en from 'element-plus/es/locale/lang/en'
 import { useI18n } from 'vue-i18n'
 
 const { tableData, pageable, loading, search, handleSizeChange, handleCurrentChange } = useTable(queryContainers)
+const { selectedAgentID, isAgentEmpty, ensureSelectedAgent, loadAgents } = useAgentSelection({ immediate: false })
+const initialized = ref(false)
 onMounted(async () => {
-  await search()
+  if (await ensureSelectedAgent())
+    await search()
+  initialized.value = true
+})
+watch(selectedAgentID, async () => {
+  if (initialized.value && selectedAgentID.value) {
+    await search()
+  }
 })
 
 const tableRef = ref<TableInstance>()
@@ -33,6 +44,11 @@ function enableEdit(containerName: string) {
 }
 function handleSelectionChange(val: Container[]) {
   tableSelection.value = val
+}
+async function refreshAgents() {
+  await loadAgents()
+  if (selectedAgentID.value)
+    await search()
 }
 
 const addContainer = useCommandComponent(AddContainer)
@@ -56,13 +72,14 @@ const locale = computed(() => {
 <template>
     <div class="am-container">
         <div class="am-table-operator">
-            <el-button type="primary" plain size="small" @click="addContainer({ title: 'container.addContainer', update: search })">
+            <el-button type="primary" plain size="small" :disabled="isAgentEmpty" @click="addContainer({ title: 'container.addContainer', update: search })">
                 <svg-icon icon-class="add" />
                 {{ t('container.addContainer') }}
             </el-button>
         </div>
         <!-- 表格主体 -->
-        <div class="am-table">
+        <AgentEmptyState v-if="isAgentEmpty" @refresh="refreshAgents" />
+        <div v-else class="am-table">
             <el-table
                 ref="tableRef"
                 v-loading="loading"
@@ -94,11 +111,11 @@ const locale = computed(() => {
                 <!--                <el-table-column prop="memory_limit" :label="t('container.memLimited')" align="center" min-width="160" show-overflow-tooltip /> -->
                 <el-table-column :label="t('container.operator')" width="240" fixed="right" align="center">
                     <template #default="scope">
-                        <el-button type="primary" size="small" text @click="viewLog({ title: 'container.viewLog', id: scope.row.id, update: search })">
+                        <el-button type="primary" size="small" text :disabled="isAgentEmpty" @click="viewLog({ title: 'container.viewLog', id: scope.row.id, update: search })">
                             <svg-icon icon-class="log" />
                             {{ t('container.log') }}
                         </el-button>
-                        <el-button type="primary" size="small" text :disabled="enableEdit(scope.row.name)" @click="startContainer({ title: 'container.startContainer', id: scope.row.id, update: search })">
+                        <el-button type="primary" size="small" text :disabled="isAgentEmpty || enableEdit(scope.row.name)" @click="startContainer({ title: 'container.startContainer', id: scope.row.id, update: search })">
                             <svg-icon icon-class="start" />
                             {{ t('container.start') }}
                         </el-button>
@@ -110,19 +127,19 @@ const locale = computed(() => {
                             <template #dropdown>
                                 <el-dropdown-menu>
                                     <el-dropdown-item>
-                                        <el-button type="warning" size="small" text :disabled="enableEdit(scope.row.name)" @click="stopContainer({ title: 'container.stopContainer', id: scope.row.id, update: search })">
+                                        <el-button type="warning" size="small" text :disabled="isAgentEmpty || enableEdit(scope.row.name)" @click="stopContainer({ title: 'container.stopContainer', id: scope.row.id, update: search })">
                                             <svg-icon icon-class="stop" />
                                             {{ t('container.stop') }}
                                         </el-button>
                                     </el-dropdown-item>
                                     <el-dropdown-item>
-                                        <el-button type="warning" size="small" text :disabled="enableEdit(scope.row.name)" @click="restartContainer({ title: 'container.restartContainer', id: scope.row.id, update: search })">
+                                        <el-button type="warning" size="small" text :disabled="isAgentEmpty || enableEdit(scope.row.name)" @click="restartContainer({ title: 'container.restartContainer', id: scope.row.id, update: search })">
                                             <svg-icon icon-class="update" />
                                             {{ t('container.restart') }}
                                         </el-button>
                                     </el-dropdown-item>
                                     <el-dropdown-item>
-                                        <el-button type="danger" size="small" text :disabled="enableEdit(scope.row.name)" @click="deleteContainer({ title: 'container.deleteContainer', id: scope.row.id, update: search })">
+                                        <el-button type="danger" size="small" text :disabled="isAgentEmpty || enableEdit(scope.row.name)" @click="deleteContainer({ title: 'container.deleteContainer', id: scope.row.id, update: search })">
                                             <svg-icon icon-class="delete" />
                                             {{ t('container.delete') }}
                                         </el-button>
@@ -134,7 +151,7 @@ const locale = computed(() => {
                 </el-table-column>
             </el-table>
         </div>
-        <div class="am-pagination">
+        <div v-if="!isAgentEmpty" class="am-pagination">
             <el-config-provider :locale="locale">
                 <el-pagination
                     v-model:current-page="pageable.page"

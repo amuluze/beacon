@@ -23,7 +23,7 @@
 ## 模块事实
 
 - 模块路径：`amprobe`
-- Go 版本：`1.21.10`
+- Go 版本：`1.25.0`
 - Go 源码文件：115
 - Go 测试文件：5
 - 包名：`account`, `agent`, `alarm`, `api`, `audit`, `auth`, `container`, `contextx`, `errors`, `fiberx`, `hash`, `host`, `jwtauth`, `license`, `mail`, `main`, `middleware`, `model`, `report`, `repository`, `rpc`, `schema`, `service`, `task`, `utils`, `uuid`, `validatex`, `web`

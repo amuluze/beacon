@@ -8,7 +8,9 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     404: typeof import('./../src/components/Error/404.vue')['default']
+    AgentEmptyState: typeof import('./../src/components/Agent/AgentEmptyState.vue')['default']
     ContentWrap: typeof import('./../src/components/ContentWrap/index.vue')['default']
+    DataStaleTag: typeof import('./../src/components/Agent/DataStaleTag.vue')['default']
     Echarts: typeof import('./../src/components/Echarts/index.vue')['default']
     ElAside: typeof import('element-plus/es')['ElAside']
     ElAvatar: typeof import('element-plus/es')['ElAvatar']
@@ -27,6 +29,7 @@ declare module 'vue' {
     ElDropdown: typeof import('element-plus/es')['ElDropdown']
     ElDropdownItem: typeof import('element-plus/es')['ElDropdownItem']
     ElDropdownMenu: typeof import('element-plus/es')['ElDropdownMenu']
+    ElEmpty: typeof import('element-plus/es')['ElEmpty']
     ElForm: typeof import('element-plus/es')['ElForm']
     ElFormItem: typeof import('element-plus/es')['ElFormItem']
     ElInput: typeof import('element-plus/es')['ElInput']

@@ -30,6 +30,16 @@ const dialogVisible = computed<boolean>({
 // 导入镜像
 const store = useStore()
 const imageImportLoading = ref(false)
+const uploadHeaders = computed(() => {
+  const headers: Record<string, string> = {}
+  if (store.user.token) {
+    headers.Authorization = `Bearer ${store.user.token}`
+  }
+  if (store.agent.selectedAgentID) {
+    headers['X-Agent-ID'] = store.agent.selectedAgentID
+  }
+  return headers
+})
 
 function onSuccess() {
   success('导入成功')
@@ -44,9 +54,7 @@ const { t } = useI18n()
         <el-upload
 
             action="/api/v1/container/image_import"
-            :headers="{
-                Authorization: `Bearer ${store.user.token}`,
-            }"
+            :headers="uploadHeaders"
             :limit="1"
             :loading="imageImportLoading"
             multiple drag

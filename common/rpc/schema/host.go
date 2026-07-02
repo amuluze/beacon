@@ -89,8 +89,9 @@ type HostInfoReply struct {
 
 type CPUInfoArgs struct{}
 type CPUInfoReply struct {
-	Stale   bool    `json:"stale,omitempty"`
-	Percent float64 `json:"percent"`
+	Stale     bool    `json:"stale,omitempty"`
+	Timestamp int64   `json:"timestamp"`
+	Percent   float64 `json:"percent"`
 }
 
 type CPUUsageArgs struct {
@@ -98,16 +99,17 @@ type CPUUsageArgs struct {
 	EndTime   int64 `json:"end_time"`
 }
 type CPUUsageReply struct {
-	Stale bool   `json:"stale,omitempty"`
+	Stale bool    `json:"stale,omitempty"`
 	Data  []Usage `json:"data"`
 }
 
 type MemoryInfoArgs struct{}
 type MemoryInfoReply struct {
-	Stale   bool    `json:"stale,omitempty"`
-	Percent float64 `json:"percent"`
-	Total   float64 `json:"total"`
-	Used    float64 `json:"used"`
+	Stale     bool    `json:"stale,omitempty"`
+	Timestamp int64   `json:"timestamp"`
+	Percent   float64 `json:"percent"`
+	Total     float64 `json:"total"`
+	Used      float64 `json:"used"`
 }
 
 type MemoryUsageArgs struct {
@@ -115,7 +117,7 @@ type MemoryUsageArgs struct {
 	EndTime   int64 `json:"end_time"`
 }
 type MemoryUsageReply struct {
-	Stale bool   `json:"stale,omitempty"`
+	Stale bool    `json:"stale,omitempty"`
 	Data  []Usage `json:"data"`
 }
 

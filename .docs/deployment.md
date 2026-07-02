@@ -94,6 +94,6 @@ docker compose -f compose.yaml up
 
 | Path | Module | Go |
 |------|--------|----|
-| `amprobe` | `amprobe` | `1.21.10` |
-| `collia` | `collia` | `1.21.10` |
+| `amprobe` | `amprobe` | `1.25.0` |
+| `collia` | `collia` | `1.25.0` |
 | `common` | `common` | `1.25.0` |
