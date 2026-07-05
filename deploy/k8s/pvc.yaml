@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: amprobe-data
-  namespace: amprobe
+  name: beacon-data
+  namespace: beacon
 spec:
   accessModes:
     - ReadWriteOnce
@@ -13,8 +13,8 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: amprobe-logs
-  namespace: amprobe
+  name: beacon-logs
+  namespace: beacon
 spec:
   accessModes:
     - ReadWriteOnce

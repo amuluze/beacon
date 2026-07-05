@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // 设置页面标题
 useHead({
-    title: 'Amprobe 使用手册 - 轻量级主机监控及 Docker 容器管理工具',
+    title: 'Beacon 使用手册 - 轻量级主机监控及 Docker 容器管理工具',
 })
 </script>
 
@@ -9,7 +9,7 @@ useHead({
     <div class="am-document">
         <div class="am-document__header">
             <h1 class="am-document__title">
-                Amprobe 2.0 使用手册
+                Beacon 2.0 使用手册
             </h1>
             <p class="am-document__subtitle">
                 轻量级主机监控及 Docker 容器管理工具
@@ -32,45 +32,45 @@ useHead({
                         <div class="am-code-block">
                             <pre><code>
 # 下载并执行安装脚本
-curl -fsSL https://official.amprobe.amuluze.com/download/install.sh -o install.sh
+curl -fsSL https://official.beacon.amuluze.com/download/install.sh -o install.sh
 sh install.sh
 
 # 非交互安装示例
-INSTALL_DIR=/data/amprobe \
-AMPROBE_HTTP_PORT=1443 \
-AMPROBE_CONTROL_PORT=17000 \
-AMPROBE_PUBLIC_BASE_URL=http://服务器IP:1443 \
+INSTALL_DIR=/data/beacon \
+BEACON_HTTP_PORT=1443 \
+BEACON_CONTROL_PORT=17000 \
+BEACON_PUBLIC_BASE_URL=http://服务器IP:1443 \
 sh install.sh
                             </code></pre>
                         </div>
 
                         <h3>安装脚本会做什么</h3>
                         <ul>
-                            <li>提示输入安装目录，默认目录为 <code>/data/amprobe</code>；</li>
+                            <li>提示输入安装目录，默认目录为 <code>/data/beacon</code>；</li>
                             <li>从官网接口下载 <code>compose.yaml</code> 到安装目录；</li>
                             <li>在同一目录生成并可编辑 <code>.env</code>，用于配置镜像、端口、公开访问地址、Agent 安装 Token 等环境变量；</li>
-                            <li>执行 <code>docker compose pull</code> 和 <code>docker compose up -d</code> 启动 Amprobe 容器。</li>
+                            <li>执行 <code>docker compose pull</code> 和 <code>docker compose up -d</code> 启动 Beacon 容器。</li>
                         </ul>
 
                         <h3>手动安装</h3>
                         <div class="am-code-block">
                             <pre><code>
-mkdir -p /data/amprobe
-cd /data/amprobe
+mkdir -p /data/beacon
+cd /data/beacon
 
-curl -fsSL https://official.amprobe.amuluze.com/download/compose.yaml -o compose.yaml
+curl -fsSL https://official.beacon.amuluze.com/download/compose.yaml -o compose.yaml
 
 cat > .env <<'EOF'
-AMPROBE_IMAGE=registry.cn-hangzhou.aliyuncs.com/amuluze/amprobe:latest
-AMPROBE_CONTAINER_NAME=amprobe
-AMPROBE_HTTP_PORT=1443
-AMPROBE_CONTROL_PORT=17000
-AMPROBE_DATA_DIR=./data
-AMPROBE_LOG_DIR=./logs
-AMPROBE_DB_NAME=/app/data/probe
-AMPROBE_PUBLIC_BASE_URL=http://服务器IP:1443
-AMPROBE_AGENT_INSTALL_TOKEN=请替换为随机长字符串
-AMPROBE_AUTH_SIGNING_KEY=请替换为随机长字符串
+BEACON_IMAGE=registry.cn-hangzhou.aliyuncs.com/amuluze/beacon:latest
+BEACON_CONTAINER_NAME=beacon
+BEACON_HTTP_PORT=1443
+BEACON_CONTROL_PORT=17000
+BEACON_DATA_DIR=./data
+BEACON_LOG_DIR=./logs
+BEACON_DB_NAME=/app/data/beacon
+BEACON_PUBLIC_BASE_URL=http://服务器IP:1443
+BEACON_AGENT_INSTALL_TOKEN=请替换为随机长字符串
+BEACON_AUTH_SIGNING_KEY=请替换为随机长字符串
 EOF
 
 docker compose up -d
@@ -85,27 +85,27 @@ docker compose up -d
                             重新应用。
                         </p>
                         <p>
-                            启动 Amprobe 前，请确认：
+                            启动 Beacon 前，请确认：
                         </p>
                         <ul>
                             <li>
                                 已安装 Docker，并支持 <code>docker compose</code> 命令；
                             </li>
                             <li>
-                                <code>AMPROBE_HTTP_PORT</code> 和 <code>AMPROBE_CONTROL_PORT</code> 未被占用；
+                                <code>BEACON_HTTP_PORT</code> 和 <code>BEACON_CONTROL_PORT</code> 未被占用；
                             </li>
                             <li>
-                                <code>AMPROBE_PUBLIC_BASE_URL</code> 能被浏览器和 Agent 节点访问；
+                                <code>BEACON_PUBLIC_BASE_URL</code> 能被浏览器和 Agent 节点访问；
                             </li>
                             <li>
-                                <code>AMPROBE_AGENT_INSTALL_TOKEN</code> 和 <code>AMPROBE_AUTH_SIGNING_KEY</code> 已替换为随机长字符串。
+                                <code>BEACON_AGENT_INSTALL_TOKEN</code> 和 <code>BEACON_AUTH_SIGNING_KEY</code> 已替换为随机长字符串。
                             </li>
                         </ul>
                         <h3>运维命令</h3>
                         <div class="am-code-block">
                             <pre><code>
 # 进入安装目录
-cd /data/amprobe
+cd /data/beacon
 
 # 启动或更新服务
 docker compose up -d
@@ -120,7 +120,7 @@ docker compose down
                         </div>
 
                         <h3>访问服务</h3>
-                        <p>启动 <code>amprobe</code> 容器后，可通过浏览器访问 <code>AMPROBE_PUBLIC_BASE_URL</code> 或 <code>http://服务器IP:1443</code> 进行管理。</p>
+                        <p>启动 <code>beacon</code> 容器后，可通过浏览器访问 <code>BEACON_PUBLIC_BASE_URL</code> 或 <code>http://服务器IP:1443</code> 进行管理。</p>
                     </div>
                 </div>
             </section>
@@ -143,10 +143,10 @@ docker compose down
                             <div class="am-faq__answer">
                                 <p><strong>A:</strong> 配置备份方法：</p>
                                 <ul>
-                                    <li>部署配置位置：<code>/data/amprobe/.env</code> 和 <code>/data/amprobe/compose.yaml</code></li>
-                                    <li>数据目录：<code>/data/amprobe/data</code></li>
+                                    <li>部署配置位置：<code>/data/beacon/.env</code> 和 <code>/data/beacon/compose.yaml</code></li>
+                                    <li>数据目录：<code>/data/beacon/data</code></li>
                                     <li>
-                                        备份命令：<code>tar -czf amprobe-backup.tar.gz /data/amprobe</code>
+                                        备份命令：<code>tar -czf beacon-backup.tar.gz /data/beacon</code>
                                     </li>
                                     <li>恢复时解压到对应目录并执行 <code>docker compose up -d</code></li>
                                 </ul>
@@ -160,7 +160,7 @@ docker compose down
                             <div class="am-faq__answer">
                                 <p><strong>A:</strong> 更新步骤：</p>
                                 <ul>
-                                    <li>进入安装目录：<code>cd /data/amprobe</code></li>
+                                    <li>进入安装目录：<code>cd /data/beacon</code></li>
                                     <li>更新前建议备份 <code>.env</code>、<code>compose.yaml</code> 和数据目录</li>
                                     <li>执行 <code>docker compose pull && docker compose up -d</code></li>
                                 </ul>
@@ -175,7 +175,7 @@ docker compose down
                                 <p><strong>A:</strong> 初始化用户及密码:</p>
                                 <ul>
                                     <li> 管理用户 admin 密码 admin123 </li>
-                                    <li> 普通用户 amprobe 密码 123456 </li>
+                                    <li> 普通用户 beacon 密码 123456 </li>
                                     <li>管理员用户能够对普通用户进行管理</li>
                                 </ul>
                             </div>

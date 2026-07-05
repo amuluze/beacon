@@ -1,6 +1,6 @@
-# Amprobe Kubernetes Deployment
+# Beacon Kubernetes Deployment
 
-This directory contains base Kubernetes manifests for deploying the Amprobe Server.
+This directory contains base Kubernetes manifests for deploying the Beacon Server.
 
 ## Prerequisites
 
@@ -24,8 +24,8 @@ kubectl apply -f deploy/k8s/deployment.yaml
 kubectl apply -f deploy/k8s/service.yaml
 
 # 4. Verify
-kubectl get pods -n amprobe
-kubectl logs -n amprobe -l app=amprobe-server
+kubectl get pods -n beacon
+kubectl logs -n beacon -l app=beacon-server
 ```
 
 ## Important Security Notes
@@ -34,14 +34,14 @@ kubectl logs -n amprobe -l app=amprobe-server
    - External Secret Management (e.g., Vault, Sealed Secrets, AWS Secrets Manager)
    - `kubectl create secret` with values generated from a secure random source
 
-2. **Signing Key**: `AMPROBE_AUTH_SIGNING_KEY` must be ≥32 bytes of random data.
+2. **Signing Key**: `BEACON_AUTH_SIGNING_KEY` must be ≥32 bytes of random data.
    ```bash
    openssl rand -hex 32
    ```
 
 3. **ConfigMap**: The base config disables TLS on the control tunnel. Enable it in production by:
    - Setting `Control.TLS.Enable = true`
-   - Mounting certificate files into `/etc/amprobe/control-certs`
+   - Mounting certificate files into `/etc/beacon/control-certs`
 
 ## Health Probes
 
@@ -51,7 +51,7 @@ The readiness probe checks DB connectivity and tunnel state when dependencies ar
 ## Storage
 
 Two PVCs are created:
-- `amprobe-data`: SQLite database and install ID file
-- `amprobe-logs`: Application logs
+- `beacon-data`: SQLite database and install ID file
+- `beacon-logs`: Application logs
 
 For production, consider migrating to PostgreSQL or ClickHouse by updating the ConfigMap.

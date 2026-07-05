@@ -1,6 +1,6 @@
 <script setup lang="ts">
 function toDevelopment() {
-    window.open('https://amprobe.amuluze.com/', '_blank')
+    window.open('https://beacon.amuluze.com/', '_blank')
 }
 </script>
 
@@ -8,7 +8,7 @@ function toDevelopment() {
     <div class="am-container">
         <div class="am-logo">
             <RouterLink to="/" class="am-logo__link">
-                <span>Amprobe</span>
+                <span>Beacon</span>
             </RouterLink>
         </div>
 

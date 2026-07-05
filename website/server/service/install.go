@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-const defaultAmprobeImage = "registry.cn-hangzhou.aliyuncs.com/amuluze/amprobe:latest"
+const defaultBeaconImage = "registry.cn-hangzhou.aliyuncs.com/amuluze/beacon:latest"
 
 func (a *Router) WebsiteInstallScript(ctx *fiber.Ctx) error {
 	baseURL := requestBaseURL(ctx)
@@ -29,7 +29,7 @@ func buildWebsiteInstallScript(baseURL string) string {
 set -eu
 
 BASE_URL=%s
-DEFAULT_INSTALL_DIR="/data/amprobe"
+DEFAULT_INSTALL_DIR="/data/beacon"
 DEFAULT_IMAGE=%s
 
 prompt() {
@@ -74,12 +74,12 @@ else
 fi
 
 INSTALL_DIR="${INSTALL_DIR:-$(prompt "Install directory" "$DEFAULT_INSTALL_DIR")}"
-AMPROBE_IMAGE="${AMPROBE_IMAGE:-$(prompt "Amprobe image" "$DEFAULT_IMAGE")}"
-AMPROBE_HTTP_PORT="${AMPROBE_HTTP_PORT:-$(prompt "Web console host port" "1443")}"
-AMPROBE_CONTROL_PORT="${AMPROBE_CONTROL_PORT:-$(prompt "Agent control host port" "17000")}"
-AMPROBE_PUBLIC_BASE_URL="${AMPROBE_PUBLIC_BASE_URL:-$(prompt "Public base URL" "http://127.0.0.1:$AMPROBE_HTTP_PORT")}"
-AMPROBE_AGENT_INSTALL_TOKEN="${AMPROBE_AGENT_INSTALL_TOKEN:-$(random_secret)}"
-AMPROBE_AUTH_SIGNING_KEY="${AMPROBE_AUTH_SIGNING_KEY:-$(random_secret)}"
+BEACON_IMAGE="${BEACON_IMAGE:-$(prompt "Beacon image" "$DEFAULT_IMAGE")}"
+BEACON_HTTP_PORT="${BEACON_HTTP_PORT:-$(prompt "Web console host port" "1443")}"
+BEACON_CONTROL_PORT="${BEACON_CONTROL_PORT:-$(prompt "Agent control host port" "17000")}"
+BEACON_PUBLIC_BASE_URL="${BEACON_PUBLIC_BASE_URL:-$(prompt "Public base URL" "http://127.0.0.1:$BEACON_HTTP_PORT")}"
+BEACON_AGENT_INSTALL_TOKEN="${BEACON_AGENT_INSTALL_TOKEN:-$(random_secret)}"
+BEACON_AUTH_SIGNING_KEY="${BEACON_AUTH_SIGNING_KEY:-$(random_secret)}"
 
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
@@ -87,16 +87,16 @@ cd "$INSTALL_DIR"
 curl -fsSL "$BASE_URL/download/compose.yaml" -o compose.yaml
 
 cat > .env <<EOF
-AMPROBE_IMAGE=$AMPROBE_IMAGE
-AMPROBE_CONTAINER_NAME=amprobe
-AMPROBE_HTTP_PORT=$AMPROBE_HTTP_PORT
-AMPROBE_CONTROL_PORT=$AMPROBE_CONTROL_PORT
-AMPROBE_DATA_DIR=./data
-AMPROBE_LOG_DIR=./logs
-AMPROBE_DB_NAME=/app/data/probe
-AMPROBE_PUBLIC_BASE_URL=$AMPROBE_PUBLIC_BASE_URL
-AMPROBE_AGENT_INSTALL_TOKEN=$AMPROBE_AGENT_INSTALL_TOKEN
-AMPROBE_AUTH_SIGNING_KEY=$AMPROBE_AUTH_SIGNING_KEY
+BEACON_IMAGE=$BEACON_IMAGE
+BEACON_CONTAINER_NAME=beacon
+BEACON_HTTP_PORT=$BEACON_HTTP_PORT
+BEACON_CONTROL_PORT=$BEACON_CONTROL_PORT
+BEACON_DATA_DIR=./data
+BEACON_LOG_DIR=./logs
+BEACON_DB_NAME=/app/data/beacon
+BEACON_PUBLIC_BASE_URL=$BEACON_PUBLIC_BASE_URL
+BEACON_AGENT_INSTALL_TOKEN=$BEACON_AGENT_INSTALL_TOKEN
+BEACON_AUTH_SIGNING_KEY=$BEACON_AUTH_SIGNING_KEY
 EOF
 
 mkdir -p data logs
@@ -114,42 +114,42 @@ fi
 $DOCKER_COMPOSE pull
 $DOCKER_COMPOSE up -d
 
-echo "Amprobe started."
+echo "Beacon started."
 echo "Install directory: $INSTALL_DIR"
-echo "Web console: $AMPROBE_PUBLIC_BASE_URL"
+echo "Web console: $BEACON_PUBLIC_BASE_URL"
 echo "Agent install token is stored in $INSTALL_DIR/.env"
-`, shellQuote(baseURL), shellQuote(defaultAmprobeImage))
+`, shellQuote(baseURL), shellQuote(defaultBeaconImage))
 }
 
 func websiteComposeYAML() string {
 	return `services:
-  amprobe:
-    image: ${AMPROBE_IMAGE:-registry.cn-hangzhou.aliyuncs.com/amuluze/amprobe:latest}
-    container_name: ${AMPROBE_CONTAINER_NAME:-amprobe}
+  beacon:
+    image: ${BEACON_IMAGE:-registry.cn-hangzhou.aliyuncs.com/amuluze/beacon:latest}
+    container_name: ${BEACON_CONTAINER_NAME:-beacon}
     restart: unless-stopped
     ports:
-      - "${AMPROBE_HTTP_PORT:-1443}:80"
-      - "${AMPROBE_CONTROL_PORT:-17000}:${AMPROBE_CONTROL_PORT:-17000}"
+      - "${BEACON_HTTP_PORT:-1443}:80"
+      - "${BEACON_CONTROL_PORT:-17000}:${BEACON_CONTROL_PORT:-17000}"
     volumes:
-      - ${AMPROBE_DATA_DIR:-./data}:/app/data
-      - ${AMPROBE_LOG_DIR:-./logs}:/app/logs
+      - ${BEACON_DATA_DIR:-./data}:/app/data
+      - ${BEACON_LOG_DIR:-./logs}:/app/logs
     environment:
-      AMPROBE_DB_NAME: ${AMPROBE_DB_NAME:-/app/data/probe}
-      AMPROBE_PUBLIC_BASE_URL: ${AMPROBE_PUBLIC_BASE_URL:-}
-      AMPROBE_AGENT_INSTALL_TOKEN: ${AMPROBE_AGENT_INSTALL_TOKEN:-change-me}
-      AMPROBE_AUTH_SIGNING_KEY: ${AMPROBE_AUTH_SIGNING_KEY:-amprobe}
-      AMPROBE_CONTROL_PORT: ${AMPROBE_CONTROL_PORT:-17000}
+      BEACON_DB_NAME: ${BEACON_DB_NAME:-/app/data/beacon}
+      BEACON_PUBLIC_BASE_URL: ${BEACON_PUBLIC_BASE_URL:-}
+      BEACON_AGENT_INSTALL_TOKEN: ${BEACON_AGENT_INSTALL_TOKEN:-change-me}
+      BEACON_AUTH_SIGNING_KEY: ${BEACON_AUTH_SIGNING_KEY:-beacon}
+      BEACON_CONTROL_PORT: ${BEACON_CONTROL_PORT:-17000}
     command:
       - /bin/sh
       - -c
       - |
         set -eu
-        sed -i "s|DBName = \".*\"|DBName = \"$${AMPROBE_DB_NAME:-/app/data/probe}\"|" /app/configs/config.toml
-        sed -i "s|SigningKey = \".*\"|SigningKey = \"$${AMPROBE_AUTH_SIGNING_KEY:-amprobe}\"|" /app/configs/config.toml
-        sed -i "s|Address = \".*\"|Address = \":$${AMPROBE_CONTROL_PORT:-17000}\"|" /app/configs/config.toml
-        sed -i "s|Token = \".*\"|Token = \"$${AMPROBE_AGENT_INSTALL_TOKEN:-change-me}\"|" /app/configs/config.toml
-        sed -i "s|PublicBaseURL = \".*\"|PublicBaseURL = \"$${AMPROBE_PUBLIC_BASE_URL:-}\"|" /app/configs/config.toml
-        sed -i "s|ControlPort = .*|ControlPort = $${AMPROBE_CONTROL_PORT:-17000}|" /app/configs/config.toml
+        sed -i "s|DBName = \".*\"|DBName = \"$${BEACON_DB_NAME:-/app/data/beacon}\"|" /app/configs/config.toml
+        sed -i "s|SigningKey = \".*\"|SigningKey = \"$${BEACON_AUTH_SIGNING_KEY:-beacon}\"|" /app/configs/config.toml
+        sed -i "s|Address = \".*\"|Address = \":$${BEACON_CONTROL_PORT:-17000}\"|" /app/configs/config.toml
+        sed -i "s|Token = \".*\"|Token = \"$${BEACON_AGENT_INSTALL_TOKEN:-change-me}\"|" /app/configs/config.toml
+        sed -i "s|PublicBaseURL = \".*\"|PublicBaseURL = \"$${BEACON_PUBLIC_BASE_URL:-}\"|" /app/configs/config.toml
+        sed -i "s|ControlPort = .*|ControlPort = $${BEACON_CONTROL_PORT:-17000}|" /app/configs/config.toml
         exec /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
 `
 }

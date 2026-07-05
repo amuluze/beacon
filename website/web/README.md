@@ -1,6 +1,6 @@
-# amprobe offical
+# beacon official
 
-amprobe 官网
+beacon 官网
 
 ```bash
 $ cd src

@@ -2,7 +2,7 @@ version: '3'
 
 vars:
   REGISTRY: registry.cn-hangzhou.aliyuncs.com
-  IMAGE: '{{.REGISTRY}}/amuluze/amprobe-offical'
+  IMAGE: '{{.REGISTRY}}/amuluze/beacon-offical'
   TAG: v0.1.7
 
 includes:

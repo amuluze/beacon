@@ -1,16 +1,16 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: amprobe-config
-  namespace: amprobe
+  name: beacon-config
+  namespace: beacon
 data:
   config.toml: |
     [Fiber]
     Host = "0.0.0.0"
     Port = 8000
     ShutdownTimeout = 30
-    SeverHeader = "probe"
-    AppName = "probe"
+    SeverHeader = "beacon"
+    AppName = "beacon"
     Prefork = false
 
     [Control]
@@ -21,7 +21,7 @@ data:
 
     [Control.TLS]
     Enable = false
-    CertDir = "/etc/amprobe/control-certs"
+    CertDir = "/etc/beacon/control-certs"
     ClientNames = []
 
     [Gorm]
@@ -38,11 +38,11 @@ data:
     Port = ""
     User = ""
     Password = ""
-    DBName = "/app/data/probe"
+    DBName = "/app/data/beacon"
     SSLMode = ""
 
     [Log]
-    Output = "/app/logs/probe.log"
+    Output = "/app/logs/beacon.log"
     Level = "debug"
     Rotation = 1
     MaxAge = 7
@@ -50,7 +50,7 @@ data:
     [Auth]
     Enable = true
     SigningMethod = "HS512"
-    SigningKey = "amprobe"
+    SigningKey = "beacon"
     Expired = 7200
     RefreshExpired = 86400
     Prefix = "auth_"
@@ -75,7 +75,7 @@ data:
 
     [InstallReport]
     Enable = false
-    URL = "https://official.amprobe.amuluze.com/api/v1/install/report"
-    InstallDir = "/data/amprobe"
+    URL = "https://official.beacon.amuluze.com/api/v1/install/report"
+    InstallDir = "/data/beacon"
     IDFile = "/app/data/install.id"
     Timeout = 5

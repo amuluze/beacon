@@ -7,7 +7,7 @@
 
 | Path | Module | Go |
 |------|--------|----|
-| `amprobe` | `amprobe` | `1.21.10` |
+| `beacon` | `beacon` | `1.21.10` |
 | `collia` | `collia` | `1.21.10` |
 | `common` | `common` | `1.25.0` |
 
@@ -18,7 +18,7 @@
 | `.docs/` | implementation documentation |
 | `.plans/` | SDD implementation plans |
 | `.specs/` | SDD task, status, and domain specs |
-| `amprobe/` | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client |
+| `beacon/` | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client |
 | `collia/` | Agent runtime: 主机/容器采集、HTTP 监控上报、Docker 控制和反向 tunnel Service |
 | `common/` | shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型 |
 | `deploy/` | supporting project directory |
@@ -27,15 +27,15 @@
 
 ### `Taskfile.yml`
 
-- `task amprobe:amd64`: build linux/amd64 Amprobe Docker image
-- `task amprobe:arm64`: build linux/arm64 Amprobe Docker image
-- `task amprobe:bin`: build local Amprobe binary
-- `task amprobe:build`: build and push multi-platform Amprobe Docker image
-- `task amprobe:dev`: run Amprobe with development config
-- `task amprobe:wire`: generate Amprobe Wire injector code
-- `task amprobe-web:build`: build Amprobe web assets
-- `task amprobe-web:dev`: run Amprobe web dev server
-- `task amprobe-web:install`: install Amprobe web dependencies
+- `task beacon:amd64`: build linux/amd64 Beacon Docker image
+- `task beacon:arm64`: build linux/arm64 Beacon Docker image
+- `task beacon:bin`: build local Beacon binary
+- `task beacon:build`: build and push multi-platform Beacon Docker image
+- `task beacon:dev`: run Beacon with development config
+- `task beacon:wire`: generate Beacon Wire injector code
+- `task beacon-web:build`: build Beacon web assets
+- `task beacon-web:dev`: run Beacon web dev server
+- `task beacon-web:install`: install Beacon web dependencies
 - `task collia:amd64`: build linux/amd64 Collia binary
 - `task collia:arm64`: build linux/arm64 Collia binary
 - `task collia:wire`: generate Collia Wire injector code
@@ -51,7 +51,7 @@
 
 ## Package Scripts
 
-- `amprobe/web/package.json (amprobe-web)`: `build`, `dev`, `lint`, `lint:fix`, `preview`, `ts`
+- `beacon/web/package.json (beacon-web)`: `build`, `dev`, `lint`, `lint:fix`, `preview`, `ts`
 
 ## Documentation Inventory
 
@@ -61,8 +61,8 @@
 - `.docs/architecture.md`
 - `.docs/concepts/data-flow.md`
 - `.docs/deployment.md`
-- `.docs/modules/amprobe-web.md`
-- `.docs/modules/amprobe.md`
+- `.docs/modules/beacon-web.md`
+- `.docs/modules/beacon.md`
 - `.docs/modules/collia.md`
 - `.docs/modules/common.md`
 - `.docs/project-analysis.md`
@@ -76,11 +76,11 @@
 本节只列出静态发现的测试入口；Domain Spec 中的验收方式是建议验证路径，不代表这些测试已经证明约束成立。
 
 - Test files discovered: 9
-- `amprobe/pkg/fiberx/fiberx_test.go`
-- `amprobe/service/agent_install_test.go`
-- `amprobe/service/container/repository/container_test.go`
-- `amprobe/service/host/repository/host_test.go`
-- `amprobe/service/report/report_test.go`
+- `beacon/pkg/fiberx/fiberx_test.go`
+- `beacon/service/agent_install_test.go`
+- `beacon/service/container/repository/container_test.go`
+- `beacon/service/host/repository/host_test.go`
+- `beacon/service/report/report_test.go`
 - `collia/pkg/psutil/psutil_test.go`
 - `collia/pkg/timectl/timectl_test.go`
 - `collia/service/report/client_test.go`
@@ -96,10 +96,10 @@
 
 | Domain Ref | Evidence | Last Verified | Notes |
 |------------|----------|---------------|-------|
-| `monitoring-platform/I001` | `TestContainerUpdateCallsAgentRPC`; `cd amprobe && go test ./...` | working tree validation | 覆盖控制调用不在 Server 本地伪成功；仍需补多 Agent 集成测试。 |
-| `monitoring-platform/I005` | `TestStorePersistsReportBatch`; `TestStoreRejectsMissingAgentID`; `cd amprobe && go test ./...` | working tree validation | 覆盖成功批次和缺失 Agent 拒绝；仍需补真实 DB 写入失败回滚测试。 |
-| `monitoring-platform/R001` | `TestNetUsageReturnsDBError`; `cd amprobe && go test ./...` | working tree validation | 覆盖监控查询 DB 错误不降级为空成功；仍需补 API 层错误表现。 |
-| `monitoring-platform/R005` | `TestStoreRejectsMissingAgentID`; `cd amprobe && go test ./...` | working tree validation | 覆盖缺失 Agent 上报拒绝。 |
+| `monitoring-platform/I001` | `TestContainerUpdateCallsAgentRPC`; `cd beacon && go test ./...` | working tree validation | 覆盖控制调用不在 Server 本地伪成功；仍需补多 Agent 集成测试。 |
+| `monitoring-platform/I005` | `TestStorePersistsReportBatch`; `TestStoreRejectsMissingAgentID`; `cd beacon && go test ./...` | working tree validation | 覆盖成功批次和缺失 Agent 拒绝；仍需补真实 DB 写入失败回滚测试。 |
+| `monitoring-platform/R001` | `TestNetUsageReturnsDBError`; `cd beacon && go test ./...` | working tree validation | 覆盖监控查询 DB 错误不降级为空成功；仍需补 API 层错误表现。 |
+| `monitoring-platform/R005` | `TestStoreRejectsMissingAgentID`; `cd beacon && go test ./...` | working tree validation | 覆盖缺失 Agent 上报拒绝。 |
 | `monitoring-platform/R006` | `TestContainerUpdateCallsAgentRPC`; Agent `ContainerUpdate` 返回未实现错误 | working tree validation | 覆盖 Server 不再本地假成功；仍需补端到端 API/RPC 契约测试。 |
 
 ## Domain Specs
@@ -143,18 +143,18 @@
   - `.docs/architecture.md`
   - `.docs/concepts/data-flow.md`
   - `.docs/deployment.md`
-  - `.docs/modules/amprobe-web.md`
-  - `.docs/modules/amprobe.md`
+  - `.docs/modules/beacon-web.md`
+  - `.docs/modules/beacon.md`
   - `.docs/modules/collia.md`
   - `.docs/modules/common.md`
   - `.docs/project-analysis.md`
   - `.specs/domain/monitoring-platform.md`
   - `AGENTS.md`
   - `CLAUDE.md`
-  - `amprobe/AGENTS.md`
-  - `amprobe/CLAUDE.md`
-  - `amprobe/web/AGENTS.md`
-  - `amprobe/web/CLAUDE.md`
+  - `beacon/AGENTS.md`
+  - `beacon/CLAUDE.md`
+  - `beacon/web/AGENTS.md`
+  - `beacon/web/CLAUDE.md`
   - `collia/AGENTS.md`
   - `collia/CLAUDE.md`
   - `common/AGENTS.md`

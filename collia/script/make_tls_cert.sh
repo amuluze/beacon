@@ -7,7 +7,7 @@
 
 ca_base_dir="$1"
 output_dir="$2"
-common_name="${3:-amprobe/collia}"
+common_name="${3:-beacon/collia}"
 dns_names="${4:-$common_name}"
 ip_names="${5:-127.0.0.1}"
 

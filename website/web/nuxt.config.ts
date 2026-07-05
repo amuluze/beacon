@@ -29,23 +29,23 @@ export default defineNuxtConfig({
     app: {
         baseURL: '/',
         head: {
-            title: 'Amprobe - 轻量级主机及容器监控管理工具',
+            title: 'Beacon - 轻量级主机及容器监控管理工具',
             meta: [
                 { charset: 'utf-8' },
                 { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-                { name: 'description', content: 'Amprobe 是一款开源的轻量级主机监控及 Docker 容器管理工具，支持实时监控服务器资源使用情况，管理 Docker 容器、镜像和网络。' },
+                { name: 'description', content: 'Beacon 是一款开源的轻量级主机监控及 Docker 容器管理工具，支持实时监控服务器资源使用情况，管理 Docker 容器、镜像和网络。' },
                 { name: 'keywords', content: '主机监控,Docker管理,容器管理,服务器监控,开源监控工具' },
-                { name: 'author', content: 'Amprobe Team' },
+                { name: 'author', content: 'Beacon Team' },
                 // Open Graph tags
-                { property: 'og:title', content: 'Amprobe - 轻量级主机及容器监控管理工具' },
-                { property: 'og:description', content: 'Amprobe 是一款开源的轻量级主机监控及 Docker 容器管理工具' },
+                { property: 'og:title', content: 'Beacon - 轻量级主机及容器监控管理工具' },
+                { property: 'og:description', content: 'Beacon 是一款开源的轻量级主机监控及 Docker 容器管理工具' },
                 { property: 'og:type', content: 'website' },
-                { property: 'og:url', content: 'https://official.amprobe.amuluze.com' },
-                { property: 'og:image', content: '/images/amprobe.png' },
+                { property: 'og:url', content: 'https://official.beacon.amuluze.com' },
+                { property: 'og:image', content: '/images/beacon.png' },
             ],
             link: [
                 { rel: 'icon', type: 'image/x-icon', href: 'favicon.ico' },
-                { rel: 'canonical', href: 'https://official.amprobe.amuluze.com' },
+                { rel: 'canonical', href: 'https://official.beacon.amuluze.com' },
             ],
         },
     },

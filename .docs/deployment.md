@@ -13,9 +13,9 @@
 ## 快速启动
 
 ```bash
-task amprobe:dev
-task amprobe-web:dev
-cd amprobe/web && npm install && npm run dev
+task beacon:dev
+task beacon-web:dev
+cd beacon/web && npm install && npm run dev
 docker compose -f compose.yaml up
 ```
 
@@ -24,21 +24,21 @@ docker compose -f compose.yaml up
 - Taskfile 承载模块内开发、构建、镜像或安装包命令。
 - 前端包通过 package scripts 运行本地开发、类型检查、lint 和构建。
 - `compose.yaml` 提供 Docker Compose 启动入口。
-- `amprobe/Dockerfile` 提供镜像构建上下文。
-- Go workspace 根目录不是一个 Go module；验证时应进入 `amprobe`、`collia`、`common` 模块分别执行 `go test ./...` 或 `go build ./...`。
+- `beacon/Dockerfile` 提供镜像构建上下文。
+- Go workspace 根目录不是一个 Go module；验证时应进入 `beacon`、`collia`、`common` 模块分别执行 `go test ./...` 或 `go build ./...`。
 
 ## 配置说明
 
 | 配置文件 | 语义 |
 |----------|------|
-| `amprobe/configs/config.dev.toml` | 开发环境配置，通常包含本地监听、数据库或 Agent 连接参数；检测到键/段：`Address`, `AgentInstall`, `AppName`, `Auth`, `AutoLoad`, `AutoLoadInternal`, `Casbin`, `CertDir` |
-| `amprobe/configs/config.toml` | 运行时配置文件；检测到键/段：`Address`, `AgentInstall`, `AppName`, `Auth`, `AutoLoad`, `AutoLoadInternal`, `Casbin`, `CertDir` |
-| `amprobe/web/tsconfig.json` | TypeScript 编译配置，用于类型检查或前端构建；检测到键/段：`allowImportingTsExtensions`, `compilerOptions`, `isolatedModules`, `jsx`, `lib`, `module`, `moduleResolution`, `noEmit` |
+| `beacon/configs/config.dev.toml` | 开发环境配置，通常包含本地监听、数据库或 Agent 连接参数；检测到键/段：`Address`, `AgentInstall`, `AppName`, `Auth`, `AutoLoad`, `AutoLoadInternal`, `Casbin`, `CertDir` |
+| `beacon/configs/config.toml` | 运行时配置文件；检测到键/段：`Address`, `AgentInstall`, `AppName`, `Auth`, `AutoLoad`, `AutoLoadInternal`, `Casbin`, `CertDir` |
+| `beacon/web/tsconfig.json` | TypeScript 编译配置，用于类型检查或前端构建；检测到键/段：`allowImportingTsExtensions`, `compilerOptions`, `isolatedModules`, `jsx`, `lib`, `module`, `moduleResolution`, `noEmit` |
 | `collia/config.yml` | 运行时配置文件；检测到键/段：`agent_id`, `control`, `disk`, `interval`, `join_token`, `level`, `log`, `max_age` |
 
 - 本节只列运行/构建配置文件；源码中的 Args/Reply/schema 类型不作为运行时配置项输出。
 - Agent 选择应以请求头、查询参数或配置中的 agent 标识为准；缺省目标必须有清晰回退语义。
-- `amprobe` 的 `[Control] Address` 是 Agent 反向连接的 tunnel 监听地址；`DefaultAgentID` 是未显式选择 Agent 时的控制调用回退目标。
+- `beacon` 的 `[Control] Address` 是 Agent 反向连接的 tunnel 监听地址；`DefaultAgentID` 是未显式选择 Agent 时的控制调用回退目标。
 - `collia` 的 `control.server` / `control.agent_id` 用于建立反向 tunnel；`task.report.url` / `task.report.agent_id` 用于 HTTP 监控上报。两处 Agent 标识必须保持同一节点语义，避免监控查询和控制调用指向不同节点。
 - `AgentInstall.Token` 与 `task.report.token` 属于敏感凭据，只记录语义，不在文档中写入真实值。
 - 数据库配置必须说明驱动、地址、库名、凭据加载边界和迁移策略。
@@ -58,22 +58,22 @@ docker compose -f compose.yaml up
 - 确认 `.docs/MANIFEST.yml` 中 required 文档存在且章节完整。
 - 确认 Domain Spec 没有混入文件路径、技术选型或伪代码。
 - 确认构建、测试和质量门禁命令在目标环境可重复执行。
-- 当前 Go 模块验证入口是分模块执行：`cd amprobe && go test ./...`、`cd collia && go test ./...`、`cd common && go test ./...`。
-- 当前前端类型检查入口是 `cd amprobe/web && npm run ts`。`npm run lint` 已配置但存在存量格式/排序问题，启用为发布门禁前需要先收敛存量 lint。
+- 当前 Go 模块验证入口是分模块执行：`cd beacon && go test ./...`、`cd collia && go test ./...`、`cd common && go test ./...`。
+- 当前前端类型检查入口是 `cd beacon/web && npm run ts`。`npm run lint` 已配置但存在存量格式/排序问题，启用为发布门禁前需要先收敛存量 lint。
 
 ## Taskfile Tasks
 
 ### `Taskfile.yml`
 
-- `task amprobe:amd64`: build linux/amd64 Amprobe Docker image
-- `task amprobe:arm64`: build linux/arm64 Amprobe Docker image
-- `task amprobe:bin`: build local Amprobe binary
-- `task amprobe:build`: build and push multi-platform Amprobe Docker image
-- `task amprobe:dev`: run Amprobe with development config
-- `task amprobe:wire`: generate Amprobe Wire injector code
-- `task amprobe-web:build`: build Amprobe web assets
-- `task amprobe-web:dev`: run Amprobe web dev server
-- `task amprobe-web:install`: install Amprobe web dependencies
+- `task beacon:amd64`: build linux/amd64 Beacon Docker image
+- `task beacon:arm64`: build linux/arm64 Beacon Docker image
+- `task beacon:bin`: build local Beacon binary
+- `task beacon:build`: build and push multi-platform Beacon Docker image
+- `task beacon:dev`: run Beacon with development config
+- `task beacon:wire`: generate Beacon Wire injector code
+- `task beacon-web:build`: build Beacon web assets
+- `task beacon-web:dev`: run Beacon web dev server
+- `task beacon-web:install`: install Beacon web dependencies
 - `task collia:amd64`: build linux/amd64 Collia binary
 - `task collia:arm64`: build linux/arm64 Collia binary
 - `task collia:wire`: generate Collia Wire injector code
@@ -89,11 +89,11 @@ docker compose -f compose.yaml up
 
 ## Package Scripts
 
-- `amprobe/web/package.json (amprobe-web)`: `build`, `dev`, `lint`, `lint:fix`, `preview`, `ts`
+- `beacon/web/package.json (beacon-web)`: `build`, `dev`, `lint`, `lint:fix`, `preview`, `ts`
 ## Workspace Modules
 
 | Path | Module | Go |
 |------|--------|----|
-| `amprobe` | `amprobe` | `1.21.10` |
+| `beacon` | `beacon` | `1.21.10` |
 | `collia` | `collia` | `1.21.10` |
 | `common` | `common` | `1.25.0` |

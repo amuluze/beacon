@@ -7,7 +7,7 @@
         <div class="am-container__top">
             <div class="am-description">
                 <div class="am-description__title">
-                    Amprobe
+                    Beacon
                 </div>
                 <div class="am-description__subtitle">
                     <span>轻量级主机监控及 Docker 容器管理工具</span>

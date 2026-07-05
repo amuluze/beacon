@@ -1,6 +1,6 @@
 services:
   official:
-    image: registry.cn-hangzhou.aliyuncs.com/amuluze/amprobe-offical:v0.1.4
+    image: registry.cn-hangzhou.aliyuncs.com/amuluze/beacon-offical:v0.1.4
     restart: unless-stopped
     ports:
       - "3000:3000"

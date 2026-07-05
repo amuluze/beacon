@@ -16,7 +16,7 @@ const buttonsLoaded = ref(false)
 // 添加安装按钮加载状态
 const copyingInstall = ref(false)
 const downloadingInstall = ref(false)
-const officialBaseURL = 'https://official.amprobe.amuluze.com'
+const officialBaseURL = 'https://official.beacon.amuluze.com'
 const installCommand = `curl -fsSL ${officialBaseURL}/download/install.sh -o install.sh && sh install.sh`
 
 onMounted(async () => {
@@ -117,7 +117,7 @@ onUnmounted(() => {
 })
 // SEO 优化
 useHead({
-    title: 'Amprobe - 开源轻量级主机监控工具',
+    title: 'Beacon - 开源轻量级主机监控工具',
     meta: [
         {
             name: 'description',
@@ -143,7 +143,7 @@ useHead({
 
             <div class="am-introduction__content">
                 <div class="am-introduction__title">
-                    <span class="title-highlight">Amprobe</span>
+                    <span class="title-highlight">Beacon</span>
                     <div class="title-subtitle">
                         开源，轻量，现代化
                     </div>

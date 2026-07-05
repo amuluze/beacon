@@ -1,9 +1,9 @@
 services:
-  amprobe:
+  beacon:
     build:
       context: .
-      dockerfile: amprobe/Dockerfile
-    image: amprobe:local
+      dockerfile: beacon/Dockerfile
+    image: beacon:local
     container_name: beacon
     restart: unless-stopped
     ports:

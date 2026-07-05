@@ -1,10 +1,10 @@
-# Amprobe
+# Beacon
 
-`Amprobe` 项目入口文档，由 `/sdd doc update` 根据当前 workspace 事实重写。
+`Beacon` 项目入口文档，由 `/sdd doc update` 根据当前 workspace 事实重写。
 
 ## 30 秒项目摘要
 
-`Amprobe` 是一个 Server-Agent 监控/探测平台：Server 侧提供 Web UI 和 HTTP API，按 Agent 标识选择目标节点；Agent 侧采集主机与 Docker 状态，通过 HTTP 上报监控批次，并通过反向 gRPC tunnel 接收 Server 发起的控制调用。
+`Beacon` 是一个 Server-Agent 监控/探测平台：Server 侧提供 Web UI 和 HTTP API，按 Agent 标识选择目标节点；Agent 侧采集主机与 Docker 状态，通过 HTTP 上报监控批次，并通过反向 gRPC tunnel 接收 Server 发起的控制调用。
 
 核心链路：
 - Vue/Vite Web 前端发起用户操作或订阅日志、终端等实时通道。
@@ -22,8 +22,8 @@
 | [.docs/architecture.md](.docs/architecture.md) | system architecture, runtime flow, module boundaries and dependency direction |
 | [.docs/concepts/data-flow.md](.docs/concepts/data-flow.md) | request lifecycle, data ownership boundaries and cross-module flow |
 | [.docs/deployment.md](.docs/deployment.md) | environment requirements, build commands, configuration policy and release checks |
-| [.docs/modules/amprobe-web.md](.docs/modules/amprobe-web.md) | amprobe-web module responsibilities, implementation signals, exported-symbol hints, dependencies, state and validation |
-| [.docs/modules/amprobe.md](.docs/modules/amprobe.md) | amprobe module responsibilities, implementation signals, exported-symbol hints, dependencies, state and validation |
+| [.docs/modules/beacon-web.md](.docs/modules/beacon-web.md) | beacon-web module responsibilities, implementation signals, exported-symbol hints, dependencies, state and validation |
+| [.docs/modules/beacon.md](.docs/modules/beacon.md) | beacon module responsibilities, implementation signals, exported-symbol hints, dependencies, state and validation |
 | [.docs/modules/collia.md](.docs/modules/collia.md) | collia module responsibilities, implementation signals, exported-symbol hints, dependencies, state and validation |
 | [.docs/modules/common.md](.docs/modules/common.md) | common module responsibilities, implementation signals, exported-symbol hints, dependencies, state and validation |
 | [.docs/project-analysis.md](.docs/project-analysis.md) | workspace inventory, documentation health, coverage model and update guidance |
@@ -44,7 +44,7 @@
 | `.docs/` | implementation documentation |
 | `.plans/` | SDD implementation plans |
 | `.specs/` | SDD task, status, and domain specs |
-| `amprobe/` | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client |
+| `beacon/` | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client |
 | `collia/` | Agent runtime: 主机/容器采集、HTTP 监控上报、Docker 控制和反向 tunnel Service |
 | `common/` | shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型 |
 | `deploy/` | supporting project directory |
@@ -56,15 +56,15 @@
 ## 开发命令
 
 ```bash
-task amprobe:amd64
-task amprobe:arm64
-task amprobe:bin
-task amprobe:build
-task amprobe:dev
-task amprobe:wire
-task amprobe-web:build
-task amprobe-web:dev
-task amprobe-web:install
+task beacon:amd64
+task beacon:arm64
+task beacon:bin
+task beacon:build
+task beacon:dev
+task beacon:wire
+task beacon-web:build
+task beacon-web:dev
+task beacon-web:install
 task collia:amd64
 task collia:arm64
 task collia:wire
@@ -107,5 +107,5 @@ task website-web:dev
 - `AGENTS.md` 是 AI 协作入口的 SSOT；`CLAUDE.md` 是同步副本，内容必须一致。
 - 新增模块、命令、路由、配置或领域概念后，重新运行 `/sdd doc update` 并检查 `.docs/MANIFEST.yml`。
 - 不在文档中写入真实密钥、Token、内部凭据或不可公开的环境值。
-- 根目录不是 Go module；Go 验证需进入 `amprobe`、`collia`、`common` 分别执行。
+- 根目录不是 Go module；Go 验证需进入 `beacon`、`collia`、`common` 分别执行。
 - 监控查询、监控上报和控制调用是三条不同路径；新增接口或修复 Bug 时必须明确所属路径和 Agent 选择语义。
