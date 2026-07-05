@@ -41,7 +41,7 @@
 ## 依赖
 
 - `github.com/amuluze/amutool/logger` `v0.0.0-20240821104128-caed9cc0d402`
-- `github.com/amuluze/amutool/timex` `v0.0.0-20240821104128-caed9cc0d402`
+- `github.com/amuluze/amutool/timex` `v0.0.0-20250508153823-fe9a5de55958`
 - `github.com/amuluze/docker` `v0.0.0-20240822095446-429928f7463e`
 - `github.com/docker/docker` `v27.2.1+incompatible`
 - `github.com/google/wire` `v0.6.0`

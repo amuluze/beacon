@@ -112,7 +112,6 @@
 
 以下直接依赖在多个 Go 模块中出现不同版本；这通常是需要维护者评估和收敛的兼容性风险。
 
-- `github.com/amuluze/amutool/timex`: `v0.0.0-20240821104128-caed9cc0d402` in `collia`; `v0.0.0-20250508153823-fe9a5de55958` in `amprobe`
 - `gorm.io/gorm`: `v1.25.10` in `common`; `v1.25.12` in `amprobe`, `collia`
 
 ## 配置与入口信号
