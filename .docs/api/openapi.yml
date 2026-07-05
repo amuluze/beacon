@@ -2,18 +2,45 @@ openapi: 3.0.3
 info:
   title: Amprobe API
   description: |
-    Amprobe Server-Agent monitoring platform API.
-    All monitoring queries require an `X-Agent-ID` header or `agent_id` query parameter.
-    Control operations are dispatched to the target Agent via a reverse gRPC tunnel.
+    Amprobe Server-Agent monitoring platform HTTP API.
+
+    All monitoring queries require an `X-Agent-ID` header or `agent_id` query parameter;
+    the repository layer rejects requests that do not name a target Agent (see
+    Domain Spec I001 + R005). Control operations are dispatched to the target Agent
+    via a reverse gRPC tunnel (`common/rpc/tunnel`) keyed on agent_id.
+
+    This file describes every endpoint registered in `amprobe/service/router.go`.
+    Request and response schemas are expressed as `additionalProperties: true`
+    placeholders for paths that have not yet been formalized into concrete
+    components. The five paths originally documented (health, login, agent list,
+    report, host_info, container_list) are kept verbatim with their existing
+    schema references; new paths follow the lighter `additionalProperties` style.
   version: 0.0.1
   contact:
     name: Amprobe
 servers:
   - url: http://localhost:8000
     description: Local development server
+
+tags:
+  - name: index
+  - name: user
+  - name: role
+  - name: resource
+  - name: agent
+  - name: auth
+  - name: container
+  - name: host
+  - name: audit
+  - name: mail
+  - name: alarm
+  - name: ops
+
 paths:
+  # ---------------- Ops (no auth) ----------------
   /health:
     get:
+      tags: [ops]
       summary: Liveness probe
       description: Returns HTTP 200 if the process is running. No authentication required.
       operationId: liveness
@@ -26,8 +53,9 @@ paths:
                 $ref: '#/components/schemas/HealthResponse'
   /ready:
     get:
+      tags: [ops]
       summary: Readiness probe
-      description: Returns HTTP 200 when all dependencies are healthy; HTTP 503 when DB or tunnel is down. No authentication required.
+      description: Returns HTTP 200 when all dependencies (DB, reverse-tunnel) are healthy; HTTP 503 when DB ping reports an error.
       operationId: readiness
       responses:
         '200':
@@ -42,10 +70,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
+  /ws:
+    get:
+      tags: [ops]
+      summary: WebSocket upgrade for terminal channel
+      description: Upgrade to WebSocket; rejects plain HTTP with 426.
+      operationId: wsTerminal
+      responses:
+        '101':
+          description: Switching protocols
+        '426':
+          description: Upgrade required
+  /ws/{id}:
+    get:
+      tags: [ops]
+      summary: WebSocket upgrade for log streaming
+      operationId: wsLogStream
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '101': { description: Switching protocols }
+        '426': { description: Upgrade required }
+
+  # ---------------- Index ----------------
+  /api/v1/index/index:
+    get:
+      tags: [index]
+      summary: Hello-world sanity endpoint
+      operationId: hello
+      responses:
+        '200': { description: 'Plain text: hello world' }
+
+  # ---------------- Auth (login + token) ----------------
   /api/v1/auth/login:
     post:
+      tags: [auth]
       summary: User login
-      description: Authenticate with username and password. Returns JWT access and refresh tokens.
+      description: Authenticate with username and password. Returns JWT access and refresh tokens. Rate-limited to 10 req/min/IP.
       operationId: login
       requestBody:
         required: true
@@ -54,76 +118,136 @@ paths:
             schema:
               type: object
               properties:
-                username:
-                  type: string
-                password:
-                  type: string
+                username: { type: string }
+                password: { type: string }
       responses:
-        '200':
-          description: Login successful
-        '429':
-          description: Too many requests (rate limited)
+        '200': { description: Login successful }
+        '429': { description: Too many requests (rate limited) }
+
+  /api/v1/auth/logout:
+    post:
+      tags: [auth]
+      summary: User logout
+      operationId: logout
+      responses:
+        '200': { description: Logged out }
+
+  /api/v1/auth/pass_update:
+    post:
+      tags: [auth]
+      summary: Update password
+      operationId: passUpdate
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: true } } }
+      responses:
+        '200': { description: Password updated }
+
+  /api/v1/auth/token_update:
+    post:
+      tags: [auth]
+      summary: Update access token via refresh token
+      description: |
+        Used by the web client interceptor (see web/src/api/index.ts) when a
+        401 response is observed. Returns 400 when the refresh token is invalid;
+        the client treats that as a hard logout.
+      operationId: tokenUpdate
+      responses:
+        '200': { description: New token pair issued }
+        '400': { description: Refresh token invalid; client clears tokens }
+
+  /api/v1/auth/user_info:
+    get:
+      tags: [auth]
+      summary: Current user info + permissions
+      operationId: userInfo
+      responses:
+        '200': { description: User info payload }
+
+  # ---------------- Agent ----------------
   /api/v1/agent/list:
     get:
+      tags: [agent]
       summary: List known Agents
       description: Returns the list of Agents known to the Server with their lifecycle state.
       operationId: listAgents
       security:
         - BearerAuth: []
       responses:
-        '200':
-          description: Agent list
-  /api/v1/host/report:
+        '200': { description: Agent list (may be empty) }
+
+  # ---------------- User / Role / Resource ----------------
+  /api/v1/user/user_query:
+    get:
+      tags: [user]
+      summary: 查询用户
+      operationId: userQuery
+      responses: { '200': { description: User page } }
+  /api/v1/user/user_create:
     post:
-      summary: Agent monitoring report
-      description: |
-        Receives a monitoring data batch from an Agent and persists it atomically.
-        Must include `X-Agent-ID` or `agent_id` in the request. Must include `X-Install-Token` or `token` if configured.
-      operationId: report
+      tags: [user]
+      summary: 创建用户
+      operationId: userCreate
       requestBody:
         required: true
-        content:
-          application/json:
-            schema:
-              type: object
+        content: { application/json: { schema: { type: object, additionalProperties: true } } }
       responses:
-        '200':
-          description: Batch stored successfully
-        '400':
-          description: Missing Agent ID or malformed batch
-        '401':
-          description: Invalid install token
-        '429':
-          description: Too many requests (rate limited)
-  /api/v1/host/host_info:
+        '200': { description: User created }
+        '400': { description: Invalid input }
+  /api/v1/user/user_update:
+    post:
+      tags: [user]
+      summary: 更新用户
+      operationId: userUpdate
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses: { '200': { description: Updated } }
+  /api/v1/user/user_delete:
+    post:
+      tags: [user]
+      summary: 删除用户
+      operationId: userDelete
+      responses: { '200': { description: Deleted } }
+
+  /api/v1/role/role_query:
+    get: { tags: [role], summary: 查询角色, operationId: roleQuery, responses: { '200': { description: Roles } } }
+  /api/v1/role/role_create:
+    post:
+      tags: [role]
+      summary: 创建角色
+      operationId: roleCreate
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses: { '200': { description: Created } }
+  /api/v1/role/role_update:
+    post:
+      tags: [role]
+      summary: 更新角色
+      operationId: roleUpdate
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses: { '200': { description: Updated } }
+  /api/v1/role/role_delete:
+    post: { tags: [role], summary: 删除角色, operationId: roleDelete, responses: { '200': { description: Deleted } } }
+
+  /api/v1/resource/resource_query:
+    get: { tags: [resource], summary: 查询资源, operationId: resourceQuery, responses: { '200': { description: Resources } } }
+
+  # ---------------- Container ----------------
+  /api/v1/container/version:
     get:
-      summary: Get host information
-      description: Returns the latest host info for the selected Agent.
-      operationId: hostInfo
-      parameters:
-        - in: header
-          name: X-Agent-ID
-          schema:
-            type: string
-          required: true
-          description: Target Agent identifier
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Host info with freshness metadata
-        '400':
-          description: Missing Agent ID
+      tags: [container]
+      summary: 获取 Docker 版本信息
+      operationId: containerVersion
+      parameters: [ { $ref: '#/components/parameters/XAgentID' } ]
+      responses: { '200': { description: Docker version payload } }
   /api/v1/container/containers:
     get:
-      summary: List containers
+      tags: [container]
+      summary: 获取容器列表
       description: Returns the latest container list for the selected Agent.
       operationId: containerList
       parameters:
         - in: header
           name: X-Agent-ID
-          schema:
-            type: string
+          schema: { type: string }
           required: true
           description: Target Agent identifier
       security:
@@ -133,7 +257,245 @@ paths:
           description: Container list with freshness metadata
         '400':
           description: Missing Agent ID
+  /api/v1/container/usage:
+    get:
+      tags: [container]
+      summary: 获取容器资源使用情况
+      operationId: containerUsage
+      parameters: [ { $ref: '#/components/parameters/XAgentID' } ]
+      responses: { '200': { description: Aggregate usage } }
+  /api/v1/container/container_create:
+    post:
+      tags: [container]
+      summary: 创建容器
+      operationId: containerCreate
+      parameters: [ { $ref: '#/components/parameters/XAgentID' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: true } } }
+      responses: { '200': { description: Created }, '400': { description: Invalid spec } }
+  /api/v1/container/container_start:
+    post:
+      tags: [container]
+      summary: 启动容器
+      operationId: containerStart
+      parameters: [ { $ref: '#/components/parameters/XAgentID' } ]
+      responses: { '200': { description: Started }, '404': { description: Not found } }
+  /api/v1/container/container_stop:
+    post:
+      tags: [container]
+      summary: 停止容器
+      operationId: containerStop
+      parameters: [ { $ref: '#/components/parameters/XAgentID' } ]
+      responses: { '200': { description: Stopped } }
+  /api/v1/container/container_restart:
+    post:
+      tags: [container]
+      summary: 重启容器
+      operationId: containerRestart
+      parameters: [ { $ref: '#/components/parameters/XAgentID' } ]
+      responses: { '200': { description: Restarted } }
+  /api/v1/container/container_remove:
+    post:
+      tags: [container]
+      summary: 删除容器
+      operationId: containerRemove
+      parameters: [ { $ref: '#/components/parameters/XAgentID' } ]
+      responses: { '200': { description: Removed } }
+  /api/v1/container/images:
+    get:
+      tags: [container]
+      summary: 获取镜像列表
+      operationId: imageList
+      parameters: [ { $ref: '#/components/parameters/XAgentID' } ]
+      responses: { '200': { description: Image list } }
+  /api/v1/container/image_remove:
+    post:
+      tags: [container]
+      summary: 删除镜像
+      operationId: imageRemove
+      parameters: [ { $ref: '#/components/parameters/XAgentID' } ]
+      responses: { '200': { description: Removed } }
+  /api/v1/container/images_prune:
+    post:
+      tags: [container]
+      summary: 清理虚悬镜像
+      operationId: imagesPrune
+      parameters: [ { $ref: '#/components/parameters/XAgentID' } ]
+      responses: { '200': { description: Pruned } }
+  /api/v1/container/image_pull:
+    post:
+      tags: [container]
+      summary: 拉取镜像
+      operationId: imagePull
+      parameters: [ { $ref: '#/components/parameters/XAgentID' } ]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses: { '200': { description: Pulled } }
+  /api/v1/container/image_import:
+    post: { tags: [container], summary: 导入镜像, operationId: imageImport, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Imported } } }
+  /api/v1/container/image_export:
+    post: { tags: [container], summary: 导出镜像, operationId: imageExport, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Exported } } }
+  /api/v1/container/network_create:
+    post: { tags: [container], summary: 创建网络, operationId: networkCreate, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Created } } }
+  /api/v1/container/network_delete:
+    post: { tags: [container], summary: 删除网络, operationId: networkDelete, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Deleted } } }
+  /api/v1/container/networks:
+    get: { tags: [container], summary: 获取网络列表, operationId: networkList, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Network list } } }
+  /api/v1/container/get_docker_registry_mirrors:
+    get: { tags: [container], summary: 获取 Docker 镜像设置, operationId: getDockerRegistryMirrors, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Mirror config } } }
+  /api/v1/container/set_docker_registry_mirrors:
+    post: { tags: [container], summary: 更新 Docker 镜像设置, operationId: setDockerRegistryMirrors, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Updated } } }
+
+  # ---------------- Host ----------------
+  /api/v1/host/install:
+    get:
+      tags: [host]
+      summary: 获取 Collia 安装脚本
+      description: Returns the bash installation script for the target node.
+      operationId: agentInstallScript
+      responses: { '200': { description: Bash script } }
+  /api/v1/host/install/package:
+    get:
+      tags: [host]
+      summary: 下载 Collia 安装包
+      operationId: agentInstallPackage
+      responses: { '200': { description: Binary archive } }
+  /api/v1/host/install/config:
+    get:
+      tags: [host]
+      summary: 下载 Collia 配置
+      operationId: agentInstallConfig
+      responses: { '200': { description: Agent config } }
+  /api/v1/host/install/certs:
+    get:
+      tags: [host]
+      summary: 下载 Collia 证书
+      operationId: agentInstallCerts
+      responses: { '200': { description: TLS material } }
+  /api/v1/host/report:
+    post:
+      tags: [host]
+      summary: Agent monitoring report
+      description: |
+        Receives a monitoring data batch from an Agent and persists it atomically.
+        Must include `X-Agent-ID` or `agent_id` in the request. Must include
+        `X-Install-Token` or `token` if configured. Rate-limited to 60 req/min
+        per Agent ID / IP.
+      operationId: report
+      parameters:
+        - $ref: '#/components/parameters/XAgentID'
+        - in: query
+          name: agent_id
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: Batch stored successfully }
+        '400': { description: Missing Agent ID or malformed batch }
+        '401': { description: Invalid install token }
+        '429': { description: Too many requests (rate limited) }
+  /api/v1/host/host_info:
+    get:
+      tags: [host]
+      summary: Get host information
+      description: Returns the latest host info for the selected Agent.
+      operationId: hostInfo
+      parameters:
+        - in: header
+          name: X-Agent-ID
+          schema: { type: string }
+          required: true
+          description: Target Agent identifier
+      security:
+        - BearerAuth: []
+      responses:
+        '200': { description: Host info with freshness metadata }
+        '400': { description: Missing Agent ID }
+  /api/v1/host/cpu_info:
+    get: { tags: [host], summary: 获取 CPU 信息, operationId: cpuInfo, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: CPU info payload } } }
+  /api/v1/host/mem_info:
+    get: { tags: [host], summary: 获取内存信息, operationId: memInfo, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Memory info payload } } }
+  /api/v1/host/disk_info:
+    get: { tags: [host], summary: 获取磁盘信息, operationId: diskInfo, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Disk info payload } } }
+  /api/v1/host/cpu_trending:
+    get: { tags: [host], summary: 获取 CPU 使用率, operationId: cpuUsage, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: CPU usage time series } } }
+  /api/v1/host/mem_trending:
+    get: { tags: [host], summary: 获取内存使用率, operationId: memUsage, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Memory usage time series } } }
+  /api/v1/host/disk_trending:
+    get: { tags: [host], summary: 获取磁盘使用率, operationId: diskUsage, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Disk usage time series } } }
+  /api/v1/host/net_trending:
+    get: { tags: [host], summary: 获取网络使用率, operationId: netUsage, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Network usage time series } } }
+  /api/v1/host/file_search:
+    get: { tags: [host], summary: 文件搜索, operationId: filesSearch, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: File list } } }
+  /api/v1/host/file_upload:
+    post: { tags: [host], summary: 文件上传, operationId: fileUpload, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Uploaded } } }
+  /api/v1/host/file_download:
+    post: { tags: [host], summary: 文件下载, operationId: fileDownload, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Downloaded } } }
+  /api/v1/host/file_delete:
+    post: { tags: [host], summary: 删除文件, operationId: fileDelete, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Deleted } } }
+  /api/v1/host/file_create:
+    post: { tags: [host], summary: 创建文件, operationId: fileCreate, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Created } } }
+  /api/v1/host/folder_create:
+    post: { tags: [host], summary: 创建文件夹, operationId: folderCreate, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Created } } }
+  /api/v1/host/get_dns_settings:
+    get: { tags: [host], summary: 获取 DNS 设置, operationId: getDnsSettings, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: DNS config } } }
+  /api/v1/host/set_dns_settings:
+    post: { tags: [host], summary: 更新 DNS 设置, operationId: setDnsSettings, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Updated } } }
+  /api/v1/host/get_system_time:
+    get: { tags: [host], summary: 获取系统时间, operationId: getSystemTime, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: System time payload } } }
+  /api/v1/host/set_system_time:
+    post: { tags: [host], summary: 更新系统时间, operationId: setSystemTime, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Updated } } }
+  /api/v1/host/get_system_timezone_list:
+    get: { tags: [host], summary: 获取系统时区列表, operationId: getSystemTimeZoneList, responses: { '200': { description: Timezone list } } }
+  /api/v1/host/get_system_timezone:
+    get: { tags: [host], summary: 获取系统时区, operationId: getSystemTimeZone, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Current timezone } } }
+  /api/v1/host/set_system_timezone:
+    post: { tags: [host], summary: 更新系统时区, operationId: setSystemTimeZone, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Updated } } }
+  /api/v1/host/reboot:
+    post: { tags: [host], summary: 重启系统, operationId: reboot, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Reboot initiated } } }
+  /api/v1/host/shutdown:
+    post: { tags: [host], summary: 关闭系统, operationId: shutdown, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Shutdown initiated } } }
+
+  # ---------------- Audit / Mail / Alarm ----------------
+  /api/v1/audit/query:
+    get:
+      tags: [audit]
+      summary: 获取审计日志
+      operationId: auditQuery
+      responses: { '200': { description: Audit log page } }
+
+  /api/v1/mail/mail_create:
+    post: { tags: [mail], summary: 创建邮件告警配置, operationId: mailCreate, responses: { '200': { description: Created } } }
+  /api/v1/mail/mail_delete:
+    post: { tags: [mail], summary: 删除邮件告警配置, operationId: mailDelete, responses: { '200': { description: Deleted } } }
+  /api/v1/mail/mail_update:
+    post: { tags: [mail], summary: 更新邮件告警配置, operationId: mailUpdate, responses: { '200': { description: Updated } } }
+  /api/v1/mail/mail_query:
+    get: { tags: [mail], summary: 查询邮件告警配置, operationId: mailQuery, responses: { '200': { description: Mail configs } } }
+  /api/v1/mail/mail_test:
+    post: { tags: [mail], summary: 测试邮件告警, operationId: mailTest, responses: { '200': { description: Test sent } } }
+
+  /api/v1/alarm/alarm_update:
+    post: { tags: [alarm], summary: 更新告警阈值, operationId: alarmUpdate, responses: { '200': { description: Updated } } }
+  /api/v1/alarm/alarm_query:
+    get: { tags: [alarm], summary: 查询告警阈值, operationId: alarmQuery, responses: { '200': { description: Threshold configs } } }
+
 components:
+  parameters:
+    XAgentID:
+      in: header
+      name: X-Agent-ID
+      required: false
+      schema: { type: string }
+      description: |
+        Identifies the target Agent for control-plane endpoints. Required for
+        any host.* or container.* path; the repository layer (see
+        RequireAgentID in amprobe/pkg/contextx) rejects the request with
+        HTTP 400 when missing.
+
   schemas:
     HealthResponse:
       type: object
@@ -147,6 +509,7 @@ components:
         timestamp:
           type: string
           format: date-time
+
   securitySchemes:
     BearerAuth:
       type: http
