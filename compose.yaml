@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: amprobe/Dockerfile
     image: amprobe:local
-    container_name: amprobe
+    container_name: beacon
     restart: unless-stopped
     ports:
       - "1443:80"
