@@ -16,7 +16,7 @@ spec:
         app: amprobe-server
     spec:
       containers:
-        - name: amprobe
+        - name: beacon
           image: amuluze/amprobe:latest
           imagePullPolicy: IfNotPresent
           ports:

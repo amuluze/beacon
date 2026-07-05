@@ -5,7 +5,7 @@ services:
     build:
       context: ..
       dockerfile: amprobe/Dockerfile
-    container_name: amprobe-server
+    container_name: beacon
     restart: unless-stopped
     ports:
       - "8000:8000"
