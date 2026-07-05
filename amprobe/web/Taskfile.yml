@@ -21,6 +21,11 @@ tasks:
     cmds:
       - pnpm run test
 
+  generate-types:
+    desc: Generate TypeScript types from OpenAPI spec
+    cmds:
+      - pnpm run generate:types
+
   dev:
     desc: Run frontend dev server
     cmds:

@@ -11,7 +11,8 @@
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
         "test": "vitest run",
-        "test:watch": "vitest"
+        "test:watch": "vitest",
+        "generate:types": "openapi-typescript ../../.docs/api/openapi.yml -o ./src/types/api-generated.d.ts"
     },
     "dependencies": {
         "@element-plus/icons-vue": "^2.3.1",
@@ -42,6 +43,7 @@
         "eslint-plugin-format": "^1.0.1",
         "jsdom": "^25.0.1",
         "lint-staged": "^15.4.0",
+        "openapi-typescript": "^7.13.0",
         "postcss": "^8.5.1",
         "sass": "^1.83.4",
         "simple-git-hooks": "^2.11.1",
