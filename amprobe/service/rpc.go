@@ -67,3 +67,10 @@ func SetAgentLifecycle(svc *agent.Service) {
 		svc.SetTunnel(globalTunnel.tun)
 	}
 }
+
+// ServerTunnelFromHolder returns the singleton tunnel instance held by globalTunnel.
+// It exposes the live tunnel so other components (e.g. health.Probe) can wire
+// into it without taking on the lifetime ownership.
+func ServerTunnelFromHolder() *tunnelpkg.ServerTunnel {
+	return globalTunnel.tun
+}

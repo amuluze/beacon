@@ -65,7 +65,6 @@
 - `github.com/google/wire` `v0.6.0`
 - `github.com/patrickmn/go-cache` `v2.1.0+incompatible`
 - `github.com/pkg/errors` `v0.9.1`
-- `github.com/smallnest/rpcx` `v1.8.31`
 - `github.com/spf13/viper` `v1.19.0`
 - `github.com/urfave/cli/v2` `v2.27.4`
 - `gopkg.in/gomail.v2` `v2.0.0-20160411212932-81ebce5c23df`
