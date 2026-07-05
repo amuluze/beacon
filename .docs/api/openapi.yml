@@ -250,11 +250,26 @@ paths:
           schema: { type: string }
           required: true
           description: Target Agent identifier
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
       security:
         - BearerAuth: []
       responses:
         '200':
           description: Container list with freshness metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Container' }
+                  freshness: { $ref: '#/components/schemas/Freshness' }
         '400':
           description: Missing Agent ID
   /api/v1/container/usage:
@@ -412,7 +427,22 @@ paths:
       security:
         - BearerAuth: []
       responses:
-        '200': { description: Host info with freshness metadata }
+        '200':
+          description: Host info with freshness metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp: { type: integer, format: int64 }
+                  uptime: { type: string }
+                  hostname: { type: string }
+                  os: { type: string }
+                  platform: { type: string }
+                  platform_version: { type: string }
+                  kernel_version: { type: string }
+                  kernel_arch: { type: string }
+                  freshness: { $ref: '#/components/schemas/Freshness' }
         '400': { description: Missing Agent ID }
   /api/v1/host/cpu_info:
     get: { tags: [host], summary: 获取 CPU 信息, operationId: cpuInfo, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: CPU info payload } } }
@@ -421,13 +451,104 @@ paths:
   /api/v1/host/disk_info:
     get: { tags: [host], summary: 获取磁盘信息, operationId: diskInfo, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Disk info payload } } }
   /api/v1/host/cpu_trending:
-    get: { tags: [host], summary: 获取 CPU 使用率, operationId: cpuUsage, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: CPU usage time series } } }
+    get:
+      tags: [host]
+      summary: 获取 CPU 使用率
+      operationId: cpuUsage
+      parameters:
+        - $ref: '#/components/parameters/XAgentID'
+        - in: query
+          name: start_time
+          schema: { type: integer, format: int64, description: Unix epoch start }
+        - in: query
+          name: end_time
+          schema: { type: integer, format: int64, description: Unix epoch end }
+      responses:
+        '200':
+          description: CPU usage time series
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UsagePoint'
+        '400': { description: Missing agent_id or invalid time range }
   /api/v1/host/mem_trending:
-    get: { tags: [host], summary: 获取内存使用率, operationId: memUsage, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Memory usage time series } } }
+    get:
+      tags: [host]
+      summary: 获取内存使用率
+      operationId: memUsage
+      parameters:
+        - $ref: '#/components/parameters/XAgentID'
+        - in: query
+          name: start_time
+          schema: { type: integer, format: int64 }
+        - in: query
+          name: end_time
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Memory usage time series
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/UsagePoint' }
+        '400': { description: Missing agent_id or invalid time range }
   /api/v1/host/disk_trending:
-    get: { tags: [host], summary: 获取磁盘使用率, operationId: diskUsage, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Disk usage time series } } }
+    get:
+      tags: [host]
+      summary: 获取磁盘使用率
+      operationId: diskUsage
+      parameters:
+        - $ref: '#/components/parameters/XAgentID'
+        - in: query
+          name: start_time
+          schema: { type: integer, format: int64 }
+        - in: query
+          name: end_time
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Disk usage time series (per device)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  usage:
+                    type: array
+                    items: { $ref: '#/components/schemas/DiskUsage' }
   /api/v1/host/net_trending:
-    get: { tags: [host], summary: 获取网络使用率, operationId: netUsage, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Network usage time series } } }
+    get:
+      tags: [host]
+      summary: 获取网络使用率
+      operationId: netUsage
+      parameters:
+        - $ref: '#/components/parameters/XAgentID'
+        - in: query
+          name: start_time
+          schema: { type: integer, format: int64 }
+        - in: query
+          name: end_time
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Network usage time series (per ethernet)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  usage:
+                    type: array
+                    items: { $ref: '#/components/schemas/NetUsage' }
   /api/v1/host/file_search:
     get: { tags: [host], summary: 文件搜索, operationId: filesSearch, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: File list } } }
   /api/v1/host/file_upload:
@@ -509,6 +630,83 @@ components:
         timestamp:
           type: string
           format: date-time
+
+    Freshness:
+      description: |
+        Derived from the Agent-side collection timestamp in each monitoring row.
+        `stale` and `degraded` are both true when the row's age exceeds the
+        `freshnessStaleAfter` constant (2 minutes by default).
+      type: object
+      properties:
+        collected_at:
+          type: integer
+          format: int64
+          description: Unix epoch of the original collection.
+        age_seconds:
+          type: integer
+        stale:
+          type: boolean
+        degraded:
+          type: boolean
+
+    UsagePoint:
+      description: Single point on the CPU / memory time series.
+      type: object
+      properties:
+        timestamp: { type: integer, format: int64, description: Unix epoch }
+        value: { type: number, format: double }
+
+    DiskUsage:
+      description: Disk usage grouped by device.
+      type: object
+      properties:
+        device: { type: string }
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp: { type: integer, format: int64 }
+              io_read: { type: number }
+              io_write: { type: number }
+
+    NetUsage:
+      description: Network usage grouped by ethernet.
+      type: object
+      properties:
+        ethernet: { type: string }
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp: { type: integer, format: int64 }
+              bytes_sent: { type: number }
+              bytes_recv: { type: number }
+
+    Container:
+      description: |
+        Mirrors `common/rpc/schema.Container`. JSON omits empty fields so the
+        optional Num/Tag fields may be missing.
+      type: object
+      properties:
+        timestamp: { type: string, format: date-time }
+        container_id: { type: string }
+        name: { type: string }
+        image: { type: string }
+        network: { type: string }
+        ip: { type: string }
+        ports: { type: string }
+        state: { type: string }
+        uptime: { type: string }
+        volumes: { type: string }
+        environments: { type: string }
+        commands: { type: string }
+        labels: { type: string }
+        cpu_percent: { type: number }
+        mem_percent: { type: number }
+        mem_usage: { type: number }
+        mem_limit: { type: number }
 
   securitySchemes:
     BearerAuth:
