@@ -1326,6 +1326,75 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        /**
+         * @description Derived from the Agent-side collection timestamp in each monitoring row.
+         *     `stale` and `degraded` are both true when the row's age exceeds the
+         *     `freshnessStaleAfter` constant (2 minutes by default).
+         */
+        Freshness: {
+            /**
+             * Format: int64
+             * @description Unix epoch of the original collection.
+             */
+            collected_at?: number;
+            age_seconds?: number;
+            stale?: boolean;
+            degraded?: boolean;
+        };
+        /** @description Single point on the CPU / memory time series. */
+        UsagePoint: {
+            /**
+             * Format: int64
+             * @description Unix epoch
+             */
+            timestamp?: number;
+            /** Format: double */
+            value?: number;
+        };
+        /** @description Disk usage grouped by device. */
+        DiskUsage: {
+            device?: string;
+            data?: {
+                /** Format: int64 */
+                timestamp?: number;
+                io_read?: number;
+                io_write?: number;
+            }[];
+        };
+        /** @description Network usage grouped by ethernet. */
+        NetUsage: {
+            ethernet?: string;
+            data?: {
+                /** Format: int64 */
+                timestamp?: number;
+                bytes_sent?: number;
+                bytes_recv?: number;
+            }[];
+        };
+        /**
+         * @description Mirrors `common/rpc/schema.Container`. JSON omits empty fields so the
+         *     optional Num/Tag fields may be missing.
+         */
+        Container: {
+            /** Format: date-time */
+            timestamp?: string;
+            container_id?: string;
+            name?: string;
+            image?: string;
+            network?: string;
+            ip?: string;
+            ports?: string;
+            state?: string;
+            uptime?: string;
+            volumes?: string;
+            environments?: string;
+            commands?: string;
+            labels?: string;
+            cpu_percent?: number;
+            mem_percent?: number;
+            mem_usage?: number;
+            mem_limit?: number;
+        };
     };
     responses: never;
     parameters: {
@@ -1818,7 +1887,10 @@ export interface operations {
     };
     containerList: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                size?: number;
+            };
             header: {
                 /** @description Target Agent identifier */
                 "X-Agent-ID": string;
@@ -1833,7 +1905,12 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Container"][];
+                        freshness?: components["schemas"]["Freshness"];
+                    };
+                };
             };
             /** @description Missing Agent ID */
             400: {
@@ -2454,7 +2531,20 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: int64 */
+                        timestamp?: number;
+                        uptime?: string;
+                        hostname?: string;
+                        os?: string;
+                        platform?: string;
+                        platform_version?: string;
+                        kernel_version?: string;
+                        kernel_arch?: string;
+                        freshness?: components["schemas"]["Freshness"];
+                    };
+                };
             };
             /** @description Missing Agent ID */
             400: {
@@ -2545,7 +2635,10 @@ export interface operations {
     };
     cpuUsage: {
         parameters: {
-            query?: never;
+            query?: {
+                start_time?: number;
+                end_time?: number;
+            };
             header?: {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
@@ -2565,13 +2658,27 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["UsagePoint"][];
+                    };
+                };
+            };
+            /** @description Missing agent_id or invalid time range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
     };
     memUsage: {
         parameters: {
-            query?: never;
+            query?: {
+                start_time?: number;
+                end_time?: number;
+            };
             header?: {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
@@ -2591,13 +2698,27 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["UsagePoint"][];
+                    };
+                };
+            };
+            /** @description Missing agent_id or invalid time range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
     };
     diskUsage: {
         parameters: {
-            query?: never;
+            query?: {
+                start_time?: number;
+                end_time?: number;
+            };
             header?: {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
@@ -2612,18 +2733,25 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Disk usage time series */
+            /** @description Disk usage time series (per device) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        usage?: components["schemas"]["DiskUsage"][];
+                    };
+                };
             };
         };
     };
     netUsage: {
         parameters: {
-            query?: never;
+            query?: {
+                start_time?: number;
+                end_time?: number;
+            };
             header?: {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
@@ -2638,12 +2766,16 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Network usage time series */
+            /** @description Network usage time series (per ethernet) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        usage?: components["schemas"]["NetUsage"][];
+                    };
+                };
             };
         };
     };
