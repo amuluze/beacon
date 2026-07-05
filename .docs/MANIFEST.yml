@@ -18,6 +18,12 @@ docs:
       must_contain:
         - "## 范围"
       description: API route and handler signal index inferred from source registrations
+    - path: api/openapi.yml
+      min_lines: 20
+      must_contain:
+        - "openapi: 3.0.3"
+        - "/health"
+      description: OpenAPI 3.0 specification of the Amprobe HTTP API surface
     - path: architecture.md
       min_lines: 50
       must_contain:
