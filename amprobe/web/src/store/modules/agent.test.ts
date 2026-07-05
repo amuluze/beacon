@@ -10,8 +10,8 @@ describe('useAgentStore', () => {
     it('sets current agent from list', () => {
         const store = useAgentStore()
         store.setAgents([
-            { agent_id: 'agent-a', hostname: 'host-a', status: 'online', last_seen: Date.now() },
-            { agent_id: 'agent-b', hostname: 'host-b', status: 'online', last_seen: Date.now() },
+            { agent_id: 'agent-a', hostname: 'host-a', status: 'online', last_seen: String(Date.now()) },
+            { agent_id: 'agent-b', hostname: 'host-b', status: 'online', last_seen: String(Date.now()) },
         ])
         expect(store.currentAgentID).toBe('agent-a')
     })
@@ -25,7 +25,7 @@ describe('useAgentStore', () => {
 
     it('switches current agent explicitly', () => {
         const store = useAgentStore()
-        store.setAgents([{ agent_id: 'agent-a', hostname: 'host-a', status: 'online', last_seen: Date.now() }])
+        store.setAgents([{ agent_id: 'agent-a', hostname: 'host-a', status: 'online', last_seen: String(Date.now()) }])
         store.setCurrentAgent('agent-b')
         expect(store.currentAgentID).toBe('agent-b')
     })
