@@ -237,7 +237,16 @@ paths:
       summary: 获取 Docker 版本信息
       operationId: containerVersion
       parameters: [ { $ref: '#/components/parameters/XAgentID' } ]
-      responses: { '200': { description: Docker version payload } }
+      responses:
+        '200':
+          description: Docker version payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Docker' }
+                  freshness: { $ref: '#/components/schemas/Freshness' }
   /api/v1/container/containers:
     get:
       tags: [container]
@@ -278,7 +287,28 @@ paths:
       summary: 获取容器资源使用情况
       operationId: containerUsage
       parameters: [ { $ref: '#/components/parameters/XAgentID' } ]
-      responses: { '200': { description: Aggregate usage } }
+      responses:
+        '200':
+          description: Container usage aggregate keyed by container name.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  names:
+                    type: array
+                    items: { type: string }
+                  cpu_usage:
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items: { $ref: '#/components/schemas/UsagePoint' }
+                  mem_usage:
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items: { $ref: '#/components/schemas/UsagePoint' }
+                  freshness: { $ref: '#/components/schemas/Freshness' }
   /api/v1/container/container_create:
     post:
       tags: [container]
@@ -322,8 +352,26 @@ paths:
       tags: [container]
       summary: 获取镜像列表
       operationId: imageList
-      parameters: [ { $ref: '#/components/parameters/XAgentID' } ]
-      responses: { '200': { description: Image list } }
+      parameters:
+        - $ref: '#/components/parameters/XAgentID'
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Image list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Image' }
+                  freshness: { $ref: '#/components/schemas/Freshness' }
   /api/v1/container/image_remove:
     post:
       tags: [container]
@@ -355,7 +403,30 @@ paths:
   /api/v1/container/network_delete:
     post: { tags: [container], summary: 删除网络, operationId: networkDelete, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Deleted } } }
   /api/v1/container/networks:
-    get: { tags: [container], summary: 获取网络列表, operationId: networkList, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Network list } } }
+    get:
+      tags: [container]
+      summary: 获取网络列表
+      operationId: networkList
+      parameters:
+        - $ref: '#/components/parameters/XAgentID'
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Network list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Network' }
+                  freshness: { $ref: '#/components/schemas/Freshness' }
   /api/v1/container/get_docker_registry_mirrors:
     get: { tags: [container], summary: 获取 Docker 镜像设置, operationId: getDockerRegistryMirrors, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Mirror config } } }
   /api/v1/container/set_docker_registry_mirrors:
@@ -445,11 +516,57 @@ paths:
                   freshness: { $ref: '#/components/schemas/Freshness' }
         '400': { description: Missing Agent ID }
   /api/v1/host/cpu_info:
-    get: { tags: [host], summary: 获取 CPU 信息, operationId: cpuInfo, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: CPU info payload } } }
+    get:
+      tags: [host]
+      summary: 获取 CPU 信息
+      operationId: cpuInfo
+      parameters: [ { $ref: '#/components/parameters/XAgentID' } ]
+      responses:
+        '200':
+          description: CPU info payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  percent: { type: number, description: CPU usage percentage }
+                  freshness: { $ref: '#/components/schemas/Freshness' }
   /api/v1/host/mem_info:
-    get: { tags: [host], summary: 获取内存信息, operationId: memInfo, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Memory info payload } } }
+    get:
+      tags: [host]
+      summary: 获取内存信息
+      operationId: memInfo
+      parameters: [ { $ref: '#/components/parameters/XAgentID' } ]
+      responses:
+        '200':
+          description: Memory info payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  percent: { type: number }
+                  total: { type: number, description: Total memory in bytes }
+                  used: { type: number, description: Used memory in bytes }
+                  freshness: { $ref: '#/components/schemas/Freshness' }
   /api/v1/host/disk_info:
-    get: { tags: [host], summary: 获取磁盘信息, operationId: diskInfo, parameters: [ { $ref: '#/components/parameters/XAgentID' } ], responses: { '200': { description: Disk info payload } } }
+    get:
+      tags: [host]
+      summary: 获取磁盘信息
+      operationId: diskInfo
+      parameters: [ { $ref: '#/components/parameters/XAgentID' } ]
+      responses:
+        '200':
+          description: Disk info payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: array
+                    items: { $ref: '#/components/schemas/Disk' }
+                  freshness: { $ref: '#/components/schemas/Freshness' }
   /api/v1/host/cpu_trending:
     get:
       tags: [host]
@@ -707,6 +824,57 @@ components:
         mem_percent: { type: number }
         mem_usage: { type: number }
         mem_limit: { type: number }
+
+    Disk:
+      description: Per-device disk info; mirrors `common/rpc/schema.Disk`.
+      type: object
+      properties:
+        timestamp: { type: string, format: date-time }
+        device: { type: string }
+        disk_percent: { type: number }
+        disk_total: { type: number }
+        disk_used: { type: number }
+        disk_read: { type: number }
+        disk_write: { type: number }
+
+    Image:
+      description: Docker image metadata; mirrors `common/rpc/schema.Image`.
+      type: object
+      properties:
+        timestamp: { type: string, format: date-time }
+        image_id: { type: string }
+        name: { type: string }
+        tag: { type: string }
+        created: { type: string }
+        size: { type: string }
+
+    Network:
+      description: Docker network metadata; mirrors `common/rpc/schema.Network`.
+      type: object
+      properties:
+        timestamp: { type: string, format: date-time }
+        network_id: { type: string }
+        name: { type: string }
+        driver: { type: string }
+        scope: { type: string }
+        created: { type: string }
+        internal: { type: boolean }
+        subnet: { type: string }
+        gateway: { type: string }
+        labels: { type: string }
+
+    Docker:
+      description: Docker daemon info; mirrors `common/rpc/schema.Docker`.
+      type: object
+      properties:
+        timestamp: { type: string, format: date-time }
+        docker_version: { type: string }
+        api_version: { type: string }
+        min_api_version: { type: string }
+        git_commit: { type: string }
+        go_version: { type: string }
+        os: { type: string }
+        arch: { type: string }
 
   securitySchemes:
     BearerAuth:
