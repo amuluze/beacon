@@ -1395,6 +1395,53 @@ export interface components {
             mem_usage?: number;
             mem_limit?: number;
         };
+        /** @description Per-device disk info; mirrors `common/rpc/schema.Disk`. */
+        Disk: {
+            /** Format: date-time */
+            timestamp?: string;
+            device?: string;
+            disk_percent?: number;
+            disk_total?: number;
+            disk_used?: number;
+            disk_read?: number;
+            disk_write?: number;
+        };
+        /** @description Docker image metadata; mirrors `common/rpc/schema.Image`. */
+        Image: {
+            /** Format: date-time */
+            timestamp?: string;
+            image_id?: string;
+            name?: string;
+            tag?: string;
+            created?: string;
+            size?: string;
+        };
+        /** @description Docker network metadata; mirrors `common/rpc/schema.Network`. */
+        Network: {
+            /** Format: date-time */
+            timestamp?: string;
+            network_id?: string;
+            name?: string;
+            driver?: string;
+            scope?: string;
+            created?: string;
+            internal?: boolean;
+            subnet?: string;
+            gateway?: string;
+            labels?: string;
+        };
+        /** @description Docker daemon info; mirrors `common/rpc/schema.Docker`. */
+        Docker: {
+            /** Format: date-time */
+            timestamp?: string;
+            docker_version?: string;
+            api_version?: string;
+            min_api_version?: string;
+            git_commit?: string;
+            go_version?: string;
+            os?: string;
+            arch?: string;
+        };
     };
     responses: never;
     parameters: {
@@ -1881,7 +1928,12 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Docker"];
+                        freshness?: components["schemas"]["Freshness"];
+                    };
+                };
             };
         };
     };
@@ -1938,12 +1990,23 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Aggregate usage */
+            /** @description Container usage aggregate keyed by container name. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        names?: string[];
+                        cpu_usage?: {
+                            [key: string]: components["schemas"]["UsagePoint"][];
+                        };
+                        mem_usage?: {
+                            [key: string]: components["schemas"]["UsagePoint"][];
+                        };
+                        freshness?: components["schemas"]["Freshness"];
+                    };
+                };
             };
         };
     };
@@ -2099,7 +2162,10 @@ export interface operations {
     };
     imageList: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                size?: number;
+            };
             header?: {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
@@ -2119,7 +2185,12 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Image"][];
+                        freshness?: components["schemas"]["Freshness"];
+                    };
+                };
             };
         };
     };
@@ -2313,7 +2384,10 @@ export interface operations {
     };
     networkList: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                size?: number;
+            };
             header?: {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
@@ -2333,7 +2407,12 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Network"][];
+                        freshness?: components["schemas"]["Freshness"];
+                    };
+                };
             };
         };
     };
@@ -2577,7 +2656,13 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** @description CPU usage percentage */
+                        percent?: number;
+                        freshness?: components["schemas"]["Freshness"];
+                    };
+                };
             };
         };
     };
@@ -2603,7 +2688,16 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        percent?: number;
+                        /** @description Total memory in bytes */
+                        total?: number;
+                        /** @description Used memory in bytes */
+                        used?: number;
+                        freshness?: components["schemas"]["Freshness"];
+                    };
+                };
             };
         };
     };
@@ -2629,7 +2723,12 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        info?: components["schemas"]["Disk"][];
+                        freshness?: components["schemas"]["Freshness"];
+                    };
+                };
             };
         };
     };
