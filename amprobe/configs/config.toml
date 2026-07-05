@@ -7,7 +7,7 @@ AppName = "probe"
 Prefork = false
 
 [Control]
-Enable = true          # 启用反向隧道（替代 rpcx）
+Enable = true          # 启用反向 gRPC tunnel，控制通道由 Agent 主动连接 Server
 Address = ":17000"     # gRPC 控制端口
 DefaultAgentID = "default"
 JoinToken = ""          # Agent 反向隧道注册令牌；为空时复用 AgentInstall.Token

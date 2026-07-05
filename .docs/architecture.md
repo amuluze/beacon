@@ -22,7 +22,6 @@
 
 - reverse gRPC tunnel control channel
 - HTTP monitoring report channel
-- rpcx dependency retained in module metadata
 - Docker/host operation boundary
 - Vue/Vite frontend
 - Fiber/HTTP API
@@ -100,7 +99,6 @@
 - `github.com/patrickmn/go-cache` `v2.1.0+incompatible`（amprobe/go.mod）
 - `github.com/pkg/errors` `v0.9.1`（amprobe/go.mod）
 - `github.com/shirou/gopsutil/v3` `v3.24.5`（collia/go.mod）
-- `github.com/smallnest/rpcx` `v1.8.31`（amprobe/go.mod）
 - `github.com/spf13/viper` `v1.19.0`（amprobe/go.mod）
 - `github.com/takama/daemon` `v1.0.0`（collia/go.mod）
 - `github.com/urfave/cli/v2` `v2.27.4`（amprobe/go.mod）
@@ -115,7 +113,6 @@
 以下直接依赖在多个 Go 模块中出现不同版本；这通常是需要维护者评估和收敛的兼容性风险。
 
 - `github.com/amuluze/amutool/timex`: `v0.0.0-20240821104128-caed9cc0d402` in `collia`; `v0.0.0-20250508153823-fe9a5de55958` in `amprobe`
-- `github.com/smallnest/rpcx`: `v1.8.31` in `amprobe`; `v1.8.32` in `collia`
 - `gorm.io/gorm`: `v1.25.10` in `common`; `v1.25.12` in `amprobe`, `collia`
 
 ## 配置与入口信号

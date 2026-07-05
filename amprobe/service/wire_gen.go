@@ -23,6 +23,7 @@ import (
 	"amprobe/service/container/api"
 	"amprobe/service/container/repository"
 	"amprobe/service/container/service"
+	"amprobe/service/health/api"
 	api2 "amprobe/service/host/api"
 	repository2 "amprobe/service/host/repository"
 	service2 "amprobe/service/host/service"
@@ -101,6 +102,9 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	loggerHandler := NewLoggerHandler(client)
 	termHandler := NewTermHandler()
 	reportService := NewReportService(config, db)
+	probe := health.NewProbe()
+	probe.SetDB(db)
+	probe.SetTunnel(ServerTunnelFromHolder())
 	router := &Router{
 		config:        config,
 		auth:          auther,
@@ -116,6 +120,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		reportSvc:     reportService,
 		loggerHandler: loggerHandler,
 		termHandler:   termHandler,
+		healthProbe:   probe,
 	}
 	app := NewFiberApp(config, router)
 	prepare := &Prepare{

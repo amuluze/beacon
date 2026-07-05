@@ -90,9 +90,9 @@ jobs:
           test -f .docs/concepts/data-flow.md
           test -f .docs/deployment.md
           test -f .docs/api/routes.md
-          test -f .docs/api/openapi.yml
           test -f .docs/modules/amprobe.md
           test -f .docs/modules/collia.md
           test -f .docs/modules/common.md
           test -f .docs/modules/amprobe-web.md
+          test -f .docs/project-analysis.md
           echo "All required docs present."

@@ -89,7 +89,6 @@ task website-web:dev
 
 - reverse gRPC tunnel control channel
 - HTTP monitoring report channel
-- rpcx dependency retained in module metadata
 - Docker/host operation boundary
 - Vue/Vite frontend
 - Fiber/HTTP API

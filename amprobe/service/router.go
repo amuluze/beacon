@@ -10,7 +10,7 @@ import (
 	"amprobe/pkg/auth"
 	"amprobe/pkg/contextx"
 	"amprobe/service/agent"
-	"amprobe/service/health"
+	healthapi "amprobe/service/health/api"
 	"amprobe/service/middleware"
 	"amprobe/service/report"
 
@@ -21,6 +21,7 @@ import (
 	"github.com/google/wire"
 
 	accountAPI "amprobe/service/account/api"
+	alarmAPI "amprobe/service/alarm/api"
 	auditAPI "amprobe/service/audit/api"
 	authAPI "amprobe/service/auth/api"
 	containerAPI "amprobe/service/container/api"
@@ -55,14 +56,12 @@ type Router struct {
 	loggerHandler *LoggerHandler
 	termHandler   *TermHandler
 
-	healthProbe *health.Probe
+	healthProbe *healthapi.Probe
 }
 
 func (a *Router) RegisterAPI(app *fiber.App) {
 	// Health probes — no auth required, must be placed before auth middleware.
-	if a.healthProbe == nil {
-		a.healthProbe = health.NewProbe()
-	}
+	// healthProbe is injected by BuildInjector (wire) so DB/tunnel dependencies are honored.
 	app.Get("/health", a.healthProbe.Liveness)
 	app.Get("/ready", a.healthProbe.Readiness)
 
