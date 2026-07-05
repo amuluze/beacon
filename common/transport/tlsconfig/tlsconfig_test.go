@@ -9,7 +9,7 @@ import (
 
 func TestCertificateMatchesName(t *testing.T) {
 	cert := &x509.Certificate{
-		Subject:     pkix.Name{CommonName: "amprobe"},
+		Subject:     pkix.Name{CommonName: "beacon"},
 		DNSNames:    []string{"collia-host-a"},
 		IPAddresses: []net.IP{net.ParseIP("10.0.0.11")},
 	}
@@ -18,7 +18,7 @@ func TestCertificateMatchesName(t *testing.T) {
 		name string
 		want bool
 	}{
-		{name: "amprobe", want: true},
+		{name: "beacon", want: true},
 		{name: "collia-host-a", want: true},
 		{name: "10.0.0.11", want: true},
 		{name: "collia-host-b", want: false},
@@ -32,9 +32,9 @@ func TestCertificateMatchesName(t *testing.T) {
 }
 
 func TestCertificateMatchesAnyName(t *testing.T) {
-	cert := &x509.Certificate{Subject: pkix.Name{CommonName: "amprobe"}}
+	cert := &x509.Certificate{Subject: pkix.Name{CommonName: "beacon"}}
 
-	if !certificateMatchesAnyName(cert, []string{"other", "amprobe"}) {
+	if !certificateMatchesAnyName(cert, []string{"other", "beacon"}) {
 		t.Fatal("expected certificate to match one allowed name")
 	}
 	if certificateMatchesAnyName(cert, []string{"other"}) {

@@ -1,12 +1,12 @@
 version: '3'
 
 includes:
-  amprobe:
-    taskfile: ./amprobe/Taskfile.yml
-    dir: ./amprobe
-  amprobe-web:
-    taskfile: ./amprobe/web/Taskfile.yml
-    dir: ./amprobe/web
+  beacon:
+    taskfile: ./beacon/Taskfile.yml
+    dir: ./beacon
+  beacon-web:
+    taskfile: ./beacon/web/Taskfile.yml
+    dir: ./beacon/web
   collia:
     taskfile: ./collia/Taskfile.yml
     dir: ./collia

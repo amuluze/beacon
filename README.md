@@ -1,4 +1,4 @@
-# Amprobe
+# Beacon
 
 ![MIT License](https://img.shields.io/badge/License-MIT-green.svg)
 ![Go Reference](https://pkg.go.dev/badge/github.com/shirou/gopsutil/v3.svg)
@@ -8,26 +8,26 @@
 
 ## 简介
 
-`Amprobe` 是一款轻量级主机及 `Docker` 容器监控工具。当前项目采用 `Server-Agent` 架构：
+`Beacon` 是一款轻量级主机及 `Docker` 容器监控工具。当前项目采用 `Server-Agent` 架构：
 
-- `amprobe`：Server 端，负责 Web UI、HTTP API、认证授权、审计、告警配置和任务编排。
+- `beacon`：Server 端，负责 Web UI、HTTP API、认证授权、审计、告警配置和任务编排。
 - `collia`：Agent 端，负责主机与 Docker 指标采集、本机执行能力，并通过反向 `gRPC tunnel` 主动连接 Server，让 Server 按 Agent 标识反向调用本机资源。
 
 ## Docker Compose 启动
 
-Amprobe 面板服务通过仓库根目录的 `compose.yaml` 启动：
+Beacon 面板服务通过仓库根目录的 `compose.yaml` 启动：
 
 ```bash
 docker compose up -d --build
 ```
 
-默认暴露 `http://<host>:1443`。Collia Agent 可通过 Amprobe 下发的安装脚本安装：
+默认暴露 `http://<host>:1443`。Collia Agent 可通过 Beacon 下发的安装脚本安装：
 
 ```bash
 curl -kfsSL 'http://<host>:1443/api/v1/host/install?node=1' | sudo bash -s -- --token=<install-token>
 ```
 
-Collia 二进制在构建 Amprobe 镜像时一并打包进镜像，安装时由 Amprobe 直接下发；启用 mTLS 时证书包需在构建镜像前放置在 `deploy/downloads/collia/certs/<node>.tar.gz`，会随镜像一同打进镜像。
+Collia 二进制在构建 Beacon 镜像时一并打包进镜像，安装时由 Beacon 直接下发；启用 mTLS 时证书包需在构建镜像前放置在 `deploy/downloads/collia/certs/<node>.tar.gz`，会随镜像一同打进镜像。
 
 它可以帮助我们完成以下几方面的工作：
 
@@ -49,13 +49,13 @@ Collia 二进制在构建 Amprobe 镜像时一并打包进镜像，安装时由 
 
 - 查看用户登录、登出、操作记录
 
-官网地址：[官网 | Amprobe (amprobe.amuluze.com)](https://amprobe.amuluze.com/official/)
+官网地址：[官网 | Beacon (beacon.amuluze.com)](https://beacon.amuluze.com/official/)
 
 > **docker 版本要求：>= 20.10.9**
 
 ## 技术栈
 
-`Amprobe` 采用前后端分离的技术架构。
+`Beacon` 采用前后端分离的技术架构。
 
 **前端技术栈:**
 
@@ -73,15 +73,15 @@ Collia 二进制在构建 Amprobe 镜像时一并打包进镜像，安装时由 
 
 ## 请作者喝杯咖啡
 
-非常感谢大家使用 `Amprobe`, 目前该项目由个人用业余时间在维护，如果本项目有帮助到你的话，可以考虑请作者喝杯咖啡~
+非常感谢大家使用 `Beacon`, 目前该项目由个人用业余时间在维护，如果本项目有帮助到你的话，可以考虑请作者喝杯咖啡~
 
-<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171446310.jpg" alt="阿慕"  width="300" height="300" />
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/beacon/202403171446310.jpg" alt="阿慕"  width="300" height="300" />
 
 ## 其他
 
 作者阿慕，作为一名 35 岁的临“退”程序员，目前正在尝试去探索一条能够延长职业生涯的可行方案，欢迎添加作者微信或关注作者公众号进行交流呀！
 
-<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171449114.jpg" alt="阿慕微信"  width="300" height="350" /> <img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/amprobe/202403171450306.png" alt="公众号"  width="300" />
+<img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/beacon/202403171449114.jpg" alt="阿慕微信"  width="300" height="350" /> <img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/beacon/202403171450306.png" alt="公众号"  width="300" />
 
 开源不易，最后别忘了给本项目点个 **Star** ~
 

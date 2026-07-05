@@ -8,10 +8,10 @@ control:
   tls:
     enable: false
     cert_dir: /etc/collia/certs
-    server_name: amprobe/collia
+    server_name: beacon/collia
 
 log:
-  output: /data/amprobe/logs/collia/collia.log
+  output: /data/beacon/logs/collia/collia.log
   level: info
   rotation: 1
   max_age: 7
@@ -36,10 +36,10 @@ db:
   port: ""
   user: ""
   password: ""
-  dbname: /data/amprobe/collia/storage/collia
+  dbname: /data/beacon/collia/storage/collia
   sslmode: ""
 
 variables:
   image_tag: latest
-  host_prefix: /data/amprobe
+  host_prefix: /data/beacon
   container_prefix: /

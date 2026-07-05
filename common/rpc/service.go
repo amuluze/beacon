@@ -6,7 +6,7 @@ import (
 	"context"
 )
 
-// IService defines the RPC interface that collia Agent exposes to amprobe Server.
+// IService defines the RPC interface that collia Agent exposes to beacon Server.
 // Monitoring data is pushed separately via ReportService; this interface only
 // contains operational commands (container/image/network/file/system).
 type IService interface {

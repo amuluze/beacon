@@ -23,7 +23,7 @@ docs:
       must_contain:
         - "openapi: 3.0.3"
         - "/health"
-      description: OpenAPI 3.0 specification of the Amprobe HTTP API surface
+      description: OpenAPI 3.0 specification of the Beacon HTTP API surface
     - path: architecture.md
       min_lines: 50
       must_contain:
@@ -44,20 +44,20 @@ docs:
         - "## 快速启动"
         - "## 配置说明"
       description: environment requirements, build commands, configuration policy and release checks
-    - path: modules/amprobe-web.md
+    - path: modules/beacon-web.md
       min_lines: 30
       must_contain:
         - "## 模块职责"
         - "## 职责边界"
         - "## 验证命令"
-      description: amprobe-web module responsibilities, implementation signals, exported-symbol hints, dependencies, state and validation
-    - path: modules/amprobe.md
+      description: beacon-web module responsibilities, implementation signals, exported-symbol hints, dependencies, state and validation
+    - path: modules/beacon.md
       min_lines: 30
       must_contain:
         - "## 模块职责"
         - "## 职责边界"
         - "## 验证命令"
-      description: amprobe module responsibilities, implementation signals, exported-symbol hints, dependencies, state and validation
+      description: beacon module responsibilities, implementation signals, exported-symbol hints, dependencies, state and validation
     - path: modules/collia.md
       min_lines: 30
       must_contain:
@@ -115,25 +115,25 @@ index:
       - "## 文档地图"
       - "## 关键约束"
     description: synchronized copy of root AGENTS.md
-  - path: ../amprobe/AGENTS.md
+  - path: ../beacon/AGENTS.md
     min_lines: 20
     must_contain:
       - "## 模块路径"
       - "## 开发命令"
     description: module AI entry, SSOT for this directory
-  - path: ../amprobe/CLAUDE.md
+  - path: ../beacon/CLAUDE.md
     min_lines: 20
     must_contain:
       - "## 模块路径"
       - "## 开发命令"
     description: synchronized copy of sibling AGENTS.md
-  - path: ../amprobe/web/AGENTS.md
+  - path: ../beacon/web/AGENTS.md
     min_lines: 20
     must_contain:
       - "## 模块路径"
       - "## 开发命令"
     description: module AI entry, SSOT for this directory
-  - path: ../amprobe/web/CLAUDE.md
+  - path: ../beacon/web/CLAUDE.md
     min_lines: 20
     must_contain:
       - "## 模块路径"

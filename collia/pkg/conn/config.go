@@ -24,7 +24,7 @@ type TLSConfig struct {
 
 // ClientConfig returns tls config for client
 func ClientConfig(absDir string) (*TLSConfig, error) {
-	cfg, err := transporttls.ClientConfig(absDir, "amprobe/collia")
+	cfg, err := transporttls.ClientConfig(absDir, "beacon/collia")
 	if err != nil {
 		return nil, err
 	}

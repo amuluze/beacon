@@ -40,7 +40,7 @@ func NewRPCServer(config *Config, db *database.DB) (*Server, error) {
 	if config.Control.TLS.Enable {
 		serverName := config.Control.TLS.ServerName
 		if serverName == "" {
-			serverName = "amprobe/collia"
+			serverName = "beacon/collia"
 		}
 		tlsCfg, err := transporttls.ClientConfig(config.Control.TLS.CertDir, serverName)
 		if err != nil {

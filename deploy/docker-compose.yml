@@ -1,22 +1,22 @@
 version: '3.8'
 
 services:
-  amprobe:
+  beacon:
     build:
       context: ..
-      dockerfile: amprobe/Dockerfile
+      dockerfile: beacon/Dockerfile
     container_name: beacon
     restart: unless-stopped
     ports:
       - "8000:8000"
       - "17000:17000"
     volumes:
-      - amprobe-data:/app/data
-      - amprobe-logs:/app/logs
-      - ../amprobe/configs:/app/configs:ro
+      - beacon-data:/app/data
+      - beacon-logs:/app/logs
+      - ../beacon/configs:/app/configs:ro
     environment:
-      - AMPROBE_AUTH_SIGNING_KEY=amprobe-dev
-      - AMPROBE_AGENT_INSTALL_TOKEN=change-me-dev
+      - BEACON_AUTH_SIGNING_KEY=beacon-dev
+      - BEACON_AGENT_INSTALL_TOKEN=change-me-dev
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8000/health"]
       interval: 30s
@@ -24,12 +24,12 @@ services:
       retries: 3
       start_period: 10s
     networks:
-      - amprobe-net
+      - beacon-net
 
 volumes:
-  amprobe-data:
-  amprobe-logs:
+  beacon-data:
+  beacon-logs:
 
 networks:
-  amprobe-net:
+  beacon-net:
     driver: bridge

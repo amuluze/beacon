@@ -1,6 +1,6 @@
 # Collia Agent Packages
 
-Collia binaries are built into the Amprobe image during `docker buildx build`,
+Collia binaries are built into the Beacon image during `docker buildx build`,
 one per supported arch, and served from:
 
 ```text
@@ -9,7 +9,7 @@ one per supported arch, and served from:
   arm64/collia
 ```
 
-The Amprobe install script detects the target machine's architecture via
+The Beacon install script detects the target machine's architecture via
 `uname -m` and downloads the matching binary, so no manual binary placement is
 required.
 

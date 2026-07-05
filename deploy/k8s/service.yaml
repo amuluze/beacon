@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: amprobe-server
-  namespace: amprobe
+  name: beacon-server
+  namespace: beacon
 spec:
   selector:
-    app: amprobe-server
+    app: beacon-server
   ports:
     - name: http
       port: 8000
