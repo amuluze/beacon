@@ -62,10 +62,14 @@ type Service struct {
 	tunnel *tunnelpkg.ServerTunnel
 }
 
-func NewAgentService(repo *Repository, tun *tunnelpkg.ServerTunnel) *Service {
-	s := &Service{repo: repo, tunnel: tun}
+func NewAgentService(repo *Repository) *Service {
+	return &Service{repo: repo}
+}
+
+// SetTunnel wires the tunnel lifecycle hooks into the agent service.
+func (s *Service) SetTunnel(tun *tunnelpkg.ServerTunnel) {
+	s.tunnel = tun
 	tun.SetAgentLifecycle(s)
-	return s
 }
 
 // OnAgentConnect implements tunnel.AgentLifecycle.

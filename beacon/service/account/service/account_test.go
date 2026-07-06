@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"amprobe/service/account/repository"
-	"amprobe/service/model"
-	"amprobe/service/schema"
-	testutil "amprobe/service/testutil"
+	"beacon/service/account/repository"
+	"beacon/service/model"
+	"beacon/service/schema"
+	testutil "beacon/service/testutil"
 
 	"github.com/casbin/casbin/v2"
 	casbinModel "github.com/casbin/casbin/v2/model"

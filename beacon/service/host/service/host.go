@@ -7,6 +7,7 @@ package service
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"beacon/service/host/repository"
 	"beacon/service/schema"
@@ -47,11 +48,16 @@ type IHostService interface {
 }
 
 type HostService struct {
-	HostRepo repository.IHostRepo
+	HostRepo         repository.IHostRepo
+	stalenessSeconds int64
 }
 
-func NewHostService(hostRepo repository.IHostRepo) *HostService {
-	return &HostService{HostRepo: hostRepo}
+func NewHostService(hostRepo repository.IHostRepo, stalenessSeconds ...int64) *HostService {
+	ss := int64(300) // default 5 minutes
+	if len(stalenessSeconds) > 0 {
+		ss = stalenessSeconds[0]
+	}
+	return &HostService{HostRepo: hostRepo, stalenessSeconds: ss}
 }
 
 func mapFreshness(f rpcSchema.Freshness) schema.Freshness {
@@ -88,6 +94,8 @@ func (h *HostService) CPUInfo(ctx context.Context) (schema.CPUInfoReply, error) 
 		return reply, err
 	}
 	reply.Percent = cpuInfo.Percent
+	reply.Timestamp = cpuInfo.Timestamp
+	reply.Stale = isStale(cpuInfo.Timestamp, h.stalenessSeconds)
 	reply.Freshness = mapFreshness(cpuInfo.Freshness)
 	return reply, nil
 }
@@ -124,6 +132,8 @@ func (h *HostService) MemInfo(ctx context.Context) (schema.MemoryInfoReply, erro
 	reply.Used = memInfo.Used
 	reply.Total = memInfo.Total
 	reply.Percent = memInfo.Percent
+	reply.Timestamp = memInfo.Timestamp
+	reply.Stale = isStale(memInfo.Timestamp, h.stalenessSeconds)
 	reply.Freshness = mapFreshness(memInfo.Freshness)
 	return reply, nil
 }
@@ -159,10 +169,12 @@ func (h *HostService) DiskInfo(ctx context.Context) (schema.DiskInfoReply, error
 	var list []schema.DiskInfo
 	for _, di := range rpcReply.Info {
 		list = append(list, schema.DiskInfo{
-			Device:  di.Device,
-			Percent: di.DiskPercent,
-			Total:   di.DiskTotal,
-			Used:    di.DiskUsed,
+			Device:    di.Device,
+			Percent:   di.DiskPercent,
+			Total:     di.DiskTotal,
+			Used:      di.DiskUsed,
+			Timestamp: di.Timestamp.Unix(),
+			Stale:     di.Stale || isStale(di.Timestamp.Unix(), h.stalenessSeconds),
 		})
 	}
 	reply.Info = list
@@ -365,4 +377,13 @@ func (h *HostService) GetSystemTimeZoneList(ctx context.Context, args schema.Get
 	}
 	reply.SystemTimeZoneList = rpcReply.SystemTimeZoneList
 	return reply, nil
+}
+
+
+// isStale checks if a timestamp is older than the given staleness threshold.
+func isStale(ts int64, stalenessSeconds int64) bool {
+	if stalenessSeconds <= 0 {
+		return false
+	}
+	return time.Now().Unix()-ts > stalenessSeconds
 }

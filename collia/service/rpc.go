@@ -23,17 +23,20 @@ type Server struct {
 }
 
 // NewRPCServer creates the tunnel connection to the Server.
-func NewRPCServer(config *Config, db *database.DB) (*Server, error) {
+func NewRPCServer(config *Config, db *database.DB, version Version) (*Server, error) {
 	manager, err := docker.NewManager()
 	if err != nil {
 		return nil, err
 	}
-	s := rpc.NewService(db, manager)
+	rootDir := config.Variables.HostPrefix
+	s := rpc.NewService(db, manager, rootDir)
 
 	agentID := config.Control.AgentID
 	if agentID == "" {
 		agentID = "default"
 	}
+
+	slog.Info("collia agent", "version", version.String(), "agent_id", agentID)
 
 	tunnel := rpctunnel.NewAgentTunnel(config.Control.Server, agentID)
 	tunnel.SetJoinToken(config.Control.JoinToken)

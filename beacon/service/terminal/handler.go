@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"time"
 
-	"amprobe/pkg/contextx"
-	"amprobe/pkg/rpc"
-	"amprobe/service/model"
+	"beacon/pkg/contextx"
+	"beacon/pkg/rpc"
+	"beacon/service/model"
 
 	"common/database"
 	rpcSchema "common/rpc/schema"

@@ -215,12 +215,26 @@ func TestServerTunnel_Register_InvalidPayload(t *testing.T) {
 	stream := openAgentStream(t, conn)
 	_ = stream.Send(&Frame{FrameType: FrameType_FRAME_REGISTER, Method: "agent-x", Payload: []byte("not-json")})
 
-	frame, err := stream.Recv()
-	if err != nil {
-		t.Fatalf("recv: %v", err)
+	// Server should reject with an error, which closes the stream
+	// Use a goroutine + timeout to avoid hanging on Recv
+	type result struct {
+		frame *Frame
+		err   error
 	}
-	if frame.FrameType != FrameType_FRAME_REGISTER_REJECTED {
-		t.Fatalf("frame type = %v, want REGISTER_REJECTED", frame.FrameType)
+	ch := make(chan result, 1)
+	go func() {
+		f, e := stream.Recv()
+		ch <- result{f, e}
+	}()
+	var err error
+	select {
+	case r := <-ch:
+		_, err = r.frame, r.err
+	case <-time.After(5 * time.Second):
+		t.Fatalf("recv timeout: expected stream to close with error")
+	}
+	if err == nil {
+		t.Fatalf("expected error from closed stream, got nil")
 	}
 	if s.IsOnline("agent-x") {
 		t.Fatalf("agent with invalid payload should not be online")

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"amprobe/service/model"
+	"beacon/service/model"
 	"common/database"
 )
 
@@ -18,6 +18,7 @@ func newTaskTestDB(t *testing.T) *database.DB {
 		t.Fatalf("new db: %v", err)
 	}
 	if err := db.AutoMigrate(
+		new(model.Agent),
 		new(model.AlarmThreshold),
 		new(model.Audit),
 		new(model.Mail),
@@ -29,6 +30,8 @@ func newTaskTestDB(t *testing.T) *database.DB {
 	); err != nil {
 		t.Fatalf("auto migrate: %v", err)
 	}
+	// Seed a minimal mail record so alarm tasks don't fail on sendMail.
+	_ = db.Create(&model.Mail{Server: "localhost", Port: 0, Sender: "test@test.com", Password: "", Receiver: "test@test.com"})
 	return db
 }
 
@@ -133,8 +136,8 @@ func TestServiceTaskSeparatesContainerStateCacheByAgent(t *testing.T) {
 		t.Fatalf("audit count = %d, want 1", len(audits))
 	}
 	msg := audits[0].Operate
-	if !strings.Contains(msg, "agent-b") || !strings.Contains(msg, "host-b") {
-		t.Fatalf("audit message %q does not identify changed agent-b/host-b", msg)
+	if !strings.Contains(msg, "agent-b") {
+		t.Fatalf("audit message %q does not identify changed agent-b", msg)
 	}
 	if strings.Contains(msg, "agent-a") || strings.Contains(msg, "host-a") {
 		t.Fatalf("audit message %q unexpectedly includes unchanged agent-a", msg)

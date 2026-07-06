@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"amprobe/service/testutil"
+	"beacon/service/testutil"
 	rpcSchema "common/rpc/schema"
 )
 

@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"amprobe/service/container/repository"
-	"amprobe/service/schema"
-	testutil "amprobe/service/testutil"
+	"beacon/service/container/repository"
+	"beacon/service/schema"
+	testutil "beacon/service/testutil"
 	rpcSchema "common/rpc/schema"
 
 	"github.com/stretchr/testify/assert"

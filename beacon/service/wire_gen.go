@@ -101,7 +101,14 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 
 	loggerHandler := NewLoggerHandler(client)
 	termHandler := NewTermHandler()
-	reportService := NewReportService(config, db)
+	reportSvc, err := NewReportService(config, db)
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	reportService := reportSvc
 	probe := health.NewProbe()
 	probe.SetDB(db)
 	probe.SetTunnel(ServerTunnelFromHolder())
