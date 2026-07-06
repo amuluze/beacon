@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  beacon:
+    build:
+      context: ..
+      dockerfile: beacon/Dockerfile
+    container_name: beacon
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+      - "17000:17000"
+    volumes:
+      - beacon-data:/app/data
+      - beacon-logs:/app/logs
+      - ../beacon/configs:/app/configs:ro
+    environment:
+      - BEACON_AUTH_SIGNING_KEY=beacon-dev
+      - BEACON_AGENT_INSTALL_TOKEN=change-me-dev
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - beacon-net
+
+volumes:
+  beacon-data:
+  beacon-logs:
+
+networks:
+  beacon-net:
+    driver: bridge

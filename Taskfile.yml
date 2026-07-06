@@ -1,19 +1,27 @@
 version: '3'
 
 includes:
-  amprobe:
-    taskfile: ./amprobe/Taskfile.yml
-    dir: ./amprobe
+  beacon:
+    taskfile: ./beacon/Taskfile.yml
+    dir: ./beacon
+  beacon-web:
+    taskfile: ./beacon/web/Taskfile.yml
+    dir: ./beacon/web
   collia:
     taskfile: ./collia/Taskfile.yml
     dir: ./collia
-  web:
-    taskfile: ./amprobe/web/Taskfile.yml
-    dir: ./amprobe/web
+  website:
+    taskfile: ./website/Taskfile.yml
+    dir: ./website
+  website-server:
+    taskfile: ./website/server/Taskfile.yml
+    dir: ./website/server
+  website-web:
+    taskfile: ./website/web/Taskfile.yml
+    dir: ./website/web
 
 tasks:
   default:
     desc: List available tasks
-    silent: true
     cmds:
       - task --list

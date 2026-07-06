@@ -9,24 +9,24 @@
 
 ## 路由信号
 
-### `amprobe`
+### `beacon`
 
-- `api := app.Group("/api")` at `amprobe/service/router.go:99`
-- `app.Get("/ws", websocket.New(a.termHandler.Handler))` at `amprobe/service/router.go:78`
-- `app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))` at `amprobe/service/router.go:77`
-- `app.Use("/", filesystem.New(filesystem.Config{` at `amprobe/service/app.go:37`
-- `app.Use("ws", func(c *fiber.Ctx) error {` at `amprobe/service/router.go:68`
-- `app.Use(func(c *fiber.Ctx) error {` at `amprobe/service/router.go:57`
-- `app.Use(middleware.CasbinMiddleware(` at `amprobe/service/router.go:91`
-- `app.Use(middleware.PanicMiddleware())` at `amprobe/service/app.go:34`
-- `app.Use(middleware.StackMiddleware)` at `amprobe/service/app.go:35`
-- `app.Use(middleware.UserAuthMiddleware(` at `amprobe/service/router.go:81`
-- `gAgent.Get("/list", a.agentAPI.List).Name("查询 Agent 列表")` at `amprobe/service/router.go:133`
-- `gAlarm.Get("/alarm_query", a.alarmAPI.AlarmQuery).Name("查询告警阈值")` at `amprobe/service/router.go:217`
-- `gAlarm.Post("/alarm_update", a.alarmAPI.AlarmUpdate).Name("更新告警阈值")` at `amprobe/service/router.go:216`
-- `gAudit.Get("/query", a.auditAPI.AuditQuery).Name("获取审计日志")` at `amprobe/service/router.go:202`
-- `gAuth.Get("/user_info", a.authAPI.UserInfo).Name("查询权限")` at `amprobe/service/router.go:142`
-- `gAuth.Post("/login", a.authAPI.Login).Name("登录")` at `amprobe/service/router.go:138`
+- `api := app.Group("/api")` at `beacon/service/router.go:99`
+- `app.Get("/ws", websocket.New(a.termHandler.Handler))` at `beacon/service/router.go:78`
+- `app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))` at `beacon/service/router.go:77`
+- `app.Use("/", filesystem.New(filesystem.Config{` at `beacon/service/app.go:37`
+- `app.Use("ws", func(c *fiber.Ctx) error {` at `beacon/service/router.go:68`
+- `app.Use(func(c *fiber.Ctx) error {` at `beacon/service/router.go:57`
+- `app.Use(middleware.CasbinMiddleware(` at `beacon/service/router.go:91`
+- `app.Use(middleware.PanicMiddleware())` at `beacon/service/app.go:34`
+- `app.Use(middleware.StackMiddleware)` at `beacon/service/app.go:35`
+- `app.Use(middleware.UserAuthMiddleware(` at `beacon/service/router.go:81`
+- `gAgent.Get("/list", a.agentAPI.List).Name("查询 Agent 列表")` at `beacon/service/router.go:133`
+- `gAlarm.Get("/alarm_query", a.alarmAPI.AlarmQuery).Name("查询告警阈值")` at `beacon/service/router.go:217`
+- `gAlarm.Post("/alarm_update", a.alarmAPI.AlarmUpdate).Name("更新告警阈值")` at `beacon/service/router.go:216`
+- `gAudit.Get("/query", a.auditAPI.AuditQuery).Name("获取审计日志")` at `beacon/service/router.go:202`
+- `gAuth.Get("/user_info", a.authAPI.UserInfo).Name("查询权限")` at `beacon/service/router.go:142`
+- `gAuth.Post("/login", a.authAPI.Login).Name("登录")` at `beacon/service/router.go:138`
 
 ## 维护约束
 

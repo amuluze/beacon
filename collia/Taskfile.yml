@@ -3,19 +3,17 @@ version: '3'
 vars:
   TARGET: collia
   SERVER: ./cmd/{{.TARGET}}
-  VERSION:
-    sh: cat VERSION
 
 tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
   wire:
-    desc: Generate Wire dependency injection code
+    desc: Generate Wire injector code
     cmds:
       - wire ./service/
-
-  test:
-    desc: Run tests with race detector
-    cmds:
-      - go test -race -count=1 ./...
 
   amd64:
     desc: Build linux/amd64 collia binary
@@ -24,10 +22,10 @@ tasks:
       GOOS: linux
       GOARCH: amd64
     cmds:
-      - go build -ldflags "-X main.Version={{.VERSION}}" -o {{.TARGET}} {{.SERVER}}
+      - go build -o {{.TARGET}} {{.SERVER}}
 
   arm64:
-    desc: Build linux/arm64 collia binary
+    desc: Generate Wire code and build linux/arm64 collia binary
     deps:
       - wire
     env:
@@ -35,4 +33,4 @@ tasks:
       GOOS: linux
       GOARCH: arm64
     cmds:
-      - go build -ldflags "-X main.Version={{.VERSION}}" -o {{.TARGET}} {{.SERVER}}
+      - go build -o {{.TARGET}} {{.SERVER}}

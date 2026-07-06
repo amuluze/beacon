@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: beacon-server
+  namespace: beacon
+spec:
+  selector:
+    app: beacon-server
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+    - name: control
+      port: 17000
+      targetPort: 17000
+  type: ClusterIP

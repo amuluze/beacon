@@ -1,7 +1,7 @@
 go 1.25.0
 
 use (
-	./amprobe
+	./beacon
 	./collia
 	./common
 )

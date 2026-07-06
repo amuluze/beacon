@@ -1,8 +1,0 @@
-.idea/
-.DS_Store
-
-node_modules/
-dist/
-
-pnpm-lock.yaml
-pnpm-workspace.yaml

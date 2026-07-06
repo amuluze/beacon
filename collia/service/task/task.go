@@ -2,6 +2,7 @@
 package task
 
 import (
+	"errors"
 	"time"
 
 	"github.com/amuluze/docker"
@@ -136,16 +137,26 @@ func NewTask(interval int, manager *docker.Manager, dev map[string]struct{}, eth
 
 // Report collects all monitoring data and returns it as a MonitorReport.
 func (a *Task) Report(timestamp time.Time) (*MonitorReport, error) {
+	hostReport, hostErr := a.HostTask()
+	cpuReport, cpuErr := a.CPUTask()
+	memoryReport, memoryErr := a.MemoryTask()
+	diskReports, diskErr := a.DiskTask()
+	netReports, netErr := a.NetTask()
+
 	report := &MonitorReport{
-		Host:   a.HostTask(),
-		CPU:    a.CPUTask(),
-		Memory: a.MemoryTask(),
-		Disks:  a.DiskTask(),
-		Nets:   a.NetTask(),
-		Docker: a.DockerTask(),
+		Host:       hostReport,
+		CPU:        cpuReport,
+		Memory:     memoryReport,
+		Disks:      diskReports,
+		Nets:       netReports,
+		Docker:     a.DockerTask(),
 		Containers: a.ContainerTask(),
 		Images:     a.ImageTask(),
 		Networks:   a.NetworkTask(),
+	}
+	report.Error = errors.Join(hostErr, cpuErr, memoryErr, diskErr, netErr)
+	if report.Error != nil {
+		return report, report.Error
 	}
 	return report, nil
 }

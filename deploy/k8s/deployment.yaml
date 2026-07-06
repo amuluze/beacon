@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: beacon-server
+  namespace: beacon
+  labels:
+    app: beacon-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: beacon-server
+  template:
+    metadata:
+      labels:
+        app: beacon-server
+    spec:
+      containers:
+        - name: beacon
+          image: amuluze/beacon:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: http
+            - containerPort: 17000
+              name: control
+          env:
+            - name: BEACON_AUTH_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: beacon-secrets
+                  key: auth-signing-key
+            - name: BEACON_AGENT_INSTALL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: beacon-secrets
+                  key: agent-install-token
+            - name: BEACON_CONTROL_JOIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: beacon-secrets
+                  key: control-join-token
+          volumeMounts:
+            - name: config
+              mountPath: /app/configs
+              readOnly: true
+            - name: data
+              mountPath: /app/data
+            - name: logs
+              mountPath: /app/logs
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: beacon-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: beacon-data
+        - name: logs
+          persistentVolumeClaim:
+            claimName: beacon-logs

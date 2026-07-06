@@ -1,22 +1,31 @@
 package report
 
 import (
+	"io"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	rpcSchema "common/rpc/schema"
 )
 
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
 func TestPushAcceptsNilContext(t *testing.T) {
 	var gotToken string
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotToken = r.Header.Get("X-Install-Token")
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
 
-	client := NewClient(server.URL, "secret")
+	client := NewClient("http://example.test/report", "secret")
+	client.httpClient.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		gotToken = r.Header.Get("X-Install-Token")
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(http.NoBody),
+			Header:     make(http.Header),
+		}, nil
+	})
 	defer client.Close()
 
 	err := client.Push(nil, rpcSchema.MonitorReportArgs{AgentID: "agent-a"})

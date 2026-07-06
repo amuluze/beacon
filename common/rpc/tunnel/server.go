@@ -4,47 +4,20 @@ package tunnel
 
 import (
 	"context"
+	"crypto/subtle"
 	"crypto/tls"
-	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net"
-	"strconv"
 	"sync"
 	"sync/atomic"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
-
-// ServerOption configures a ServerTunnel.
-type ServerOption func(*ServerTunnel)
-
-// WithServerTLS enables TLS on the tunnel listener.
-func WithServerTLS(cfg *tls.Config) ServerOption {
-	return func(s *ServerTunnel) {
-		s.tlsConfig = cfg
-	}
-}
-
-// WithJoinToken sets the expected join token for agent registration.
-// If empty (default), token validation is skipped for backward compatibility.
-func WithJoinToken(token string) ServerOption {
-	return func(s *ServerTunnel) {
-		s.joinToken = token
-	}
-}
-
-// AgentInfo carries the agent identity and metadata from the registration frame.
-type AgentInfo struct {
-	AgentID string
-	Version string
-	OS      string
-	Arch    string
-}
 
 // AgentLifecycle is called when an agent connects or disconnects.
 type AgentLifecycle interface {
-	OnAgentConnect(info AgentInfo)
+	OnAgentConnect(agentID string)
 	OnAgentDisconnect(agentID string)
 	OnAgentHeartbeat(agentID string)
 }
@@ -57,16 +30,6 @@ type pendingCall struct {
 // pendingStream represents an in-flight streaming RPC.
 type pendingStream struct {
 	chunkChan chan *Frame
-	done      chan struct{}
-	once      sync.Once
-}
-
-// close signals that the caller has stopped consuming (stream ended, ctx
-// cancelled, or caller abandoned). It is idempotent. After close, pending
-// inbound frames for this stream are discarded by the dispatch loop instead
-// of being buffered, which bounds memory for slow or abandoned consumers.
-func (ps *pendingStream) close() {
-	ps.once.Do(func() { close(ps.done) })
 }
 
 // ServerTunnel is the Server-side tunnel manager.
@@ -75,13 +38,13 @@ type ServerTunnel struct {
 	UnimplementedReverseTunnelServer
 	grpcServer *grpc.Server
 	listener   net.Listener
-	tlsConfig  *tls.Config
-	joinToken  string
 	agents     sync.Map // map[string]*agentStream
 	pending    sync.Map // map[string]*pendingCall   (call_id -> pendingCall)
 	streams    sync.Map // map[string]*pendingStream (stream_id -> pendingStream)
 	callID     atomic.Uint64
 	lifecycle  AgentLifecycle
+	joinToken  string
+	tlsConfig  *tls.Config
 }
 
 type agentStream struct {
@@ -90,12 +53,18 @@ type agentStream struct {
 }
 
 // NewServerTunnel creates a new Server-side tunnel manager.
-func NewServerTunnel(opts ...ServerOption) *ServerTunnel {
-	s := &ServerTunnel{}
-	for _, opt := range opts {
-		opt(s)
-	}
-	return s
+func NewServerTunnel() *ServerTunnel {
+	return &ServerTunnel{}
+}
+
+// SetJoinToken configures the optional registration token required from Agents.
+func (s *ServerTunnel) SetJoinToken(token string) {
+	s.joinToken = token
+}
+
+// SetTLSConfig configures optional TLS credentials for the gRPC server.
+func (s *ServerTunnel) SetTLSConfig(cfg *tls.Config) {
+	s.tlsConfig = cfg
 }
 
 // SetAgentLifecycle registers lifecycle callbacks for agent connect/disconnect.
@@ -109,14 +78,15 @@ func (s *ServerTunnel) Start(addr string) error {
 	if err != nil {
 		return err
 	}
-	if s.tlsConfig != nil {
-		lis = tls.NewListener(lis, s.tlsConfig)
-	}
 	s.listener = lis
 
-	s.grpcServer = grpc.NewServer()
+	var opts []grpc.ServerOption
+	if s.tlsConfig != nil {
+		opts = append(opts, grpc.Creds(credentials.NewTLS(s.tlsConfig)))
+	}
+	s.grpcServer = grpc.NewServer(opts...)
 	RegisterReverseTunnelServer(s.grpcServer, s)
-	slog.Info("server tunnel: listening", "addr", addr, "tls", s.tlsConfig != nil, "auth", s.joinToken != "")
+	slog.Info("server tunnel: listening", "addr", addr)
 	return s.grpcServer.Serve(lis)
 }
 
@@ -125,16 +95,6 @@ func (s *ServerTunnel) Stop() {
 	if s.grpcServer != nil {
 		s.grpcServer.GracefulStop()
 	}
-}
-
-// parseRegistrationPayload parses the registration frame payload as JSON.
-// Break change: payload must be a valid RegistrationPayload JSON.
-func parseRegistrationPayload(payload []byte) (RegistrationPayload, error) {
-	var reg RegistrationPayload
-	if err := json.Unmarshal(payload, &reg); err != nil {
-		return reg, fmt.Errorf("invalid registration payload: %w", err)
-	}
-	return reg, nil
 }
 
 // Tunnel implements the ReverseTunnelServer interface.
@@ -151,36 +111,16 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 	}
 
 	agentID := frame.Method
-	reg, err := parseRegistrationPayload(frame.Payload)
-	if err != nil {
-		slog.Warn("server tunnel: registration payload parse failed", "agent_id", agentID, "err", err)
-		rejFrame := &Frame{
-			FrameType: FrameType_FRAME_REGISTER_REJECTED,
-			Error:     err.Error(),
-		}
-		_ = stream.Send(rejFrame)
-		return nil
+	if agentID == "" {
+		err := &InvalidAgentIDError{}
+		slog.Warn("server tunnel: empty agent id rejected")
+		return err
 	}
-
-	// Validate join token if server has one configured.
-	// Empty joinToken on server means skip validation (backward compatible).
-	if s.joinToken != "" && reg.JoinToken != s.joinToken {
-		slog.Warn("server tunnel: registration rejected", "agent_id", agentID)
-		rejFrame := &Frame{
-			FrameType: FrameType_FRAME_REGISTER_REJECTED,
-			Error:     "invalid join token",
-		}
-		_ = stream.Send(rejFrame)
-		return nil
+	if !s.validJoinToken(frame.Payload) {
+		err := &AgentUnauthorizedError{AgentID: agentID}
+		slog.Warn("server tunnel: agent registration rejected", "agent_id", agentID)
+		return err
 	}
-
-	info := AgentInfo{
-		AgentID: agentID,
-		Version: reg.Version,
-		OS:      reg.OS,
-		Arch:    reg.Arch,
-	}
-	slog.Info("server tunnel: agent registered", "agent_id", agentID, "version", info.Version, "os", info.OS, "arch", info.Arch)
 
 	as := &agentStream{
 		agentID: agentID,
@@ -188,7 +128,12 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 			return stream.Send(f)
 		},
 	}
-	s.agents.Store(agentID, as)
+	if _, loaded := s.agents.LoadOrStore(agentID, as); loaded {
+		err := &DuplicateAgentError{AgentID: agentID}
+		slog.Warn("server tunnel: duplicate agent rejected", "agent_id", agentID)
+		return err
+	}
+	slog.Info("server tunnel: agent registered", "agent_id", agentID)
 	defer func() {
 		s.agents.Delete(agentID)
 		if s.lifecycle != nil {
@@ -198,7 +143,7 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 	}()
 
 	if s.lifecycle != nil {
-		s.lifecycle.OnAgentConnect(info)
+		s.lifecycle.OnAgentConnect(agentID)
 	}
 
 	for {
@@ -213,27 +158,23 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 				s.lifecycle.OnAgentHeartbeat(agentID)
 			}
 
-		case FrameType_FRAME_REPLY:
+		case FrameType_FRAME_REPLY, FrameType_FRAME_STREAM_END:
 			// Route single response to the waiting caller
 			if v, ok := s.pending.LoadAndDelete(frame.Id); ok {
 				pc := v.(*pendingCall)
 				pc.replyChan <- frame
 			}
 
-		case FrameType_FRAME_STREAM_DATA, FrameType_FRAME_STREAM_END:
-			// Route streaming chunk / completion to the waiting caller.
-			// STREAM_END carries no payload but signals the caller to stop reading.
+		case FrameType_FRAME_STREAM_DATA:
+			// Route streaming chunk
 			if v, ok := s.streams.Load(frame.Id); ok {
 				ps := v.(*pendingStream)
 				select {
 				case ps.chunkChan <- frame:
-				case <-ps.done:
-					// Caller has stopped consuming; drop the frame to avoid
-					// blocking the agent's Recv loop or buffering unbounded data.
+				default:
 				}
-				if frame.FrameType == FrameType_FRAME_STREAM_END || frame.Eos {
+				if frame.Eos {
 					s.streams.Delete(frame.Id)
-					ps.close()
 				}
 			}
 
@@ -245,6 +186,16 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 			}
 		}
 	}
+}
+
+func (s *ServerTunnel) validJoinToken(token []byte) bool {
+	if s.joinToken == "" {
+		return true
+	}
+	if len(token) != len(s.joinToken) {
+		return false
+	}
+	return subtle.ConstantTimeCompare(token, []byte(s.joinToken)) == 1
 }
 
 // Call dispatches an RPC call to an agent and waits for the response.
@@ -306,24 +257,19 @@ func (s *ServerTunnel) StreamCall(ctx context.Context, agentID string, method st
 		return nil, &AgentOfflineError{AgentID: agentID}
 	}
 
-	ps := &pendingStream{
-		chunkChan: make(chan *Frame, 64),
-		done:      make(chan struct{}),
-	}
+	ps := &pendingStream{chunkChan: make(chan *Frame, 64)}
 	s.streams.Store(id, ps)
-	// ctx 兜底：调用方未在 ctx 取消前读取完流（例如消费者泄漏或 agent 永不发 STREAM_END）时，
-	// 由该 goroutine 删除 streams 条目并关闭 done，防止 pendingStream 永久驻留。
-	// 正常结束路径（STREAM_END 到达）会先于 ctx.Done 删除条目，此处 LoadAndDelete 返回 false。
-	go func() {
-		<-ctx.Done()
-		if _, ok := s.streams.LoadAndDelete(id); ok {
-			ps.close()
+	defer func() {
+		// If ctx done before stream ends, clean up
+		select {
+		case <-ctx.Done():
+			s.streams.Delete(id)
+		default:
 		}
 	}()
 
 	if err := as.(*agentStream).send(frame); err != nil {
 		s.streams.Delete(id)
-		ps.close()
 		return nil, err
 	}
 
@@ -346,7 +292,7 @@ func (s *ServerTunnel) IsOnline(agentID string) bool {
 	return ok
 }
 
-// AgentCount returns the number of connected agents.
+// AgentInfo returns info about all connected agents.
 func (s *ServerTunnel) AgentCount() int {
 	count := 0
 	s.agents.Range(func(_, _ interface{}) bool {
@@ -357,7 +303,7 @@ func (s *ServerTunnel) AgentCount() int {
 }
 
 func (s *ServerTunnel) nextID() string {
-	return "rpc-" + strconv.FormatUint(s.callID.Add(1), 10)
+	return "rpc-" + itoa(int(s.callID.Add(1)))
 }
 
 // AgentOfflineError is returned when the target agent is not connected.
@@ -369,6 +315,31 @@ func (e *AgentOfflineError) Error() string {
 	return "agent " + e.AgentID + " is offline"
 }
 
+// InvalidAgentIDError is returned when an Agent registers without an identity.
+type InvalidAgentIDError struct{}
+
+func (e *InvalidAgentIDError) Error() string {
+	return "agent id is required"
+}
+
+// AgentUnauthorizedError is returned when an Agent registration token is invalid.
+type AgentUnauthorizedError struct {
+	AgentID string
+}
+
+func (e *AgentUnauthorizedError) Error() string {
+	return "agent " + e.AgentID + " is unauthorized"
+}
+
+// DuplicateAgentError is returned when an Agent ID is already connected.
+type DuplicateAgentError struct {
+	AgentID string
+}
+
+func (e *DuplicateAgentError) Error() string {
+	return "agent " + e.AgentID + " is already connected"
+}
+
 // RPCError is returned when the agent returns an RPC error.
 type RPCError struct {
 	Method string
@@ -377,4 +348,18 @@ type RPCError struct {
 
 func (e *RPCError) Error() string {
 	return "rpc " + e.Method + " failed: " + e.Err
+}
+
+func itoa(n int) string {
+	if n == 0 {
+		return "0"
+	}
+	var buf [20]byte
+	i := len(buf)
+	for n > 0 {
+		i--
+		buf[i] = byte('0' + n%10)
+		n /= 10
+	}
+	return string(buf[i:])
 }

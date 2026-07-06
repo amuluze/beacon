@@ -20,10 +20,10 @@
 
 | 边界 | 输入 | 输出 | 约束 |
 |------|------|------|------|
-| `amprobe` | HTTP/WebSocket 请求、认证上下文、目标资源或节点标识、运行时配置、Agent 上报批次 | JSON/API 响应、实时事件、tunnel 调用结果、审计或持久化副作用 | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client |
+| `beacon` | HTTP/WebSocket 请求、认证上下文、目标资源或节点标识、运行时配置、Agent 上报批次 | JSON/API 响应、实时事件、tunnel 调用结果、审计或持久化副作用 | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client |
 | `collia` | tunnel RPC 请求、主机/容器资源标识、采集任务、运行时配置 | HTTP 监控批次、控制操作结果、错误状态、实时日志流 | Agent runtime: 主机/容器采集、HTTP 监控上报、Docker 控制和反向 tunnel Service |
 | `common` | 调用方传入的 schema、查询参数、数据库/传输配置 | 跨模块复用的结构体、RPC 参数/返回值、数据库或反向 tunnel 封装结果 | shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型 |
-| `amprobe-web` | 路由参数、表单输入、用户操作、API 响应、实时事件 | 页面状态、API 请求、组件事件、本地 store/cache 更新、实时通道订阅状态、HTTP client 调用 | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 |
+| `beacon-web` | 路由参数、表单输入、用户操作、API 响应、实时事件 | 页面状态、API 请求、组件事件、本地 store/cache 更新、实时通道订阅状态、HTTP client 调用 | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 |
 
 ## 事件传播
 

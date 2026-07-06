@@ -1,0 +1,78 @@
+[Fiber]
+Host = "0.0.0.0"      # http监听地址
+Port = 8000           # http监听端口
+ShutdownTimeout = 30  # http优雅关闭等待超时时长(单位秒)
+SeverHeader = "beacon"
+AppName = "beacon"
+Prefork = false
+
+[Control]
+Enable = true          # 启用反向 gRPC tunnel，控制通道由 Agent 主动连接 Server
+Address = ":17000"     # gRPC 控制端口
+DefaultAgentID = "default"
+JoinToken = ""          # Agent 反向隧道注册令牌；为空时复用 AgentInstall.Token
+
+[Control.TLS]
+Enable = false
+CertDir = "/etc/beacon/control-certs"
+ClientNames = []
+
+[Gorm]
+Debug = true             # 是否开启调试模式
+DBType = "sqlite"        # 数据库类型(目前支持的数据库类型：postgres, sqlite)
+MaxLifetime = 7200       # 设置连接可以重用的最长时间(单位：秒)
+MaxOpenConns = 150       # 设置数据库的最大打开连接数
+MaxIdleConns = 50        # 设置空闲连接池中的最大连接数
+TablePrefix = "s_"       # 数据库表名前缀
+EnableAutoMigrate = true # 是否启用自动映射数据库表结构
+
+[DB]
+Host = ""             # 连接地址
+Port = ""             # 连接端口
+User = ""             # 用户名
+Password = ""         # 密码
+DBName = "/app/beacon" # 数据库
+SSLMode = ""          # SSL模式
+
+[Log]
+Output = "/app/logs/beacon.log" # 日志存放路径
+Level = "debug"                # 日志等级
+Rotation = 1                   # 每天切分一个日志文件
+MaxAge = 7                     # 最多保留 7 天的日志
+
+[Auth]
+Enable = true           # 是否启用
+SigningMethod = "HS512" # 签名方式(支持：HS512/HS384/HS512)
+# ⚠️ 生产环境必须通过环境变量 BEACON_AUTH_SIGNING_KEY 设置强随机密钥，
+# 或替换下方默认值。保留 "beacon" 会在启动时发出 WARN 日志。
+SigningKey = "beacon"  # 签名key
+Expired = 7200          # 过期时间（单位秒）
+RefreshExpired = 86400  # 刷新过期时间（单位秒）
+Prefix = "auth_"        # key 前缀
+
+[Casbin]
+Enable = true         # 是否启用casbin
+Debug = false         # debug模式
+AutoLoad = true       # 是否启用定期自动加载策略
+AutoLoadInternal = 60 # 定期自动加载策略时间间隔（单位秒）
+
+[Task]
+Interval = 15
+
+[AgentInstall]
+Enable = true
+# ⚠️ 生产环境必须通过环境变量 BEACON_AGENT_INSTALL_TOKEN 设置，
+# 或替换下方默认值。保留 "change-me" 会在启动时发出 WARN 日志。
+Token = "change-me"
+PublicBaseURL = ""
+PackageDir = "/app/downloads/collia"
+ControlPort = 17000
+TLSEnable = true
+CertDir = "/etc/collia/certs"
+
+[InstallReport]
+Enable = true
+URL = "https://official.beacon.amuluze.com/api/v1/install/report"
+InstallDir = "/data/beacon"
+IDFile = "/app/data/install.id"
+Timeout = 5
