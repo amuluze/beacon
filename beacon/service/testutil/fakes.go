@@ -8,14 +8,14 @@ import (
 	"context"
 	"fmt"
 
-	"amprobe/pkg/auth"
-	alarmRepo "amprobe/service/alarm/repository"
-	auditRepo "amprobe/service/audit/repository"
-	authRepo "amprobe/service/auth/repository"
-	accountRepo "amprobe/service/account/repository"
-	mailRepo "amprobe/service/mail/repository"
-	"amprobe/service/model"
-	"amprobe/service/schema"
+	"beacon/pkg/auth"
+	alarmRepo "beacon/service/alarm/repository"
+	auditRepo "beacon/service/audit/repository"
+	authRepo "beacon/service/auth/repository"
+	accountRepo "beacon/service/account/repository"
+	mailRepo "beacon/service/mail/repository"
+	"beacon/service/model"
+	"beacon/service/schema"
 
 	rpcSchema "common/rpc/schema"
 

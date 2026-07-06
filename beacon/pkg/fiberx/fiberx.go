@@ -58,6 +58,18 @@ func ReturnJson(c *fiber.Ctx, status int, v interface{}) error {
 	return c.JSON(v)
 }
 
+// ServiceError converts a Go error to errors.Error using FromError.
+// If the input is already an errors.Error, it is returned as-is.
+func ServiceError(err error) errors.Error {
+	if e, ok := err.(errors.Error); ok {
+		return e
+	}
+	if e, ok := err.(*errors.Error); ok {
+		return *e
+	}
+	return errors.FromError(err)
+}
+
 // ParseQuery Parse query parameter to struct
 func ParseQuery(c *fiber.Ctx, obj interface{}) error {
 	return c.QueryParser(obj)

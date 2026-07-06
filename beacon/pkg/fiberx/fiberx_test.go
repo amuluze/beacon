@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"amprobe/pkg/contextx"
-	pkgerrors "amprobe/pkg/errors"
+	"beacon/pkg/contextx"
+	pkgerrors "beacon/pkg/errors"
 	tunnelpkg "common/rpc/tunnel"
 
 	"github.com/gofiber/fiber/v2"

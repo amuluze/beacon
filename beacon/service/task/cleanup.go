@@ -9,7 +9,7 @@ import (
 	"log/slog"
 	"time"
 
-	"amprobe/service/model"
+	"beacon/service/model"
 	"common/database"
 )
 

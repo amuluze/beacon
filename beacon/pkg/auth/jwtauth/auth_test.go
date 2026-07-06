@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"amprobe/pkg/auth"
+	"beacon/pkg/auth"
 
 	"github.com/golang-jwt/jwt/v5"
 )

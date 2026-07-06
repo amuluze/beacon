@@ -39,6 +39,8 @@ type CPUArgs struct{}
 
 type CPUInfoReply struct {
 	Percent   float64   `json:"percent"`
+	Timestamp int64     `json:"timestamp"`
+	Stale     bool      `json:"stale"`
 	Freshness Freshness `json:"freshness"`
 }
 
@@ -57,6 +59,8 @@ type MemoryInfoReply struct {
 	Percent   float64   `json:"percent"`
 	Total     float64   `json:"total"`
 	Used      float64   `json:"used"`
+	Timestamp int64     `json:"timestamp"`
+	Stale     bool      `json:"stale"`
 	Freshness Freshness `json:"freshness"`
 }
 
@@ -72,10 +76,12 @@ type MemoryUsageReply struct {
 type DiskArgs struct{}
 
 type DiskInfo struct {
-	Device  string  `json:"device"`
-	Percent float64 `json:"percent"`
-	Total   float64 `json:"total"`
-	Used    float64 `json:"used"`
+	Device    string  `json:"device"`
+	Percent   float64 `json:"percent"`
+	Total     float64 `json:"total"`
+	Used      float64 `json:"used"`
+	Timestamp int64   `json:"timestamp"`
+	Stale     bool    `json:"stale"`
 }
 
 type DiskUsage struct {

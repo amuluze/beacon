@@ -5,10 +5,17 @@
 package hash
 
 import (
+	"crypto/sha1"
 	"crypto/subtle"
+	"fmt"
 
 	"golang.org/x/crypto/bcrypt"
 )
+
+// SHA1String returns the SHA-1 hex digest of the input string.
+func SHA1String(s string) string {
+	return fmt.Sprintf("%x", sha1.Sum([]byte(s)))
+}
 
 // BcryptHash generates a bcrypt hash from the given password.
 func BcryptHash(password string) (string, error) {

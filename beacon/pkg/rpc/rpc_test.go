@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"amprobe/pkg/contextx"
+	"beacon/pkg/contextx"
 )
 
 // TestTunnelClientCallRejectsMissingAgentID 验证控制调用在 context 缺失 agentID 时

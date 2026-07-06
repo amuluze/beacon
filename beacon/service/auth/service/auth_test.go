@@ -8,10 +8,10 @@ import (
 	"context"
 	"testing"
 
-	"amprobe/pkg/auth"
-	"amprobe/service/model"
-	"amprobe/service/schema"
-	"amprobe/service/testutil"
+	"beacon/pkg/auth"
+	"beacon/service/model"
+	"beacon/service/schema"
+	"beacon/service/testutil"
 
 	"github.com/google/uuid"
 )

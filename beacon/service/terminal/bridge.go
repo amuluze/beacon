@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"amprobe/pkg/rpc"
+	"beacon/pkg/rpc"
 	rpcSchema "common/rpc/schema"
 
 	"github.com/gofiber/contrib/websocket"

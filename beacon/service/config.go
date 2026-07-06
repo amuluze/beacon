@@ -22,6 +22,10 @@ type Config struct {
 	Task          Task
 	AgentInstall  AgentInstall
 	InstallReport InstallReport
+	CORS          CORS
+	RateLimit     RateLimit
+	App           App
+	Retention     Retention
 }
 
 // NewConfig Load config file (toml/json/yaml)
@@ -46,13 +50,13 @@ func NewConfig(configFile string) (*Config, error) {
 // overrideFromEnv overrides sensitive config values from environment variables
 // to prevent hard-coded secrets in production deployments.
 func overrideFromEnv(config *Config) {
-	if v := firstEnv("BEACON_AUTH_SIGNING_KEY", "AMPROBE_AUTH_SIGNING_KEY"); v != "" {
+	if v := firstEnv("BEACON_AUTH_SIGNING_KEY", "BEACON_AUTH_SIGNINGKEY", "AMPROBE_AUTH_SIGNING_KEY", "AMPROBE_AUTH_SIGNINGKEY"); v != "" {
 		config.Auth.SigningKey = v
 	}
-	if v := firstEnv("BEACON_AGENT_INSTALL_TOKEN", "AMPROBE_AGENT_INSTALL_TOKEN"); v != "" {
+	if v := firstEnv("BEACON_AGENT_INSTALL_TOKEN", "BEACON_AGENT_INSTALLTOKEN", "AMPROBE_AGENT_INSTALL_TOKEN", "AMPROBE_AGENT_INSTALLTOKEN"); v != "" {
 		config.AgentInstall.Token = v
 	}
-	if v := firstEnv("BEACON_CONTROL_JOIN_TOKEN", "AMPROBE_CONTROL_JOIN_TOKEN"); v != "" {
+	if v := firstEnv("BEACON_CONTROL_JOIN_TOKEN", "BEACON_CONTROL_JOINTOKEN", "AMPROBE_CONTROL_JOIN_TOKEN", "AMPROBE_CONTROL_JOINTOKEN"); v != "" {
 		config.Control.JoinToken = v
 	}
 }
@@ -148,6 +152,24 @@ type Log struct {
 	Level    string
 	Rotation int
 	MaxAge   int
+}
+
+type CORS struct {
+	Enable       bool
+	AllowOrigins []string
+}
+
+type RateLimit struct {
+	Enable    bool
+	GlobalMax int
+}
+
+type App struct {
+	Env string
+}
+
+type Retention struct {
+	Days int
 }
 
 type Auth struct {

@@ -5,13 +5,15 @@
 package errors
 
 import (
-	"beacon/pkg/contextx"
+	"context"
 	stderrors "errors"
 	"net/http"
 
+	"beacon/pkg/contextx"
 	tunnel "common/rpc/tunnel"
 
 	pkgerrors "github.com/pkg/errors"
+	"gorm.io/gorm"
 )
 
 const (
@@ -46,6 +48,13 @@ type Error struct {
 	Status int    // 响应状态码
 }
 
+func (e Error) Error() string {
+	if e.Err != "" {
+		return e.Err
+	}
+	return e.Msg
+}
+
 func newError(status int, message string) Error {
 	return Error{
 		Msg:    message,
@@ -55,6 +64,20 @@ func newError(status int, message string) Error {
 
 func New400Error(error string) Error {
 	err := newError(400, BadRequest)
+	err.Err = error
+	return err
+}
+
+// New401Error creates a 401 Unauthorized error with the given message.
+func New401Error(error string) Error {
+	err := newError(401, InvalidToken)
+	err.Err = error
+	return err
+}
+
+// New409Error creates a 409 Conflict error with the given message.
+func New409Error(error string) Error {
+	err := newError(409, "conflict")
 	err.Err = error
 	return err
 }
@@ -72,6 +95,18 @@ func FromError(err error) Error {
 
 	if stderrors.Is(err, contextx.ErrAgentIDRequired) {
 		e := newError(http.StatusBadRequest, "agent id is required")
+		e.Err = err.Error()
+		return e
+	}
+
+	if stderrors.Is(err, contextx.ErrMissingAgentID) {
+		e := newError(http.StatusBadRequest, "agent id is missing")
+		e.Err = err.Error()
+		return e
+	}
+
+	if stderrors.Is(err, contextx.ErrInvalidAgentID) {
+		e := newError(http.StatusBadRequest, "invalid agent id")
 		e.Err = err.Error()
 		return e
 	}
@@ -104,5 +139,17 @@ func FromError(err error) Error {
 		return e
 	}
 
-	return New400Error(err.Error())
+	if stderrors.Is(err, gorm.ErrRecordNotFound) {
+		e := newError(http.StatusNotFound, "not found")
+		e.Err = err.Error()
+		return e
+	}
+
+	if stderrors.Is(err, context.DeadlineExceeded) {
+		e := newError(http.StatusGatewayTimeout, "upstream timeout")
+		e.Err = err.Error()
+		return e
+	}
+
+	return New500Error(err.Error())
 }

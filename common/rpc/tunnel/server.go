@@ -6,6 +6,8 @@ import (
 	"context"
 	"crypto/subtle"
 	"crypto/tls"
+	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net"
 	"sync"
@@ -15,9 +17,26 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
+// AgentInfo carries metadata about a connected agent.
+type AgentInfo struct {
+	AgentID string
+	Version string
+	OS      string
+	Arch    string
+}
+
+// RegistrationPayload is the JSON payload sent by an agent during registration.
+type RegistrationPayload struct {
+	AgentID  string `json:"agent_id"`
+	Version  string `json:"version"`
+	OS       string `json:"os"`
+	Arch     string `json:"arch"`
+	JoinToken string `json:"join_token"`
+}
+
 // AgentLifecycle is called when an agent connects or disconnects.
 type AgentLifecycle interface {
-	OnAgentConnect(agentID string)
+	OnAgentConnect(info AgentInfo)
 	OnAgentDisconnect(agentID string)
 	OnAgentHeartbeat(agentID string)
 }
@@ -52,9 +71,30 @@ type agentStream struct {
 	send    func(*Frame) error
 }
 
+// ServerOption configures the ServerTunnel.
+type ServerOption func(*ServerTunnel)
+
+// WithJoinToken sets the join token for agent registration authentication.
+func WithJoinToken(token string) ServerOption {
+	return func(s *ServerTunnel) {
+		s.joinToken = token
+	}
+}
+
+// WithAgentLifecycle sets the lifecycle callback handler.
+func WithAgentLifecycle(l AgentLifecycle) ServerOption {
+	return func(s *ServerTunnel) {
+		s.lifecycle = l
+	}
+}
+
 // NewServerTunnel creates a new Server-side tunnel manager.
-func NewServerTunnel() *ServerTunnel {
-	return &ServerTunnel{}
+func NewServerTunnel(opts ...ServerOption) *ServerTunnel {
+	s := &ServerTunnel{}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
 }
 
 // SetJoinToken configures the optional registration token required from Agents.
@@ -116,8 +156,34 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 		slog.Warn("server tunnel: empty agent id rejected")
 		return err
 	}
-	if !s.validJoinToken(frame.Payload) {
+	// Parse registration payload for agent metadata
+	info := AgentInfo{AgentID: agentID}
+	var regPayload RegistrationPayload
+	if len(frame.Payload) > 0 {
+		if err := json.Unmarshal(frame.Payload, &regPayload); err != nil {
+			slog.Warn("server tunnel: invalid registration payload", "agent_id", agentID, "err", err)
+			return fmt.Errorf("invalid registration payload: %w", err)
+		}
+		info.Version = regPayload.Version
+		info.OS = regPayload.OS
+		info.Arch = regPayload.Arch
+		if regPayload.AgentID != "" {
+			info.AgentID = regPayload.AgentID
+			agentID = regPayload.AgentID
+		}
+	}
+
+	// Validate join token
+	joinToken := regPayload.JoinToken
+	if joinToken == "" {
+		joinToken = string(frame.Payload)
+	}
+	if !s.validJoinToken(joinToken) {
 		err := &AgentUnauthorizedError{AgentID: agentID}
+		_ = stream.Send(&Frame{
+			FrameType: FrameType_FRAME_REGISTER_REJECTED,
+			Error:     "invalid join token",
+		})
 		slog.Warn("server tunnel: agent registration rejected", "agent_id", agentID)
 		return err
 	}
@@ -143,7 +209,7 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 	}()
 
 	if s.lifecycle != nil {
-		s.lifecycle.OnAgentConnect(agentID)
+		s.lifecycle.OnAgentConnect(info)
 	}
 
 	for {
@@ -158,11 +224,21 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 				s.lifecycle.OnAgentHeartbeat(agentID)
 			}
 
-		case FrameType_FRAME_REPLY, FrameType_FRAME_STREAM_END:
+		case FrameType_FRAME_REPLY:
 			// Route single response to the waiting caller
 			if v, ok := s.pending.LoadAndDelete(frame.Id); ok {
 				pc := v.(*pendingCall)
 				pc.replyChan <- frame
+			}
+
+		case FrameType_FRAME_STREAM_END:
+			// Route stream end to the waiting stream consumer
+			if v, ok := s.streams.LoadAndDelete(frame.Id); ok {
+				ps := v.(*pendingStream)
+				select {
+				case ps.chunkChan <- frame:
+				default:
+				}
 			}
 
 		case FrameType_FRAME_STREAM_DATA:
@@ -188,14 +264,14 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 	}
 }
 
-func (s *ServerTunnel) validJoinToken(token []byte) bool {
+func (s *ServerTunnel) validJoinToken(token string) bool {
 	if s.joinToken == "" {
 		return true
 	}
 	if len(token) != len(s.joinToken) {
 		return false
 	}
-	return subtle.ConstantTimeCompare(token, []byte(s.joinToken)) == 1
+	return subtle.ConstantTimeCompare([]byte(token), []byte(s.joinToken)) == 1
 }
 
 // Call dispatches an RPC call to an agent and waits for the response.
@@ -259,13 +335,10 @@ func (s *ServerTunnel) StreamCall(ctx context.Context, agentID string, method st
 
 	ps := &pendingStream{chunkChan: make(chan *Frame, 64)}
 	s.streams.Store(id, ps)
-	defer func() {
-		// If ctx done before stream ends, clean up
-		select {
-		case <-ctx.Done():
-			s.streams.Delete(id)
-		default:
-		}
+	// Clean up stream entry when context is cancelled
+	go func() {
+		<-ctx.Done()
+		s.streams.Delete(id)
 	}()
 
 	if err := as.(*agentStream).send(frame); err != nil {

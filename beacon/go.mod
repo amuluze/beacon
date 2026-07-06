@@ -1,4 +1,4 @@
-module amprobe
+module beacon
 
 go 1.25.0
 

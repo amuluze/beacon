@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"amprobe/pkg/utils/hash"
-	"amprobe/pkg/utils/uuid"
-	"amprobe/service/model"
-	"amprobe/service/schema"
+	"beacon/pkg/utils/hash"
+	"beacon/pkg/utils/uuid"
+	"beacon/service/model"
+	"beacon/service/schema"
 	"common/database"
 )
 

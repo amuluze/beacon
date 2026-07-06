@@ -4,6 +4,7 @@ package task
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -261,7 +262,8 @@ func (t *Task) sendAlarmAudit(msg string) error {
 func (t *Task) sendMail(msg string) error {
 	var mail model.Mail
 	if err := t.db.Model(&model.Mail{}).First(&mail).Error; err != nil {
-		return err
+		// No mail config configured — skip silently
+		return nil
 	}
 	dialer := gomail.NewDialer(mail.Server, mail.Port, mail.Sender, mail.Password)
 	for _, recv := range strings.Split(mail.Receiver, ",") {
@@ -272,7 +274,7 @@ func (t *Task) sendMail(msg string) error {
 		mailMessage.SetBody("text/plain", msg)
 
 		if err := dialer.DialAndSend(mailMessage); err != nil {
-			return err
+			slog.Warn("send alarm mail failed", "err", err, "receiver", recv)
 		}
 	}
 	return nil

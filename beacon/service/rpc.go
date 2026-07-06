@@ -51,7 +51,7 @@ func NewRPCClient(config *Config) (rpc.Caller, error) {
 	if defaultID == "" {
 		defaultID = rpc.DefaultAgentID
 	}
-	return rpc.NewTunnelClient(tun, defaultID), nil
+	return rpc.NewTunnelClient(tun), nil
 }
 
 func controlJoinToken(config *Config) string {

@@ -7,9 +7,39 @@ package contextx
 import (
 	"context"
 	"errors"
+	"regexp"
 )
 
-var ErrAgentIDRequired = errors.New("agent id is required")
+var (
+	ErrAgentIDRequired = errors.New("agent id is required")
+	ErrMissingAgentID  = errors.New("agent id is missing")
+	ErrInvalidAgentID  = errors.New("invalid agent id")
+)
+
+const maxAgentIDLen = 128
+
+var validAgentIDRe = regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
+
+// IsValidAgentID validates agent ID format: alphanumeric, dots, dashes, underscores only.
+func IsValidAgentID(id string) bool {
+	if id == "" || len(id) > maxAgentIDLen {
+		return false
+	}
+	return validAgentIDRe.MatchString(id)
+}
+
+// ResolveAgentID extracts and validates agent ID from context.
+// Returns ErrMissingAgentID if not present, ErrInvalidAgentID if format is invalid.
+func ResolveAgentID(ctx context.Context) (string, error) {
+	agentID := FromAgentID(ctx)
+	if agentID == "" {
+		return "", ErrMissingAgentID
+	}
+	if !IsValidAgentID(agentID) {
+		return "", ErrInvalidAgentID
+	}
+	return agentID, nil
+}
 
 type (
 	userIDCtx   struct{}

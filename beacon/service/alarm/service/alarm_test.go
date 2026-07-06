@@ -5,9 +5,9 @@
 package service
 
 import (
-	"amprobe/service/model"
-	"amprobe/service/schema"
-	testutil "amprobe/service/testutil"
+	"beacon/service/model"
+	"beacon/service/schema"
+	testutil "beacon/service/testutil"
 	"context"
 	"errors"
 	"testing"
