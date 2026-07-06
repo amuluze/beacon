@@ -10,6 +10,7 @@ import (
 	"beacon/service/audit"
 	"beacon/service/auth"
 	"beacon/service/container"
+	healthapi "beacon/service/health/api"
 	"beacon/service/host"
 	"beacon/service/mail"
 	"beacon/service/model"
@@ -17,15 +18,21 @@ import (
 	"github.com/google/wire"
 )
 
+// NewStalenessMinutes provides the staleness threshold for host data freshness checks.
+// Default is 300 seconds (5 minutes); can be configured via retention.
+func NewStalenessMinutes() []int64 { return nil }
+
+// NewHealthProbe provides the health probe instance.
+func NewHealthProbe() *healthapi.Probe { return healthapi.NewProbe() }
+
 func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), error) {
 	wire.Build(
+		NewStalenessMinutes,
+		NewHealthProbe,
 		NewConfig,
 		NewLogger,
 		NewDB,
 		NewRPCClient,
-		NewRPCCaller,
-		NewServerTunnelFromResult,
-		NewStalenessMinutes,
 		NewReportService,
 		InitAuthStore,
 		InitAuth,
@@ -41,7 +48,6 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		alarm.Set,
 		mail.Set,
 		NewLoggerHandler,
-		NewTerminalHandler,
 		NewTermHandler,
 		NewTimedTask,
 		RouterSet,

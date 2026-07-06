@@ -47,10 +47,6 @@ func NewRPCClient(config *Config) (rpc.Caller, error) {
 		}
 	}()
 
-	defaultID := config.Control.DefaultAgentID
-	if defaultID == "" {
-		defaultID = rpc.DefaultAgentID
-	}
 	return rpc.NewTunnelClient(tun), nil
 }
 

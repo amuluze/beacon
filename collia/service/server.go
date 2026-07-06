@@ -9,7 +9,8 @@ import (
 )
 
 func Run(configFile string, prefix Prefix, version string) (func(), error) {
-	injector, clearFunc, err := BuildInjector(configFile, prefix, version)
+	v := NewVersion(version)
+	injector, clearFunc, err := BuildInjector(configFile, prefix, v)
 	if err != nil {
 		slog.Error("build injector failed:", "err", err)
 		return nil, err

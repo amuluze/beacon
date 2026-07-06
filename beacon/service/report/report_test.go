@@ -44,6 +44,20 @@ func TestStoreRejectsMissingAgentID(t *testing.T) {
 	}
 }
 
+// TestStoreRejectsInvalidAgentID 验证非法格式 agent_id 被拒绝。
+// Domain R005 约束：缺失 Agent 标识的监控上报必须被拒绝。
+func TestStoreRejectsInvalidAgentID(t *testing.T) {
+	svc := NewService(newTestDB(t), "")
+
+	// Invalid characters (spaces, slashes, etc.) should be rejected
+	if err := svc.Store(rpcSchema.MonitorReportArgs{AgentID: "agent/evil"}); err == nil {
+		t.Fatalf("expected error for invalid agent_id, got nil")
+	}
+	if err := svc.Store(rpcSchema.MonitorReportArgs{AgentID: "agent evil"}); err == nil {
+		t.Fatalf("expected error for invalid agent_id with space, got nil")
+	}
+}
+
 func TestStorePersistsReportBatch(t *testing.T) {
 	db := newTestDB(t)
 	svc := NewService(db, "")

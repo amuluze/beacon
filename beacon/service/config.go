@@ -94,6 +94,8 @@ type Fiber struct {
 type Control struct {
 	Enable         bool
 	Address        string
+	// Deprecated: DefaultAgentID is no longer used. Agent selection must be explicit
+	// via X-Agent-ID header or agent_id query parameter in every request.
 	DefaultAgentID string
 	JoinToken      string
 	TLS            ControlTLS

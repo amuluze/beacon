@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	DefaultAgentID = "default"
 	DefaultNetwork = "tcp"
 )
 
@@ -37,10 +36,6 @@ type TunnelClient struct {
 }
 
 // NewTunnelClient creates a new tunnel-based RPC caller.
-//
-// 历史上本函数接受一个 defaultAgentID 参数用于在 context 缺失 agentID 时回退，
-// 但该回退语义已废弃：控制调用要求请求方显式选择目标 Agent，缺失时返回
-// ErrMissingAgentID，不再静默指向默认节点。DefaultAgentID 常量仅为向后兼容保留。
 func NewTunnelClient(tunnel *tunnelpkg.ServerTunnel) *TunnelClient {
 	return &TunnelClient{tunnel: tunnel}
 }

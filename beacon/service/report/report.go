@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"regexp"
 
 	"beacon/service/model"
 	"common/database"
@@ -22,6 +23,17 @@ type Service struct {
 }
 
 var ErrMissingAgentID = errors.New("missing agent_id")
+var ErrInvalidAgentID = errors.New("invalid agent_id")
+
+var validAgentIDRe = regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
+const maxAgentIDLen = 128
+
+func isValidAgentID(id string) bool {
+	if id == "" || len(id) > maxAgentIDLen {
+		return false
+	}
+	return validAgentIDRe.MatchString(id)
+}
 
 func NewService(db *database.DB, token string) *Service {
 	return &Service{DB: db, Token: token}
@@ -43,7 +55,7 @@ func (s *Service) HandleReport(c *fiber.Ctx) error {
 	}
 
 	if err := s.Store(args); err != nil {
-		if errors.Is(err, ErrMissingAgentID) {
+		if errors.Is(err, ErrMissingAgentID) || errors.Is(err, ErrInvalidAgentID) {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 		}
 		slog.Error("report store failed", "agent", args.AgentID, "error", err)
@@ -58,6 +70,9 @@ func (s *Service) Store(args rpcSchema.MonitorReportArgs) error {
 	agentID := args.AgentID
 	if agentID == "" {
 		return ErrMissingAgentID
+	}
+	if !isValidAgentID(agentID) {
+		return ErrInvalidAgentID
 	}
 
 	if err := s.DB.RunInTransaction(func(tx *gorm.DB) error {

@@ -12,19 +12,18 @@ import (
 
 // Injectors from wire.go:
 
-func BuildInjector(configFile string, prefix Prefix, version string) (*Injector, func(), error) {
+func BuildInjector(configFile string, prefix Prefix, version Version) (*Injector, func(), error) {
 	config, err := NewConfig(configFile, prefix)
 	if err != nil {
 		return nil, nil, err
 	}
+	timedTask := NewTimedTask(config)
 	models := model.NewModels()
 	db, err := NewDB(config, models)
 	if err != nil {
 		return nil, nil, err
 	}
-	v := NewVersion(version)
-	timedTask := NewTimedTask(config)
-	server, err := NewRPCServer(config, db, v)
+	server, err := NewRPCServer(config, db, version)
 	if err != nil {
 		return nil, nil, err
 	}
