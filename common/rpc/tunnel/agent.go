@@ -123,11 +123,15 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 		a.stream = stream
 		slog.Info("agent tunnel: connected to server")
 
-		// Send registration frame
+		// Send registration frame with JSON payload carrying agent metadata.
+		regPayload, _ := json.Marshal(RegistrationPayload{
+			AgentID:   a.agentID,
+			JoinToken: a.joinToken,
+		})
 		regFrame := &Frame{
 			FrameType: FrameType_FRAME_REGISTER,
 			Method:    a.agentID,
-			Payload:   []byte(a.joinToken),
+			Payload:   regPayload,
 		}
 		if err := a.sendFrame(stream, regFrame); err != nil {
 			slog.Error("agent tunnel: send registration failed", "err", err)

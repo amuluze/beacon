@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"beacon/pkg/contextx"
 	"beacon/service/model"
 	"common/database"
 	rpcSchema "common/rpc/schema"
@@ -39,7 +40,7 @@ func newTestDB(t *testing.T) *database.DB {
 func TestStoreRejectsMissingAgentID(t *testing.T) {
 	svc := NewService(newTestDB(t), "")
 
-	if err := svc.Store(rpcSchema.MonitorReportArgs{}); !errors.Is(err, ErrMissingAgentID) {
+	if err := svc.Store(rpcSchema.MonitorReportArgs{}); !errors.Is(err, contextx.ErrMissingAgentID) {
 		t.Fatalf("error = %v, want ErrMissingAgentID", err)
 	}
 }

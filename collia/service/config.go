@@ -39,24 +39,24 @@ func NewConfig(configFile string, prefix Prefix) (*Config, error) {
 }
 
 type Task struct {
-	Interval int      `yaml:"interval"`
-	MaxAge   int      `yaml:"max_age"`
-	Disk     Disk     `yaml:"disk"`
-	Ethernet Ethernet `yaml:"ethernet"`
-	Report   Report   `yaml:"report"`
+	Interval int      `yaml:"interval" mapstructure:"interval"`
+	MaxAge   int      `yaml:"max_age" mapstructure:"max_age"`
+	Disk     Disk     `yaml:"disk" mapstructure:"disk"`
+	Ethernet Ethernet `yaml:"ethernet" mapstructure:"ethernet"`
+	Report   Report   `yaml:"report" mapstructure:"report"`
 }
 
 type Report struct {
-	URL     string `yaml:"url"`
-	Token   string `yaml:"token"`
-	AgentID string `yaml:"agent_id"`
+	URL     string `yaml:"url" mapstructure:"url"`
+	Token   string `yaml:"token" mapstructure:"token"`
+	AgentID string `yaml:"agent_id" mapstructure:"agent_id"`
 }
 
 type Control struct {
-	Server    string `yaml:"server"`
-	AgentID   string `yaml:"agent_id"`
-	JoinToken string `yaml:"join_token"`
-	TLS       TLS    `yaml:"tls"`
+	Server    string `yaml:"server" mapstructure:"server"`
+	AgentID   string `yaml:"agent_id" mapstructure:"agent_id"`
+	JoinToken string `yaml:"join_token" mapstructure:"join_token"`
+	TLS       TLS    `yaml:"tls" mapstructure:"tls"`
 }
 
 type TLS struct {
@@ -67,32 +67,32 @@ type TLS struct {
 }
 
 type Disk struct {
-	Devices []string `yaml:"devices"`
+	Devices []string `yaml:"devices" mapstructure:"devices"`
 }
 
 type Ethernet struct {
-	Names []string `yaml:"names"`
+	Names []string `yaml:"names" mapstructure:"names"`
 }
 
 type Log struct {
-	Output   string `yaml:"output"`
-	Level    string `yaml:"level"`
-	Rotation int    `yaml:"rotation"`
-	MaxAge   int    `yaml:"max_age"`
+	Output   string `yaml:"output" mapstructure:"output"`
+	Level    string `yaml:"level" mapstructure:"level"`
+	Rotation int    `yaml:"rotation" mapstructure:"rotation"`
+	MaxAge   int    `yaml:"max_age" mapstructure:"max_age"`
 }
 
 type DB struct {
-	DBType   string `yaml:"dbtype"`
-	Host     string `yaml:"host"`
-	Port     string `yaml:"port"`
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
-	DBName   string `yaml:"dbname"`
-	SSLMode  string `yaml:"sslmode"`
+	DBType   string `yaml:"dbtype" mapstructure:"dbtype"`
+	Host     string `yaml:"host" mapstructure:"host"`
+	Port     string `yaml:"port" mapstructure:"port"`
+	User     string `yaml:"user" mapstructure:"user"`
+	Password string `yaml:"password" mapstructure:"password"`
+	DBName   string `yaml:"dbname" mapstructure:"dbname"`
+	SSLMode  string `yaml:"sslmode" mapstructure:"sslmode"`
 }
 
 type Variables struct {
-	ImageTag        string `yaml:"image_tag"`
-	HostPrefix      string `yaml:"host_prefix"`
-	ContainerPrefix string `yaml:"container_prefix"`
+	ImageTag        string `yaml:"image_tag" mapstructure:"image_tag"`
+	HostPrefix      string `yaml:"host_prefix" mapstructure:"host_prefix"`
+	ContainerPrefix string `yaml:"container_prefix" mapstructure:"container_prefix"`
 }

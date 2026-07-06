@@ -174,7 +174,14 @@ paths:
       security:
         - BearerAuth: []
       responses:
-        '200': { description: Agent list (may be empty) }
+        '200':
+          description: Agent list (may be empty)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentItem'
 
   # ---------------- User / Role / Resource ----------------
   /api/v1/user/user_query:
@@ -477,7 +484,8 @@ paths:
         required: true
         content:
           application/json:
-            schema: { type: object }
+            schema:
+              $ref: '#/components/schemas/MonitorReport'
       responses:
         '200': { description: Batch stored successfully }
         '400': { description: Missing Agent ID or malformed batch }
@@ -875,6 +883,86 @@ components:
         go_version: { type: string }
         os: { type: string }
         arch: { type: string }
+
+    MonitorReport:
+      description: |
+        Agent monitoring batch payload. Sent via POST /api/v1/host/report.
+        The entire batch is persisted atomically; partial writes are never committed.
+      type: object
+      required: [agent_id]
+      properties:
+        agent_id:
+          type: string
+          description: Agent identifier (format: alphanumeric + dots/dashes/underscores, max 128 chars)
+        host:
+          type: object
+          properties:
+            timestamp: { type: string, format: date-time }
+            uptime: { type: string }
+            hostname: { type: string }
+            os: { type: string }
+            platform: { type: string }
+            platform_version: { type: string }
+            kernel_arch: { type: string }
+            kernel_version: { type: string }
+        cpu:
+          type: object
+          properties:
+            timestamp: { type: string, format: date-time }
+            cpu_percent: { type: number }
+        memory:
+          type: object
+          properties:
+            timestamp: { type: string, format: date-time }
+            mem_percent: { type: number }
+            mem_total: { type: number }
+            mem_used: { type: number }
+        disks:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp: { type: string, format: date-time }
+              device: { type: string }
+              disk_percent: { type: number }
+              disk_total: { type: number }
+              disk_used: { type: number }
+              disk_read: { type: number }
+              disk_write: { type: number }
+        nets:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp: { type: string, format: date-time }
+              ethernet: { type: string }
+              net_recv: { type: number }
+              net_send: { type: number }
+        docker:
+          $ref: '#/components/schemas/Docker'
+        containers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Container'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+        networks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Network'
+
+    AgentItem:
+      description: Agent registration record returned by /api/v1/agent/list.
+      type: object
+      properties:
+        agent_id: { type: string }
+        version: { type: string }
+        os: { type: string }
+        arch: { type: string }
+        status: { type: string, enum: [online, offline] }
+        last_seen: { type: string, format: date-time }
 
   securitySchemes:
     BearerAuth:

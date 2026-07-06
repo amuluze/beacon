@@ -15,8 +15,6 @@ import (
 	"gorm.io/gorm"
 )
 
-const freshnessStaleAfter = 2 * time.Minute
-
 var HostRepoSet = wire.NewSet(NewHostRepo, wire.Bind(new(IHostRepo), new(*HostRepo)))
 
 var _ IHostRepo = (*HostRepo)(nil)
@@ -69,23 +67,6 @@ func (h *HostRepo) agentDB(ctx context.Context) (*gorm.DB, error) {
 	return h.DB.DB.Where("agent_id = ?", agentID), nil
 }
 
-func freshness(ts time.Time) rpcSchema.Freshness {
-	if ts.IsZero() {
-		return rpcSchema.Freshness{Stale: true, Degraded: true}
-	}
-	age := time.Since(ts)
-	if age < 0 {
-		age = 0
-	}
-	stale := age > freshnessStaleAfter
-	return rpcSchema.Freshness{
-		CollectedAt: ts.Unix(),
-		AgeSeconds:  int64(age.Seconds()),
-		Stale:       stale,
-		Degraded:    stale,
-	}
-}
-
 // ── Monitoring queries (local DB) ──
 
 func (h *HostRepo) HostInfo(ctx context.Context, args rpcSchema.HostInfoArgs) (rpcSchema.HostInfoReply, error) {
@@ -106,7 +87,7 @@ func (h *HostRepo) HostInfo(ctx context.Context, args rpcSchema.HostInfoArgs) (r
 		PlatformVersion: info.PlatformVersion,
 		KernelVersion:   info.KernelVersion,
 		KernelArch:      info.KernelArch,
-		Freshness:       freshness(info.Timestamp),
+		Freshness:       rpcSchema.ComputeFreshness(info.Timestamp),
 	}, nil
 }
 
@@ -119,7 +100,7 @@ func (h *HostRepo) CPUInfo(ctx context.Context, args rpcSchema.CPUInfoArgs) (rpc
 	if err := db.Model(&model.MonitorCPU{}).Order("timestamp desc").First(&info).Error; err != nil {
 		return rpcSchema.CPUInfoReply{}, err
 	}
-	return rpcSchema.CPUInfoReply{Percent: info.CPUPercent, Freshness: freshness(info.Timestamp)}, nil
+	return rpcSchema.CPUInfoReply{Percent: info.CPUPercent, Freshness: rpcSchema.ComputeFreshness(info.Timestamp)}, nil
 }
 
 func (h *HostRepo) CPUUsage(ctx context.Context, args rpcSchema.CPUUsageArgs) (rpcSchema.CPUUsageReply, error) {
@@ -149,7 +130,7 @@ func (h *HostRepo) MemInfo(ctx context.Context, args rpcSchema.MemoryInfoArgs) (
 	if err := db.Model(&model.MonitorMemory{}).Order("timestamp desc").First(&info).Error; err != nil {
 		return rpcSchema.MemoryInfoReply{}, err
 	}
-	return rpcSchema.MemoryInfoReply{Percent: info.MemPercent, Total: info.MemTotal, Used: info.MemUsed, Freshness: freshness(info.Timestamp)}, nil
+	return rpcSchema.MemoryInfoReply{Percent: info.MemPercent, Total: info.MemTotal, Used: info.MemUsed, Freshness: rpcSchema.ComputeFreshness(info.Timestamp)}, nil
 }
 
 func (h *HostRepo) MemUsage(ctx context.Context, args rpcSchema.MemoryUsageArgs) (rpcSchema.MemoryUsageReply, error) {
@@ -201,7 +182,7 @@ func (h *HostRepo) DiskInfo(ctx context.Context, args rpcSchema.DiskInfoArgs) (r
 			DiskUsed:    info.DiskUsed,
 		})
 	}
-	return rpcSchema.DiskInfoReply{Info: list, Freshness: freshness(latestTimestamp)}, nil
+	return rpcSchema.DiskInfoReply{Info: list, Freshness: rpcSchema.ComputeFreshness(latestTimestamp)}, nil
 }
 
 func (h *HostRepo) DiskUsage(ctx context.Context, args rpcSchema.DiskUsageArgs) (rpcSchema.DiskUsageReply, error) {

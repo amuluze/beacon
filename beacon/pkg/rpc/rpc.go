@@ -37,7 +37,7 @@ type TunnelClient struct {
 
 // NewTunnelClient creates a new tunnel-based RPC caller.
 func NewTunnelClient(tunnel *tunnelpkg.ServerTunnel) *TunnelClient {
-	return &TunnelClient{tunnel: tunnel}
+	return &TunnelClient{tunnel: tunnel, started: true}
 }
 
 func (tc *TunnelClient) Call(ctx context.Context, method string, args interface{}, reply interface{}) error {

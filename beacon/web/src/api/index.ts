@@ -80,39 +80,39 @@ class Request {
         this.clearExpiredRequest()
     }
 
-    /** 避免频繁发送更新 */
-    firstRequest: boolean
-
     /** 利用 refreshToken 更新 accessToken */
     private updateAccessTokenByRefreshToken = (): void => {
-        this.firstRequest = false
         const store = useStore()
         this.service.post('/api/v1/auth/token_update', {}, {
             headers: { Authorization: `Bearer ${store.user.refresh}` },
         }).then((res) => {
             // 更新本地 token
             store.user.setToken(res.data.access_token, res.data.refresh_token)
-            // 更新 token 后，重启发起之前失败的请求
+            // 更新 token 后，重放之前失败的请求
             this.againRequest()
         }).catch(() => {
             // 此时 refreshToken 也失效了，返回登录页
+            this.clearExpiredRequest()
             window.location.href = '/'
+        }).finally(() => {
+            this.isRefreshing = false
         })
     }
 
     private refreshToken = (expiredRequest: () => any): void => {
         this.saveErrorRequest(expiredRequest)
-        // 保证再发起更新时，已经没有过期请求要进行存储了
-        setTimeout(() => {
-            this.updateAccessTokenByRefreshToken()
-        }, 500)
+        if (this.isRefreshing) {
+            // 已有刷新进行中，当前请求排队等待完成后由 againRequest 重放
+            return
+        }
+        this.isRefreshing = true
+        this.updateAccessTokenByRefreshToken()
     }
 
     public constructor(config: AxiosRequestConfig) {
         // instantiation
         this.service = axios.create(config)
         this.isRefreshing = false
-        this.firstRequest = false
         this.requestQueue = []
 
         /**

@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"regexp"
 
+	"beacon/pkg/contextx"
 	"beacon/service/model"
 	"common/database"
 	rpcSchema "common/rpc/schema"
@@ -22,18 +22,11 @@ type Service struct {
 	Token string
 }
 
-var ErrMissingAgentID = errors.New("missing agent_id")
-var ErrInvalidAgentID = errors.New("invalid agent_id")
+// ErrMissingAgentID aliases the canonical contextx sentinel for backward compatibility.
+var ErrMissingAgentID = contextx.ErrMissingAgentID
 
-var validAgentIDRe = regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
-const maxAgentIDLen = 128
-
-func isValidAgentID(id string) bool {
-	if id == "" || len(id) > maxAgentIDLen {
-		return false
-	}
-	return validAgentIDRe.MatchString(id)
-}
+// ErrInvalidAgentID aliases the canonical contextx sentinel for backward compatibility.
+var ErrInvalidAgentID = contextx.ErrInvalidAgentID
 
 func NewService(db *database.DB, token string) *Service {
 	return &Service{DB: db, Token: token}
@@ -71,7 +64,7 @@ func (s *Service) Store(args rpcSchema.MonitorReportArgs) error {
 	if agentID == "" {
 		return ErrMissingAgentID
 	}
-	if !isValidAgentID(agentID) {
+	if !contextx.IsValidAgentID(agentID) {
 		return ErrInvalidAgentID
 	}
 

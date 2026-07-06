@@ -387,9 +387,8 @@ func TestServerTunnel_StreamCall(t *testing.T) {
 	if err != nil {
 		t.Fatalf("stream call: %v", err)
 	}
-	// 验证能收到全部 STREAM_DATA 帧。
-	// 注意：STREAM_END 当前被 server 路由到 pending 查找而不会到达调用方，
-	// 属于流式健壮性缺陷，由后续 StreamEnd 路由修复覆盖；此处以数据完整性为准。
+	// Verify all STREAM_DATA frames are received.
+	// Stream_END delivery is verified separately by TestServerTunnel_StreamCall_StreamEndDelivered.
 	var got []byte
 	timeout := time.After(time.Second)
 	for {

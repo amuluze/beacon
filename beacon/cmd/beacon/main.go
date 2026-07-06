@@ -22,7 +22,7 @@ var (
 )
 
 func main() {
-	ctx := context.TODO()
+	ctx := context.Background()
 	app := cli.NewApp()
 	if Version != "" {
 		app.Version = Version
