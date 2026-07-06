@@ -5,6 +5,7 @@ package tunnel
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"log/slog"
 	"sync"
@@ -17,26 +18,6 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
-// RegistrationPayload is the JSON payload sent in the FRAME_REGISTER frame.
-// It carries agent identity, version metadata, and the join token.
-type RegistrationPayload struct {
-	AgentID   string `json:"agent_id"`
-	Version   string `json:"version"`
-	OS        string `json:"os"`
-	Arch      string `json:"arch"`
-	JoinToken string `json:"join_token"`
-}
-
-// AgentOption configures an AgentTunnel.
-type AgentOption func(*AgentTunnel)
-
-// WithAgentTLS enables TLS credentials for the agent connection.
-func WithAgentTLS(creds credentials.TransportCredentials) AgentOption {
-	return func(a *AgentTunnel) {
-		a.tlsCredentials = creds
-	}
-}
-
 // Handler is the callback type for processing incoming RPC calls.
 // The handler receives JSON-encoded args and returns JSON-encoded reply.
 // For streaming methods, the handler sends multiple frames via the provided sender.
@@ -45,18 +26,16 @@ type Handler func(ctx context.Context, method string, payload []byte, streamSend
 // AgentTunnel is the Agent-side tunnel client.
 // It connects to the Server and waits for incoming RPC frames.
 type AgentTunnel struct {
-	serverAddr     string
-	agentID        string
-	joinToken      string
-	version        string
-	osName         string
-	arch           string
-	conn           *grpc.ClientConn
-	client         ReverseTunnelClient
-	stream         grpc.BidiStreamingClient[Frame, Frame]
-	tlsCredentials credentials.TransportCredentials
+	serverAddr string
+	agentID    string
+	joinToken  string
+	conn       *grpc.ClientConn
+	client     ReverseTunnelClient
+	stream     grpc.BidiStreamingClient[Frame, Frame]
+	tlsConfig  *tls.Config
 
 	mu          sync.Mutex
+	sendMu      sync.Mutex
 	handler     Handler
 	closed      bool
 	reconnect   bool
@@ -65,17 +44,13 @@ type AgentTunnel struct {
 
 // NewAgentTunnel creates a new Agent-side tunnel connection.
 // The agent will connect to serverAddr and identify as agentID.
-func NewAgentTunnel(serverAddr string, agentID string, opts ...AgentOption) *AgentTunnel {
-	a := &AgentTunnel{
+func NewAgentTunnel(serverAddr string, agentID string) *AgentTunnel {
+	return &AgentTunnel{
 		serverAddr:  serverAddr,
 		agentID:     agentID,
 		reconnect:   true,
 		heartbeatCh: make(chan struct{}, 1),
 	}
-	for _, opt := range opts {
-		opt(a)
-	}
-	return a
 }
 
 // SetJoinToken sets the join token for agent registration.
@@ -83,11 +58,9 @@ func (a *AgentTunnel) SetJoinToken(token string) {
 	a.joinToken = token
 }
 
-// SetVersionInfo sets the agent version, OS, and architecture for registration.
-func (a *AgentTunnel) SetVersionInfo(version, osName, arch string) {
-	a.version = version
-	a.osName = osName
-	a.arch = arch
+// SetTLSConfig configures optional TLS credentials for the gRPC client.
+func (a *AgentTunnel) SetTLSConfig(cfg *tls.Config) {
+	a.tlsConfig = cfg
 }
 
 // SetHandler registers the RPC handler for incoming requests.
@@ -102,20 +75,16 @@ func (a *AgentTunnel) SetHandler(h Handler) {
 func (a *AgentTunnel) Start(ctx context.Context) error {
 	for {
 		if a.conn != nil {
-			if err := a.conn.Close(); err != nil {
-				slog.Debug("agent tunnel: close previous connection", "err", err)
-			}
+			a.conn.Close()
 		}
 
 		slog.Info("agent tunnel: connecting to server", "addr", a.serverAddr, "agent_id", a.agentID)
-
-		creds := a.tlsCredentials
-		if creds == nil {
-			creds = insecure.NewCredentials()
+		transportCreds := insecure.NewCredentials()
+		if a.tlsConfig != nil {
+			transportCreds = credentials.NewTLS(a.tlsConfig)
 		}
-
 		conn, err := grpc.NewClient(a.serverAddr,
-			grpc.WithTransportCredentials(creds),
+			grpc.WithTransportCredentials(transportCreds),
 			grpc.WithKeepaliveParams(keepalive.ClientParameters{
 				Time:                30 * time.Second,
 				Timeout:             10 * time.Second,
@@ -140,9 +109,7 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 		stream, err := a.client.Tunnel(ctx)
 		if err != nil {
 			slog.Error("agent tunnel: create stream failed", "err", err)
-			if closeErr := conn.Close(); closeErr != nil {
-				slog.Debug("agent tunnel: close connection failed", "err", closeErr)
-			}
+			conn.Close()
 			if !a.reconnect {
 				return err
 			}
@@ -154,27 +121,17 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 			}
 		}
 		a.stream = stream
-		slog.Info("agent tunnel: connected to server", "tls", a.tlsCredentials != nil)
+		slog.Info("agent tunnel: connected to server")
 
-		// Send registration frame with agent metadata
-		regPayload := RegistrationPayload{
-			AgentID:   a.agentID,
-			Version:   a.version,
-			OS:        a.osName,
-			Arch:      a.arch,
-			JoinToken: a.joinToken,
-		}
-		payloadBytes, _ := json.Marshal(regPayload)
+		// Send registration frame
 		regFrame := &Frame{
 			FrameType: FrameType_FRAME_REGISTER,
 			Method:    a.agentID,
-			Payload:   payloadBytes,
+			Payload:   []byte(a.joinToken),
 		}
-		if err := stream.Send(regFrame); err != nil {
+		if err := a.sendFrame(stream, regFrame); err != nil {
 			slog.Error("agent tunnel: send registration failed", "err", err)
-			if closeErr := conn.Close(); closeErr != nil {
-				slog.Debug("agent tunnel: close connection failed", "err", closeErr)
-			}
+			conn.Close()
 			continue
 		}
 		slog.Info("agent tunnel: registered as", "agent_id", a.agentID)
@@ -184,22 +141,6 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 		go a.heartbeatLoop(heartbeatCtx, stream)
 
 		if err := a.processStream(heartbeatCtx, stream); err != nil {
-			if rej, ok := err.(*RegistrationRejectedError); ok {
-				slog.Error("agent tunnel: registration rejected", "reason", rej.Reason)
-				heartbeatCancel()
-				if closeErr := conn.Close(); closeErr != nil {
-					slog.Debug("agent tunnel: close connection failed", "err", closeErr)
-				}
-				if !a.reconnect {
-					return err
-				}
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				case <-time.After(5 * time.Second):
-					continue
-				}
-			}
 			slog.Warn("agent tunnel: stream ended", "err", err)
 		}
 
@@ -229,7 +170,7 @@ func (a *AgentTunnel) heartbeatLoop(ctx context.Context, stream grpc.BidiStreami
 				FrameType: FrameType_FRAME_HEARTBEAT,
 				Method:    a.agentID,
 			}
-			if err := stream.Send(frame); err != nil {
+			if err := a.sendFrame(stream, frame); err != nil {
 				slog.Debug("agent tunnel: heartbeat send failed", "err", err)
 				return
 			}
@@ -247,15 +188,12 @@ func (a *AgentTunnel) processStream(ctx context.Context, stream grpc.BidiStreami
 			slog.Info("agent tunnel: received eos")
 			return nil
 		}
-
-		switch frame.FrameType {
-		case FrameType_FRAME_REGISTER_REJECTED:
-			return &RegistrationRejectedError{Reason: frame.Error}
-		case FrameType_FRAME_REQUEST:
-			go a.dispatch(ctx, stream, frame)
-		default:
-			// ignore other frame types
+		if frame.FrameType != FrameType_FRAME_REQUEST {
+			continue
 		}
+
+		// Dispatch the RPC call
+		go a.dispatch(ctx, stream, frame)
 	}
 }
 
@@ -270,7 +208,7 @@ func (a *AgentTunnel) dispatch(ctx context.Context, stream grpc.BidiStreamingCli
 			Error:     "no handler registered",
 			FrameType: FrameType_FRAME_REPLY,
 		}
-		_ = stream.Send(resp)
+		_ = a.sendFrame(stream, resp)
 		return
 	}
 
@@ -286,7 +224,7 @@ func (a *AgentTunnel) dispatch(ctx context.Context, stream grpc.BidiStreamingCli
 			f.FrameType = FrameType_FRAME_STREAM_END
 			streamEnd.set(true)
 		}
-		_ = stream.Send(f)
+		_ = a.sendFrame(stream, f)
 	}
 
 	replyPayload, err := handler(ctx, req.Method, req.Payload, streamSender)
@@ -307,9 +245,15 @@ func (a *AgentTunnel) dispatch(ctx context.Context, stream grpc.BidiStreamingCli
 		resp.Payload = replyPayload
 	}
 
-	if err := stream.Send(resp); err != nil {
+	if err := a.sendFrame(stream, resp); err != nil {
 		slog.Error("agent tunnel: send response failed", "id", req.Id, "method", req.Method, "err", err)
 	}
+}
+
+func (a *AgentTunnel) sendFrame(stream grpc.BidiStreamingClient[Frame, Frame], frame *Frame) error {
+	a.sendMu.Lock()
+	defer a.sendMu.Unlock()
+	return stream.Send(frame)
 }
 
 // Close stops the tunnel and disconnects.
@@ -322,15 +266,6 @@ func (a *AgentTunnel) Close() error {
 		return a.conn.Close()
 	}
 	return nil
-}
-
-// RegistrationRejectedError is returned when the server rejects agent registration.
-type RegistrationRejectedError struct {
-	Reason string
-}
-
-func (e *RegistrationRejectedError) Error() string {
-	return "registration rejected: " + e.Reason
 }
 
 // marshalArgs encodes the RPC arguments as JSON.

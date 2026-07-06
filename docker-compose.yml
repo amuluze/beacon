@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  beacon:
+    build:
+      context: .
+      dockerfile: beacon/Dockerfile
+    container_name: beacon
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+      - "17000:17000"
+    volumes:
+      - beacon-data:/app/data
+      - beacon-logs:/app/logs
+      - ./beacon/configs:/app/configs:ro
+    environment:
+      # ⚠️ 生产环境必须替换以下默认值
+      - BEACON_AUTH_SIGNING_KEY=${BEACON_AUTH_SIGNING_KEY:-beacon}
+      - BEACON_AGENT_INSTALL_TOKEN=${BEACON_AGENT_INSTALL_TOKEN:-change-me}
+      - BEACON_CONTROL_JOIN_TOKEN=${BEACON_CONTROL_JOIN_TOKEN:-}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - beacon-net
+
+  # Example Agent (collia) — enable this after generating an install script from the Server UI
+  # collia:
+  #   image: ubuntu:22.04
+  #   container_name: beacon-agent-example
+  #   restart: unless-stopped
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #   command: >
+  #     sh -c "apt-get update && apt-get install -y ca-certificates curl &&
+  #            curl -fsSL http://beacon:8000/api/v1/host/install?node=example | sh"
+  #   depends_on:
+  #     beacon:
+  #       condition: service_healthy
+  #   networks:
+  #     - beacon-net
+
+volumes:
+  beacon-data:
+  beacon-logs:
+
+networks:
+  beacon-net:
+    driver: bridge

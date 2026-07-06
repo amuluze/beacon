@@ -1,0 +1,9 @@
+services:
+  official:
+    image: registry.cn-hangzhou.aliyuncs.com/amuluze/beacon-offical:v0.1.4
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      NUXT_PUBLIC_BASE_URL: http://localhost:3000

@@ -1,0 +1,37 @@
+version: '3'
+
+vars:
+  REGISTRY: registry.cn-hangzhou.aliyuncs.com
+  IMAGE: '{{.REGISTRY}}/amuluze/beacon-offical'
+  TAG: v0.1.7
+
+includes:
+  server:
+    taskfile: ./server/Taskfile.yml
+    dir: ./server
+  web:
+    taskfile: ./web/Taskfile.yml
+    dir: ./web
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
+  amd64:
+    desc: Build linux/amd64 website Docker image into local Docker
+    cmds:
+      - docker buildx build --platform linux/amd64 -t {{.IMAGE}}:{{.TAG}} -o type=docker .
+
+  arm64:
+    desc: Build linux/arm64 website Docker image into local Docker
+    env:
+      DOCKER_BUILDKIT: '0'
+    cmds:
+      - docker buildx build --platform linux/arm64 -t {{.IMAGE}}:{{.TAG}} -o type=docker .
+
+  push:
+    desc: Build and push linux/amd64 website Docker image
+    cmds:
+      - docker buildx build --platform linux/amd64 -t {{.IMAGE}}:{{.TAG}} . --push

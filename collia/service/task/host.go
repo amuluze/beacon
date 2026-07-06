@@ -2,11 +2,17 @@
 package task
 
 import (
+	"errors"
+	"fmt"
+
 	"collia/pkg/psutil"
 )
 
-func (a *Task) HostTask() *HostReport {
-	info, _ := psutil.GetSystemInfo()
+func (a *Task) HostTask() (*HostReport, error) {
+	info, err := psutil.GetSystemInfo()
+	if err != nil {
+		return nil, err
+	}
 	return &HostReport{
 		Uptime:          info.Uptime,
 		Hostname:        info.Hostname,
@@ -15,26 +21,32 @@ func (a *Task) HostTask() *HostReport {
 		PlatformVersion: info.PlatformVersion,
 		KernelVersion:   info.KernelVersion,
 		KernelArch:      info.KernelArch,
+	}, nil
+}
+
+func (a *Task) CPUTask() (*CPUReport, error) {
+	cpuPercent, err := psutil.GetCPUPercent()
+	if err != nil {
+		return nil, err
 	}
+	return &CPUReport{CPUPercent: cpuPercent}, nil
 }
 
-func (a *Task) CPUTask() *CPUReport {
-	cpuPercent, _ := psutil.GetCPUPercent()
-	return &CPUReport{CPUPercent: cpuPercent}
-}
-
-func (a *Task) MemoryTask() *MemoryReport {
-	memPercent, memTotal, memUsed, _ := psutil.GetMemInfo()
+func (a *Task) MemoryTask() (*MemoryReport, error) {
+	memPercent, memTotal, memUsed, err := psutil.GetMemInfo()
+	if err != nil {
+		return nil, err
+	}
 	return &MemoryReport{
 		MemPercent: memPercent,
 		MemTotal:   float64(memTotal),
 		MemUsed:    float64(memUsed),
-	}
+	}, nil
 }
 
-func (a *Task) DiskTask() []*DiskReport {
-	diskInfo, _ := psutil.GetDiskInfo(a.devices)
-	diskIOMap, _ := psutil.GetDiskIO(a.devices)
+func (a *Task) DiskTask() ([]*DiskReport, error) {
+	diskInfo, infoErr := psutil.GetDiskInfo(a.devices)
+	diskIOMap, ioErr := psutil.GetDiskIO(a.devices)
 	var reports []*DiskReport
 	interval := a.safeInterval()
 
@@ -65,11 +77,11 @@ func (a *Task) DiskTask() []*DiskReport {
 		}
 		reports = append(reports, r)
 	}
-	return reports
+	return reports, errors.Join(infoErr, ioErr)
 }
 
-func (a *Task) NetTask() []*NetReport {
-	netMap, _ := psutil.GetNetworkIO(a.ethernet)
+func (a *Task) NetTask() ([]*NetReport, error) {
+	netMap, err := psutil.GetNetworkIO(a.ethernet)
 	var reports []*NetReport
 	interval := a.safeInterval()
 	for eth, info := range netMap {
@@ -90,7 +102,10 @@ func (a *Task) NetTask() []*NetReport {
 		}
 		reports = append(reports, r)
 	}
-	return reports
+	if err != nil {
+		return reports, fmt.Errorf("network io: %w", err)
+	}
+	return reports, nil
 }
 
 // safeInterval returns the configured interval as uint64, defaulting to 1

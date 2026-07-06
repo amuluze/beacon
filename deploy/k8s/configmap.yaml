@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: beacon-config
+  namespace: beacon
+data:
+  config.toml: |
+    [Fiber]
+    Host = "0.0.0.0"
+    Port = 8000
+    ShutdownTimeout = 30
+    SeverHeader = "beacon"
+    AppName = "beacon"
+    Prefork = false
+
+    [Control]
+    Enable = true
+    Address = ":17000"
+    DefaultAgentID = "default"
+    JoinToken = ""
+
+    [Control.TLS]
+    Enable = false
+    CertDir = "/etc/beacon/control-certs"
+    ClientNames = []
+
+    [Gorm]
+    Debug = true
+    DBType = "sqlite"
+    MaxLifetime = 7200
+    MaxOpenConns = 150
+    MaxIdleConns = 50
+    TablePrefix = "s_"
+    EnableAutoMigrate = true
+
+    [DB]
+    Host = ""
+    Port = ""
+    User = ""
+    Password = ""
+    DBName = "/app/data/beacon"
+    SSLMode = ""
+
+    [Log]
+    Output = "/app/logs/beacon.log"
+    Level = "debug"
+    Rotation = 1
+    MaxAge = 7
+
+    [Auth]
+    Enable = true
+    SigningMethod = "HS512"
+    SigningKey = "beacon"
+    Expired = 7200
+    RefreshExpired = 86400
+    Prefix = "auth_"
+
+    [Casbin]
+    Enable = true
+    Debug = false
+    AutoLoad = true
+    AutoLoadInternal = 60
+
+    [Task]
+    Interval = 15
+
+    [AgentInstall]
+    Enable = true
+    Token = "change-me"
+    PublicBaseURL = ""
+    PackageDir = "/app/downloads/collia"
+    ControlPort = 17000
+    TLSEnable = true
+    CertDir = "/etc/collia/certs"
+
+    [InstallReport]
+    Enable = false
+    URL = "https://official.beacon.amuluze.com/api/v1/install/report"
+    InstallDir = "/data/beacon"
+    IDFile = "/app/data/install.id"
+    Timeout = 5

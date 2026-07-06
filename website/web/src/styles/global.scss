@@ -1,0 +1,165 @@
+// 科技感色彩系统
+$colors: (
+    // 主色调 - 科技蓝
+    'primary': #0066ff,
+    'primary-light': #3385ff,
+    'primary-dark': #0052cc,
+
+    // 辅助色 - 渐变科技感
+    'secondary': #00d4ff,
+    'accent': #7c3aed,
+
+    // 中性色
+    'dark': #0a0e27,
+    'dark-light': #1a1f3a,
+    'gray': #64748b,
+    'light': #f8fafc,
+
+    // 功能色
+    'success': #10b981,
+    'warning': #f59e0b,
+    'error': #ef4444,
+);
+
+// 响应式断点
+$breakpoints: (
+    'xs': 0px,
+    'sm': 768px,
+    'md': 992px,
+    'lg': 1200px,
+    'xl': 1920px,
+);
+
+// 扩展间距系统
+$spacers: (
+    0: 0,
+    1: 4px,
+    2: 8px,
+    3: 12px,
+    4: 16px,
+    5: 20px,
+    6: 24px,
+    8: 32px,
+    10: 40px,
+    12: 48px,
+    16: 64px,
+    20: 80px,
+    24: 96px,
+);
+
+// 响应式 mixin
+@mixin respond-to($breakpoint) {
+    @if map-has-key($breakpoints, $breakpoint) {
+        @media (min-width: map-get($breakpoints, $breakpoint)) {
+            @content;
+        }
+    }
+}
+
+// 移动端优先的响应式设计
+@mixin mobile-first($size) {
+    @media (max-width: $size) {
+        @content;
+    }
+}
+
+// 统一动画库
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(0, 102, 255, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 30px rgba(0, 102, 255, 0.6);
+    }
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+@keyframes scan {
+    0% {
+        transform: translateY(0);
+    }
+
+    100% {
+        transform: translateY(280px);
+    }
+}
+
+@keyframes sparkle {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+}
+
+// 玻璃态效果 mixin
+@mixin glass-effect($opacity: 0.1) {
+    background: rgba(255, 255, 255, $opacity);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+// 发光效果 mixin
+@mixin glow-effect($color: #0066ff, $intensity: 0.3) {
+    box-shadow: 0 0 20px rgba($color, $intensity);
+
+    &:hover {
+        box-shadow: 0 0 30px rgba($color, $intensity + 0.2);
+    }
+}

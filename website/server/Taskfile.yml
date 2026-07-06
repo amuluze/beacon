@@ -1,0 +1,40 @@
+version: '3'
+
+vars:
+  TARGET: server
+  SERVER: ./cmd/{{.TARGET}}
+  DEV_CONFIG_FILE: '{{.TASKFILE_DIR}}/configs/config.dev.toml'
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
+  dev:
+    desc: Run website API server with development config
+    cmds:
+      - go run {{.SERVER}}/main.go run -c {{.DEV_CONFIG_FILE}}
+
+  wire:
+    desc: Generate Wire injector code
+    cmds:
+      - wire ./service/
+
+  arm64:
+    desc: Build linux/arm64 website server binary
+    env:
+      CGO_ENABLED: '0'
+      GOOS: linux
+      GOARCH: arm64
+    cmds:
+      - go build -o {{.TARGET}} {{.SERVER}}
+
+  amd64:
+    desc: Build linux/amd64 website server binary
+    env:
+      CGO_ENABLED: '0'
+      GOOS: linux
+      GOARCH: amd64
+    cmds:
+      - go build -o {{.TARGET}} {{.SERVER}}

@@ -17,7 +17,7 @@ import (
 
 const (
 	name        = "collia"
-	description = "amprobe agent service"
+	description = "beacon agent service"
 )
 
 var dependencies = []string{""}
@@ -37,7 +37,7 @@ func usage() {
 
 func parseConfig() []string {
 	flag.StringVar(&configFile, "conf", "/etc/collia/config.yml", "config file path")
-	flag.StringVar(&prefix, "prefix", "/data/amprobe", "prefix of amprobe server-agent resources dir")
+	flag.StringVar(&prefix, "prefix", "/data/beacon", "prefix of beacon server-agent resources dir")
 	flag.Parse()
 	return flag.Args()
 }

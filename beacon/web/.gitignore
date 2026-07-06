@@ -1,0 +1,11 @@
+.idea/
+.DS_Store
+
+node_modules/
+dist/*
+!dist/keep.txt
+!dist/assets/
+dist/assets/*
+!dist/assets/keep.txt
+
+pnpm-lock.yaml

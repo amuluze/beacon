@@ -5,7 +5,7 @@
 
 ## 架构概览
 
-`Amprobe` 是一个 Server-Agent 监控/探测平台：Server 侧提供 Web UI 和 HTTP API，按 Agent 标识选择目标节点；Agent 侧采集主机与 Docker 状态，通过 HTTP 上报监控批次，并通过反向 gRPC tunnel 接收 Server 发起的控制调用。
+`Beacon` 是一个 Server-Agent 监控/探测平台：Server 侧提供 Web UI 和 HTTP API，按 Agent 标识选择目标节点；Agent 侧采集主机与 Docker 状态，通过 HTTP 上报监控批次，并通过反向 gRPC tunnel 接收 Server 发起的控制调用。
 
 当前检测到 3 个 Go workspace 模块，以及 1 个 package.json 驱动的前端/Node 模块；模块间边界以 `go.work`、各模块 `go.mod`、`package.json` 和 `.specs/domain/*.md` 为主要约束来源。
 
@@ -37,16 +37,16 @@
 
 | Module | Role |
 |--------|------|
-| `amprobe` | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client |
+| `beacon` | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client |
 | `collia` | Agent runtime: 主机/容器采集、HTTP 监控上报、Docker 控制和反向 tunnel Service |
 | `common` | shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型 |
-| `amprobe-web` | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 |
+| `beacon-web` | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 |
 
 ## 职责边界
 
 | 边界 | 负责内容 | 不负责内容 | 约束来源 |
 |------|----------|------------|----------|
-| `amprobe` | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client | 其他模块的内部实现细节 | `go.mod`、导出符号信号、模块 AGENTS |
+| `beacon` | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client | 其他模块的内部实现细节 | `go.mod`、导出符号信号、模块 AGENTS |
 | `collia` | Agent runtime: 主机/容器采集、HTTP 监控上报、Docker 控制和反向 tunnel Service | 其他模块的内部实现细节 | `go.mod`、导出符号信号、模块 AGENTS |
 | `common` | shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型 | 其他模块的内部实现细节 | `go.mod`、导出符号信号、模块 AGENTS |
 
@@ -57,14 +57,14 @@
 | `.docs/` | implementation documentation |
 | `.plans/` | SDD implementation plans |
 | `.specs/` | SDD task, status, and domain specs |
-| `amprobe/` | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client |
+| `beacon/` | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client |
 | `collia/` | Agent runtime: 主机/容器采集、HTTP 监控上报、Docker 控制和反向 tunnel Service |
 | `common/` | shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型 |
 | `deploy/` | supporting project directory |
 
 ## 调用关系
 
-- `amprobe`：导出符号信号 `func AllowMethodAndPathPrefixSkipper (amprobe/service/middleware/skip.go)`, `func AllowPathPrefixNoSkipper (amprobe/service/middleware/skip.go)`, `func AllowPathPrefixSkipper (amprobe/service/middleware/skip.go)`, `func BuildInjector (amprobe/service/wire.go)`, `func BuildInjector (amprobe/service/wire_gen.go)`；入口信号 ``api := app.Group("/api")` at `amprobe/service/router.go:99``, ``app.Get("/ws", websocket.New(a.termHandler.Handler))` at `amprobe/service/router.go:78``, ``app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))` at `amprobe/service/router.go:77``, ``gAgent.Get("/list", a.agentAPI.List)` at `amprobe/service/router.go:133``；包含配置边界。
+- `beacon`：导出符号信号 `func AllowMethodAndPathPrefixSkipper (beacon/service/middleware/skip.go)`, `func AllowPathPrefixNoSkipper (beacon/service/middleware/skip.go)`, `func AllowPathPrefixSkipper (beacon/service/middleware/skip.go)`, `func BuildInjector (beacon/service/wire.go)`, `func BuildInjector (beacon/service/wire_gen.go)`；入口信号 ``api := app.Group("/api")` at `beacon/service/router.go:99``, ``app.Get("/ws", websocket.New(a.termHandler.Handler))` at `beacon/service/router.go:78``, ``app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))` at `beacon/service/router.go:77``, ``gAgent.Get("/list", a.agentAPI.List)` at `beacon/service/router.go:133``；包含配置边界。
 - `collia`：导出符号信号 `func BuildInjector (collia/service/wire.go)`, `func BuildInjector (collia/service/wire_gen.go)`, `func ClientConfig (collia/pkg/conn/config.go)`, `func CopyFile (collia/pkg/utils/file.go)`, `func EnsureDirExists (collia/pkg/utils/dir.go)`；包含配置边界。
 - `common`：导出符号信号 `func ClientConfig (common/transport/tlsconfig/tlsconfig.go)`, `func NewAgentTunnel (common/rpc/tunnel/agent.go)`, `func NewDB (common/database/db.go)`, `func NewReverseTunnelClient (common/rpc/tunnel/tunnel_grpc.pb.go)`, `func NewServerTunnel (common/rpc/tunnel/server.go)`；包含配置边界。
 
@@ -73,40 +73,40 @@
 
 ### Go Module Dependency Direction
 
-- `amprobe` -> `common`（compile-time Go import）
+- `beacon` -> `common`（compile-time Go import）
 - `collia` -> `common`（compile-time Go import）
 - `common` -> no internal Go module dependencies.
 
 ### Runtime Frontend Edges
 
-- `amprobe-web` -> backend API/WebSocket boundary（runtime HTTP/WS edge, not a Go compile-time dependency）
+- `beacon-web` -> backend API/WebSocket boundary（runtime HTTP/WS edge, not a Go compile-time dependency）
 
 ### Go Third-Party Dependencies
 
-- `github.com/amuluze/amutool/logger` `v0.0.0-20240821104128-caed9cc0d402`（amprobe/go.mod）
-- `github.com/amuluze/amutool/timex` `v0.0.0-20250508153823-fe9a5de55958`（amprobe/go.mod）
+- `github.com/amuluze/amutool/logger` `v0.0.0-20240821104128-caed9cc0d402`（beacon/go.mod）
+- `github.com/amuluze/amutool/timex` `v0.0.0-20250508153823-fe9a5de55958`（beacon/go.mod）
 - `github.com/amuluze/docker` `v0.0.0-20240822095446-429928f7463e`（collia/go.mod）
-- `github.com/casbin/casbin/v2` `v2.98.0`（amprobe/go.mod）
-- `github.com/casbin/gorm-adapter/v3` `v3.28.0`（amprobe/go.mod）
+- `github.com/casbin/casbin/v2` `v2.98.0`（beacon/go.mod）
+- `github.com/casbin/gorm-adapter/v3` `v3.28.0`（beacon/go.mod）
 - `github.com/docker/docker` `v27.2.1+incompatible`（collia/go.mod）
 - `github.com/glebarez/sqlite` `v1.11.0`（common/go.mod）
-- `github.com/go-playground/validator/v10` `v10.22.0`（amprobe/go.mod）
-- `github.com/gofiber/contrib/websocket` `v1.3.2`（amprobe/go.mod）
-- `github.com/gofiber/fiber/v2` `v2.52.5`（amprobe/go.mod）
-- `github.com/golang-jwt/jwt/v5` `v5.0.0`（amprobe/go.mod）
-- `github.com/google/uuid` `v1.6.0`（amprobe/go.mod）
-- `github.com/google/wire` `v0.6.0`（amprobe/go.mod）
-- `github.com/patrickmn/go-cache` `v2.1.0+incompatible`（amprobe/go.mod）
-- `github.com/pkg/errors` `v0.9.1`（amprobe/go.mod）
+- `github.com/go-playground/validator/v10` `v10.22.0`（beacon/go.mod）
+- `github.com/gofiber/contrib/websocket` `v1.3.2`（beacon/go.mod）
+- `github.com/gofiber/fiber/v2` `v2.52.5`（beacon/go.mod）
+- `github.com/golang-jwt/jwt/v5` `v5.0.0`（beacon/go.mod）
+- `github.com/google/uuid` `v1.6.0`（beacon/go.mod）
+- `github.com/google/wire` `v0.6.0`（beacon/go.mod）
+- `github.com/patrickmn/go-cache` `v2.1.0+incompatible`（beacon/go.mod）
+- `github.com/pkg/errors` `v0.9.1`（beacon/go.mod）
 - `github.com/shirou/gopsutil/v3` `v3.24.5`（collia/go.mod）
-- `github.com/spf13/viper` `v1.19.0`（amprobe/go.mod）
+- `github.com/spf13/viper` `v1.19.0`（beacon/go.mod）
 - `github.com/takama/daemon` `v1.0.0`（collia/go.mod）
-- `github.com/urfave/cli/v2` `v2.27.4`（amprobe/go.mod）
-- `gopkg.in/gomail.v2` `v2.0.0-20160411212932-81ebce5c23df`（amprobe/go.mod）
+- `github.com/urfave/cli/v2` `v2.27.4`（beacon/go.mod）
+- `gopkg.in/gomail.v2` `v2.0.0-20160411212932-81ebce5c23df`（beacon/go.mod）
 - `gorm.io/driver/clickhouse` `v0.6.1`（common/go.mod）
 - `gorm.io/driver/mysql` `v1.5.7`（common/go.mod）
 - `gorm.io/driver/postgres` `v1.5.9`（common/go.mod）
-- `gorm.io/gorm` `v1.25.12`（amprobe/go.mod）
+- `gorm.io/gorm` `v1.25.12`（beacon/go.mod）
 
 ### Dependency Version Drift
 
@@ -123,10 +123,10 @@
 ## 验证入口
 
 ```bash
-cd amprobe && go test ./...
+cd beacon && go test ./...
 cd collia && go test ./...
 cd common && go test ./...
-cd amprobe && go build ./...
+cd beacon && go build ./...
 cd collia && go build ./...
 cd common && go build ./...
 ```

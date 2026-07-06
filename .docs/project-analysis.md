@@ -7,7 +7,7 @@
 
 | Path | Module | Go |
 |------|--------|----|
-| `amprobe` | `amprobe` | `1.25.0` |
+| `beacon` | `beacon` | `1.25.0` |
 | `collia` | `collia` | `1.25.0` |
 | `common` | `common` | `1.25.0` |
 
@@ -18,35 +18,40 @@
 | `.docs/` | implementation documentation |
 | `.plans/` | SDD implementation plans |
 | `.specs/` | SDD task, status, and domain specs |
-| `amprobe/` | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client |
+| `beacon/` | Server control plane: Web/API 接入、认证授权、Agent 生命周期、监控批次落库、目标选择和反向 tunnel client |
 | `collia/` | Agent runtime: 主机/容器采集、HTTP 监控上报、Docker 控制和反向 tunnel Service |
 | `common/` | shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型 |
 | `deploy/` | supporting project directory |
 
-## Makefile Targets
+## Taskfile Tasks
 
-### `amprobe/Makefile`
+### `Taskfile.yml`
 
-- `make amd64`: docker amd64 image
-- `make arm64`: docker arm64 image
-- `make bin`: build bin
-- `make build`
-- `make dev`: run dev
-- `make wire`: generate wire
-### `amprobe/web/Makefile`
-
-- `make build`
-- `make dev`
-- `make install`
-### `collia/Makefile`
-
-- `make amd64`: build amd64
-- `make arm64`: build arm64
-- `make wire`: generate wire
+- `task beacon:amd64`: build linux/amd64 Beacon Docker image
+- `task beacon:arm64`: build linux/arm64 Beacon Docker image
+- `task beacon:bin`: build local Beacon binary
+- `task beacon:build`: build and push multi-platform Beacon Docker image
+- `task beacon:dev`: run Beacon with development config
+- `task beacon:wire`: generate Beacon Wire injector code
+- `task beacon-web:build`: build Beacon web assets
+- `task beacon-web:dev`: run Beacon web dev server
+- `task beacon-web:install`: install Beacon web dependencies
+- `task collia:amd64`: build linux/amd64 Collia binary
+- `task collia:arm64`: build linux/arm64 Collia binary
+- `task collia:wire`: generate Collia Wire injector code
+- `task website:amd64`: build linux/amd64 website Docker image
+- `task website:arm64`: build linux/arm64 website Docker image
+- `task website:push`: build and push website Docker image
+- `task website-server:amd64`: build linux/amd64 website server binary
+- `task website-server:arm64`: build linux/arm64 website server binary
+- `task website-server:dev`: run website server with development config
+- `task website-web:build`: build website web assets
+- `task website-web:dev`: run website web dev server
+- `task website-web:install`: install website web dependencies
 
 ## Package Scripts
 
-- `amprobe/web/package.json (amprobe-web)`: `build`, `dev`, `lint`, `lint:fix`, `preview`, `ts`
+- `beacon/web/package.json (beacon-web)`: `build`, `dev`, `lint`, `lint:fix`, `preview`, `ts`
 
 ## Documentation Inventory
 
@@ -56,8 +61,8 @@
 - `.docs/architecture.md`
 - `.docs/concepts/data-flow.md`
 - `.docs/deployment.md`
-- `.docs/modules/amprobe-web.md`
-- `.docs/modules/amprobe.md`
+- `.docs/modules/beacon-web.md`
+- `.docs/modules/beacon.md`
 - `.docs/modules/collia.md`
 - `.docs/modules/common.md`
 - `.docs/project-analysis.md`
@@ -73,21 +78,21 @@
 > 注：以下清单为基线快照，未随每次提交全量刷新。完整测试入口以各模块 `go test ./...` 实际收集为准；安全加固与 Agent 隔离相关新增测试已在末尾标注。
 
 - Test files discovered: 9（基线快照，实际更多）
-- `amprobe/pkg/fiberx/fiberx_test.go`
-- `amprobe/service/agent_install_test.go`
-- `amprobe/service/container/repository/container_test.go`
-- `amprobe/service/host/repository/host_test.go`
-- `amprobe/service/report/report_test.go`
+- `beacon/pkg/fiberx/fiberx_test.go`
+- `beacon/service/agent_install_test.go`
+- `beacon/service/container/repository/container_test.go`
+- `beacon/service/host/repository/host_test.go`
+- `beacon/service/report/report_test.go`
 - `collia/pkg/psutil/psutil_test.go`
 - `collia/pkg/timectl/timectl_test.go`
 - `collia/service/report/client_test.go`
 - `common/transport/tlsconfig/tlsconfig_test.go`
 - 新增（凭据强校验 / Agent 隔离）：
-  - `amprobe/pkg/contextx/contextx_test.go`（`ResolveAgentID`/`IsValidAgentID` 边界）
-  - `amprobe/pkg/rpc/rpc_test.go`（`TunnelClient` 缺失/非法 `agent_id` 拒绝）
-  - `amprobe/service/config_test.go` 扩展（`resolveControlToken`/`resolveInstallToken` 生产强校验）
-  - `amprobe/service/host/repository/host_test.go` 扩展（8 查询拒绝缺失 `agent_id` + 非法 + Agent 隔离）
-  - `amprobe/service/container/repository/container_test.go` 扩展（9 查询拒绝缺失 `agent_id` + 非法 + Agent 隔离）
+  - `beacon/pkg/contextx/contextx_test.go`（`ResolveAgentID`/`IsValidAgentID` 边界）
+  - `beacon/pkg/rpc/rpc_test.go`（`TunnelClient` 缺失/非法 `agent_id` 拒绝）
+  - `beacon/service/config_test.go` 扩展（`resolveControlToken`/`resolveInstallToken` 生产强校验）
+  - `beacon/service/host/repository/host_test.go` 扩展（8 查询拒绝缺失 `agent_id` + 非法 + Agent 隔离）
+  - `beacon/service/container/repository/container_test.go` 扩展（9 查询拒绝缺失 `agent_id` + 非法 + Agent 隔离）
 
 ### Domain Spec Evidence Notes
 
@@ -99,10 +104,10 @@
 
 | Domain Ref | Evidence | Last Verified | Notes |
 |------------|----------|---------------|-------|
-| `monitoring-platform/I001` | `TestContainerUpdateCallsAgentRPC`; `TestTunnelClientCallRejectsMissingAgentID`; `TestHostQueriesRejectMissingAgentID`; `TestContainerQueriesRejectMissingAgentID`; `cd amprobe && go test ./...` | working tree validation | 覆盖控制调用不在 Server 本地伪成功，且读/写路径缺失 `agent_id` 统一返回 `ErrMissingAgentID`；Agent 隔离由 `TestHostQueriesScopedByAgentID`/`TestContainerQueriesScopedByAgentID` 覆盖。 |
-| `monitoring-platform/I005` | `TestStorePersistsReportBatch`; `TestStoreRejectsMissingAgentID`; `cd amprobe && go test ./...` | working tree validation | 覆盖成功批次和缺失 Agent 拒绝；仍需补真实 DB 写入失败回滚测试。 |
-| `monitoring-platform/R001` | `TestNetUsageReturnsDBError`; `TestHostQueriesRejectMissingAgentID`/`TestContainerQueriesRejectMissingAgentID`; `cd amprobe && go test ./...` | working tree validation | 覆盖监控查询 DB 错误不降级为空成功，且缺失 `agent_id` 不再静默全表回退；仍需补 API 层错误表现。 |
-| `monitoring-platform/R005` | `TestStoreRejectsMissingAgentID`; `TestStore_RejectsInvalidAgentID`; `cd amprobe && go test ./...` | working tree validation | 覆盖缺失与格式非法 Agent 上报拒绝。 |
+| `monitoring-platform/I001` | `TestContainerUpdateCallsAgentRPC`; `TestTunnelClientCallRejectsMissingAgentID`; `TestHostQueriesRejectMissingAgentID`; `TestContainerQueriesRejectMissingAgentID`; `cd beacon && go test ./...` | working tree validation | 覆盖控制调用不在 Server 本地伪成功，且读/写路径缺失 `agent_id` 统一返回 `ErrMissingAgentID`；Agent 隔离由 `TestHostQueriesScopedByAgentID`/`TestContainerQueriesScopedByAgentID` 覆盖。 |
+| `monitoring-platform/I005` | `TestStorePersistsReportBatch`; `TestStoreRejectsMissingAgentID`; `cd beacon && go test ./...` | working tree validation | 覆盖成功批次和缺失 Agent 拒绝；仍需补真实 DB 写入失败回滚测试。 |
+| `monitoring-platform/R001` | `TestNetUsageReturnsDBError`; `TestHostQueriesRejectMissingAgentID`/`TestContainerQueriesRejectMissingAgentID`; `cd beacon && go test ./...` | working tree validation | 覆盖监控查询 DB 错误不降级为空成功，且缺失 `agent_id` 不再静默全表回退；仍需补 API 层错误表现。 |
+| `monitoring-platform/R005` | `TestStoreRejectsMissingAgentID`; `TestStore_RejectsInvalidAgentID`; `cd beacon && go test ./...` | working tree validation | 覆盖缺失与格式非法 Agent 上报拒绝。 |
 | `monitoring-platform/R006` | `TestContainerUpdateCallsAgentRPC`; Agent `ContainerUpdate` 返回未实现错误 | working tree validation | 覆盖 Server 不再本地假成功；仍需补端到端 API/RPC 契约测试。 |
 
 ## Domain Specs
@@ -146,18 +151,18 @@
   - `.docs/architecture.md`
   - `.docs/concepts/data-flow.md`
   - `.docs/deployment.md`
-  - `.docs/modules/amprobe-web.md`
-  - `.docs/modules/amprobe.md`
+  - `.docs/modules/beacon-web.md`
+  - `.docs/modules/beacon.md`
   - `.docs/modules/collia.md`
   - `.docs/modules/common.md`
   - `.docs/project-analysis.md`
   - `.specs/domain/monitoring-platform.md`
   - `AGENTS.md`
   - `CLAUDE.md`
-  - `amprobe/AGENTS.md`
-  - `amprobe/CLAUDE.md`
-  - `amprobe/web/AGENTS.md`
-  - `amprobe/web/CLAUDE.md`
+  - `beacon/AGENTS.md`
+  - `beacon/CLAUDE.md`
+  - `beacon/web/AGENTS.md`
+  - `beacon/web/CLAUDE.md`
   - `collia/AGENTS.md`
   - `collia/CLAUDE.md`
   - `common/AGENTS.md`

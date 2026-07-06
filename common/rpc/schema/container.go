@@ -64,7 +64,8 @@ type DockerArgs struct {
 }
 
 type DockerReply struct {
-	Data Docker `json:"data"`
+	Data      Docker    `json:"data"`
+	Freshness Freshness `json:"freshness"`
 }
 
 type ContainerQueryArgs struct {
@@ -73,7 +74,8 @@ type ContainerQueryArgs struct {
 }
 
 type ContainerQueryReply struct {
-	Data []Container `json:"data"`
+	Data      []Container `json:"data"`
+	Freshness Freshness   `json:"freshness"`
 }
 
 type ContainersByImageArgs struct {
@@ -96,7 +98,8 @@ type ImageQueryArgs struct {
 }
 
 type ImageQueryReply struct {
-	Data []Image `json:"data"`
+	Data      []Image   `json:"data"`
+	Freshness Freshness `json:"freshness"`
 }
 
 type ImageCountArgs struct{}
@@ -111,7 +114,8 @@ type NetworkQueryArgs struct {
 }
 
 type NetworkQueryReply struct {
-	Data []Network `json:"data"`
+	Data      []Network `json:"data"`
+	Freshness Freshness `json:"freshness"`
 }
 
 type NetworkCountArgs struct{}

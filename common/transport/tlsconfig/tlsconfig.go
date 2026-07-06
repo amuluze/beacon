@@ -1,4 +1,4 @@
-// Package tlsconfig builds mutual TLS configs shared by amprobe and collia.
+// Package tlsconfig builds mutual TLS configs shared by beacon and collia.
 package tlsconfig
 
 import (

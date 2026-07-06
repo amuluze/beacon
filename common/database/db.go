@@ -5,6 +5,8 @@
 package database
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -126,4 +128,17 @@ func (db *DB) AutoMigrate(models ...interface{}) error {
 
 func (db *DB) GetModel(model interface{}) *DB {
 	return &DB{db.DB.Model(model)}
+}
+
+// Ping verifies the underlying connection is alive. It satisfies any
+// health.DBPinger-style contract in upstream modules.
+func (db *DB) Ping() error {
+	if db == nil || db.DB == nil {
+		return errors.New("database not initialized")
+	}
+	sqlDB, err := db.DB.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.PingContext(context.Background())
 }

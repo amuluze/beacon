@@ -6,6 +6,7 @@ package psutil
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"math"
 	"strings"
@@ -60,13 +61,19 @@ func GetCPUPercent() (float64, error) {
 	if err != nil {
 		return 0.0, err
 	}
+	if len(totalPercent) == 0 {
+		return 0.0, fmt.Errorf("cpu percent result is empty")
+	}
 	return totalPercent[0], nil
 }
 
 func GetDiskInfo(devices map[string]struct{}) (map[string]DiskInfo, error) {
 	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{})
 	diskMap := make(map[string]DiskInfo)
-	infos, _ := disk.PartitionsWithContext(ctx, false)
+	infos, err := disk.PartitionsWithContext(ctx, false)
+	if err != nil {
+		return diskMap, err
+	}
 	for _, info := range infos {
 		usedInfo, err := disk.UsageWithContext(ctx, info.Mountpoint)
 		if usedInfo == nil {
@@ -112,10 +119,16 @@ func GetDiskIO(devices map[string]struct{}) (map[string]DiskIO, error) {
 	return diskMap, nil
 }
 
-func GetNetworkIO(eth map[string]struct{}) (map[string]NetIO, error) {
+func GetNetworkIO(eth map[string]struct{}) (result map[string]NetIO, err error) {
 	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{})
 
 	netMap := make(map[string]NetIO)
+	defer func() {
+		if r := recover(); r != nil {
+			result = netMap
+			err = fmt.Errorf("get network io panic: %v", r)
+		}
+	}()
 	IOCountersStat, err := net.IOCountersWithContext(ctx, true)
 	if err != nil {
 		slog.Error("get network io err", "err", err)

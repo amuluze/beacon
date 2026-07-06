@@ -1,4 +1,4 @@
-# Amprobe
+# Beacon
 
 ![MIT License](https://img.shields.io/badge/License-MIT-green.svg)
 ![Go Reference](https://pkg.go.dev/badge/github.com/shirou/gopsutil/v3.svg)
@@ -8,10 +8,10 @@ English | [中文](./README.md)
 
 ## Introduction
 
-Amprobe is a lightweight host and Docker container monitoring tool. The project uses a Server-Agent architecture:
+Beacon is a lightweight host and Docker container monitoring tool. The project uses a Server-Agent architecture:
 
-- `amprobe`: the Server side, responsible for the Web UI, HTTP API, authentication, authorization, auditing, alarm configuration, and task orchestration.
-- `collia`: the Agent side, responsible for host and Docker metric collection, local execution capabilities, and receiving Server calls through a reverse gRPC tunnel.
+- `beacon`: the Server side, responsible for the Web UI, HTTP API, authentication, authorization, auditing, alarm configuration, and task orchestration.
+- `collia`: the Agent side, responsible for host and Docker metric collection, local execution capabilities, and exposing them to the Server through a reverse gRPC tunnel (the Agent dials the Server, the Server calls back per `agent_id`).
 
 It can help us complete the following tasks:
 
@@ -33,7 +33,7 @@ Architecture details: [System Architecture](./.docs/architecture.md)
 
 - View user login, logout, and operation records
 
-Official website Address:[Website | Amprobe (amprobe.amuluze.com)](https://amprobe.amuluze.com/)
+Official website Address:[Website | Beacon (beacon.amuluze.com)](https://beacon.amuluze.com/)
 
 > **docker version required：>= 20.10.9**
 
@@ -43,7 +43,7 @@ Golang + Vue3
 
 ## License
 
-Amprobe is available under the MIT license
+Beacon is available under the MIT license
 
 ## Thanks
 
