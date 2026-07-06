@@ -486,3 +486,150 @@ func TestServerTunnel_StreamCall_CtxCancelReleasesStream(t *testing.T) {
 	cancel()
 	eventually(t, func() bool { return remaining() == 0 }, time.Second, "streams cleared after cancel")
 }
+
+// ── E2E Integration Tests ──
+// 全链路覆盖 Domain I001 / I003 / R001 / R006：
+// Agent 注册 → Server 派发 RPC → Agent 处理 → Server 接收响应 → Agent 断开
+
+// TestE2E_RegisterCallDisconnect 覆盖完整的 Agent 生命周期链路。
+func TestE2E_RegisterCallDisconnect(t *testing.T) {
+	lc := &fakeLifecycle{}
+	s, conn := startTestServer(t, WithJoinToken("e2e-token"))
+	s.SetAgentLifecycle(lc)
+
+	// Phase 1: Agent registers with metadata
+	stream := openAgentStream(t, conn)
+	payload, _ := json.Marshal(RegistrationPayload{
+		AgentID: "e2e-agent", Version: "v2.0.0", OS: "linux", Arch: "arm64", JoinToken: "e2e-token",
+	})
+	registerFrame := &Frame{
+		FrameType: FrameType_FRAME_REGISTER,
+		Method:    "e2e-agent",
+		Payload:   payload,
+	}
+	serveAgent(stream, registerFrame, func(method string, payload []byte) ([]byte, error) {
+		// Agent handler: echo the payload back
+		return payload, nil
+	})
+	eventually(t, func() bool { return s.IsOnline("e2e-agent") }, time.Second, "agent should be online")
+	eventually(t, func() bool { return lc.connectCount() == 1 }, time.Second, "connect callback should fire")
+
+	// Phase 2: Server dispatches RPC call
+	var reply map[string]interface{}
+	err := s.Call(context.Background(), "e2e-agent", "GetInfo", map[string]string{"key": "value"}, &reply)
+	if err != nil {
+		t.Fatalf("E2E Call: %v", err)
+	}
+	if reply["key"] != "value" {
+		t.Fatalf("E2E reply = %v, want key=value", reply)
+	}
+
+	// Phase 3: Agent disconnects
+	err = stream.CloseSend()
+	if err != nil {
+		t.Fatalf("close send: %v", err)
+	}
+	eventually(t, func() bool { return !s.IsOnline("e2e-agent") }, time.Second, "agent should be offline")
+	eventually(t, func() bool { return lc.disconnectCount() == 1 }, time.Second, "disconnect callback should fire")
+}
+
+// TestE2E_MultiAgentIsolation 验证多 Agent 场景下调用正确隔离。
+// Domain I003: 容器运行时操作必须只影响目标节点。
+// 注：bufconn 测试中，两个 Agent 通过同一 gRPC 连接的不同 stream 注册，
+// 这模拟了 NAT/防火墙后的真实场景（Server 看到同一 IP 但不同 Agent）。
+func TestE2E_MultiAgentIsolation(t *testing.T) {
+	lc := &fakeLifecycle{}
+	s, conn := startTestServer(t)
+	s.SetAgentLifecycle(lc)
+
+	// Register agent-a on first stream
+	streamA := openAgentStream(t, conn)
+	serveAgent(streamA, registerFrame("agent-a", RegistrationPayload{AgentID: "agent-a"}),
+		func(method string, payload []byte) ([]byte, error) {
+			return json.Marshal(map[string]string{"handler": "a"})
+		})
+	eventually(t, func() bool { return s.IsOnline("agent-a") }, time.Second, "agent-a online")
+
+	// Register agent-b on second stream (same connection, different stream)
+	streamB := openAgentStream(t, conn)
+	serveAgent(streamB, registerFrame("agent-b", RegistrationPayload{AgentID: "agent-b"}),
+		func(method string, payload []byte) ([]byte, error) {
+			return json.Marshal(map[string]string{"handler": "b"})
+		})
+	eventually(t, func() bool { return s.IsOnline("agent-b") }, time.Second, "agent-b online")
+
+	// Calls to each agent return distinct results
+	var replyA, replyB map[string]string
+	if err := s.Call(context.Background(), "agent-a", "Do", nil, &replyA); err != nil {
+		t.Fatalf("Call agent-a: %v", err)
+	}
+	if err := s.Call(context.Background(), "agent-b", "Do", nil, &replyB); err != nil {
+		t.Fatalf("Call agent-b: %v", err)
+	}
+	if replyA["handler"] != "a" || replyB["handler"] != "b" {
+		t.Fatalf("multi-agent isolation failed: a=%q b=%q", replyA["handler"], replyB["handler"])
+	}
+
+	// Validate AgentIDs and AgentCount
+	ids := s.AgentIDs()
+	if len(ids) != 2 {
+		t.Fatalf("AgentIDs = %v, want 2 agents", ids)
+	}
+	if s.AgentCount() != 2 {
+		t.Fatalf("AgentCount = %d, want 2", s.AgentCount())
+	}
+}
+
+// TestE2E_RegistrationRejectsUnauthorized 验证未授权 Agent 注册被拒绝。
+// Domain R005: 无有效认证的上报请求被拒绝。
+func TestE2E_RegistrationRejectsUnauthorized(t *testing.T) {
+	s, conn := startTestServer(t, WithJoinToken("secure-token"))
+	stream := openAgentStream(t, conn)
+
+	// Send registration with wrong token
+	payload, _ := json.Marshal(RegistrationPayload{
+		AgentID: "eve", JoinToken: "wrong-token",
+	})
+	_ = stream.Send(&Frame{
+		FrameType: FrameType_FRAME_REGISTER,
+		Method:    "eve",
+		Payload:   payload,
+	})
+
+	// Agent should receive REGISTER_REJECTED
+	frame, err := stream.Recv()
+	if err != nil {
+		t.Fatalf("recv: %v", err)
+	}
+	if frame.FrameType != FrameType_FRAME_REGISTER_REJECTED {
+		t.Fatalf("frame type = %v, want REGISTER_REJECTED", frame.FrameType)
+	}
+	if s.IsOnline("eve") {
+		t.Fatalf("unauthorized agent eve should not be online")
+	}
+}
+
+// TestE2E_HeartbeatKeepsAgentAlive 验证心跳保持 Agent 在线。
+func TestE2E_HeartbeatKeepsAgentAlive(t *testing.T) {
+	lc := &fakeLifecycle{}
+	s, conn := startTestServer(t)
+	s.SetAgentLifecycle(lc)
+
+	stream := openAgentStream(t, conn)
+	serveAgent(stream, registerFrame("alive-agent", RegistrationPayload{AgentID: "alive-agent"}), nil)
+	eventually(t, func() bool { return s.IsOnline("alive-agent") }, time.Second, "online")
+
+	// Send heartbeats
+	for i := 0; i < 3; i++ {
+		_ = stream.Send(&Frame{
+			FrameType: FrameType_FRAME_HEARTBEAT,
+			Method:    "alive-agent",
+		})
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	eventually(t, func() bool { return lc.heartbeatCount() >= 3 }, 2*time.Second, "3+ heartbeats")
+	if !s.IsOnline("alive-agent") {
+		t.Fatalf("alive-agent should still be online after heartbeats")
+	}
+}

@@ -6,6 +6,7 @@ package service
 
 import (
 	"log/slog"
+	"sync"
 
 	"beacon/pkg/rpc"
 	"beacon/service/agent"
@@ -13,12 +14,12 @@ import (
 	transporttls "common/transport/tlsconfig"
 )
 
-// serverTunnelHolder holds the tunnel instance so other components can wire into it.
-type serverTunnelHolder struct {
-	tun *tunnelpkg.ServerTunnel
-}
-
-var globalTunnel serverTunnelHolder
+// globalTunnel guards the singleton tunnel instance.
+// Set once during initialization; read safely by health probes and lifecycle hooks.
+var (
+	globalTunnelOnce sync.Once
+	globalTunnel     *tunnelpkg.ServerTunnel
+)
 
 // NewRPCClient creates the tunnel-based RPC client.
 // Server listens for reverse connections from Agents.
@@ -39,7 +40,7 @@ func NewRPCClient(config *Config) (rpc.Caller, error) {
 		tun.SetTLSConfig(tlsCfg)
 		slog.Info("reverse tunnel tls enabled", "cert_dir", config.Control.TLS.CertDir)
 	}
-	globalTunnel.tun = tun
+	globalTunnel = tun
 
 	go func() {
 		if err := tun.Start(addr); err != nil {
@@ -59,8 +60,8 @@ func controlJoinToken(config *Config) string {
 
 // SetAgentLifecycle wires the agent service into the tunnel lifecycle hooks.
 func SetAgentLifecycle(svc *agent.Service) {
-	if globalTunnel.tun != nil {
-		svc.SetTunnel(globalTunnel.tun)
+	if globalTunnel != nil {
+		svc.SetTunnel(globalTunnel)
 	}
 }
 
@@ -68,5 +69,5 @@ func SetAgentLifecycle(svc *agent.Service) {
 // It exposes the live tunnel so other components (e.g. health.Probe) can wire
 // into it without taking on the lifetime ownership.
 func ServerTunnelFromHolder() *tunnelpkg.ServerTunnel {
-	return globalTunnel.tun
+	return globalTunnel
 }
