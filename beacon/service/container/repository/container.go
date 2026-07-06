@@ -15,8 +15,6 @@ import (
 	"gorm.io/gorm"
 )
 
-const freshnessStaleAfter = 2 * time.Minute
-
 var ContainerServiceSet = wire.NewSet(NewContainerRepo, wire.Bind(new(IContainerRepo), new(*ContainerRepo)))
 
 var _ IContainerRepo = (*ContainerRepo)(nil)
@@ -71,23 +69,6 @@ func (c *ContainerRepo) agentDB(ctx context.Context) (*gorm.DB, error) {
 	return c.DB.DB.Where("agent_id = ?", agentID), nil
 }
 
-func freshness(ts time.Time) rpcSchema.Freshness {
-	if ts.IsZero() {
-		return rpcSchema.Freshness{Stale: true, Degraded: true}
-	}
-	age := time.Since(ts)
-	if age < 0 {
-		age = 0
-	}
-	stale := age > freshnessStaleAfter
-	return rpcSchema.Freshness{
-		CollectedAt: ts.Unix(),
-		AgeSeconds:  int64(age.Seconds()),
-		Stale:       stale,
-		Degraded:    stale,
-	}
-}
-
 // ── Monitoring queries (local DB) ──
 
 func (c *ContainerRepo) Version(ctx context.Context, args rpcSchema.DockerArgs) (rpcSchema.DockerReply, error) {
@@ -110,7 +91,7 @@ func (c *ContainerRepo) Version(ctx context.Context, args rpcSchema.DockerArgs) 
 			Os:            result.Os,
 			Arch:          result.Arch,
 		},
-		Freshness: freshness(result.Timestamp),
+		Freshness: rpcSchema.ComputeFreshness(result.Timestamp),
 	}, nil
 }
 
@@ -156,7 +137,7 @@ func (c *ContainerRepo) ContainerList(ctx context.Context, args rpcSchema.Contai
 			Labels:      container.Labels,
 		})
 	}
-	return rpcSchema.ContainerQueryReply{Data: results, Freshness: freshness(latestTimestamp)}, nil
+	return rpcSchema.ContainerQueryReply{Data: results, Freshness: rpcSchema.ComputeFreshness(latestTimestamp)}, nil
 }
 
 func (c *ContainerRepo) Usage(ctx context.Context, args rpcSchema.ContainerUsageArgs) (rpcSchema.ContainerUsageReply, error) {
@@ -192,7 +173,7 @@ func (c *ContainerRepo) Usage(ctx context.Context, args rpcSchema.ContainerUsage
 			Timestamp: item.Timestamp.Unix(), Value: item.MemUsage,
 		})
 	}
-	reply.Freshness = freshness(latestTimestamp)
+	reply.Freshness = rpcSchema.ComputeFreshness(latestTimestamp)
 	return reply, nil
 }
 
@@ -255,7 +236,7 @@ func (c *ContainerRepo) ImageList(ctx context.Context, args rpcSchema.ImageQuery
 			Size:      result.Size,
 		})
 	}
-	return rpcSchema.ImageQueryReply{Data: list, Freshness: freshness(latestTimestamp)}, nil
+	return rpcSchema.ImageQueryReply{Data: list, Freshness: rpcSchema.ComputeFreshness(latestTimestamp)}, nil
 }
 
 func (c *ContainerRepo) ImageCount(ctx context.Context, args rpcSchema.ImageCountArgs) (rpcSchema.ImageCountReply, error) {
@@ -299,7 +280,7 @@ func (c *ContainerRepo) NetworkList(ctx context.Context, args rpcSchema.NetworkQ
 			Labels:    n.Labels,
 		})
 	}
-	return rpcSchema.NetworkQueryReply{Data: list, Freshness: freshness(latestTimestamp)}, nil
+	return rpcSchema.NetworkQueryReply{Data: list, Freshness: rpcSchema.ComputeFreshness(latestTimestamp)}, nil
 }
 
 func (c *ContainerRepo) NetworkCount(ctx context.Context, args rpcSchema.NetworkCountArgs) (rpcSchema.NetworkCountReply, error) {

@@ -75,6 +75,10 @@ func (a *Router) registerHealthProbes(app *fiber.App) {
 
 // registerMiddlewares sets up global middlewares: rate limiting, agent ID injection,
 // WebSocket upgrade, auth, and casbin.
+// commonAuthSkipperPaths lists paths that are exempt from authentication and authorization checks.
+// These are typically public endpoints (health probes, login, token refresh) and agent installation.
+var commonAuthSkipperPaths = []string{"/health", "/ready", "/api/v1/index/index", "/api/v1/auth/login", "/api/v1/auth/token_update", "/api/v1/host/install"}
+
 func (a *Router) registerMiddlewares(app *fiber.App) {
 	app.Use("/api/v1/auth/login", limiter.New(limiter.Config{
 		Max:        10,
@@ -128,20 +132,14 @@ func (a *Router) registerMiddlewares(app *fiber.App) {
 	if a.config.Auth.Enable {
 		app.Use(middleware.UserAuthMiddleware(
 			a.auth,
-			middleware.AllowPathPrefixSkipper("/api/v1/index/index"),
-			middleware.AllowPathPrefixSkipper("/api/v1/auth/login"),
-			middleware.AllowPathPrefixSkipper("/api/v1/auth/token_update"),
-			middleware.AllowPathPrefixSkipper("/api/v1/host/install"),
+			middleware.AllowPathPrefixSkipper(commonAuthSkipperPaths...),
 		))
 	}
 
 	if a.config.Casbin.Enable {
 		app.Use(middleware.CasbinMiddleware(
 			a.enforcer,
-			middleware.AllowPathPrefixSkipper("/api/v1/index/index"),
-			middleware.AllowPathPrefixSkipper("/api/v1/auth/login"),
-			middleware.AllowPathPrefixSkipper("/api/v1/auth/token_update"),
-			middleware.AllowPathPrefixSkipper("/api/v1/host/install"),
+			middleware.AllowPathPrefixSkipper(commonAuthSkipperPaths...),
 		))
 	}
 }

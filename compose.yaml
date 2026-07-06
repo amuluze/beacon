@@ -10,3 +10,54 @@ services:
       - "1443:80"
     volumes:
       - ./deploy/logs:/app/logs
+      - ./deploy/data/beacon:/app/data
+    environment:
+      - BEACON_AUTH_SIGNING_KEY=${BEACON_AUTH_SIGNING_KEY:-development-signing-key-change-in-production}
+      - BEACON_CONTROL_JOINTOKEN=${BEACON_CONTROL_JOINTOKEN:-}
+      - BEACON_AGENT_INSTALL_TOKEN=${BEACON_AGENT_INSTALL_TOKEN:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Development database (MySQL)
+  db:
+    image: mysql:8.4
+    container_name: beacon-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-beacon-dev}
+      MYSQL_DATABASE: beacon
+      MYSQL_USER: beacon
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-beacon-dev}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # Standalone Agent for testing the full Server-Agent loop
+  collia:
+    build:
+      context: .
+      dockerfile: collia/Dockerfile  # requires collia/Dockerfile to exist
+    image: collia:local
+    container_name: collia-agent
+    restart: unless-stopped
+    profiles:
+      - full-stack
+    environment:
+      - COLLIA_AGENT_ID=${COLLIA_AGENT_ID:-test-agent}
+      - COLLIA_CONTROL_SERVER=beacon:17000
+      - COLLIA_JOIN_TOKEN=${BEACON_CONTROL_JOINTOKEN:-}
+      - COLLIA_REPORT_URL=http://beacon:80/api/v1/host/report
+      - COLLIA_REPORT_TOKEN=${BEACON_AGENT_INSTALL_TOKEN:-}
+    depends_on:
+      - beacon
+
+volumes:
+  db_data:

@@ -156,7 +156,7 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 		slog.Warn("server tunnel: empty agent id rejected")
 		return err
 	}
-	// Parse registration payload for agent metadata
+	// Parse registration payload for agent metadata.
 	info := AgentInfo{AgentID: agentID}
 	var regPayload RegistrationPayload
 	if len(frame.Payload) > 0 {
@@ -174,11 +174,7 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 	}
 
 	// Validate join token
-	joinToken := regPayload.JoinToken
-	if joinToken == "" {
-		joinToken = string(frame.Payload)
-	}
-	if !s.validJoinToken(joinToken) {
+	if !s.validJoinToken(regPayload.JoinToken) {
 		err := &AgentUnauthorizedError{AgentID: agentID}
 		_ = stream.Send(&Frame{
 			FrameType: FrameType_FRAME_REGISTER_REJECTED,
