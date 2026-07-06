@@ -62,18 +62,19 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		cleanup()
 		return nil, nil, err
 	}
-	client, err := NewRPCClient(config)
+	caller, err := NewRPCClient(config)
 	if err != nil {
 		cleanup3()
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	containerRepo := repository.NewContainerRepo(client, db)
+	containerRepo := repository.NewContainerRepo(caller, db)
 	containerService := service.NewContainerService(containerRepo)
 	containerAPI := api.NewContainerAPI(containerService)
-	hostRepo := repository2.NewHostRepo(client, db)
-	hostService := service2.NewHostService(hostRepo)
+	hostRepo := repository2.NewHostRepo(caller, db)
+	v := NewStalenessMinutes()
+	hostService := service2.NewHostService(hostRepo, v...)
 	hostAPI := api2.NewHostAPI(hostService)
 	authRepo := repository3.NewAuthRepo(db)
 	authService := service3.NewAuthService(auther, authRepo)
@@ -90,28 +91,19 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	alarmRepository := repository7.NewAlarmRepository(db)
 	alarmService := service7.NewAlarmService(alarmRepository)
 	alarmAPI := api7.NewAlarmAPI(alarmService)
-
-	// Agent module
-	agentRepo := agent.NewAgentRepo(db)
-	agentSvc := agent.NewAgentService(agentRepo)
-	agentAPI := agent.NewAgentAPI(agentSvc)
-
-	// Wire agent lifecycle into tunnel
-	SetAgentLifecycle(agentSvc)
-
-	loggerHandler := NewLoggerHandler(client)
-	termHandler := NewTermHandler()
-	reportSvc, err := NewReportService(config, db)
+	agentRepository := agent.NewAgentRepo(db)
+	agentService := agent.NewAgentService(agentRepository)
+	agentAPI := agent.NewAgentAPI(agentService)
+	reportService, err := NewReportService(config, db)
 	if err != nil {
 		cleanup3()
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	reportService := reportSvc
-	probe := health.NewProbe()
-	probe.SetDB(db)
-	probe.SetTunnel(ServerTunnelFromHolder())
+	loggerHandler := NewLoggerHandler(caller)
+	termHandler := NewTermHandler()
+	probe := NewHealthProbe()
 	router := &Router{
 		config:        config,
 		auth:          auther,
@@ -134,7 +126,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		db:       db,
 		enforcer: syncedEnforcer,
 	}
-	timedTask := NewTimedTask(config, client, db)
+	timedTask := NewTimedTask(config, caller, db)
 	logger := NewLogger(config)
 	injector, err := NewInjector(app, router, prepare, config, timedTask, reportService, logger)
 	if err != nil {
@@ -149,3 +141,12 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		cleanup()
 	}, nil
 }
+
+// wire.go:
+
+// NewStalenessMinutes provides the staleness threshold for host data freshness checks.
+// Default is 300 seconds (5 minutes); can be configured via retention.
+func NewStalenessMinutes() []int64 { return nil }
+
+// NewHealthProbe provides the health probe instance.
+func NewHealthProbe() *health.Probe { return health.NewProbe() }

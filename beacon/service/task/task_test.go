@@ -143,3 +143,58 @@ func TestServiceTaskSeparatesContainerStateCacheByAgent(t *testing.T) {
 		t.Fatalf("audit message %q unexpectedly includes unchanged agent-a", msg)
 	}
 }
+
+// TestCPUAlarmRecoversAfterMetricDrops 验证报警恢复：
+// 当指标持续高于阈值时产生报警，指标回落后不再产生新报警。
+// Domain I004约束：报警由可观测指标+阈值+恢复条件决定。
+func TestCPUAlarmRecoversAfterMetricDrops(t *testing.T) {
+	db := newTaskTestDB(t)
+	t.Cleanup(db.Close)
+
+	createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 5, Threshold: 80})
+	seedTaskHost(t, db, "agent-a", "host-a")
+
+	now := time.Now()
+	// Simulate sustained high CPU for 5+ minutes
+	for i := 0; i < 6; i++ {
+		createTaskRecord(t, db, &model.MonitorCPU{
+			AgentID:   "agent-a",
+			Timestamp: now.Add(-time.Duration(5-i) * time.Minute),
+			CPUPercent: 0.90, // 90% — above 80% threshold
+		})
+	}
+
+	task := NewTask(db)
+	if err := task.CPUAlarmTask(context.Background()); err != nil {
+		t.Fatalf("CPUAlarmTask: %v", err)
+	}
+
+	// Expected: one alarm due to sustained high CPU
+	audits := taskAudits(t, db)
+	if len(audits) != 1 {
+		t.Fatalf("alarm audit count = %d, want 1", len(audits))
+	}
+	if !strings.Contains(audits[0].Operate, "CPU") {
+		t.Fatalf("expected CPU alarm message, got %q", audits[0].Operate)
+	}
+
+	// Now simulate recovery: CPU drops below threshold
+	for i := 0; i < 3; i++ {
+		createTaskRecord(t, db, &model.MonitorCPU{
+			AgentID:   "agent-a",
+			Timestamp: now.Add(time.Duration(i) * time.Minute),
+			CPUPercent: 0.30, // 30% — well below 80% threshold
+		})
+	}
+
+	// Run the task again — should NOT generate a new alarm
+	if err := task.CPUAlarmTask(context.Background()); err != nil {
+		t.Fatalf("CPUAlarmTask after recovery: %v", err)
+	}
+
+	// No additional audits beyond the original alarm
+	audits = taskAudits(t, db)
+	if len(audits) != 1 {
+		t.Fatalf("audit count after recovery = %d, want 1 (no new alarm)", len(audits))
+	}
+}
