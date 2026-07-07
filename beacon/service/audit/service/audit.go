@@ -41,6 +41,7 @@ func (a AuditService) AuditQuery(ctx context.Context, args schema.AuditQueryArgs
 		list = append(list, schema.Audit{
 			ID:       audit.ID,
 			Username: audit.Username,
+			AgentID:  audit.AgentID,
 			Operate:  audit.Operate,
 			Created:  audit.CreatedAt.Format("2006-01-02 15:04:05"),
 		})
