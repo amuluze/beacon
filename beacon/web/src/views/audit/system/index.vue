@@ -71,7 +71,7 @@ const locale = computed(() => {
                 style="width: 240px"
             >
                 <el-option
-                    v-for="agent in store.agent.agents"
+                    v-for="agent in store.agent.list"
                     :key="agent.agent_id"
                     :label="agent.hostname || agent.agent_id"
                     :value="agent.agent_id"
