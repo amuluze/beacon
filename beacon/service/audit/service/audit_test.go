@@ -25,7 +25,10 @@ func TestAuditService_AuditQuery_Success(t *testing.T) {
 			{Model: gorm.Model{ID: 2, CreatedAt: now}, Username: "user1", Operate: "logout"},
 		}, nil
 	}
-	r.AuditCountFn = func(ctx context.Context) (int, error) {
+	r.AuditCountFn = func(ctx context.Context, args schema.AuditQueryArgs) (int, error) {
+		if args.Page != 2 || args.Size != 10 {
+			t.Fatalf("AuditCount args = %+v, want query args", args)
+		}
 		return 42, nil
 	}
 	svc := NewAuditService(r)
@@ -72,7 +75,7 @@ func TestAuditService_AuditQuery_Empty(t *testing.T) {
 	r.AuditQueryFn = func(ctx context.Context, args schema.AuditQueryArgs) (model.Audits, error) {
 		return model.Audits{}, nil
 	}
-	r.AuditCountFn = func(ctx context.Context) (int, error) {
+	r.AuditCountFn = func(ctx context.Context, args schema.AuditQueryArgs) (int, error) {
 		return 0, nil
 	}
 	svc := NewAuditService(r)
@@ -95,7 +98,7 @@ func TestAuditService_AuditQuery_Error(t *testing.T) {
 	r.AuditQueryFn = func(ctx context.Context, args schema.AuditQueryArgs) (model.Audits, error) {
 		return nil, testutil.ErrTest
 	}
-	r.AuditCountFn = func(ctx context.Context) (int, error) {
+	r.AuditCountFn = func(ctx context.Context, args schema.AuditQueryArgs) (int, error) {
 		return 0, nil
 	}
 	svc := NewAuditService(r)
@@ -104,5 +107,20 @@ func TestAuditService_AuditQuery_Error(t *testing.T) {
 	_, err := svc.AuditQuery(context.Background(), args)
 	if !errors.Is(err, testutil.ErrTest) {
 		t.Fatalf("error = %v, want ErrTest", err)
+	}
+}
+
+func TestAuditService_AuditQuery_CountError(t *testing.T) {
+	r := testutil.NewFakeAuditRepo()
+	r.AuditQueryFn = func(ctx context.Context, args schema.AuditQueryArgs) (model.Audits, error) {
+		return model.Audits{}, nil
+	}
+	r.AuditCountFn = func(ctx context.Context, args schema.AuditQueryArgs) (int, error) {
+		return 0, testutil.ErrTest
+	}
+
+	_, err := NewAuditService(r).AuditQuery(context.Background(), schema.AuditQueryArgs{Page: 1, Size: 10})
+	if !errors.Is(err, testutil.ErrTest) {
+		t.Fatalf("error = %v, want count error", err)
 	}
 }
