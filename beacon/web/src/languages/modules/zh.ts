@@ -11,10 +11,8 @@ export default {
     header: {
         language: '国际化',
         theme: '主题',
-        personalData: '个人信息',
         updatePassword: '更新密码',
         logout: '退出登录',
-        profile: '个人中心',
     },
     menu: {
         monitor: '监控',
@@ -25,6 +23,7 @@ export default {
         imageManager: '镜像管理',
         networkManager: '网络管理',
         account: '用户',
+        accountSetting: '用户设置',
         userManager: '用户管理',
         roleManager: '角色管理',
         apiManager: '接口管理',
@@ -34,7 +33,6 @@ export default {
         systemDocker: 'Docker 设置',
     },
     avatar: {
-        profile: '个人中心',
         updatePassword: '更新密码',
         logout: '退出登录',
     },
@@ -242,16 +240,6 @@ export default {
         inputOldPassword: '请输入旧密码',
         inputRoleName: '请输入角色名',
         inputRemark: '请输入备注',
-    },
-    profile: {
-        currentAccount: '当前用户',
-        username: '用户名',
-        status: '状态',
-        role: '角色',
-        enable: '启用',
-        disable: '禁用',
-        admin: '管理员',
-        normal: '普通用户',
     },
     audit: {
         title: '审计日志',

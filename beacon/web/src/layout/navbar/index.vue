@@ -1,31 +1,17 @@
 <script setup lang="ts">
 import Avatar from '@/layout/navbar/Avatar.vue'
+import AgentSelect from '@/layout/navbar/AgentSelect.vue'
 import Language from '@/layout/navbar/Language.vue'
 import ThemeChange from '@/layout/navbar/ThemeChange.vue'
 import { dynamicRoutes } from '@/router/dynamic.ts'
-import useStore from '@/store'
 import type { RouteRecordRaw } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
 const router = useRouter()
-const store = useStore()
 const { t } = useI18n()
 
-const primaryRouteNames = new Set(['monitor', 'container', 'setting'])
-
-const visibleRoutes = computed(() => {
-  return dynamicRoutes.filter((item) => {
-    if (!item.meta?.show)
-      return false
-    if (store.user.userInfo.name !== 'admin' && item.name === 'account')
-      return false
-    return true
-  })
-})
-
-const primaryMenus = computed(() => visibleRoutes.value.filter(item => primaryRouteNames.has(String(item.name))))
-const secondaryMenus = computed(() => visibleRoutes.value.filter(item => !primaryRouteNames.has(String(item.name))))
+const visibleRoutes = computed(() => dynamicRoutes.filter(item => item.meta?.show))
 
 function routeTarget(item: RouteRecordRaw): string {
   return typeof item.redirect === 'string' ? item.redirect : item.path
@@ -46,10 +32,6 @@ function menuTitle(item: RouteRecordRaw): string {
 function goRoute(item: RouteRecordRaw): void {
   router.push(routeTarget(item))
 }
-
-function goSecondary(path: string): void {
-  router.push(path)
-}
 </script>
 
 <template>
@@ -61,7 +43,7 @@ function goSecondary(path: string): void {
 
         <nav class="am-navbar__menu" aria-label="Primary">
             <button
-                v-for="item in primaryMenus"
+                v-for="item in visibleRoutes"
                 :key="String(item.name)"
                 class="am-navbar__menu-item"
                 :class="{ 'am-navbar__menu-item--active': isRouteActive(item) }"
@@ -71,27 +53,10 @@ function goSecondary(path: string): void {
                 <svg-icon :icon-class="menuIcon(item)" size="15px" />
                 <span>{{ menuTitle(item) }}</span>
             </button>
-            <el-dropdown v-if="secondaryMenus.length > 0" trigger="click" @command="goSecondary">
-                <button class="am-navbar__menu-item" type="button">
-                    <svg-icon icon-class="more" size="15px" />
-                    <span>{{ t('container.more') }}</span>
-                </button>
-                <template #dropdown>
-                    <el-dropdown-menu>
-                        <el-dropdown-item
-                            v-for="item in secondaryMenus"
-                            :key="String(item.name)"
-                            :command="routeTarget(item)"
-                        >
-                            <svg-icon :icon-class="menuIcon(item)" size="14px" />
-                            <span class="am-navbar__dropdown-label">{{ menuTitle(item) }}</span>
-                        </el-dropdown-item>
-                    </el-dropdown-menu>
-                </template>
-            </el-dropdown>
         </nav>
 
         <div class="am-navbar__right">
+            <AgentSelect />
             <Language />
             <ThemeChange />
             <Avatar />
@@ -183,10 +148,6 @@ function goSecondary(path: string): void {
     align-items: center;
     justify-content: flex-end;
     gap: var(--am-spacing-sm);
-  }
-
-  @include e(dropdown-label) {
-    margin-left: var(--am-spacing-xs);
   }
 }
 

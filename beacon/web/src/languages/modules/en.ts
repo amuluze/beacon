@@ -11,10 +11,8 @@ export default {
     header: {
         language: 'Language',
         theme: 'theme',
-        personalData: 'Personal Data',
         updatePassword: 'Update Password',
         logout: 'Logout',
-        profile: 'Profile',
     },
     menu: {
         monitor: 'Monitor',
@@ -28,6 +26,7 @@ export default {
         alarmEmail: 'Alarm Email',
         alarmThreshold: 'Alarm Threshold',
         account: 'User',
+        accountSetting: 'User Settings',
         userManager: 'User Manager',
         roleManager: 'Role Manager',
         apiManager: 'API Manager',
@@ -37,7 +36,6 @@ export default {
         systemDocker: 'Docker Setting',
     },
     avatar: {
-        profile: 'Profile',
         updatePassword: 'Update Password',
         logout: 'Logout',
     },
@@ -246,16 +244,6 @@ export default {
         inputOldPassword: 'Please Enter Old Password',
         inputRoleName: 'Please Enter Role Name',
         inputRemark: 'Please Enter Remark',
-    },
-    profile: {
-        currentAccount: 'Current Account',
-        username: 'Username',
-        status: 'Status',
-        role: 'Role',
-        enable: 'Enable',
-        disable: 'Disable',
-        admin: 'Admin',
-        normal: 'Normal',
     },
     audit: {
         title: 'Audit Log',
