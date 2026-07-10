@@ -1,127 +1,92 @@
 <script setup lang="ts">
-import type { AlarmThreshold, AlarmThresholdUpdateArgs } from '@/interface/alarm.ts'
 import { updateAlarmThreshold } from '@/api/alarm'
 import { success } from '@/components/Message/message.ts'
+import type { AlarmThreshold } from '@/interface/alarm.ts'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   visible: boolean
   title?: string
   threshold: AlarmThreshold
-  update?: () => void
+  update?: () => void | Promise<void>
 }>()
 
-const emits = defineEmits<{
-  (e: 'update:visible', visible: boolean): void
-  (e: 'close'): void
+const emit = defineEmits<{
+  'update:visible': [visible: boolean]
+  'close': []
 }>()
 
-const drawerVisible = computed<boolean>({
-  get() {
-    return props.visible
-  },
-  set(visible: boolean) {
-    emits('update:visible', visible)
-    if (!visible) {
-      emits('close')
-    }
+const dialogVisible = computed({
+  get: () => props.visible,
+  set: (visible: boolean) => {
+    emit('update:visible', visible)
+    if (!visible)
+      emit('close')
   },
 })
-
-// 编辑内存告警阈值
-const memThreshold = ref<AlarmThreshold>({
-  id: 0,
-  type: '',
-  duration: 0,
-  threshold: 0,
-})
-
-const optionOptions = [
-  {
-    value: 2,
-    label: '2分钟',
-  },
-  {
-    value: 3,
-    label: '3分钟',
-  },
-  {
-    value: 4,
-    label: '4分钟',
-  },
-  {
-    value: 5,
-    label: '5分钟',
-  },
-  {
-    value: 6,
-    label: '6分钟',
-  },
-  {
-    value: 7,
-    label: '7分钟',
-  },
-  {
-    value: 8,
-    label: '8分钟',
-  },
-  {
-    value: 9,
-    label: '9分钟',
-  },
-  {
-    value: 10,
-    label: '10分钟',
-  },
-]
-
-onMounted(() => {
-  memThreshold.value.id = props.threshold.id
-  memThreshold.value.type = props.threshold.type
-  memThreshold.value.duration = props.threshold.duration
-  memThreshold.value.threshold = props.threshold.threshold
-})
-
-function confirmEditMemoryThreshold() {
-  const params: AlarmThresholdUpdateArgs = {
-    id: memThreshold.value.id,
-    type: memThreshold.value.type,
-    duration: memThreshold.value.duration,
-    threshold: Number(memThreshold.value.threshold),
-  }
-  updateAlarmThreshold(params).finally(() => {
-    success('修改成功')
-    drawerVisible.value = false
-  })
-}
+const form = reactive<AlarmThreshold>({ ...props.threshold })
+const loading = shallowRef(false)
+const durationOptions = Array.from({ length: 9 }, (_, index) => index + 2)
 const { t } = useI18n()
+
+async function submit() {
+  loading.value = true
+  try {
+    await updateAlarmThreshold({ ...form, threshold: Number(form.threshold) })
+    success('修改成功')
+    dialogVisible.value = false
+    await props.update?.()
+  }
+  catch {
+    // 请求拦截器负责展示服务端错误；保留弹窗和本地输入供用户重试。
+  }
+  finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
-    <el-drawer v-model="drawerVisible" size="50%" :title="t(props.title as string)">
-        <el-form :model="memThreshold" label-width="160px" label-position="left">
-            <el-form-item prop="server" :label="t('setting.memAlarmThreshold')">
-                {{ t('setting.memUsage') }}
-                <el-select v-model="memThreshold.duration" size="small" style="width: 100px;margin: 0 4px">
-                    <el-option v-for="item in optionOptions" :key="item.value" :value="item.value" :label="item.label" />
-                </el-select>
-                {{ t('setting.over') }}
-                <el-input v-model="memThreshold.threshold" size="small" style="width: 140px;margin: 0 4px">
-                    <template #append>
-                        %
-                    </template>
-                </el-input>
+    <el-dialog v-model="dialogVisible" width="480px" :title="t(props.title ?? 'setting.memAlarmThreshold')">
+        <el-form :model="form" label-position="top">
+            <el-form-item :label="t('setting.memAlarmThreshold')">
+                <div class="threshold-row">
+                    <span>{{ t('setting.memUsage') }}</span>
+                    <el-select v-model="form.duration">
+                        <el-option v-for="duration in durationOptions" :key="duration" :value="duration" :label="`${duration} 分钟`" />
+                    </el-select>
+                    <span>{{ t('setting.over') }}</span>
+                    <el-input v-model="form.threshold">
+                        <template #append>
+                            %
+                        </template>
+                    </el-input>
+                </div>
             </el-form-item>
         </el-form>
-        <el-button type="primary" size="small" plain @click="drawerVisible = false">
-            {{ t('setting.cancel') }}
-        </el-button>
-        <el-button type="primary" size="small" plain @click="confirmEditMemoryThreshold">
-            {{ t('setting.confirm') }}
-        </el-button>
-    </el-drawer>
+        <template #footer>
+            <el-button @click="dialogVisible = false">
+                {{ t('setting.cancel') }}
+            </el-button>
+            <el-button :loading="loading" type="primary" @click="submit">
+                {{ t('setting.confirm') }}
+            </el-button>
+        </template>
+    </el-dialog>
 </template>
 
 <style scoped lang="scss">
+.threshold-row {
+  display: grid;
+  grid-template-columns: auto 110px auto minmax(120px, 1fr);
+  gap: var(--am-spacing-sm);
+  align-items: center;
+  width: 100%;
+}
 
+@media (max-width: 520px) {
+  .threshold-row {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

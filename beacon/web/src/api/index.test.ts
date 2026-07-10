@@ -14,8 +14,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Stub-pinia store handle exposed via the shared store.
-type StubStore = {
-    user: { token: string; refresh: string; setToken: ReturnType<typeof vi.fn> }
+interface StubStore {
+    user: { token: string, refresh: string, setToken: ReturnType<typeof vi.fn> }
     agent: { selectedAgentID: string }
 }
 const stubStore: StubStore = {
@@ -108,6 +108,15 @@ describe('api/index — request interceptor', () => {
 
         const out = await requestHandlers[0]({ headers: {}, url: '/api/v1/host/info' })
         expect(out.headers['X-Agent-ID']).toBe('agent-1')
+    })
+
+    it('injects X-Agent-ID for audit queries', async () => {
+        stubStore.agent.selectedAgentID = 'agent-audit'
+
+        await loadRequest()
+        const out = await requestHandlers[0]({ headers: {}, url: '/api/v1/audit/query?page=1&size=10' })
+
+        expect(out.headers['X-Agent-ID']).toBe('agent-audit')
     })
 
     it('injects Authorization from stubStore.user.token', async () => {

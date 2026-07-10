@@ -11,17 +11,17 @@ router.beforeEach(async (to, _, next) => {
     const store = useStore()
     if (store.user.token === '' && to.name !== 'login') {
         // 未登录，to 非登录页  --> 跳转登录页
-        next({ name: 'login' })
+        return next({ name: 'login' })
     }
     if (store.user.token === '' && to.name === 'login') {
         // 未登录，to 登录页
-        next()
+        return next()
     }
     if (store.user.token !== '' && to.name === 'login') {
         // 跳转首页
-        next({ name: 'overview' })
+        return next({ name: 'monitor' })
     }
-    next()
+    return next()
 })
 
 export default router

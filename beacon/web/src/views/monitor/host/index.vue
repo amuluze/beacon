@@ -255,90 +255,13 @@ const { t } = useI18n()
 </template>
 
 <style scoped lang="scss">
-.am-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  height: 100%;
-}
-.am-section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-}
-.am-section-title-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.am-section-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1a1a2e;
-}
-.am-density-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.am-density-label {
-  font-size: 13px;
-  color: #666;
-}
-.am-chart-grid {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 0 12px 12px;
-}
-.am-chart-row {
-  flex: 1;
-  display: flex;
-  gap: 12px;
-}
-.am-chart-card {
-  flex: 1;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.am-chart-card-header {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.am-chart-card-title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.am-chart-card-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1a1a2e;
-}
-.am-chart-card-percent {
-  font-size: 12px;
-  font-family: 'Geist Mono', monospace;
-  font-weight: 500;
-}
 .accent-primary {
-  color: #4f7cff;
+  color: var(--am-accent-primary);
 }
 .accent-warning {
-  color: #f5a623;
+  color: var(--am-accent-warning);
 }
 .accent-success {
-  color: #52c41a;
-}
-.am-chart-area {
-  flex: 1;
-  min-height: 180px;
+  color: var(--am-accent-success);
 }
 </style>

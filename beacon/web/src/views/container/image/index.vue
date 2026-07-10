@@ -85,7 +85,7 @@ const locale = computed(() => {
                 ref="tableRef"
                 v-loading="loading"
                 :data="tableData as Image[]"
-                :header-cell-style="{ height: '45px', fontSize: '14px', color: '#000' }"
+                :header-cell-style="{ height: '44px', fontSize: '13px', color: 'var(--am-foreground-primary)', background: 'var(--am-surface-secondary)' }"
                 height="100%"
                 border
                 @selection-change="handleSelectionChange"

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { createContainer, queryImages, queryNetworks } from '@/api/container'
+import { queryNetworks, updateContainer } from '@/api/container'
 import { error, success } from '@/components/Message/message'
-import type { Image, Network } from '@/interface/container'
+import type { Container, Network } from '@/interface/container'
 import {
-  emptyContainerForm,
+  containerToForm,
   restartPolicyOptions,
-  serializeContainerCreate,
+  serializeContainerUpdate,
 } from '@/views/container/container/containerForm'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useI18n } from 'vue-i18n'
@@ -13,6 +13,7 @@ import { useI18n } from 'vue-i18n'
 const props = defineProps<{
   visible: boolean
   title?: string
+  container: Container
   update?: () => void | Promise<void>
 }>()
 
@@ -32,24 +33,13 @@ const drawerVisible = computed({
 
 const { t } = useI18n()
 const formRef = ref<FormInstance>()
-const form = reactive(emptyContainerForm())
-const images = ref<Image[]>([])
+const form = reactive(containerToForm(props.container))
 const networks = ref<Network[]>([])
 const loading = shallowRef(false)
 
 const rules: FormRules = {
   containerName: [{ required: true, message: '请输入容器名称', trigger: 'blur' }],
-  imageName: [{ required: true, message: '请选择镜像', trigger: 'change' }],
-  networkName: [{ required: true, message: '请选择网络', trigger: 'change' }],
-}
-
-async function loadOptions() {
-  const [imageReply, networkReply] = await Promise.all([
-    queryImages({ page: 1, size: 100 }),
-    queryNetworks({ page: 1, size: 100 }),
-  ])
-  images.value = imageReply.data.data ?? []
-  networks.value = networkReply.data.data ?? []
+  imageName: [{ required: true, message: '请输入镜像名称', trigger: 'blur' }],
 }
 
 async function submit() {
@@ -61,9 +51,8 @@ async function submit() {
 
   loading.value = true
   try {
-    const network = networks.value.find(item => item.name === form.networkName)
-    await createContainer(serializeContainerCreate(form, network && { id: network.id, driver: network.driver }))
-    success('容器创建成功')
+    await updateContainer(serializeContainerUpdate(props.container.id, form))
+    success('容器更新成功')
     drawerVisible.value = false
     await props.update?.()
   }
@@ -75,29 +64,23 @@ async function submit() {
   }
 }
 
-onMounted(() => {
-  void loadOptions()
+onMounted(async () => {
+  const { data } = await queryNetworks({ page: 1, size: 100 })
+  networks.value = data.data ?? []
 })
 </script>
 
 <template>
-    <el-drawer v-model="drawerVisible" :title="t(props.title ?? 'container.addContainer')" size="480px" destroy-on-close>
+    <el-drawer v-model="drawerVisible" :title="t(props.title ?? 'container.editContainer')" size="480px" destroy-on-close>
         <el-form ref="formRef" class="container-form" :model="form" :rules="rules" label-position="top">
             <el-form-item :label="t('container.containerName')" prop="containerName">
-                <el-input v-model="form.containerName" :placeholder="t('container.containerCreatePlaceholder')" />
+                <el-input v-model="form.containerName" />
             </el-form-item>
             <el-form-item :label="t('container.imageName')" prop="imageName">
-                <el-select v-model="form.imageName" filterable :placeholder="t('container.containerCreateImagePlaceholder')">
-                    <el-option
-                        v-for="item in images"
-                        :key="item.id"
-                        :label="`${item.name}:${item.tag}`"
-                        :value="`${item.name}:${item.tag}`"
-                    />
-                </el-select>
+                <el-input v-model="form.imageName" />
             </el-form-item>
-            <el-form-item :label="t('container.networkName')" prop="networkName">
-                <el-select v-model="form.networkName" :placeholder="t('container.containerCreateNetworkPlaceholder')">
+            <el-form-item :label="t('container.networkName')">
+                <el-select v-model="form.networkName" filterable clearable :placeholder="t('container.keepCurrentNetwork')">
                     <el-option v-for="item in networks" :key="item.id" :label="item.name" :value="item.name" />
                 </el-select>
             </el-form-item>
@@ -124,7 +107,7 @@ onMounted(() => {
                 {{ t('container.cancel') }}
             </el-button>
             <el-button :loading="loading" type="primary" @click="submit">
-                {{ t('container.confirm') }}
+                {{ t('container.saveChanges') }}
             </el-button>
         </template>
     </el-drawer>

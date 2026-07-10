@@ -1,154 +1,114 @@
 <script setup lang="ts">
-import type { FormRules } from 'element-plus'
-import type { MailCreateArgs, MailUpdateArgs } from '@/interface/mail.ts'
 import { createMail, updateMail } from '@/api/mail'
 import { info } from '@/components/Message/message.ts'
 import type { EmailSetting } from '@/interface/alarm.ts'
+import type { MailCreateArgs, MailUpdateArgs } from '@/interface/mail.ts'
+import type { FormInstance, FormRules } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   visible: boolean
   title?: string
   setting: EmailSetting
-  update?: () => void
 }>()
 
-const emits = defineEmits<{
-  (e: 'update:visible', visible: boolean): void
-  (e: 'close'): void
+const emit = defineEmits<{
+  'update:visible': [visible: boolean]
+  'close': []
+  'saved': [setting: EmailSetting]
 }>()
 
-const drawerVisible = computed<boolean>({
-  get() {
-    return props.visible
-  },
-  set(visible: boolean) {
-    emits('update:visible', visible)
-    if (!visible) {
-      emits('close')
-    }
+const dialogVisible = computed({
+  get: () => props.visible,
+  set: (visible: boolean) => {
+    emit('update:visible', visible)
+    if (!visible)
+      emit('close')
   },
 })
 
-// 编辑发信服务配置
-let updateEmailSetting = reactive<EmailSetting>({
-  id: 0,
-  server: '',
-  port: 0,
-  sender: '',
-  password: '',
-  receiver: '',
-})
-
-onMounted(() => {
-  updateEmailSetting = props.setting
-})
-
-const loading = ref(false)
-
-interface RuleForm {
-  id: number
-  server: string
-  port: number
-  sender: string
-  password: string
-  receiver: string
-}
-
-const rules = reactive<FormRules<RuleForm>>({
-  server: [
-    {
-      required: true,
-      message: '请输入邮箱服务器地址',
-      trigger: 'blur',
-    },
-  ],
-  port: [
-    {
-      required: true,
-      message: '请输入邮箱服务器端口',
-      trigger: 'blur',
-    },
-  ],
-  sender: [
-    {
-      required: true,
-      message: '请输入发信邮箱账号',
-      trigger: 'blur',
-    },
-  ],
-  password: [
-    {
-      required: true,
-      message: '请输入发信邮箱密码',
-      trigger: 'blur',
-    },
-  ],
-})
-
-function confirmMailEdit() {
-  if (updateEmailSetting.id === 0) {
-    loading.value = true
-    const params: MailCreateArgs = {
-      server: updateEmailSetting.server,
-      port: Number(updateEmailSetting.port),
-      sender: updateEmailSetting.sender,
-      password: updateEmailSetting.password,
-      receiver: updateEmailSetting.receiver,
-    }
-    createMail(params).finally(() => {
-      info('邮件设置创建成功')
-      drawerVisible.value = false
-      loading.value = false
-    })
-  }
-  else {
-    loading.value = true
-    const params: MailUpdateArgs = {
-      id: updateEmailSetting.id,
-      server: updateEmailSetting.server,
-      port: Number(updateEmailSetting.port),
-      sender: updateEmailSetting.sender,
-      password: updateEmailSetting.password,
-      receiver: updateEmailSetting.receiver,
-    }
-    updateMail(params).finally(() => {
-      info('邮件设置更新成功')
-      drawerVisible.value = false
-      loading.value = false
-    })
-  }
-}
+const formRef = ref<FormInstance>()
+const form = reactive<EmailSetting>(structuredClone(toRaw(props.setting)))
+const loading = shallowRef(false)
 const { t } = useI18n()
+
+const rules: FormRules = {
+  server: [{ required: true, message: '请输入邮箱服务器地址', trigger: 'blur' }],
+  port: [{ required: true, message: '请输入邮箱服务器端口', trigger: 'blur' }],
+  sender: [{ required: true, message: '请输入发信邮箱账号', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入发信邮箱密码', trigger: 'blur' }],
+}
+
+async function submit() {
+  const valid = await formRef.value?.validate().catch(() => false)
+  if (!valid)
+    return
+
+  loading.value = true
+  try {
+    if (form.id === 0) {
+      const params: MailCreateArgs = {
+        server: form.server,
+        port: Number(form.port),
+        sender: form.sender,
+        password: form.password,
+        receiver: form.receiver,
+      }
+      await createMail(params)
+      info('邮件设置创建成功')
+    }
+    else {
+      const params: MailUpdateArgs = {
+        id: form.id,
+        server: form.server,
+        port: Number(form.port),
+        sender: form.sender,
+        password: form.password,
+        receiver: form.receiver,
+      }
+      await updateMail(params)
+      info('邮件设置更新成功')
+    }
+    emit('saved', structuredClone(toRaw(form)))
+    dialogVisible.value = false
+  }
+  catch {
+    // 请求拦截器负责展示服务端错误；保留本地表单供用户重试。
+  }
+  finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
-    <el-drawer v-model="drawerVisible" size="50%" :title="t(props.title as string)">
-        <el-form :model="updateEmailSetting" :rules="rules" label-width="160px" label-position="left">
+    <el-dialog v-model="dialogVisible" width="480px" :title="t(props.title ?? 'setting.mailServerSetting')">
+        <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
             <el-form-item prop="server" :label="t('setting.mailServerHost')">
-                <el-input v-model="updateEmailSetting.server" :placeholder="t('setting.hostPlaceholder')" />
+                <el-input v-model="form.server" :placeholder="t('setting.hostPlaceholder')" />
             </el-form-item>
             <el-form-item prop="port" :label="t('setting.mailServerPort')">
-                <el-input v-model="updateEmailSetting.port" :placeholder="t('setting.portPlaceholder')" />
+                <el-input v-model="form.port" :placeholder="t('setting.portPlaceholder')" />
             </el-form-item>
             <el-form-item prop="sender" :label="t('setting.mailServerAccount')">
-                <el-input v-model="updateEmailSetting.sender" :placeholder="t('setting.senderPlaceholder')" />
+                <el-input v-model="form.sender" :placeholder="t('setting.senderPlaceholder')" />
             </el-form-item>
             <el-form-item prop="password" :label="t('setting.mailServerPassword')">
-                <el-input v-model="updateEmailSetting.password" type="password" :placeholder="t('setting.passwordPlaceholder')" show-password />
+                <el-input v-model="form.password" type="password" show-password :placeholder="t('setting.passwordPlaceholder')" />
             </el-form-item>
             <el-form-item prop="receiver" :label="t('setting.mailReceiver')">
-                <el-input v-model="updateEmailSetting.receiver" :placeholder="t('setting.receiverPlaceholder')" />
+                <el-input v-model="form.receiver" :placeholder="t('setting.receiverPlaceholder')" />
             </el-form-item>
         </el-form>
-        <el-button type="primary" size="default" plain @click="drawerVisible = false">
-            {{ t('setting.cancel') }}
-        </el-button>
-        <el-button type="primary" size="default" plain @click="confirmMailEdit">
-            {{ t('setting.confirm') }}
-        </el-button>
-    </el-drawer>
+        <template #footer>
+            <el-button @click="dialogVisible = false">
+                {{ t('setting.cancel') }}
+            </el-button>
+            <el-button :loading="loading" type="primary" @click="submit">
+                {{ t('setting.confirm') }}
+            </el-button>
+        </template>
+    </el-dialog>
 </template>
 
-<style scoped lang="scss">
-</style>
+<style scoped lang="scss"></style>

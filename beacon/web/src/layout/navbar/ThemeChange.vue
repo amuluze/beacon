@@ -9,18 +9,13 @@ const { switchDark } = useTheme()
 function themeChange() {
   switchDark()
 }
-const dark = ref(store.theme.dark)
+const dark = computed(() => store.theme.dark)
 </script>
 
 <template>
-    <el-switch v-model="dark" class="mr-4" @change="themeChange">
-        <template #active-action>
-            <svg-icon icon-class="moon" />
-        </template>
-        <template #inactive-action>
-            <svg-icon icon-class="sunny" />
-        </template>
-    </el-switch>
+    <button class="am-topbar-action" type="button" :aria-label="dark ? '切换到浅色主题' : '切换到深色主题'" @click="themeChange">
+        <svg-icon :icon-class="dark ? 'moon' : 'sunny'" size="14px" />
+    </button>
 </template>
 
 <style scoped lang="scss">

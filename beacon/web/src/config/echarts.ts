@@ -41,7 +41,7 @@ export const cpuOption = {
             y2: 1,
             colorStops: [{
                 offset: 1,
-                color: ['#fff'],
+                color: ['#fbfcfe'],
             }, {
                 offset: 0,
                 color: ['#6a7feb'],
@@ -99,7 +99,7 @@ export const memOption = {
             y2: 1,
             colorStops: [{
                 offset: 1,
-                color: ['#fff'],
+                color: ['#fbfcfe'],
             }, {
                 offset: 0,
                 color: ['#c06504'],
@@ -157,7 +157,7 @@ export const diskOption = {
             y2: 1,
             colorStops: [{
                 offset: 1,
-                color: ['#fff'],
+                color: ['#fbfcfe'],
             }, {
                 offset: 0,
                 color: ['#5f7906'],

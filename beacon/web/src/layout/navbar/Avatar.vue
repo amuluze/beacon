@@ -10,6 +10,9 @@ import UpdatePassword from '@/layout/navbar/components/UpdatePassword.vue'
 const { t } = useI18n()
 const store = useStore()
 const router = useRouter()
+const displayName = computed(() => store.user.userInfo.name || 'admin')
+const avatarText = computed(() => displayName.value.slice(0, 1).toUpperCase())
+
 async function doLogout() {
   // 1. 退出登录
   await logout()
@@ -28,9 +31,10 @@ const updatePasswordDraw = useCommandComponent(UpdatePassword)
 
 <template>
     <el-dropdown trigger="click" placement="bottom">
-        <el-avatar size="small">
-            <i-ep-user />
-        </el-avatar>
+        <div class="am-avatar-trigger">
+            <span class="am-avatar-trigger__avatar">{{ avatarText }}</span>
+            <span class="am-avatar-trigger__name">{{ displayName }}</span>
+        </div>
         <template #dropdown>
             <el-dropdown-menu>
                 <el-dropdown-item @click.prevent="toProfile">
@@ -52,6 +56,36 @@ const updatePasswordDraw = useCommandComponent(UpdatePassword)
 </template>
 
 <style scoped lang="scss">
+.am-avatar-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--am-spacing-sm);
+  color: var(--am-foreground-primary);
+  cursor: pointer;
+
+  &__avatar {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--am-surface-primary);
+    background: var(--am-accent-primary);
+    border-radius: 50%;
+    font-size: var(--am-font-sm);
+    font-weight: 700;
+  }
+
+  &__name {
+    max-width: 120px;
+    overflow: hidden;
+    font-size: var(--am-font-sm);
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
 .el-divider {
   margin: 4px;
   width: 90%;

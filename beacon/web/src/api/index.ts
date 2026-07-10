@@ -20,6 +20,7 @@ import axios from 'axios'
 const agentScopedPrefixes = [
     '/api/v1/host/',
     '/api/v1/container/',
+    '/api/v1/audit/',
 ]
 
 const agentScopedExcludes = [

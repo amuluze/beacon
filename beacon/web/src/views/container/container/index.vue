@@ -11,10 +11,10 @@ import { useAgentSelection } from '@/hooks/useAgentSelection'
 import useCommandComponent from '@/hooks/useCommandComponent.ts'
 import AddContainer from '@/views/container/container/components/AddContainer.vue'
 import DeleteContainer from '@/views/container/container/components/DeleteContainer.vue'
+import EditContainer from '@/views/container/container/components/EditContainer.vue'
 import RestartContainer from '@/views/container/container/components/RestartContainer.vue'
 import StartContainer from '@/views/container/container/components/StartContainer.vue'
 import StopContainer from '@/views/container/container/components/StopContainer.vue'
-import ViewLog from '@/views/container/container/components/ViewLog.vue'
 
 import useStore from '@/store'
 import { getBrowserLanguage } from '@/utils'
@@ -56,7 +56,7 @@ const startContainer = useCommandComponent(StartContainer)
 const stopContainer = useCommandComponent(StopContainer)
 const restartContainer = useCommandComponent(RestartContainer)
 const deleteContainer = useCommandComponent(DeleteContainer)
-const viewLog = useCommandComponent(ViewLog)
+const editContainer = useCommandComponent(EditContainer)
 
 const { t } = useI18n()
 const store = useStore()
@@ -84,7 +84,7 @@ const locale = computed(() => {
                 ref="tableRef"
                 v-loading="loading"
                 :data="tableData as Container[]"
-                :header-cell-style="{ height: '45px', fontSize: '14px', color: '#000' }"
+                :header-cell-style="{ height: '44px', fontSize: '13px', color: 'var(--am-foreground-primary)', background: 'var(--am-surface-secondary)' }"
                 height="100%"
                 border
                 @selection-change="handleSelectionChange"
@@ -109,12 +109,8 @@ const locale = computed(() => {
                 <!--                <el-table-column prop="memory_percent" :label="t('container.menPercent')" align="center" min-width="180" show-overflow-tooltip /> -->
                 <!--                <el-table-column prop="memory_usage" :label="t('container.memUsed')" align="center" min-width="140" show-overflow-tooltip /> -->
                 <!--                <el-table-column prop="memory_limit" :label="t('container.memLimited')" align="center" min-width="160" show-overflow-tooltip /> -->
-                <el-table-column :label="t('container.operator')" width="240" fixed="right" align="center">
+                <el-table-column :label="t('container.operator')" width="190" fixed="right" align="center">
                     <template #default="scope">
-                        <el-button type="primary" size="small" text :disabled="isAgentEmpty" @click="viewLog({ title: 'container.viewLog', id: scope.row.id, update: search })">
-                            <svg-icon icon-class="log" />
-                            {{ t('container.log') }}
-                        </el-button>
                         <el-button type="primary" size="small" text :disabled="isAgentEmpty || enableEdit(scope.row.name)" @click="startContainer({ title: 'container.startContainer', id: scope.row.id, update: search })">
                             <svg-icon icon-class="start" />
                             {{ t('container.start') }}
@@ -126,6 +122,12 @@ const locale = computed(() => {
                             </el-button>
                             <template #dropdown>
                                 <el-dropdown-menu>
+                                    <el-dropdown-item>
+                                        <el-button type="primary" size="small" text :disabled="isAgentEmpty || enableEdit(scope.row.name)" @click="editContainer({ title: 'container.editContainer', container: scope.row, update: search })">
+                                            <svg-icon icon-class="edit" />
+                                            {{ t('container.edit') }}
+                                        </el-button>
+                                    </el-dropdown-item>
                                     <el-dropdown-item>
                                         <el-button type="warning" size="small" text :disabled="isAgentEmpty || enableEdit(scope.row.name)" @click="stopContainer({ title: 'container.stopContainer', id: scope.row.id, update: search })">
                                             <svg-icon icon-class="stop" />

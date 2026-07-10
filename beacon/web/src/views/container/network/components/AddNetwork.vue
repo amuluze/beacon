@@ -16,7 +16,7 @@ const emits = defineEmits<{
   (e: 'close'): void
 }>()
 
-const drawerVisible = computed<boolean>({
+const dialogVisible = computed<boolean>({
   get() {
     return props.visible
   },
@@ -75,23 +75,24 @@ async function confirmCreateNetwork(formEl: FormInstance | undefined) {
     }
     else {
       createNetworkLoading.value = true
-      const ls: Map<string, string> = new Map()
+      const labels: Record<string, string> = {}
       const labelsArr = networkCreateMode.networkLabels.split('\n')
       labelsArr.forEach((label) => {
         const [key, value] = label.split('=')
-        ls.set(key, value)
+        if (key?.trim())
+          labels[key.trim()] = value?.trim() ?? ''
       })
       const params: NetworkCreateArgs = {
         name: networkCreateMode.networkName,
         driver: networkCreateMode.networkMode,
-        network_sebnet: networkCreateMode.networkSubnet,
-        network_gateway: networkCreateMode.networkGateway,
-        labels: ls,
+        subnet: networkCreateMode.networkSubnet,
+        gateway: networkCreateMode.networkGateway,
+        labels,
       }
       createNetwork(params)
         .then(() => {
           createNetworkLoading.value = false
-          drawerVisible.value = false
+          dialogVisible.value = false
           success('创建成功')
           props.update && props.update()
         })
@@ -107,7 +108,7 @@ const { t } = useI18n()
 </script>
 
 <template>
-    <el-drawer v-model="drawerVisible" :title="t(props.title as string)" size="50%">
+    <el-dialog v-model="dialogVisible" :title="t(props.title as string)" width="480px">
         <div class="am-network-create__content">
             <el-form ref="networkCreateRef" :model="networkCreateMode" :rules="rules" label-width="160px" label-position="left">
                 <el-form-item :label="t('network.networkName')" prop="networkName">
@@ -130,14 +131,14 @@ const { t } = useI18n()
             </el-form>
         </div>
         <div class="am-network-create__operator">
-            <el-button type="default" size="default" plain @click="drawerVisible = false">
+            <el-button type="default" size="default" plain @click="dialogVisible = false">
                 {{ t('network.cancel') }}
             </el-button>
             <el-button v-loading="createNetworkLoading" type="primary" size="default" plain @click="confirmCreateNetwork(networkCreateRef)">
                 {{ t('network.confirm') }}
             </el-button>
         </div>
-    </el-drawer>
+    </el-dialog>
 </template>
 
 <style scoped lang="scss">

@@ -1,16 +1,9 @@
-/**
- * @Author     : Amu
- * @Date       : 2024/4/8 23:39
- * @Description:
- */
 import request from '@/api'
-import type { AuditQueryResult } from '@/interface/audit.ts'
-import type { Pagination } from '@/interface/pagination.ts'
+import type { AuditQueryParams, AuditQueryResult } from '@/interface/audit.ts'
 
-export async function queryOperateAudit(params: Pagination) {
+export async function queryAudit(params: AuditQueryParams) {
     return request.get<AuditQueryResult>('/api/v1/audit/query', params)
 }
 
-export async function querySystemAudit(params: Pagination) {
-    return request.get<AuditQueryResult>('/api/v1/audit/query', params)
-}
+export const queryOperateAudit = queryAudit
+export const querySystemAudit = queryAudit

@@ -53,7 +53,7 @@ const { t } = useI18n()
                 v-loading="loading"
                 :data="tableData"
                 height="100%"
-                :header-cell-style="{ height: '45px', fontSize: '14px', color: '#000', background: '#fafafa' }"
+                :header-cell-style="{ height: '44px', fontSize: '13px', color: 'var(--am-foreground-primary)', background: 'var(--am-surface-secondary)' }"
                 border
             >
                 <el-table-column prop="name" label="角色名" min-width="120" align="center" />

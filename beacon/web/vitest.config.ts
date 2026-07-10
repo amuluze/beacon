@@ -41,6 +41,11 @@ export default defineConfig({
         environment: 'happy-dom',
         globals: true,
         setupFiles: ['src/__tests__/setup.ts'],
+        server: {
+            deps: {
+                inline: [/element-plus/],
+            },
+        },
         coverage: {
             provider: 'v8',
             reporter: ['text', 'html'],

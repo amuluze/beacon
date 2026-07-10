@@ -42,11 +42,17 @@ const emptyDescription = computed(() => props.description || t('agent.emptyDescr
   align-items: center;
   justify-content: center;
   width: 100%;
+  padding: var(--am-spacing-xl);
+  color: var(--am-foreground-secondary);
+  background: var(--am-surface-card);
+  border: 1px dashed var(--am-border-subtle);
+  border-radius: var(--am-radius-md);
+  box-shadow: var(--am-shadow-subtle);
 }
 
 .agent-empty-state__description {
-  margin-bottom: 12px;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
+  margin-bottom: var(--am-spacing-md);
+  color: var(--am-foreground-muted);
+  font-size: var(--am-font-sm);
 }
 </style>

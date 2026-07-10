@@ -44,13 +44,18 @@ const uploadHeaders = computed(() => {
 function onSuccess() {
   success('导入成功')
   imageImportLoading.value = false
+  dialogVisible.value = false
   props.update && props.update()
+}
+
+function onError() {
+  imageImportLoading.value = false
 }
 const { t } = useI18n()
 </script>
 
 <template>
-    <el-dialog v-model="dialogVisible" :title="t(props.title as string)" width="50%">
+    <el-dialog v-model="dialogVisible" :title="t(props.title as string)" width="480px">
         <el-upload
 
             action="/api/v1/container/image_import"
@@ -59,6 +64,7 @@ const { t } = useI18n()
             :loading="imageImportLoading"
             multiple drag
             :on-success="onSuccess"
+            :on-error="onError"
         >
             <svg-icon icon-class="upload" />
             <div class="el-upload__text">
