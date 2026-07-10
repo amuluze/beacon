@@ -88,3 +88,26 @@ func TestAuditQueryFiltersByAgentID(t *testing.T) {
 		t.Fatalf("unknown agent count = %d, want 0", len(none))
 	}
 }
+
+func TestAuditCountUsesSameFiltersAsQuery(t *testing.T) {
+	db := newAuditTestDB(t)
+	if err := db.Create(&[]model.Audit{
+		{Username: "system", AgentID: "agent-a", Operate: "cpu alarm"},
+		{Username: "system", AgentID: "agent-a", Operate: "memory alarm"},
+		{Username: "system", AgentID: "agent-b", Operate: "disk alarm"},
+		{Username: "admin", AgentID: "agent-a", Operate: "login"},
+	}).Error; err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	repo := NewAuditRepo(db)
+	total, err := repo.AuditCount(t.Context(), schema.AuditQueryArgs{
+		Type: "system", AgentID: "agent-a", Page: 1, Size: 10,
+	})
+	if err != nil {
+		t.Fatalf("count: %v", err)
+	}
+	if total != 2 {
+		t.Fatalf("filtered total = %d, want 2", total)
+	}
+}

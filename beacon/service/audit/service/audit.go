@@ -46,7 +46,10 @@ func (a AuditService) AuditQuery(ctx context.Context, args schema.AuditQueryArgs
 			Created:  audit.CreatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}
-	total, _ := a.AuditRepo.AuditCount(ctx)
+	total, err := a.AuditRepo.AuditCount(ctx, args)
+	if err != nil {
+		return reply, err
+	}
 	reply.Data = list
 	reply.Total = total
 	reply.Page = args.Page

@@ -227,20 +227,22 @@ var _ mailRepo.IMailRepository = (*FakeMailRepo)(nil)
 
 type FakeAuditRepo struct {
 	AuditQueryFn func(ctx context.Context, args schema.AuditQueryArgs) (model.Audits, error)
-	AuditCountFn func(ctx context.Context) (int, error)
+	AuditCountFn func(ctx context.Context, args schema.AuditQueryArgs) (int, error)
 }
 
 func NewFakeAuditRepo() *FakeAuditRepo {
 	return &FakeAuditRepo{
 		AuditQueryFn: func(ctx context.Context, args schema.AuditQueryArgs) (model.Audits, error) { return nil, nil },
-		AuditCountFn: func(ctx context.Context) (int, error) { return 0, nil },
+		AuditCountFn: func(ctx context.Context, args schema.AuditQueryArgs) (int, error) { return 0, nil },
 	}
 }
 
 func (f *FakeAuditRepo) AuditQuery(ctx context.Context, args schema.AuditQueryArgs) (model.Audits, error) {
 	return f.AuditQueryFn(ctx, args)
 }
-func (f *FakeAuditRepo) AuditCount(ctx context.Context) (int, error) { return f.AuditCountFn(ctx) }
+func (f *FakeAuditRepo) AuditCount(ctx context.Context, args schema.AuditQueryArgs) (int, error) {
+	return f.AuditCountFn(ctx, args)
+}
 
 var _ auditRepo.IAuditRepo = (*FakeAuditRepo)(nil)
 

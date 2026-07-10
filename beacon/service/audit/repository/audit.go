@@ -22,7 +22,7 @@ var _ IAuditRepo = (*AuditRepo)(nil)
 
 type IAuditRepo interface {
 	AuditQuery(ctx context.Context, args schema.AuditQueryArgs) (model.Audits, error)
-	AuditCount(ctx context.Context) (int, error)
+	AuditCount(ctx context.Context, args schema.AuditQueryArgs) (int, error)
 }
 
 type AuditRepo struct {
@@ -33,43 +33,34 @@ func NewAuditRepo(db *database.DB) *AuditRepo {
 	return &AuditRepo{DB: db}
 }
 
+func (a *AuditRepo) filteredQuery(ctx context.Context, args schema.AuditQueryArgs) *gorm.DB {
+	q := a.DB.WithContext(ctx).Model(&model.Audit{})
+	if args.Type == "system" {
+		q = q.Where("username = ?", "system")
+	} else {
+		q = q.Where("username != ?", "system")
+	}
+	if args.AgentID != "" {
+		q = q.Where("agent_id = ?", args.AgentID)
+	}
+	return q
+}
+
 func (a *AuditRepo) AuditQuery(ctx context.Context, args schema.AuditQueryArgs) (model.Audits, error) {
 	var audits model.Audits
-
-	// Build the common conditions once and reuse across Type branches.
-	// The AgentID filter is optional; only applied when non-empty.
-	applyFilters := func(q *gorm.DB) *gorm.DB {
-		if args.AgentID != "" {
-			q = q.Where("agent_id = ?", args.AgentID)
-		}
-		return q
-	}
-
-	if args.Type == "system" {
-		q := a.DB.Model(&model.Audit{}).Where("username = ?", "system")
-		q = applyFilters(q)
-		if err := q.Order("created_at DESC").
-			Offset((args.Page - 1) * args.Size).
-			Limit(args.Size).
-			Find(&audits).Error; err != nil {
-			return audits, nil
-		}
-	} else {
-		q := a.DB.Model(&model.Audit{}).Where("username != ?", "system")
-		q = applyFilters(q)
-		if err := q.Order("created_at DESC").
-			Offset((args.Page - 1) * args.Size).
-			Limit(args.Size).
-			Find(&audits).Error; err != nil {
-			return audits, nil
-		}
+	if err := a.filteredQuery(ctx, args).
+		Order("created_at DESC").
+		Offset((args.Page - 1) * args.Size).
+		Limit(args.Size).
+		Find(&audits).Error; err != nil {
+		return nil, err
 	}
 	return audits, nil
 }
 
-func (a *AuditRepo) AuditCount(ctx context.Context) (int, error) {
+func (a *AuditRepo) AuditCount(ctx context.Context, args schema.AuditQueryArgs) (int, error) {
 	var count int64
-	if err := a.DB.Model(&model.Audit{}).Count(&count).Error; err != nil {
+	if err := a.filteredQuery(ctx, args).Count(&count).Error; err != nil {
 		return int(count), err
 	}
 	return int(count), nil
