@@ -27,7 +27,10 @@ body {
   margin: 0;
   font-family:
     'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  font-size: var(--am-font-md, 14px);
   line-height: inherit;
+  color: var(--am-foreground-primary, #1f2329);
+  background: var(--am-surface-primary, #fbfcfe);
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizelegibility;
@@ -78,5 +81,12 @@ div:focus {
 h4,
 p,
 span {
-  font-size: 14px;
+  font-size: inherit;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }

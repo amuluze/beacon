@@ -31,23 +31,27 @@ const imagePullLoading = ref(false)
 const imageNameForPull = ref('')
 async function confirmImagePull() {
   imagePullLoading.value = true
-  const params: PullImageArgs = {
-    image_name: imageNameForPull.value,
+  try {
+    const params: PullImageArgs = {
+      image_name: imageNameForPull.value,
+    }
+    await pullImage(params)
+    dialogVisible.value = false
+    await props.update?.()
   }
-  await pullImage(params)
-  imagePullLoading.value = false
-  dialogVisible.value = false
-  props.update && props.update()
+  finally {
+    imagePullLoading.value = false
+  }
 }
 
 const { t } = useI18n()
 </script>
 
 <template>
-    <el-dialog v-model="dialogVisible" :title="t(props.title as string)" width="50%">
+    <el-dialog v-model="dialogVisible" :title="t(props.title as string)" width="480px">
         <div class="am-image-pull">
             <el-input v-model="imageNameForPull" style="margin-right: 8px" :placeholder="t('image.pullImagePlaceholder')" />
-            <el-button v-loading="imagePullLoading" size="default" type="primary" plain @click="confirmImagePull">
+            <el-button :loading="imagePullLoading" size="default" type="primary" plain @click="confirmImagePull">
                 {{ t('image.confirm') }}
             </el-button>
         </div>

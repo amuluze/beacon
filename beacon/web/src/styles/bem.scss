@@ -42,16 +42,17 @@ $modifier-sel: '--' !default;
 
   height: 100%;
   width: 100%;
-  border-radius: 4px;
-  border: 1px solid var(--el-header-border-color);
-  color: var(--el-header-text-color);
-  background-color: var(--el-header-bg-color);
-  padding: 16px;
+  gap: var(--am-spacing-sm);
+  border-radius: var(--am-radius-md);
+  border: 0;
+  color: var(--am-foreground-primary);
+  background-color: var(--am-surface-primary);
+  padding: var(--am-spacing-lg);
 
   :deep(.el-card) {
     height: 100%;
-    color: var(--el-menu-text-color);
-    background-color: '#fff';
+    color: var(--am-foreground-primary);
+    background-color: var(--am-surface-card);
 
     :deep(.el-card__body) {
       height: 100%;
@@ -62,27 +63,28 @@ $modifier-sel: '--' !default;
 // el-table 撑满
 @include b(table) {
   flex: 1;
+  min-height: 0;
   max-height: 100%;
-  overflow: auto;
-  margin: 8px 0;
-  color: var(--el-menu-text-color);
-  background-color: var(--el-menu-bg-color);
+  overflow: hidden;
+  margin: 0;
+  color: var(--am-foreground-secondary);
+  background-color: var(--am-surface-card);
+  border: 1px solid var(--am-border-subtle);
+  border-radius: var(--am-radius-md);
 
   .el-table {
-    background-color: var(--el-menu-bg-color);
-    color: var(--el-menu-text-color);
-    //
+    background-color: var(--am-surface-card);
+    color: var(--am-foreground-secondary);
   }
 
   .el-table__header th {
-    background-color: var(--el-menu-bg-color) !important;
-    color: var(--el-menu-text-color) !important;
+    background-color: var(--am-surface-secondary) !important;
+    color: var(--am-foreground-primary) !important;
   }
 
   .el-table__row {
-    background-color: var(--el-menu-bg-color);
-    color: var(--el-menu-text-color);
-    // border: 1px solid var(--el-header-border-color);
+    background-color: var(--am-surface-card);
+    color: var(--am-foreground-secondary);
   }
 }
 
@@ -92,16 +94,14 @@ $modifier-sel: '--' !default;
   justify-content: space-between;
   height: 36px;
   width: 100%;
-  color: var(--el-menu-text-color);
-  // background-color: var(--el-menu-bg-color);
+  color: var(--am-foreground-secondary);
 }
 
 @include b(pagination) {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  color: var(--el-menu-text-color);
-  // background-color: var(--el-menu-bg-color);
+  color: var(--am-foreground-secondary);
 }
 
 @include b(description) {

@@ -17,7 +17,13 @@ export interface Container {
     memory_percent: number
     memory_usage: number
     memory_limit: number
+    network?: string
+    volumes?: string
+    environments?: string
+    labels?: Record<string, string>
 }
+
+export type RestartPolicy = 'no' | 'always' | 'unless-stopped' | 'on-failure'
 
 export interface CreateContainerArgs {
     container_name: string
@@ -28,10 +34,27 @@ export interface CreateContainerArgs {
     ports: string[]
     volumes: string[]
     environments: string[]
-    labels: Map<string, string>
+    labels: Record<string, string>
+    restart_policy: RestartPolicy
 }
 
 export interface CreateContainerResult {
+    container_id: string
+}
+
+export interface UpdateContainerArgs {
+    container_id: string
+    container_name: string
+    image_name: string
+    network_name: string
+    ports: string[]
+    volumes?: string[]
+    environments?: string[]
+    labels?: Record<string, string>
+    restart_policy: RestartPolicy
+}
+
+export interface UpdateContainerResult {
     container_id: string
 }
 
@@ -101,9 +124,9 @@ export interface NetworkQueryResult {
 export interface NetworkCreateArgs {
     name: string
     driver: string
-    network_sebnet: string
-    network_gateway: string
-    labels: Map<string, string>
+    subnet: string
+    gateway: string
+    labels: Record<string, string>
 }
 
 export interface NetworkCreateResult {

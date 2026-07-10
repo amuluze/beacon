@@ -6,6 +6,8 @@ interface UseAgentSelectionOptions {
     immediate?: boolean
 }
 
+let agentLoadPromise: Promise<string> | null = null
+
 export function useAgentSelection(options: UseAgentSelectionOptions = {}) {
     const store = useStore()
 
@@ -24,16 +26,23 @@ export function useAgentSelection(options: UseAgentSelectionOptions = {}) {
         return { agent_id: selectedAgentID.value }
     })
 
-    async function loadAgents() {
+    async function loadAgents(): Promise<string> {
+        if (agentLoadPromise)
+            return agentLoadPromise
+
         store.agent.setLoading(true)
-        try {
-            const { data } = await queryAgentList()
-            store.agent.setAgents(data || [])
-        }
-        finally {
-            store.agent.setLoading(false)
-        }
-        return store.agent.selectedAgentID
+        agentLoadPromise = (async () => {
+            try {
+                const { data } = await queryAgentList()
+                store.agent.setAgents(data || [])
+                return store.agent.selectedAgentID
+            }
+            finally {
+                store.agent.setLoading(false)
+                agentLoadPromise = null
+            }
+        })()
+        return agentLoadPromise
     }
 
     async function ensureSelectedAgent() {

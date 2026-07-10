@@ -1,12 +1,7 @@
-/**
- * @Author     : Amu
- * @Date       : 2024/4/8 23:41
- * @Description:
- */
-
 export interface Audit {
     id: number
     username: string
+    agent_id?: string
     operate: string
     created: string
 }
@@ -18,8 +13,9 @@ export interface AuditQueryResult {
     size: number
 }
 
-export interface SystemAuditQueryParams {
-    type: string
+export interface AuditQueryParams {
+    type?: string
+    agent_id?: string
     page: number
     size: number
 }

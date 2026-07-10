@@ -34,6 +34,7 @@ const cpuOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(containerCpu
 const memOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(containerMemOption)))
 
 const containerNames = ref<string[]>([])
+const containerPalette = ['#409EFF', '#569A2E', '#C28014', '#DB5050']
 
 async function render() {
   if (!currentAgent.value)
@@ -49,9 +50,8 @@ async function render() {
   const memData = new Map<string, Usage[]>(Object.entries(data.mem_usage))
 
   // Legend
-  const cpuLegendColors = ['#4f7cff', '#52c41a', '#f5a623', '#f56c6c']
-  set(cpuOption, 'legend.data', data.names.map((n: string, i: number) => ({ name: n, textStyle: { color: cpuLegendColors[i % 4] } })))
-  set(memOption, 'legend.data', data.names.map((n: string, i: number) => ({ name: n, textStyle: { color: cpuLegendColors[i % 4] } })))
+  set(cpuOption, 'legend.data', data.names.map((n: string, i: number) => ({ name: n, textStyle: { color: containerPalette[i % containerPalette.length] } })))
+  set(memOption, 'legend.data', data.names.map((n: string, i: number) => ({ name: n, textStyle: { color: containerPalette[i % containerPalette.length] } })))
 
   // X axis from first container
   const cpuFirstKey = cpuData.keys().next().value as string
@@ -70,8 +70,8 @@ async function render() {
         type: 'line',
         smooth: true,
         showSymbol: false,
-        lineStyle: { width: 1.5, color: cpuLegendColors[i % 4] },
-        itemStyle: { color: cpuLegendColors[i % 4] },
+        lineStyle: { width: 1.5, color: containerPalette[i % containerPalette.length] },
+        itemStyle: { color: containerPalette[i % containerPalette.length] },
       })
     }
   })
@@ -87,8 +87,8 @@ async function render() {
         type: 'line',
         smooth: true,
         showSymbol: false,
-        lineStyle: { width: 1.5, color: cpuLegendColors[i % 4] },
-        itemStyle: { color: cpuLegendColors[i % 4] },
+        lineStyle: { width: 1.5, color: containerPalette[i % containerPalette.length] },
+        itemStyle: { color: containerPalette[i % containerPalette.length] },
       })
     }
   })
@@ -139,7 +139,7 @@ onUnmounted(() => {
                         <span class="am-chart-card-title">CPU 使用率</span>
                         <div class="am-chart-card-legend">
                             <div v-for="(name, i) in containerNames" :key="name" class="am-legend-item">
-                                <span class="am-legend-dot" :style="{ background: ['#4f7cff', '#52c41a', '#f5a623', '#f56c6c'][i % 4] }" />
+                                <span class="am-legend-dot" :style="{ background: containerPalette[i % containerPalette.length] }" />
                                 <span class="am-legend-label">{{ name }}</span>
                             </div>
                         </div>
@@ -153,7 +153,7 @@ onUnmounted(() => {
                         <span class="am-chart-card-title">内存使用率</span>
                         <div class="am-chart-card-legend">
                             <div v-for="(name, i) in containerNames" :key="name" class="am-legend-item">
-                                <span class="am-legend-dot" :style="{ background: ['#4f7cff', '#52c41a', '#f5a623', '#f56c6c'][i % 4] }" />
+                                <span class="am-legend-dot" :style="{ background: containerPalette[i % containerPalette.length] }" />
                                 <span class="am-legend-label">{{ name }}</span>
                             </div>
                         </div>
@@ -168,69 +168,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped lang="scss">
-.am-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  height: 100%;
-}
-.am-section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-}
-.am-section-title-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.am-section-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1a1a2e;
-}
-.am-density-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.am-density-label {
-  font-size: 13px;
-  color: #666;
-}
-.am-chart-grid {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 0 12px 12px;
-}
-.am-chart-row {
-  flex: 1;
-  display: flex;
-  gap: 12px;
-}
-.am-chart-card {
-  flex: 1;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.am-chart-card-header {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.am-chart-card-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1a1a2e;
-}
 .am-chart-card-legend {
   display: flex;
   gap: 14px;
@@ -248,11 +185,7 @@ onUnmounted(() => {
   display: inline-block;
 }
 .am-legend-label {
-  font-size: 11px;
-  color: #888;
-}
-.am-chart-area {
-  flex: 1;
-  min-height: 200px;
+  color: var(--am-foreground-muted);
+  font-size: var(--am-font-xs);
 }
 </style>

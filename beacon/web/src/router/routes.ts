@@ -11,7 +11,7 @@ const routes: RouteRecordRaw[] = [
         path: '/',
         name: 'layout',
         component: async () => import('@/layout/index.vue'),
-        redirect: '/overview',
+        redirect: '/monitor',
         children: [...dynamicRoutes],
     },
     {

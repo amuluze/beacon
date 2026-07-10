@@ -1,5 +1,4 @@
 import request from '@/api'
-export { queryAgentList } from '@/api/agent'
 import type {
     ContainerQueryResult,
     ContainerTrending,
@@ -21,8 +20,12 @@ import type {
     SetDockerRegistryMirrorsArgs,
     StartContainerArgs,
     StopContainerArgs,
+    UpdateContainerArgs,
+    UpdateContainerResult,
 } from '@/interface/container.ts'
 import type { Pagination } from '@/interface/pagination'
+
+export { queryAgentList } from '@/api/agent'
 
 export async function queryContainers(params: Pagination) {
     return request.get<ContainerQueryResult>('/api/v1/container/containers', params)
@@ -34,6 +37,10 @@ export async function queryContainersUsage(param: ContainerTrendingArgs) {
 
 export async function createContainer(params: CreateContainerArgs) {
     return request.post<CreateContainerResult>('/api/v1/container/container_create', params)
+}
+
+export async function updateContainer(params: UpdateContainerArgs) {
+    return request.post<UpdateContainerResult>('/api/v1/container/container_update', params)
 }
 
 export async function startContainer(params: StartContainerArgs) {

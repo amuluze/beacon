@@ -53,7 +53,7 @@ const { t } = useI18n()
         <el-form ref="searchFormRef" :inline="true" :model="searchForm" label-width="auto">
             <el-row :class="{ 'condition-col': !collapsed }" align="middle" :gutter="5">
                 <el-col v-for="(item, index) in props.items.slice(0, collapsed ? initConditionLen : props.items.length)" :key="index" class="custom-col" :xl="6" :lg="6" :md="8" :sm="12" :xs="24">
-                    <el-form-item :label="t(item.label)" :prop="item.prop" style="width: 90%">
+                    <el-form-item :label="t(item.label)" :prop="item.prop">
                         <!-- 输入框 -->
                         <el-input
                             v-if="item.type === 'input'"
@@ -126,18 +126,20 @@ const { t } = useI18n()
 <style scoped lang="scss">
 @include b(search) {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  padding: 16px;
-  margin-bottom: 8px;
-  border-radius: 4px;
-  border: 1px solid var(--el-header-border-color);
-  color: var(--el-header-text-color);
-  background-color: var(--el-header-bg-color);
+  padding: var(--am-spacing-md);
+  border: 1px solid var(--am-border-subtle);
+  border-radius: var(--am-radius-md);
+  color: var(--am-foreground-primary);
+  background-color: var(--am-surface-card);
+  box-shadow: var(--am-shadow-subtle);
+
   .el-form {
     width: 100%;
     height: 100%;
+
     .el-form-item {
+      width: 100%;
       margin: 0;
     }
   }
@@ -150,12 +152,19 @@ const { t } = useI18n()
 }
 
 .custom-col {
-  /*默认值*/
   margin-bottom: 0;
   display: flex;
-  flex-direction: row;
   align-items: center;
-  justify-content: space-between;
+  min-width: 0;
+}
+
+.btn-group-item {
+  :deep(.el-form-item__content) {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--am-spacing-sm);
+    flex-wrap: wrap;
+  }
 }
 /* xl */
 @media (min-width: 1920px) {
@@ -185,6 +194,12 @@ const { t } = useI18n()
 @media (max-width: 767px) {
   .custom-col {
     margin-bottom: 8px;
+  }
+
+  .btn-group-item {
+    :deep(.el-form-item__content) {
+      justify-content: flex-start;
+    }
   }
 }
 </style>

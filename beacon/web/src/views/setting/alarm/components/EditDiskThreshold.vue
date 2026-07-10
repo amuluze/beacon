@@ -1,84 +1,80 @@
 <script setup lang="ts">
-import type { AlarmThreshold, AlarmThresholdUpdateArgs } from '@/interface/alarm.ts'
 import { updateAlarmThreshold } from '@/api/alarm'
 import { success } from '@/components/Message/message.ts'
+import type { AlarmThreshold } from '@/interface/alarm.ts'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   visible: boolean
   title?: string
   threshold: AlarmThreshold
-  update?: () => void
+  update?: () => void | Promise<void>
 }>()
 
-const emits = defineEmits<{
-  (e: 'update:visible', visible: boolean): void
-  (e: 'close'): void
+const emit = defineEmits<{
+  'update:visible': [visible: boolean]
+  'close': []
 }>()
 
-const drawerVisible = computed<boolean>({
-  get() {
-    return props.visible
-  },
-  set(visible: boolean) {
-    emits('update:visible', visible)
-    if (!visible) {
-      emits('close')
-    }
+const dialogVisible = computed({
+  get: () => props.visible,
+  set: (visible: boolean) => {
+    emit('update:visible', visible)
+    if (!visible)
+      emit('close')
   },
 })
-
-// 编辑磁盘告警阈值
-const diskThreshold = ref<AlarmThreshold>({
-  id: 0,
-  type: 'disk',
-  duration: 0,
-  threshold: 0,
-})
-
-onMounted(() => {
-  diskThreshold.value.id = props.threshold.id
-  diskThreshold.value.type = props.threshold.type
-  diskThreshold.value.duration = props.threshold.duration
-  diskThreshold.value.threshold = props.threshold.threshold
-})
-
-function confirmEditDiskThreshold() {
-  const params: AlarmThresholdUpdateArgs = {
-    id: diskThreshold.value.id,
-    type: 'disk',
-    duration: diskThreshold.value.duration,
-    threshold: Number(diskThreshold.value.threshold),
-  }
-  updateAlarmThreshold(params).finally(() => {
-    success('修改成功')
-    drawerVisible.value = false
-  })
-}
+const form = reactive<AlarmThreshold>({ ...props.threshold, type: 'disk' })
+const loading = shallowRef(false)
 const { t } = useI18n()
+
+async function submit() {
+  loading.value = true
+  try {
+    await updateAlarmThreshold({ ...form, threshold: Number(form.threshold) })
+    success('修改成功')
+    dialogVisible.value = false
+    await props.update?.()
+  }
+  catch {
+    // 请求拦截器负责展示服务端错误；保留弹窗和本地输入供用户重试。
+  }
+  finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
-    <el-drawer v-model="drawerVisible" size="50%" :title="t(props.title as string)">
-        <el-form :model="diskThreshold" label-width="160px" label-position="left">
-            <el-form-item prop="server" :label="t('setting.diskAlarmThreshold')">
-                {{ t('setting.diskUsage') }}
-                <el-input v-model="diskThreshold.threshold" size="small" style="width: 140px;margin: 0 4px">
-                    <template #append>
-                        %
-                    </template>
-                </el-input>
+    <el-dialog v-model="dialogVisible" width="480px" :title="t(props.title ?? 'setting.diskAlarmThreshold')">
+        <el-form :model="form" label-position="top">
+            <el-form-item :label="t('setting.diskAlarmThreshold')">
+                <div class="threshold-row">
+                    <span>{{ t('setting.diskUsage') }}</span>
+                    <el-input v-model="form.threshold">
+                        <template #append>
+                            %
+                        </template>
+                    </el-input>
+                </div>
             </el-form-item>
         </el-form>
-        <el-button type="primary" size="small" plain @click="drawerVisible = false">
-            {{ t('setting.cancel') }}
-        </el-button>
-        <el-button type="primary" size="small" plain @click="confirmEditDiskThreshold">
-            {{ t('setting.confirm') }}
-        </el-button>
-    </el-drawer>
+        <template #footer>
+            <el-button @click="dialogVisible = false">
+                {{ t('setting.cancel') }}
+            </el-button>
+            <el-button :loading="loading" type="primary" @click="submit">
+                {{ t('setting.confirm') }}
+            </el-button>
+        </template>
+    </el-dialog>
 </template>
 
 <style scoped lang="scss">
-
+.threshold-row {
+  display: grid;
+  grid-template-columns: auto minmax(120px, 1fr);
+  gap: var(--am-spacing-sm);
+  align-items: center;
+}
 </style>

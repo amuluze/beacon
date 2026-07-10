@@ -10,16 +10,14 @@
 @include b(content) {
   display: flex;
   flex-direction: column;
-
+  flex: 1;
   width: 100%;
-  height: calc(100vh - 72px);
-
-  overflow: hidden;
-  margin-top: 8px;
+  min-height: 0;
+  overflow: auto;
   position: relative;
   box-sizing: border-box;
 
-  color: var(--el-header-text-color);
-  background-color: var(--el-bg-color);
+  color: var(--am-foreground-primary);
+  background-color: var(--am-surface-primary);
 }
 </style>

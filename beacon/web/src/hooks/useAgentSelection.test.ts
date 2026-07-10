@@ -1,7 +1,7 @@
 import type { AgentInfo } from '@/interface/agent'
 import { queryAgentList } from '@/api/agent'
 import { useAgentSelection } from '@/hooks/useAgentSelection'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/api/agent', () => ({
     queryAgentList: vi.fn(),
@@ -21,6 +21,10 @@ function agent(agent_id: string, hostname = agent_id): AgentInfo {
 }
 
 describe('useAgentSelection', () => {
+    beforeEach(() => {
+        queryAgentListMock.mockReset()
+    })
+
     it('exposes empty derived state before agents are loaded', () => {
         const selection = useAgentSelection({ immediate: false })
 
@@ -80,5 +84,19 @@ describe('useAgentSelection', () => {
 
         expect(queryAgentListMock).toHaveBeenCalledTimes(1)
         expect(selection.selectedAgentID.value).toBe('agent-a')
+    })
+
+    it('deduplicates concurrent agent list requests across workspace sections', async () => {
+        let resolveQuery!: (value: { data: AgentInfo[] }) => void
+        queryAgentListMock.mockReturnValueOnce(new Promise(resolve => resolveQuery = resolve))
+        const first = useAgentSelection({ immediate: false })
+        const second = useAgentSelection({ immediate: false })
+
+        const firstLoad = first.loadAgents()
+        const secondLoad = second.loadAgents()
+
+        expect(queryAgentListMock).toHaveBeenCalledTimes(1)
+        resolveQuery({ data: [agent('agent-a')] })
+        await expect(Promise.all([firstLoad, secondLoad])).resolves.toEqual(['agent-a', 'agent-a'])
     })
 })

@@ -18,8 +18,10 @@ function changeLanguage(lang: string) {
 </script>
 
 <template>
-    <el-dropdown class="mr-4" trigger="click" @command="changeLanguage">
-        <svg-icon size="1.2rem" icon-class="translate" />
+    <el-dropdown trigger="click" @command="changeLanguage">
+        <button class="am-topbar-action" type="button" aria-label="切换语言">
+            <svg-icon size="14px" icon-class="translate" />
+        </button>
         <template #dropdown>
             <el-dropdown-menu>
                 <el-dropdown-item
