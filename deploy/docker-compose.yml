@@ -1,10 +1,8 @@
-version: '3.8'
+version: "3.8"
 
 services:
   beacon:
-    build:
-      context: ..
-      dockerfile: beacon/Dockerfile
+    image: beacon:latest
     container_name: beacon
     restart: unless-stopped
     ports:
