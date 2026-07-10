@@ -1,41 +1,27 @@
-@use './mixins.scss' as *;
-
-* {
-    margin: 0;
-    padding: 0;
+html,
+body,
+#__nuxt {
+  min-height: 100%;
 }
 
-body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Microsoft YaHei', '微软雅黑', sans-serif;
-    font-size: 16px;
-    line-height: 1.6;
-    overflow-x: hidden;
-    @include bg('primary');
-    color: #e2e8f0;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-ul,
-li {
-    list-style: none;
-}
-
-a {
-    text-decoration: none;
-    color: #b8b5b5;
-}
-
+body,
 h1,
 h2,
 h3,
 h4,
-h5,
-h6 {
-    font-weight: normal;
+p,
+ul,
+ol {
+  margin: 0;
 }
 
-.flex {
-    display: flex;
+ul,
+ol {
+  padding: 0;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
 }

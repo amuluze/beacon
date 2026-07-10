@@ -1,13 +1,10 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-import { resolve } from 'node:path'
-
 import { defineNuxtConfig } from 'nuxt/config'
 import IconsResolver from 'unplugin-icons/resolver'
 import Icons from 'unplugin-icons/vite'
 
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import Components from 'unplugin-vue-components/vite'
-import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 
 const serverProxyTarget = process.env.NUXT_SERVER_PROXY_TARGET || 'http://127.0.0.1:8000'
 
@@ -86,11 +83,6 @@ export default defineNuxtConfig({
                 // 自动安装图标库
                 autoInstall: true,
                 compiler: 'vue3',
-            }),
-            createSvgIconsPlugin({
-                iconDirs: [resolve(__dirname, 'src/assets/svg')],
-                // 指定symbolId格式
-                symbolId: 'icon-[dir]-[name]',
             }),
         ],
     },

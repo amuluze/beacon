@@ -1,478 +1,319 @@
 <script setup lang="ts">
-// 设置页面标题
-useHead({
-    title: 'Beacon 使用手册 - 轻量级主机监控及 Docker 容器管理工具',
-})
+const faq = [
+    {
+        question: '如何备份和恢复配置？',
+        answer: '备份 /data/beacon 目录（含 .env、compose.yaml 与数据），执行 tar -czf beacon-backup.tar.gz /data/beacon；恢复时解压到原目录并执行 docker compose up -d。',
+    },
+    {
+        question: '如何更新到最新版本？',
+        answer: '进入安装目录，建议先备份配置与数据，再执行 docker compose pull && docker compose up -d，即可拉取并应用最新镜像。',
+    },
+    {
+        question: '初始化用户有哪些？密码是什么？',
+        answer: '管理员 admin / admin123，普通用户 beacon / 123456；管理员可管理普通用户，请上线后及时修改默认密码。',
+    },
+    {
+        question: '如何获取技术支持？',
+        answer: '通过 GitHub Issues 反馈需求与问题，或邮件联系 314901758@qq.com，也可关注公众号获取更新动态。',
+    },
+]
+
+useHead({ title: 'Beacon 使用手册' })
 </script>
 
 <template>
-    <div class="am-document">
-        <div class="am-document__header">
-            <h1 class="am-document__title">
-                Beacon 2.0 使用手册
-            </h1>
-            <p class="am-document__subtitle">
-                轻量级主机监控及 Docker 容器管理工具
-            </p>
-        </div>
+    <div>
+        <header class="site-page-header">
+            <div class="site-container">
+                <p class="site-overline">使用手册</p>
+                <h1 class="site-page-title">Beacon 使用手册</h1>
+                <p class="site-page-description">基于 Docker Compose，几分钟完成部署，开箱即用</p>
+            </div>
+        </header>
 
-        <div class="am-document__content">
-            <!-- 第一部分：安装使用 -->
-            <section class="am-section">
-                <div class="am-section__header">
-                    <h2 class="am-section__title">
-                        <span class="am-section__number">01</span>
-                        安装使用
-                    </h2>
-                </div>
+        <main class="site-container docs">
+            <aside class="site-card docs__toc">
+                <strong>目录</strong>
+                <a href="#install">安装使用</a>
+                <a href="#faq">常见问题</a>
+                <a href="#support">技术支持</a>
+            </aside>
 
-                <div class="am-section__content">
-                    <div class="am-install">
+            <div class="docs__content">
+                <section id="install" class="docs__section">
+                    <header class="docs__section-header">
+                        <span>01</span>
+                        <div>
+                            <h2>安装使用</h2>
+                            <p>通过官方安装脚本一键部署 Beacon，或手动使用 Docker Compose 启动。</p>
+                        </div>
+                    </header>
+
+                    <article class="site-card docs__card">
                         <h3>一键安装</h3>
-                        <div class="am-code-block">
-                            <pre><code>
-# 下载并执行安装脚本
+                        <pre class="site-code"><code># 下载并执行安装脚本
 curl -fsSL https://official.beacon.amuluze.com/download/install.sh -o install.sh
 sh install.sh
 
 # 非交互安装示例
-INSTALL_DIR=/data/beacon \
-BEACON_HTTP_PORT=1443 \
-BEACON_CONTROL_PORT=17000 \
-BEACON_PUBLIC_BASE_URL=http://服务器IP:1443 \
-sh install.sh
-                            </code></pre>
-                        </div>
-
-                        <h3>安装脚本会做什么</h3>
-                        <ul>
-                            <li>提示输入安装目录，默认目录为 <code>/data/beacon</code>；</li>
-                            <li>从官网接口下载 <code>compose.yaml</code> 到安装目录；</li>
-                            <li>在同一目录生成并可编辑 <code>.env</code>，用于配置镜像、端口、公开访问地址、Agent 安装 Token 等环境变量；</li>
-                            <li>执行 <code>docker compose pull</code> 和 <code>docker compose up -d</code> 启动 Beacon 容器。</li>
-                        </ul>
+BEACON_HTTP_PORT=1443 sh install.sh</code></pre>
 
                         <h3>手动安装</h3>
-                        <div class="am-code-block">
-                            <pre><code>
-mkdir -p /data/beacon
-cd /data/beacon
-
+                        <pre class="site-code"><code>mkdir -p /data/beacon && cd /data/beacon
 curl -fsSL https://official.beacon.amuluze.com/download/compose.yaml -o compose.yaml
+# 编辑 .env 配置端口 / Token / 密钥
+docker compose up -d</code></pre>
 
-cat > .env <<'EOF'
-BEACON_IMAGE=registry.cn-hangzhou.aliyuncs.com/amuluze/beacon:latest
-BEACON_CONTAINER_NAME=beacon
-BEACON_HTTP_PORT=1443
-BEACON_CONTROL_PORT=17000
-BEACON_DATA_DIR=./data
-BEACON_LOG_DIR=./logs
-BEACON_DB_NAME=/app/data/beacon
-BEACON_PUBLIC_BASE_URL=http://服务器IP:1443
-BEACON_AGENT_INSTALL_TOKEN=请替换为随机长字符串
-BEACON_AUTH_SIGNING_KEY=请替换为随机长字符串
-EOF
-
-docker compose up -d
-                            </code></pre>
-                        </div>
-
-                        <p>
-                            安装目录中的
-                            <code>.env</code>
-                            是容器部署的主要配置入口，修改后需要在同一目录执行
-                            <code>docker compose up -d</code>
-                            重新应用。
-                        </p>
-                        <p>
-                            启动 Beacon 前，请确认：
-                        </p>
-                        <ul>
-                            <li>
-                                已安装 Docker，并支持 <code>docker compose</code> 命令；
-                            </li>
-                            <li>
-                                <code>BEACON_HTTP_PORT</code> 和 <code>BEACON_CONTROL_PORT</code> 未被占用；
-                            </li>
-                            <li>
-                                <code>BEACON_PUBLIC_BASE_URL</code> 能被浏览器和 Agent 节点访问；
-                            </li>
-                            <li>
-                                <code>BEACON_AGENT_INSTALL_TOKEN</code> 和 <code>BEACON_AUTH_SIGNING_KEY</code> 已替换为随机长字符串。
-                            </li>
-                        </ul>
                         <h3>运维命令</h3>
-                        <div class="am-code-block">
-                            <pre><code>
-# 进入安装目录
-cd /data/beacon
+                        <pre class="site-code"><code>cd /data/beacon
+docker compose up -d        # 启动 / 更新
+docker compose ps           # 查看状态
+docker compose logs -f      # 查看日志
+docker compose down         # 停止服务</code></pre>
 
-# 启动或更新服务
-docker compose up -d
+                        <p class="docs__callout">启动 beacon 容器后，浏览器访问 <code>http://服务器IP:1443</code> 即可进入管理面板。初始账号 admin / admin123。</p>
+                    </article>
+                </section>
 
-# 查看服务状态和日志
-docker compose ps
-docker compose logs -f
-
-# 停止服务
-docker compose down
-                            </code></pre>
+                <section id="faq" class="docs__section">
+                    <header class="docs__section-header">
+                        <span>02</span>
+                        <div>
+                            <h2>常见问题</h2>
+                            <p>部署与使用中的高频问题解答。</p>
                         </div>
-
-                        <h3>访问服务</h3>
-                        <p>启动 <code>beacon</code> 容器后，可通过浏览器访问 <code>BEACON_PUBLIC_BASE_URL</code> 或 <code>http://服务器IP:1443</code> 进行管理。</p>
+                    </header>
+                    <div class="docs__faq">
+                        <article v-for="item in faq" :key="item.question" class="site-card docs__faq-item">
+                            <div class="docs__qa">Q</div>
+                            <div>
+                                <h3>{{ item.question }}</h3>
+                                <p>{{ item.answer }}</p>
+                            </div>
+                        </article>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- 第二部分：常见问题 -->
-            <section class="am-section">
-                <div class="am-section__header">
-                    <h2 class="am-section__title">
-                        <span class="am-section__number">02</span>
-                        常见问题
-                    </h2>
-                </div>
-
-                <div class="am-section__content">
-                    <div class="am-faq">
-                        <div class="am-faq__item">
-                            <h3 class="am-faq__question">
-                                Q: 如何备份和恢复配置？
-                            </h3>
-                            <div class="am-faq__answer">
-                                <p><strong>A:</strong> 配置备份方法：</p>
-                                <ul>
-                                    <li>部署配置位置：<code>/data/beacon/.env</code> 和 <code>/data/beacon/compose.yaml</code></li>
-                                    <li>数据目录：<code>/data/beacon/data</code></li>
-                                    <li>
-                                        备份命令：<code>tar -czf beacon-backup.tar.gz /data/beacon</code>
-                                    </li>
-                                    <li>恢复时解压到对应目录并执行 <code>docker compose up -d</code></li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <div class="am-faq__item">
-                            <h3 class="am-faq__question">
-                                Q: 如何更新到最新版本？
-                            </h3>
-                            <div class="am-faq__answer">
-                                <p><strong>A:</strong> 更新步骤：</p>
-                                <ul>
-                                    <li>进入安装目录：<code>cd /data/beacon</code></li>
-                                    <li>更新前建议备份 <code>.env</code>、<code>compose.yaml</code> 和数据目录</li>
-                                    <li>执行 <code>docker compose pull && docker compose up -d</code></li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <div class="am-faq__item">
-                            <h3 class="am-faq__question">
-                                Q: 初始化用户有哪些?密码是什么?
-                            </h3>
-                            <div class="am-faq__answer">
-                                <p><strong>A:</strong> 初始化用户及密码:</p>
-                                <ul>
-                                    <li> 管理用户 admin 密码 admin123 </li>
-                                    <li> 普通用户 beacon 密码 123456 </li>
-                                    <li>管理员用户能够对普通用户进行管理</li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <div class="am-faq__item">
-                            <h3 class="am-faq__question">
-                                Q: 如何获取技术支持？
-                            </h3>
-                            <div class="am-faq__answer">
-                                <p><strong>A:</strong> 获取帮助的途径：</p>
-                                <ul>
-                                    <li>
-                                        查看 <a href="https://github.com/amuluze/amprobe" target="_blank">GitHub 项目</a> 的
-                                        Issues
-                                    </li>
-                                    <li>发送邮件至：314901758@qq.com</li>
-                                </ul>
-                            </div>
-                        </div>
+                <section id="support" class="site-card docs__support">
+                    <Icon name="mdi:lifebuoy" />
+                    <div>
+                        <h2>技术支持</h2>
+                        <p>在 GitHub Issues 描述问题、版本与复现步骤，我们会尽快跟进。</p>
                     </div>
-                </div>
-            </section>
-        </div>
+                    <a href="https://github.com/amuluze/amprobe/issues" target="_blank" rel="noopener noreferrer">提交 Issue</a>
+                </section>
+            </div>
+        </main>
     </div>
 </template>
 
 <style scoped lang="scss">
-.am-document {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 70px 20px;
-  font-family:
-    system-ui,
-    -apple-system,
-    sans-serif;
-  line-height: 1.6;
-  color: #333;
+.docs {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+  padding-top: 64px;
+  padding-bottom: 80px;
+}
 
-  @media (max-width: 768px) {
-    padding: 20px 16px;
+.docs__toc {
+  position: sticky;
+  top: 88px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--site-space-sm);
+  padding: var(--site-space-md);
+}
+
+.docs__toc strong {
+  margin-bottom: var(--site-space-xs);
+}
+
+.docs__toc a {
+  color: var(--site-foreground-secondary);
+}
+
+.docs__toc a:hover {
+  color: var(--site-accent);
+}
+
+.docs__content,
+.docs__section,
+.docs__faq {
+  display: flex;
+  flex-direction: column;
+}
+
+.docs__content {
+  gap: 72px;
+}
+
+.docs__section {
+  gap: var(--site-space-lg);
+  scroll-margin-top: 88px;
+}
+
+.docs__section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--site-space-md);
+}
+
+.docs__section-header > span {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  color: var(--site-on-accent);
+  background: var(--site-accent);
+  border-radius: 50%;
+  font-family: var(--site-font-mono);
+  font-weight: 700;
+}
+
+.docs__section-header h2,
+.docs__section-header p {
+  margin: 0;
+}
+
+.docs__section-header h2 {
+  font-size: 28px;
+}
+
+.docs__section-header p {
+  color: var(--site-foreground-secondary);
+}
+
+.docs__card {
+  padding: var(--site-space-xl);
+}
+
+.docs__card h3 {
+  margin: 32px 0 12px;
+}
+
+.docs__card h3:first-child {
+  margin-top: 0;
+}
+
+.docs__card pre {
+  margin: 0;
+  padding: var(--site-space-md);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.docs__callout {
+  margin: var(--site-space-lg) 0 0;
+  padding: var(--site-space-md);
+  color: var(--site-foreground-secondary);
+  background: var(--site-accent-soft);
+  border-left: 3px solid var(--site-accent);
+}
+
+.docs__faq {
+  gap: var(--site-space-md);
+}
+
+.docs__faq-item {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: var(--site-space-md);
+  padding: var(--site-space-lg);
+}
+
+.docs__qa {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: var(--site-accent);
+  background: var(--site-accent-soft);
+  border-radius: 50%;
+  font-weight: 700;
+}
+
+.docs__faq-item h3,
+.docs__faq-item p {
+  margin: 0;
+}
+
+.docs__faq-item h3 {
+  font-size: 15px;
+}
+
+.docs__faq-item p {
+  margin-top: var(--site-space-sm);
+  color: var(--site-foreground-secondary);
+}
+
+.docs__support {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--site-space-md);
+  align-items: center;
+  padding: var(--site-space-lg);
+  scroll-margin-top: 88px;
+}
+
+.docs__support > :deep(svg) {
+  color: var(--site-accent);
+  font-size: 28px;
+}
+
+.docs__support h2,
+.docs__support p {
+  margin: 0;
+}
+
+.docs__support p {
+  color: var(--site-foreground-secondary);
+}
+
+.docs__support a {
+  padding: 8px 12px;
+  color: var(--site-on-accent);
+  background: var(--site-accent);
+  border-radius: var(--site-radius-sm);
+}
+
+@media (max-width: 800px) {
+  .docs {
+    grid-template-columns: 1fr;
+    gap: var(--site-space-xl);
+    padding-top: 32px;
+    padding-bottom: 48px;
   }
 
-  &__header {
+  .docs__toc {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .docs__toc strong {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .docs__content {
+    gap: 48px;
+  }
+
+  .docs__card {
+    padding: var(--site-space-md);
+  }
+
+  .docs__support {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .docs__support a {
+    grid-column: 1 / -1;
     text-align: center;
-    margin-bottom: 60px;
-    padding-bottom: 30px;
-    border-bottom: 2px solid #f0f0f0;
-  }
-
-  &__title {
-    font-size: 48px;
-    font-weight: 700;
-    color: #0f2b5e;
-    margin-bottom: 16px;
-
-    @media (max-width: 768px) {
-      font-size: 36px;
-    }
-  }
-
-  &__subtitle {
-    font-size: 20px;
-    color: #666;
-    font-weight: 400;
-
-    @media (max-width: 768px) {
-      font-size: 18px;
-    }
-  }
-
-  &__content {
-    display: flex;
-    flex-direction: column;
-    gap: 80px;
-
-    @media (max-width: 768px) {
-      gap: 60px;
-    }
-  }
-}
-
-.am-section {
-  &__header {
-    margin-bottom: 40px;
-  }
-
-  &__title {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    font-size: 36px;
-    font-weight: 700;
-    color: #0f2b5e;
-    margin-bottom: 8px;
-
-    @media (max-width: 768px) {
-      font-size: 28px;
-    }
-  }
-
-  &__number {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #0f2b5e, #1e4a8c);
-    color: white;
-    border-radius: 50%;
-    font-size: 24px;
-    font-weight: 700;
-
-    @media (max-width: 768px) {
-      width: 50px;
-      height: 50px;
-      font-size: 20px;
-    }
-  }
-
-  &__content {
-    background: #fff;
-    border-radius: 12px;
-    padding: 40px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border: 1px solid #f0f0f0;
-
-    @media (max-width: 768px) {
-      padding: 24px;
-    }
-  }
-}
-
-.am-install {
-  h3 {
-    font-size: 24px;
-    color: #0f2b5e;
-    margin: 32px 0 16px 0;
-    font-weight: 600;
-
-    &:first-child {
-      margin-top: 0;
-    }
-  }
-
-  h4 {
-    font-size: 18px;
-    color: #333;
-    margin: 20px 0 12px 0;
-    font-weight: 600;
-  }
-
-  ul,
-  ol {
-    margin: 16px 0;
-    padding-left: 24px;
-
-    li {
-      margin: 8px 0;
-      color: #555;
-    }
-  }
-
-  code {
-    background: #f8f9fa;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: 'Monaco', 'Consolas', monospace;
-    font-size: 14px;
-    color: #e83e8c;
-  }
-}
-
-.am-code-block {
-  margin: 24px 0;
-
-  pre {
-    background: #2d3748;
-    color: #e2e8f0;
-    padding: 20px;
-    border-radius: 8px;
-    overflow-x: auto;
-    font-family: 'Monaco', 'Consolas', monospace;
-    font-size: 14px;
-    line-height: 1.5;
-    margin: 12px 0;
-
-    code {
-      background: none;
-      padding: 0;
-      color: inherit;
-    }
-  }
-}
-
-.am-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 20px 0;
-  background: #fff;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-  th,
-  td {
-    padding: 12px 16px;
-    text-align: left;
-    border-bottom: 1px solid #f0f0f0;
-  }
-
-  th {
-    background: #f8f9fa;
-    font-weight: 600;
-    color: #333;
-  }
-
-  td {
-    color: #555;
-
-    code {
-      background: #f8f9fa;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: 'Monaco', 'Consolas', monospace;
-      font-size: 13px;
-    }
-  }
-
-  tr:last-child {
-    td {
-      border-bottom: none;
-    }
-  }
-}
-
-.am-faq {
-  &__item {
-    margin-bottom: 32px;
-    padding: 24px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border-left: 4px solid #0f2b5e;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-
-  &__question {
-    font-size: 20px;
-    color: #0f2b5e;
-    margin-bottom: 16px;
-    font-weight: 600;
-
-    @media (max-width: 768px) {
-      font-size: 18px;
-    }
-  }
-
-  &__answer {
-    color: #555;
-
-    p {
-      margin: 12px 0;
-
-      strong {
-        color: #333;
-      }
-    }
-
-    ul {
-      margin: 12px 0;
-      padding-left: 24px;
-
-      li {
-        margin: 8px 0;
-
-        code {
-          background: #e9ecef;
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-family: 'Monaco', 'Consolas', monospace;
-          font-size: 13px;
-          color: #495057;
-        }
-      }
-    }
-
-    a {
-      color: #0f2b5e;
-      text-decoration: none;
-
-      &:hover {
-        text-decoration: underline;
-      }
-    }
   }
 }
 </style>

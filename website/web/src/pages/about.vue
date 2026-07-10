@@ -1,147 +1,179 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+const contacts = [
+    { icon: 'mdi:wechat', label: '微信', value: 'Amuluze' },
+    { icon: 'mdi:github', label: 'GitHub', value: 'amuluze/amprobe', href: 'https://github.com/amuluze/amprobe' },
+    { icon: 'mdi:qrcode', label: '公众号', value: '阿慕的订阅', href: '/wechat' },
+]
+
+useHead({ title: '团队故事 - Beacon' })
+</script>
 
 <template>
-    <div class="about-container">
-        <div class="content">
-            <h1>团队故事</h1>
-            <el-divider />
-            <p>亲爱的朋友，你好～我是阿慕。</p>
-            <p>一个35岁的临“退”的程序员。一名见习独立开发者。</p>
-            <p>
-                35 岁的我，已经是第二份职业的第 7
-                个年头了，程序员职业生涯的进度条已经快到头了，下一步的打算是成为一名自由职业者或者独立开发者，能够为自己打工，做自己喜欢的事，同时也能养家糊口。如果你跟我一样面临职业生涯窘境的，想探索和开启新的职业生涯，可以加我微信：Amuluze
-                交流。
-            </p>
-            <p>
-                Beacon
-                是我作为一名见习独立开发者的第一款开源产品，算是一个满足自己需求的练手项目，一方面是自己确实有这个需求，方便自己查看自己的云服务器的使用情况，另一方面也是想通过这个项目来锻炼自己独立开发的能力。
-            </p>
-            <p>
-                Beacon 是一款开源的云服务器监控及 Docker
-                容器管理工具，一方面它能够帮助用户实时监控云服务器的使用情况，包括CPU、内存、磁盘等资源的占用情况。方便我们通过Beacon来监控云服务器的使用情况，指导我们进行相应的优化和调整。
-                另一方面，它也能够帮助我们监控和管理部署在云服务上的 docker
-                容器，方便我们查看容器的状态，并进行相应的操作，比如启动、停止、重启等。
-            </p>
-            <p>
-                Beacon 目前还在不断的开发和完善中，如果你有什么需求或者建议，欢迎通过 GitHub Issues
-                或者微信联系我（微信号： Amuluze），也可以通过关注公众号了解 Beacon 的最新进展。
-            </p>
+    <div class="about-page">
+        <header class="site-page-header">
+            <div class="site-container">
+                <p class="site-overline">关于 Beacon</p>
+                <h1 class="site-page-title">团队故事</h1>
+                <p class="site-page-description">一名见习独立开发者的开源练手之作</p>
+            </div>
+        </header>
 
-            <p>阿慕</p>
-            <p>2024年5月26日夜</p>
-        </div>
+        <main class="site-container about-page__content">
+            <article class="site-card letter">
+                <p>你好，我是阿慕 —— 一个 35 岁的临“退”程序员，一名见习独立开发者。</p>
+                <p>程序员生涯的进度条已快到头，下一步打算成为一名独立开发者，做自己喜欢的事，也能养家糊口。如果你也面临职业生涯的窘境，想探索新的可能，欢迎加我微信 Amuluze 交流。</p>
+                <p>Beacon 是我作为见习独立开发者的第一款开源产品，既满足自己监控云服务器的需求，也用来锻炼独立开发的能力。</p>
+                <p>它是一款开源的云服务器监控与 Docker 容器管理工具，帮助实时掌控 CPU、内存、磁盘等资源占用，也能便捷管理部署在云服务上的容器状态。</p>
+                <p>Beacon 仍在持续开发与完善中，如果你有需求或建议，欢迎通过 GitHub Issues 或微信联系我，也可以关注公众号了解最新进展。</p>
+                <footer class="letter__signature">
+                    <strong>阿慕</strong>
+                    <span>2024.05.26 夜</span>
+                </footer>
+            </article>
+
+            <section class="contact">
+                <p class="site-overline">与我联系</p>
+                <div class="contact__grid">
+                    <component
+                        :is="item.href ? (item.href.startsWith('/') ? 'NuxtLink' : 'a') : 'div'"
+                        v-for="item in contacts"
+                        :key="item.label"
+                        class="site-card contact__card"
+                        :to="item.href?.startsWith('/') ? item.href : undefined"
+                        :href="item.href && !item.href.startsWith('/') ? item.href : undefined"
+                        :target="item.href && !item.href.startsWith('/') ? '_blank' : undefined"
+                        rel="noopener noreferrer"
+                    >
+                        <span class="contact__icon"><Icon :name="item.icon" /></span>
+                        <span>{{ item.label }}</span>
+                        <strong>{{ item.value }}</strong>
+                    </component>
+                </div>
+            </section>
+
+            <section class="site-card qrcode-card">
+                <img src="/images/wechat.jpg" alt="Beacon 公众号二维码">
+                <div>
+                    <strong>扫码关注公众号</strong>
+                    <p>获取 Beacon 最新动态与版本更新</p>
+                </div>
+            </section>
+        </main>
     </div>
 </template>
 
 <style scoped lang="scss">
-.about-container {
-  overflow-x: hidden;
-  min-height: 100vh;
-  padding: 80px 10%;
-  // 科技感背景
-  background:
-    radial-gradient(circle at center, rgba(0, 102, 255, 0.1) 0%, transparent 70%),
-    linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
-  position: relative;
+.about-page__content {
+  display: flex;
+  flex-direction: column;
+  gap: 64px;
+  padding-top: 64px;
+  padding-bottom: 80px;
+}
 
-  // 添加几何图案背景
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image:
-      linear-gradient(45deg, transparent 40%, rgba(0, 102, 255, 0.05) 50%, transparent 60%),
-      linear-gradient(-45deg, transparent 40%, rgba(124, 58, 237, 0.05) 50%, transparent 60%);
-    background-size: 60px 60px;
-    z-index: 1;
+.letter {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 48px;
+}
+
+.letter p {
+  margin: 0 0 var(--site-space-lg);
+  color: var(--site-foreground-secondary);
+  font-size: 16px;
+  line-height: 1.9;
+}
+
+.letter__signature {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--site-space-xs);
+  color: var(--site-foreground-muted);
+}
+
+.letter__signature strong {
+  color: var(--site-foreground-primary);
+}
+
+.contact {
+  text-align: center;
+}
+
+.contact__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--site-space-md);
+  margin-top: var(--site-space-lg);
+}
+
+.contact__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--site-space-xs);
+  padding: var(--site-space-lg);
+}
+
+.contact__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: var(--site-space-sm);
+  color: var(--site-accent);
+  background: var(--site-accent-soft);
+  border-radius: var(--site-radius-md);
+  font-size: 22px;
+}
+
+.contact__card > span:not(.contact__icon) {
+  color: var(--site-foreground-muted);
+  font-size: 12px;
+}
+
+.contact__card strong {
+  font-size: 13px;
+}
+
+.qrcode-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--site-space-lg);
+  max-width: 520px;
+  margin: 0 auto;
+  padding: var(--site-space-lg);
+}
+
+.qrcode-card img {
+  width: 84px;
+  height: 84px;
+  object-fit: cover;
+}
+
+.qrcode-card p {
+  margin: var(--site-space-xs) 0 0;
+  color: var(--site-foreground-muted);
+}
+
+@media (max-width: 640px) {
+  .about-page__content {
+    gap: 40px;
+    padding-top: 32px;
+    padding-bottom: 48px;
   }
 
-  .content {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 40px;
-    position: relative;
-    z-index: 2;
-    @include glass-effect(0.05);
-    border-radius: 16px;
-    @include glow-effect(#0066ff, 0.1);
-
-    // 添加渐变边框
-    &::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      padding: 2px;
-      background: linear-gradient(135deg, #0066ff, #00d4ff);
-      border-radius: inherit;
-      mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-      mask-composite: exclude;
-      -webkit-mask-composite: xor;
-    }
-
-    h1 {
-      font-size: 2.5rem;
-      color: #e2e8f0;
-      margin-bottom: 1.5rem;
-      position: relative;
-      background: linear-gradient(135deg, #0066ff, #00d4ff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-
-      &::after {
-        content: '';
-        position: absolute;
-        bottom: -0.5rem;
-        left: 0;
-        width: 60px;
-        height: 3px;
-        background: linear-gradient(135deg, #0066ff, #00d4ff);
-        border-radius: 2px;
-      }
-    }
-
-    p {
-      font-size: 1.1rem;
-      line-height: 1.8;
-      color: #cbd5e1;
-      margin-bottom: 1.2rem;
-      text-align: justify;
-
-      &:last-child {
-        margin-bottom: 0;
-        color: #94a3b8;
-        font-style: italic;
-      }
-    }
-
-    .el-divider {
-      margin: 2rem 0;
-      background: linear-gradient(90deg, transparent, rgba(0, 102, 255, 0.3), transparent);
-      height: 1px;
-      border: none;
-    }
+  .letter {
+    padding: var(--site-space-lg);
   }
 
-  @media (max-width: 768px) {
-    padding: 40px 5%;
+  .letter p {
+    font-size: 14px;
+  }
 
-    .content {
-      padding: 30px;
-
-      h1 {
-        font-size: 2rem;
-      }
-
-      p {
-        font-size: 1rem;
-      }
-    }
+  .contact__grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

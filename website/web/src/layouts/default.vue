@@ -1,26 +1,22 @@
-<script setup lang="ts">
-</script>
-
 <template>
-    <el-container class="layout-container">
+    <div class="site-layout">
         <Header />
-        <el-main class="main-content">
-            <NuxtPage :transition="{ name: 'page', mode: 'out-in' }" />
-        </el-main>
+        <main class="site-layout__main">
+            <slot />
+        </main>
         <Footer />
-    </el-container>
+    </div>
 </template>
 
 <style scoped lang="scss">
-.layout-container {
-  min-height: 100vh;
+.site-layout {
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
+}
 
-  .main-content {
-    flex: 1;
-    padding: 0 !important;
-    transition: all 0.3s ease;
-  }
+.site-layout__main {
+  flex: 1;
+  padding-top: 64px;
 }
 </style>

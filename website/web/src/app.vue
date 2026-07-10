@@ -1,16 +1,11 @@
 <template>
-    <div class="app">
-        <!-- <ParticleBackground /> -->
-        <NuxtLayout>
-            <NuxtPage />
-        </NuxtLayout>
-    </div>
+    <NuxtLayout>
+        <NuxtPage />
+    </NuxtLayout>
 </template>
 
 <style lang="scss">
-.app {
-    position: relative;
-    min-height: 100vh;
-    @include bg-gradient('primary');
+#__nuxt {
+  min-height: 100vh;
 }
 </style>

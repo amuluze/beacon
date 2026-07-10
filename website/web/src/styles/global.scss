@@ -1,165 +1,120 @@
-// 科技感色彩系统
-$colors: (
-    // 主色调 - 科技蓝
-    'primary': #0066ff,
-    'primary-light': #3385ff,
-    'primary-dark': #0052cc,
-
-    // 辅助色 - 渐变科技感
-    'secondary': #00d4ff,
-    'accent': #7c3aed,
-
-    // 中性色
-    'dark': #0a0e27,
-    'dark-light': #1a1f3a,
-    'gray': #64748b,
-    'light': #f8fafc,
-
-    // 功能色
-    'success': #10b981,
-    'warning': #f59e0b,
-    'error': #ef4444,
-);
-
-// 响应式断点
-$breakpoints: (
-    'xs': 0px,
-    'sm': 768px,
-    'md': 992px,
-    'lg': 1200px,
-    'xl': 1920px,
-);
-
-// 扩展间距系统
-$spacers: (
-    0: 0,
-    1: 4px,
-    2: 8px,
-    3: 12px,
-    4: 16px,
-    5: 20px,
-    6: 24px,
-    8: 32px,
-    10: 40px,
-    12: 48px,
-    16: 64px,
-    20: 80px,
-    24: 96px,
-);
-
-// 响应式 mixin
-@mixin respond-to($breakpoint) {
-    @if map-has-key($breakpoints, $breakpoint) {
-        @media (min-width: map-get($breakpoints, $breakpoint)) {
-            @content;
-        }
-    }
+:root {
+  --site-surface-primary: #fbfcfe;
+  --site-surface-secondary: #f0f2f5;
+  --site-surface-card: #f7f8fa;
+  --site-foreground-primary: #1f2329;
+  --site-foreground-secondary: #4e5969;
+  --site-foreground-muted: #86909c;
+  --site-border-primary: #dcdfe6;
+  --site-border-subtle: #e4e7ed;
+  --site-accent: #409eff;
+  --site-accent-soft: #e8f3ff;
+  --site-success: #569a2e;
+  --site-warning: #c28014;
+  --site-danger: #db5050;
+  --site-on-accent: #fbfcfe;
+  --site-font-ui: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+  --site-font-mono: 'Geist Mono', 'SFMono-Regular', Consolas, monospace;
+  --site-radius-sm: 4px;
+  --site-radius-md: 8px;
+  --site-space-xs: 4px;
+  --site-space-sm: 8px;
+  --site-space-md: 16px;
+  --site-space-lg: 24px;
+  --site-space-xl: 32px;
+  --site-shadow: 0 12px 32px rgba(31, 35, 41, 0.07);
 }
 
-// 移动端优先的响应式设计
-@mixin mobile-first($size) {
-    @media (max-width: $size) {
-        @content;
-    }
+html {
+  scroll-behavior: smooth;
 }
 
-// 统一动画库
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+body {
+  margin: 0;
+  overflow-x: hidden;
+  color: var(--site-foreground-primary);
+  background: var(--site-surface-primary);
+  font-family: var(--site-font-ui);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
-@keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(-30px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-@keyframes slideInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-@keyframes glow {
-
-    0%,
-    100% {
-        box-shadow: 0 0 20px rgba(0, 102, 255, 0.3);
-    }
-
-    50% {
-        box-shadow: 0 0 30px rgba(0, 102, 255, 0.6);
-    }
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
 
-@keyframes float {
-
-    0%,
-    100% {
-        transform: translateY(0px);
-    }
-
-    50% {
-        transform: translateY(-20px);
-    }
+.site-container {
+  width: min(1200px, calc(100% - 48px));
+  margin: 0 auto;
 }
 
-@keyframes scan {
-    0% {
-        transform: translateY(0);
-    }
-
-    100% {
-        transform: translateY(280px);
-    }
+.site-overline {
+  margin: 0 0 var(--site-space-sm);
+  color: var(--site-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
-@keyframes sparkle {
-
-    0%,
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-
-    50% {
-        transform: scale(1.2);
-        opacity: 0.8;
-    }
+.site-page-header {
+  padding: 80px 0 48px;
+  text-align: center;
+  border-bottom: 1px solid var(--site-border-subtle);
 }
 
-// 玻璃态效果 mixin
-@mixin glass-effect($opacity: 0.1) {
-    background: rgba(255, 255, 255, $opacity);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+.site-page-title {
+  margin: 0;
+  font-size: clamp(32px, 5vw, 48px);
+  line-height: 1.15;
 }
 
-// 发光效果 mixin
-@mixin glow-effect($color: #0066ff, $intensity: 0.3) {
-    box-shadow: 0 0 20px rgba($color, $intensity);
+.site-page-description {
+  max-width: 680px;
+  margin: var(--site-space-md) auto 0;
+  color: var(--site-foreground-secondary);
+  font-size: 16px;
+}
 
-    &:hover {
-        box-shadow: 0 0 30px rgba($color, $intensity + 0.2);
-    }
+.site-card {
+  background: var(--site-surface-card);
+  border: 1px solid var(--site-border-subtle);
+  border-radius: var(--site-radius-md);
+  box-shadow: var(--site-shadow);
+}
+
+.site-code {
+  overflow-x: auto;
+  color: var(--site-foreground-primary);
+  background: var(--site-surface-secondary);
+  border: 1px solid var(--site-border-subtle);
+  border-radius: var(--site-radius-md);
+  font-family: var(--site-font-mono);
+  white-space: pre;
+}
+
+@media (max-width: 640px) {
+  .site-container {
+    width: min(100% - 32px, 1200px);
+  }
+
+  .site-page-header {
+    padding: 56px 0 32px;
+    text-align: left;
+  }
 }
