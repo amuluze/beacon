@@ -1442,13 +1442,116 @@ export interface components {
             os?: string;
             arch?: string;
         };
+        /**
+         * @description Agent monitoring batch payload. Sent via POST /api/v1/host/report.
+         *     The entire batch is persisted atomically; partial writes are never committed.
+         */
+        MonitorReport: {
+            /** @description Agent identifier (format: alphanumeric + dots/dashes/underscores, max 128 chars) */
+            agent_id: string;
+            host?: {
+                /** Format: date-time */
+                timestamp?: string;
+                uptime?: string;
+                hostname?: string;
+                os?: string;
+                platform?: string;
+                platform_version?: string;
+                kernel_arch?: string;
+                kernel_version?: string;
+            };
+            cpu?: {
+                /** Format: date-time */
+                timestamp?: string;
+                cpu_percent?: number;
+            };
+            memory?: {
+                /** Format: date-time */
+                timestamp?: string;
+                mem_percent?: number;
+                mem_total?: number;
+                mem_used?: number;
+            };
+            disks?: {
+                /** Format: date-time */
+                timestamp?: string;
+                device?: string;
+                disk_percent?: number;
+                disk_total?: number;
+                disk_used?: number;
+                disk_read?: number;
+                disk_write?: number;
+            }[];
+            nets?: {
+                /** Format: date-time */
+                timestamp?: string;
+                ethernet?: string;
+                net_recv?: number;
+                net_send?: number;
+            }[];
+            docker?: components["schemas"]["Docker"];
+            containers?: components["schemas"]["Container"][];
+            images?: components["schemas"]["Image"][];
+            networks?: components["schemas"]["Network"][];
+        };
+        /**
+         * @description Operator / system audit row. `agent_id` is empty for operator
+         *     actions and populated for system-generated alarms (Domain Spec
+         *     I004).
+         */
+        Audit: {
+            /** Format: int64 */
+            id?: number;
+            /** @description Operator name or 'system' */
+            username?: string;
+            agent_id?: string | null;
+            /** @description Human-readable audit message */
+            operate?: string;
+            /** @description Formatted timestamp */
+            created?: string;
+        };
+        /** @description Agent observed by the Server; mirrors `schema.AgentItem`. */
+        AgentItem: {
+            agent_id?: string;
+            hostname?: string;
+            os?: string;
+            arch?: string;
+            version?: string;
+            /** Format: date-time */
+            last_seen?: string;
+            /** @enum {string} */
+            status?: "online" | "offline" | "connecting";
+        };
+        /**
+         * @description Per-resource alarm threshold (CPU / memory / disk / memory usage).
+         *     Mirrors `schema.AlarmThreshold`.
+         */
+        AlarmThreshold: {
+            /** Format: int64 */
+            id?: number;
+            /** @enum {string} */
+            type?: "cpu" | "memory" | "disk";
+            /** @description Consecutive minutes above threshold */
+            duration?: number;
+            /** @description Trigger threshold percentage */
+            threshold?: number;
+        };
+        /** @description Request body for `POST /api/v1/alarm/alarm_update`. */
+        AlarmThresholdUpdateArgs: {
+            /** Format: int64 */
+            id: number;
+            /** @enum {string} */
+            type?: "cpu" | "memory" | "disk";
+            duration?: number;
+            threshold?: number;
+        };
     };
     responses: never;
     parameters: {
         /**
          * @description Identifies the target Agent for control-plane endpoints. Required for
          *     any host.* or container.* path; the repository layer (see
-         *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+         *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
          *     HTTP 400 when missing.
          */
         XAgentID: string;
@@ -1709,7 +1812,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AgentItem"][];
+                };
             };
         };
     };
@@ -1913,7 +2018,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -1980,7 +2085,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2017,7 +2122,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2056,7 +2161,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2089,7 +2194,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2115,7 +2220,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2141,7 +2246,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2170,7 +2275,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2201,7 +2306,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2227,7 +2332,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2253,7 +2358,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2285,7 +2390,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2311,7 +2416,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2337,7 +2442,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2363,7 +2468,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2392,7 +2497,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2423,7 +2528,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2449,7 +2554,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2549,7 +2654,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2559,7 +2664,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": Record<string, never>;
+                "application/json": components["schemas"]["MonitorReport"];
             };
         };
         responses: {
@@ -2641,7 +2746,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2673,7 +2778,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2708,7 +2813,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2742,7 +2847,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2782,7 +2887,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2822,7 +2927,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2855,7 +2960,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2885,7 +2990,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2911,7 +3016,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2937,7 +3042,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2963,7 +3068,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -2989,7 +3094,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -3015,7 +3120,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -3041,7 +3146,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -3067,7 +3172,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -3093,7 +3198,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -3119,7 +3224,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -3163,7 +3268,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -3189,7 +3294,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -3215,7 +3320,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -3241,7 +3346,7 @@ export interface operations {
                 /**
                  * @description Identifies the target Agent for control-plane endpoints. Required for
                  *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
+                 *     RequireAgentID in amprobe/pkg/contextx) rejects the request with
                  *     HTTP 400 when missing.
                  */
                 "X-Agent-ID"?: components["parameters"]["XAgentID"];
@@ -3262,7 +3367,14 @@ export interface operations {
     };
     auditQuery: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description system = system-generated alarms; operator = user actions */
+                type?: "system" | "operator";
+                /** @description Optional Agent scope; omit to return rows from all Agents. */
+                agent_id?: string;
+                page?: number;
+                size?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3274,7 +3386,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Audit"][];
+                        total?: number;
+                        page?: number;
+                        size?: number;
+                    };
+                };
             };
         };
     };
@@ -3375,10 +3494,21 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlarmThresholdUpdateArgs"];
+            };
+        };
         responses: {
             /** @description Updated */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid threshold spec */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3400,7 +3530,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["AlarmThreshold"][];
+                    };
+                };
             };
         };
     };

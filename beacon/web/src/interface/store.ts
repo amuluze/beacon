@@ -20,8 +20,10 @@ export interface AgentInfo {
 }
 
 export interface AgentState {
-    currentAgentID: string
-    agents: AgentInfo[]
+    list: AgentInfo[]
+    selectedAgentID: string
+    loading: boolean
+    loaded: boolean
 }
 
 export interface AppState {

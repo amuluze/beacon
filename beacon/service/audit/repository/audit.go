@@ -13,6 +13,7 @@ import (
 	"common/database"
 
 	"github.com/google/wire"
+	"gorm.io/gorm"
 )
 
 var AuditRepoSet = wire.NewSet(NewAuditRepo, wire.Bind(new(IAuditRepo), new(*AuditRepo)))
@@ -34,14 +35,32 @@ func NewAuditRepo(db *database.DB) *AuditRepo {
 
 func (a *AuditRepo) AuditQuery(ctx context.Context, args schema.AuditQueryArgs) (model.Audits, error) {
 	var audits model.Audits
+
+	// Build the common conditions once and reuse across Type branches.
+	// The AgentID filter is optional; only applied when non-empty.
+	applyFilters := func(q *gorm.DB) *gorm.DB {
+		if args.AgentID != "" {
+			q = q.Where("agent_id = ?", args.AgentID)
+		}
+		return q
+	}
+
 	if args.Type == "system" {
-		err := a.DB.Model(&model.Audit{}).Where("username = ?", args.Type).Order("created_at DESC").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&audits).Error
-		if err != nil {
+		q := a.DB.Model(&model.Audit{}).Where("username = ?", "system")
+		q = applyFilters(q)
+		if err := q.Order("created_at DESC").
+			Offset((args.Page - 1) * args.Size).
+			Limit(args.Size).
+			Find(&audits).Error; err != nil {
 			return audits, nil
 		}
 	} else {
-		err := a.DB.Model(&model.Audit{}).Where("username != ?", "system").Order("created_at DESC").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&audits).Error
-		if err != nil {
+		q := a.DB.Model(&model.Audit{}).Where("username != ?", "system")
+		q = applyFilters(q)
+		if err := q.Order("created_at DESC").
+			Offset((args.Page - 1) * args.Size).
+			Limit(args.Size).
+			Find(&audits).Error; err != nil {
 			return audits, nil
 		}
 	}
