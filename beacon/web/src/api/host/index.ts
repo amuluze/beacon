@@ -25,6 +25,7 @@ import type {
     FolderDeleteArgs,
     FolderDeleteResult,
     HostInfo,
+    InstallTokenResult,
     MemInfo,
     MemTrending,
     MemTrendingArgs,
@@ -84,4 +85,8 @@ export async function deleteFolder(params: FolderDeleteArgs) {
 
 export async function downloadFile(params: FileDeleteArgs) {
     return request.post<FileDownloadResult>('/api/v1/host/file_download', params)
+}
+
+export async function getInstallToken() {
+    return request.post<InstallTokenResult>('/api/v1/host/get_install_token', {})
 }
