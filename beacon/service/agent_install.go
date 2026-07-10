@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"beacon/pkg/fiberx"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -92,6 +94,17 @@ func (a *Router) AgentInstallCerts(ctx *fiber.Ctx) error {
 		return fiber.NewError(http.StatusNotFound, "collia cert package not found")
 	}
 	return ctx.Download(certsPath, node+"-certs.tar.gz")
+}
+
+func (a *Router) AgentInstallToken(ctx *fiber.Ctx) error {
+	if !a.config.AgentInstall.Enable {
+		return fiber.ErrNotFound
+	}
+	if a.config.AgentInstall.Token == "" {
+		return fiber.NewError(http.StatusServiceUnavailable, "install token not configured")
+	}
+	ctx.Set("Cache-Control", "no-store")
+	return fiberx.Success(ctx, fiber.Map{"token": a.config.AgentInstall.Token})
 }
 
 func (a *Router) verifyAgentInstallToken(ctx *fiber.Ctx) error {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Avatar from '@/layout/navbar/Avatar.vue'
 import AgentSelect from '@/layout/navbar/AgentSelect.vue'
+import InstallAgent from '@/layout/navbar/InstallAgent.vue'
 import Language from '@/layout/navbar/Language.vue'
 import ThemeChange from '@/layout/navbar/ThemeChange.vue'
 import { dynamicRoutes } from '@/router/dynamic.ts'
@@ -57,6 +58,7 @@ function goRoute(item: RouteRecordRaw): void {
 
         <div class="am-navbar__right">
             <AgentSelect />
+            <InstallAgent />
             <Language />
             <ThemeChange />
             <Avatar />

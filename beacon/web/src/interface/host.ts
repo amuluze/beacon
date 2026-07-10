@@ -4,6 +4,10 @@
  * @Description:
  */
 
+export interface InstallTokenResult {
+    token: string
+}
+
 export interface HostInfo {
     timestamp: number
     stale?: boolean

@@ -226,6 +226,7 @@ func (a *Router) registerHostRoutes(v1 fiber.Router) {
 	g.Get("/install/package", a.AgentInstallPackage).Name("下载 Collia 安装包")
 	g.Get("/install/config", a.AgentInstallConfig).Name("下载 Collia 配置")
 	g.Get("/install/certs", a.AgentInstallCerts).Name("下载 Collia 证书")
+	g.Post("/get_install_token", a.AgentInstallToken).Name("获取 Collia 安装令牌")
 	g.Post("/report", a.reportSvc.HandleReport).Name("Agent 上报监控数据")
 	g.Get("/host_info", a.hostAPI.HostInfo).Name("获取主机信息")
 	g.Get("/cpu_info", a.hostAPI.CPUInfo).Name("获取 CPU 信息")

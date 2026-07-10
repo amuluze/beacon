@@ -26,6 +26,7 @@ const agentScopedPrefixes = [
 const agentScopedExcludes = [
     '/api/v1/host/install',
     '/api/v1/host/report',
+    '/api/v1/host/get_install_token',
 ]
 
 function requestPath(url?: string): string {

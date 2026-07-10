@@ -465,6 +465,13 @@ paths:
       summary: 下载 Collia 证书
       operationId: agentInstallCerts
       responses: { '200': { description: TLS material } }
+  /api/v1/host/get_install_token:
+    post:
+      tags: [host]
+      summary: 获取 Collia 安装令牌
+      description: Returns the agent install token (admin only, auto-audited, no-store).
+      operationId: agentInstallToken
+      responses: { '200': { description: 'JSON { token }' } }
   /api/v1/host/report:
     post:
       tags: [host]
