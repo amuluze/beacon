@@ -151,7 +151,7 @@ func TestNewDispatcher_RegistersStandardMethods(t *testing.T) {
 	d := NewDispatcher(&Service{})
 	cases := []string{
 		// container
-		"ContainerCreate", "ContainerStart", "ContainerStop", "ContainerLogs",
+		"ContainerCreate", "ContainerUpdate", "ContainerStart", "ContainerStop", "ContainerLogs",
 		"ImagePull", "NetworkCreate",
 		// file
 		"FilesSearch", "FileDownload", "FolderCreate",

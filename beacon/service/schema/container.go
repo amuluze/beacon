@@ -39,6 +39,7 @@ type ContainerCreateArgs struct {
 	NetworkMode   string            `json:"network_mode" validate:"required,oneof=bridge host none"`
 	NetworkID     string            `json:"network_id" validate:"omitempty,len=36"`
 	NetworkName   string            `json:"network_name" validate:"lte=128"`
+	RestartPolicy string            `json:"restart_policy" validate:"omitempty,oneof=no always unless-stopped on-failure"`
 	Ports         []string          `json:"ports" validate:"max=64"`
 	Volumes       []string          `json:"volumes" validate:"max=64"`
 	Environments  []string          `json:"environments" validate:"max=64"`
@@ -50,13 +51,14 @@ type ContainerCreateReply struct {
 }
 
 type ContainerUpdateArgs struct {
-	ContainerID   string            `json:"container_id" validate:"required,len=64"`
+	ContainerID   string            `json:"container_id" validate:"required,gte=6,lte=64"`
 	ContainerName string            `json:"container_name,omitempty" validate:"lte=128"`
 	ImageName     string            `json:"image_name,omitempty" validate:"lte=256"`
 	NetworkName   string            `json:"network_name,omitempty" validate:"lte=128"`
+	RestartPolicy string            `json:"restart_policy,omitempty" validate:"omitempty,oneof=no always unless-stopped on-failure"`
 	Ports         []string          `json:"ports,omitempty" validate:"max=64"`
 	Volumes       []string          `json:"volumes,omitempty" validate:"max=64"`
-	Environments  []string          `json:"environment,omitempty" validate:"max=64"`
+	Environments  []string          `json:"environments,omitempty" validate:"max=64"`
 	Labels        map[string]string `json:"labels,omitempty" validate:"max=32"`
 }
 
