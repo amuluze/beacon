@@ -22,10 +22,6 @@ async function doLogout() {
   await router.replace('/login')
 }
 
-function toProfile() {
-  router.push('/profile')
-}
-
 const updatePasswordDraw = useCommandComponent(UpdatePassword)
 </script>
 
@@ -37,10 +33,6 @@ const updatePasswordDraw = useCommandComponent(UpdatePassword)
         </div>
         <template #dropdown>
             <el-dropdown-menu>
-                <el-dropdown-item @click.prevent="toProfile">
-                    <svg-icon icon-class="people" style="margin-right: 4px" />
-                    {{ t('avatar.profile') }}
-                </el-dropdown-item>
                 <el-dropdown-item @click="updatePasswordDraw({ title: '更新密码' })">
                     <svg-icon icon-class="edit" style="margin-right: 4px" />
                     {{ t('avatar.updatePassword') }}

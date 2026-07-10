@@ -43,4 +43,18 @@ describe('dynamic workspace routes', () => {
         expect(route?.name).toBe(name)
         expect(route?.component).toBeTypeOf('function')
     })
+
+    it('does not expose the removed profile page', () => {
+        expect(allRoutes.find(route => route.path === '/profile')).toBeUndefined()
+        expect(allRoutes.find(route => route.name === 'profile')).toBeUndefined()
+    })
+
+    it('keeps account deep links without exposing account as primary navigation', () => {
+        const accountRoute = allRoutes.find(route => route.name === 'account')
+
+        expect(accountRoute?.meta?.show).toBe(false)
+        expect(allRoutes.find(route => route.path === '/account/user')?.component).toBeTypeOf('function')
+        expect(allRoutes.find(route => route.path === '/account/role')?.component).toBeTypeOf('function')
+        expect(allRoutes.find(route => route.path === '/account/api')?.component).toBeTypeOf('function')
+    })
 })

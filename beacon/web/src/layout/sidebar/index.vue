@@ -8,17 +8,7 @@ const currentRoute = useRoute()
 const store = useStore()
 
 const menus = computed(() => {
-  return dynamicRoutes.filter((item) => {
-    if (item.meta?.show) {
-      // 当 store.user.userInfo.name 不为 'admin' 时，不返回 item.name === 'user-manage' 的项
-      if (store.user.userInfo.name !== 'admin' && item.name === 'account') {
-        return false
-      }
-      // 其他情况下，返回所有 item.meta?.show 为 true 的项
-      return true
-    }
-    return false
-  })
+  return dynamicRoutes.filter(item => item.meta?.show)
 })
 </script>
 

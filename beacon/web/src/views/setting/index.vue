@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import AlarmSettings from './alarm/index.vue'
 import AuditLog from './components/AuditLog.vue'
+import UserSettings from './components/UserSettings.vue'
 import DockerSettings from './docker/index.vue'
 import HostSettings from './host/index.vue'
+
+import useStore from '@/store'
+
+const store = useStore()
+const isAdmin = computed(() => store.user.userInfo.name === 'admin')
 </script>
 
 <template>
@@ -16,7 +22,9 @@ import HostSettings from './host/index.vue'
                     {{ $t('menu.setting') }}
                 </h1>
             </div>
-            <span class="workspace__hint">System · Alerts · Docker · Audit</span>
+            <span class="workspace__hint">
+                System · Alerts · Docker<span v-if="isAdmin"> · Users</span> · Audit
+            </span>
         </header>
         <section class="workspace__panel">
             <h2 class="workspace__section-title">
@@ -35,6 +43,12 @@ import HostSettings from './host/index.vue'
                 {{ $t('menu.systemDocker') }}
             </h2>
             <DockerSettings />
+        </section>
+        <section v-if="isAdmin" class="workspace__panel">
+            <h2 class="workspace__section-title">
+                {{ $t('menu.accountSetting') }}
+            </h2>
+            <UserSettings />
         </section>
         <section class="workspace__panel">
             <h2 class="workspace__section-title">

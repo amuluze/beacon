@@ -86,7 +86,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         meta: {
             title: 'menu.account',
             icon: 'menu-user',
-            show: true,
+            show: false,
         },
         children: [
             {
@@ -123,15 +123,6 @@ export const dynamicRoutes: RouteRecordRaw[] = [
             title: 'menu.terminal',
             icon: 'menu-terminal',
             show: true,
-        },
-    },
-    {
-        path: '/profile',
-        name: 'profile',
-        component: async () => import('@/views/profile/index.vue'),
-        meta: {
-            title: 'menu.profile',
-            show: false,
         },
     },
 ]
