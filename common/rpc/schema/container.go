@@ -125,14 +125,15 @@ type NetworkCountReply struct {
 }
 
 type ContainerCreateArgs struct {
-	Name         string            `json:"name"`
-	Image        string            `json:"image"`
-	Network      string            `json:"network"`
-	Ports        []string          `json:"ports"`
-	Volumes      []string          `json:"volumes"`
-	Environments []string          `json:"environments"`
-	Commands     []string          `json:"commands"`
-	Labels       map[string]string `json:"labels"`
+	Name          string            `json:"name"`
+	Image         string            `json:"image"`
+	Network       string            `json:"network"`
+	RestartPolicy string            `json:"restart_policy"`
+	Ports         []string          `json:"ports"`
+	Volumes       []string          `json:"volumes"`
+	Environments  []string          `json:"environments"`
+	Commands      []string          `json:"commands"`
+	Labels        map[string]string `json:"labels"`
 }
 
 type ContainerCreateReply struct {
@@ -140,15 +141,16 @@ type ContainerCreateReply struct {
 }
 
 type ContainerUpdateArgs struct {
-	ContainerID  string            `json:"container_id"`
-	Name         string            `json:"name"`
-	Image        string            `json:"image"`
-	Network      string            `json:"network"`
-	Ports        []string          `json:"ports"`
-	Volumes      []string          `json:"volumes"`
-	Environments []string          `json:"environments"`
-	Commands     []string          `json:"commands"`
-	Labels       map[string]string `json:"labels"`
+	ContainerID   string            `json:"container_id"`
+	Name          string            `json:"name"`
+	Image         string            `json:"image"`
+	Network       string            `json:"network"`
+	RestartPolicy string            `json:"restart_policy"`
+	Ports         []string          `json:"ports"`
+	Volumes       []string          `json:"volumes"`
+	Environments  []string          `json:"environments"`
+	Commands      []string          `json:"commands"`
+	Labels        map[string]string `json:"labels"`
 }
 
 type ContainerUpdateReply struct {

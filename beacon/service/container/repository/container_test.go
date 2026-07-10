@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"beacon/pkg/contextx"
+	beaconrpc "beacon/pkg/rpc"
 	"beacon/service/model"
 	"common/database"
 	rpcSchema "common/rpc/schema"
@@ -46,6 +47,25 @@ func TestContainerUpdateCallsAgentRPC(t *testing.T) {
 	}
 	if reply.ContainerID != "updated" {
 		t.Fatalf("reply container id = %q, want updated", reply.ContainerID)
+	}
+}
+
+func TestContainerUpdateRejectsMissingAgentIDBeforeRPC(t *testing.T) {
+	repo := &ContainerRepo{RPCClient: beaconrpc.NewTunnelClient(nil)}
+
+	_, err := repo.ContainerUpdate(context.Background(), rpcSchema.ContainerUpdateArgs{ContainerID: "abc123"})
+	if !errors.Is(err, contextx.ErrMissingAgentID) {
+		t.Fatalf("error = %v, want ErrMissingAgentID", err)
+	}
+}
+
+func TestContainerUpdateRejectsInvalidAgentIDBeforeRPC(t *testing.T) {
+	repo := &ContainerRepo{RPCClient: beaconrpc.NewTunnelClient(nil)}
+	ctx := contextx.NewAgentID(context.Background(), "agent/../../etc")
+
+	_, err := repo.ContainerUpdate(ctx, rpcSchema.ContainerUpdateArgs{ContainerID: "abc123"})
+	if !errors.Is(err, contextx.ErrInvalidAgentID) {
+		t.Fatalf("error = %v, want ErrInvalidAgentID", err)
 	}
 }
 

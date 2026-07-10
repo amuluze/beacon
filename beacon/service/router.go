@@ -202,6 +202,7 @@ func (a *Router) registerContainerRoutes(v1 fiber.Router) {
 	g.Get("/containers", a.containerAPI.ContainerList).Name("获取容器列表")
 	g.Get("/usage", a.containerAPI.Usage).Name("获取容器资源使用情况")
 	g.Post("/container_create", a.containerAPI.ContainerCreate).Name("创建容器")
+	g.Post("/container_update", a.containerAPI.ContainerUpdate).Name("编辑容器")
 	g.Post("/container_start", a.containerAPI.ContainerStart).Name("启动容器")
 	g.Post("/container_stop", a.containerAPI.ContainerStop).Name("停止容器")
 	g.Post("/container_restart", a.containerAPI.ContainerRestart).Name("重启容器")

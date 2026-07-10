@@ -46,12 +46,29 @@ func (s *Service) ContainerCreate(ctx context.Context, args rpcSchema.ContainerC
 	); err != nil {
 		return err
 	}
+	updater := s.restartPolicyUpdater
+	if updater == nil {
+		updater = dockerRestartPolicyUpdater{}
+	}
+	if err := updater.UpdateRestartPolicy(ctx, containerID, normalizeRestartPolicy(args.RestartPolicy)); err != nil {
+		_ = s.Manager.DeleteContainer(ctx, containerID)
+		return fmt.Errorf("apply restart policy: %w", err)
+	}
 	reply.ContainerID = containerID
 	return nil
 }
 
 func (s *Service) ContainerUpdate(ctx context.Context, args rpcSchema.ContainerUpdateArgs, reply *rpcSchema.ContainerUpdateReply) error {
-	return fmt.Errorf("container update is not implemented")
+	updater := s.restartPolicyUpdater
+	if updater == nil {
+		updater = dockerRestartPolicyUpdater{}
+	}
+	containerID, err := recreateContainer(ctx, s.Manager, updater, args)
+	if err != nil {
+		return err
+	}
+	reply.ContainerID = containerID
+	return nil
 }
 
 func (s *Service) ContainerDelete(ctx context.Context, args rpcSchema.ContainerDeleteArgs, reply *rpcSchema.ContainerDeleteReply) error {

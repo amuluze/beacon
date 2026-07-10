@@ -98,6 +98,12 @@ func (a *ContainerService) ContainerList(ctx context.Context, args schema.Contai
 
 	var list []schema.Container
 	for _, item := range rpcReply.Data {
+		labels := make(map[string]string)
+		if item.Labels != "" {
+			if err := json.Unmarshal([]byte(item.Labels), &labels); err != nil {
+				return reply, fmt.Errorf("decode container labels: %w", err)
+			}
+		}
 		list = append(list, schema.Container{
 			ID:            item.ContainerID,
 			Name:          item.Name,
@@ -110,6 +116,7 @@ func (a *ContainerService) ContainerList(ctx context.Context, args schema.Contai
 			MemoryPercent: fmt.Sprintf("%.2f", item.MemPercent) + " %",
 			MemoryLimit:   utils.ConvertBytesToReadable(item.MemLimit),
 			MemoryUsage:   utils.ConvertBytesToReadable(item.MemUsage),
+			Labels:        labels,
 		})
 	}
 	countReply, err := a.ContainerRepo.ContainerCount(ctx, rpcSchema.ContainerCountArgs{})
@@ -165,14 +172,15 @@ func (a *ContainerService) Usage(ctx context.Context, args schema.ContainerUsage
 
 func (a *ContainerService) ContainerCreate(ctx context.Context, args schema.ContainerCreateArgs) (schema.ContainerCreateReply, error) {
 	rpcArgs := rpcSchema.ContainerCreateArgs{
-		Name:         args.ContainerName,
-		Image:        args.ImageName,
-		Network:      args.NetworkName,
-		Ports:        args.Ports,
-		Volumes:      args.Volumes,
-		Environments: args.Environments,
-		Commands:     nil,
-		Labels:       args.Labels,
+		Name:          args.ContainerName,
+		Image:         args.ImageName,
+		Network:       args.NetworkName,
+		RestartPolicy: args.RestartPolicy,
+		Ports:         args.Ports,
+		Volumes:       args.Volumes,
+		Environments:  args.Environments,
+		Commands:      nil,
+		Labels:        args.Labels,
 	}
 	var reply schema.ContainerCreateReply
 	rpcReply, err := a.ContainerRepo.ContainerCreate(ctx, rpcArgs)
@@ -185,15 +193,16 @@ func (a *ContainerService) ContainerCreate(ctx context.Context, args schema.Cont
 
 func (a *ContainerService) ContainerUpdate(ctx context.Context, args schema.ContainerUpdateArgs) (schema.ContainerUpdateReply, error) {
 	rpcArgs := rpcSchema.ContainerUpdateArgs{
-		ContainerID:  args.ContainerID,
-		Name:         args.ContainerName,
-		Image:        args.ImageName,
-		Network:      args.NetworkName,
-		Ports:        args.Ports,
-		Volumes:      args.Volumes,
-		Environments: args.Environments,
-		Commands:     nil,
-		Labels:       args.Labels,
+		ContainerID:   args.ContainerID,
+		Name:          args.ContainerName,
+		Image:         args.ImageName,
+		Network:       args.NetworkName,
+		RestartPolicy: args.RestartPolicy,
+		Ports:         args.Ports,
+		Volumes:       args.Volumes,
+		Environments:  args.Environments,
+		Commands:      nil,
+		Labels:        args.Labels,
 	}
 	var reply schema.ContainerUpdateReply
 	rpcReply, err := a.ContainerRepo.ContainerUpdate(ctx, rpcArgs)

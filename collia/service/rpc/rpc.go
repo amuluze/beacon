@@ -17,9 +17,10 @@ var _ rpc.IService = (*Service)(nil)
 const defaultRootDir = "/data/amprobe"
 
 type Service struct {
-	DB      *database.DB
-	Manager *docker.Manager
-	rootDir string
+	DB                   *database.DB
+	Manager              *docker.Manager
+	restartPolicyUpdater restartPolicyUpdater
+	rootDir              string
 }
 
 // NewService 构造 Agent RPC 服务。rootDir 是文件操作的根目录沙箱，
@@ -28,7 +29,12 @@ func NewService(db *database.DB, manager *docker.Manager, rootDir string) *Servi
 	if rootDir == "" {
 		rootDir = defaultRootDir
 	}
-	return &Service{DB: db, Manager: manager, rootDir: rootDir}
+	return &Service{
+		DB:                   db,
+		Manager:              manager,
+		restartPolicyUpdater: dockerRestartPolicyUpdater{},
+		rootDir:              rootDir,
+	}
 }
 
 // RootDir 返回文件操作沙箱根目录（已 Clean），供 file handler 复用。

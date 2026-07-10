@@ -410,6 +410,45 @@ func TestContainerService_ContainerCreate(t *testing.T) {
 	}
 }
 
+func TestContainerService_ContainerCreatePassesRestartPolicy(t *testing.T) {
+	ctx := context.Background()
+	repo := newFakeContainerRepoWithDefaults()
+	repo.ContainerCreateFn = func(_ context.Context, args rpcSchema.ContainerCreateArgs) (rpcSchema.ContainerCreateReply, error) {
+		assert.Equal(t, "unless-stopped", args.RestartPolicy)
+		return rpcSchema.ContainerCreateReply{ContainerID: "new-cid-123"}, nil
+	}
+
+	svc := NewContainerService(repo)
+	_, err := svc.ContainerCreate(ctx, schema.ContainerCreateArgs{
+		ContainerName: "test-container",
+		ImageName:     "nginx:latest",
+		NetworkName:   "bridge",
+		RestartPolicy: "unless-stopped",
+	})
+	require.NoError(t, err)
+}
+
+func TestContainerService_ContainerUpdatePassesRestartPolicy(t *testing.T) {
+	ctx := context.Background()
+	repo := newFakeContainerRepoWithDefaults()
+	repo.ContainerUpdateFn = func(_ context.Context, args rpcSchema.ContainerUpdateArgs) (rpcSchema.ContainerUpdateReply, error) {
+		assert.Equal(t, "abc123", args.ContainerID)
+		assert.Equal(t, "on-failure", args.RestartPolicy)
+		return rpcSchema.ContainerUpdateReply{ContainerID: "updated-cid"}, nil
+	}
+
+	svc := NewContainerService(repo)
+	reply, err := svc.ContainerUpdate(ctx, schema.ContainerUpdateArgs{
+		ContainerID:   "abc123",
+		ContainerName: "test-container",
+		ImageName:     "nginx:latest",
+		NetworkName:   "bridge",
+		RestartPolicy: "on-failure",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "updated-cid", reply.ContainerID)
+}
+
 func TestContainerService_ImageList(t *testing.T) {
 	ctx := context.Background()
 
