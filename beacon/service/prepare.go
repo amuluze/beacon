@@ -7,7 +7,6 @@ package service
 import (
 	"log/slog"
 
-	"beacon/pkg/utils/hash"
 	"beacon/pkg/utils/uuid"
 	"beacon/service/model"
 	"common/database"
@@ -46,11 +45,21 @@ var thresholds = []model.AlarmThreshold{
 	},
 }
 
+const (
+	defaultAdminPasswordHash  = "$2a$10$iNfHGSdhRHO1wcG9/2gv7.0ZJxN3YciHxTIQUgoyNUOS0SoXL4vLe"
+	defaultBeaconPasswordHash = "$2a$10$yZhikKtaqyLpyrQOJE9WN.AAtWigY7XK145c3mFo5SU7/NYY/RyIK"
+)
+
+var legacyDefaultPasswordHashes = map[string]string{
+	"admin":  "f865b53623b121fd34ee5426c792e5c33af8c227",
+	"beacon": "7c4a8d09ca3762af61e59520943dc26494f8941b",
+}
+
 var users = []*model.User{
 	{
 		ID:       uuid.MustUUID(),
 		Username: "admin",
-		Password: hash.SHA1String("admin123"), // hash.SHA1String(args.OldPassword)
+		Password: defaultAdminPasswordHash,
 		Remark:   "管理员",
 		IsAdmin:  1,
 		Status:   1,
@@ -65,7 +74,7 @@ var users = []*model.User{
 	{
 		ID:       uuid.MustUUID(),
 		Username: "beacon",
-		Password: hash.SHA1String("123456"),
+		Password: defaultBeaconPasswordHash,
 		Remark:   "普通用户",
 		IsAdmin:  2,
 		Status:   1,
@@ -148,8 +157,13 @@ func (a *Prepare) InitAccount(app *fiber.App) {
 			} else {
 				u.Roles[0].Resources = notAdminResources
 			}
+			if legacyHash, ok := legacyDefaultPasswordHashes[u.Username]; ok {
+				if err := tx.Model(&model.User{}).Where("username = ? AND password = ?", u.Username, legacyHash).Update("password", u.Password).Error; err != nil {
+					slog.Error("upgrade default user password hash failed", "username", u.Username, "error", err)
+				}
+			}
 			// 创建或更新
-			if err := tx.Model(&model.User{}).FirstOrCreate(&u).Error; err != nil {
+			if err := tx.Model(&model.User{}).Where("username = ?", u.Username).FirstOrCreate(u).Error; err != nil {
 				slog.Error("search or create user failed", "error", err)
 			}
 		}
