@@ -1,5 +1,5 @@
 {
-  "version": "2.13",
+  "version": "2.14",
   "children": [
     {
       "type": "frame",
@@ -12,108 +12,6 @@
       "height": 900,
       "fill": "$surface-primary",
       "children": [
-        {
-          "type": "frame",
-          "id": "Dm0Rp",
-          "name": "Login Left",
-          "width": 580,
-          "height": "fill_container",
-          "fill": "#22325b",
-          "layout": "vertical",
-          "gap": "$spacing-lg",
-          "padding": "$spacing-xl",
-          "justifyContent": "center",
-          "alignItems": "center",
-          "children": [
-            {
-              "type": "frame",
-              "id": "cFgzm",
-              "name": "Logo Row",
-              "gap": "$spacing-sm",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "rectangle",
-                  "cornerRadius": 4,
-                  "id": "rH1u7",
-                  "name": "Logo Icon",
-                  "fill": "$accent-primary",
-                  "width": 40,
-                  "height": 40
-                },
-                {
-                  "type": "text",
-                  "id": "TtNSV",
-                  "name": "App Name",
-                  "fill": "$foreground-primary",
-                  "content": "Beacon",
-                  "fontFamily": "Inter",
-                  "fontSize": "$font-size-2xl",
-                  "fontWeight": "700"
-                }
-              ]
-            },
-            {
-              "type": "text",
-              "id": "J6cc9Y",
-              "name": "Description",
-              "fill": "$foreground-secondary",
-              "content": "轻量级 Docker 容器管理平台",
-              "fontFamily": "Inter",
-              "fontSize": "$font-size-md",
-              "fontWeight": "normal"
-            },
-            {
-              "type": "frame",
-              "id": "v1mVJW",
-              "name": "Features",
-              "layout": "vertical",
-              "gap": "$spacing-md",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "wRSST",
-                  "name": "Feature Item",
-                  "fill": "$foreground-muted",
-                  "content": "· 实时监控主机与容器资源",
-                  "fontFamily": "Inter",
-                  "fontSize": "$font-size-sm",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "Is6ae",
-                  "name": "Feature Item",
-                  "fill": "$foreground-muted",
-                  "content": "· 可视化容器生命周期管理",
-                  "fontFamily": "Inter",
-                  "fontSize": "$font-size-sm",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "YRpXf",
-                  "name": "Feature Item",
-                  "fill": "$foreground-muted",
-                  "content": "· 镜像仓库与网络配置",
-                  "fontFamily": "Inter",
-                  "fontSize": "$font-size-sm",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "LeW1j",
-                  "name": "Feature Item",
-                  "fill": "$foreground-muted",
-                  "content": "· 多维度告警与审计日志",
-                  "fontFamily": "Inter",
-                  "fontSize": "$font-size-sm",
-                  "fontWeight": "normal"
-                }
-              ]
-            }
-          ]
-        },
         {
           "type": "frame",
           "id": "V8qeuE",
@@ -211,14 +109,14 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "text",
-                      "id": "y0GezH",
+                      "type": "icon",
+                      "id": "Gxoyg",
                       "name": "User Icon",
-                      "fill": "$foreground-muted",
-                      "content": "👤",
-                      "fontFamily": "Inter",
-                      "fontSize": "$font-size-md",
-                      "fontWeight": "normal"
+                      "width": 16,
+                      "height": 16,
+                      "icon": "user",
+                      "library": "lucide",
+                      "fill": "$foreground-muted"
                     },
                     {
                       "type": "text",
@@ -246,14 +144,14 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "text",
-                      "id": "V51Bp",
+                      "type": "icon",
+                      "id": "KZowb",
                       "name": "Lock Icon",
-                      "fill": "$foreground-muted",
-                      "content": "🔒",
-                      "fontFamily": "Inter",
-                      "fontSize": "$font-size-md",
-                      "fontWeight": "normal"
+                      "width": 16,
+                      "height": 16,
+                      "icon": "lock",
+                      "library": "lucide",
+                      "fill": "$foreground-muted"
                     },
                     {
                       "type": "text",
@@ -533,7 +431,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 41.985743840378476
+                                          "height": 23.73
                                         },
                                         {
                                           "type": "rectangle",
@@ -542,7 +440,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 77.69449643219292
+                                          "height": 43.92
                                         },
                                         {
                                           "type": "rectangle",
@@ -551,7 +449,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 76.33258072643997
+                                          "height": 43.15
                                         },
                                         {
                                           "type": "rectangle",
@@ -560,7 +458,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 21.10837610727358
+                                          "height": 11.93
                                         },
                                         {
                                           "type": "rectangle",
@@ -569,7 +467,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 20.116628640122826
+                                          "height": 11.37
                                         },
                                         {
                                           "type": "rectangle",
@@ -578,7 +476,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 78.4840814837996
+                                          "height": 44.37
                                         },
                                         {
                                           "type": "rectangle",
@@ -587,7 +485,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 26.71316585933232
+                                          "height": 15.1
                                         },
                                         {
                                           "type": "rectangle",
@@ -596,7 +494,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 63.58032983395392
+                                          "height": 35.94
                                         },
                                         {
                                           "type": "rectangle",
@@ -605,7 +503,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 62.5314092371193
+                                          "height": 35.35
                                         },
                                         {
                                           "type": "rectangle",
@@ -614,7 +512,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 78.29207104761034
+                                          "height": 44.26
                                         },
                                         {
                                           "type": "rectangle",
@@ -623,7 +521,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 60.55873362435501
+                                          "height": 34.23
                                         },
                                         {
                                           "type": "rectangle",
@@ -632,7 +530,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 78.29655883319731
+                                          "height": 44.26
                                         },
                                         {
                                           "type": "rectangle",
@@ -641,7 +539,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 29.618709034460032
+                                          "height": 16.74
                                         },
                                         {
                                           "type": "rectangle",
@@ -650,7 +548,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 56.97749404819622
+                                          "height": 32.21
                                         },
                                         {
                                           "type": "rectangle",
@@ -659,7 +557,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 42.33525117264348
+                                          "height": 23.93
                                         },
                                         {
                                           "type": "rectangle",
@@ -668,7 +566,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 37.98317887356825
+                                          "height": 21.47
                                         },
                                         {
                                           "type": "rectangle",
@@ -677,7 +575,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 36.319001348007994
+                                          "height": 20.53
                                         },
                                         {
                                           "type": "rectangle",
@@ -686,7 +584,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 37.85869740695948
+                                          "height": 21.4
                                         },
                                         {
                                           "type": "rectangle",
@@ -695,7 +593,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 79.59714842587151
+                                          "height": 45
                                         },
                                         {
                                           "type": "rectangle",
@@ -704,7 +602,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 78.7943486475368
+                                          "height": 44.54
                                         }
                                       ]
                                     }
@@ -788,7 +686,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 21.12968540931336
+                                          "height": 12.58
                                         },
                                         {
                                           "type": "rectangle",
@@ -797,7 +695,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 69.79005402945901
+                                          "height": 41.54
                                         },
                                         {
                                           "type": "rectangle",
@@ -806,7 +704,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 58.455665751602346
+                                          "height": 34.79
                                         },
                                         {
                                           "type": "rectangle",
@@ -815,7 +713,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 46.48329894881443
+                                          "height": 27.67
                                         },
                                         {
                                           "type": "rectangle",
@@ -824,7 +722,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 47.36359862773797
+                                          "height": 28.19
                                         },
                                         {
                                           "type": "rectangle",
@@ -833,7 +731,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 44.2441928318961
+                                          "height": 26.33
                                         },
                                         {
                                           "type": "rectangle",
@@ -842,7 +740,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 52.31464918029098
+                                          "height": 31.14
                                         },
                                         {
                                           "type": "rectangle",
@@ -851,7 +749,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 72.2117495916533
+                                          "height": 42.98
                                         },
                                         {
                                           "type": "rectangle",
@@ -860,7 +758,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 54.3567850218549
+                                          "height": 32.35
                                         },
                                         {
                                           "type": "rectangle",
@@ -869,7 +767,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 71.19626742678209
+                                          "height": 42.38
                                         },
                                         {
                                           "type": "rectangle",
@@ -878,7 +776,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 63.99975523291788
+                                          "height": 38.09
                                         },
                                         {
                                           "type": "rectangle",
@@ -887,7 +785,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 34.22731807480564
+                                          "height": 20.37
                                         },
                                         {
                                           "type": "rectangle",
@@ -896,7 +794,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 59.521117863367515
+                                          "height": 35.43
                                         },
                                         {
                                           "type": "rectangle",
@@ -905,7 +803,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 66.87767426993211
+                                          "height": 39.81
                                         },
                                         {
                                           "type": "rectangle",
@@ -914,7 +812,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 32.83261463947129
+                                          "height": 19.54
                                         },
                                         {
                                           "type": "rectangle",
@@ -923,7 +821,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 75.60508290628546
+                                          "height": 45
                                         },
                                         {
                                           "type": "rectangle",
@@ -932,7 +830,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 42.17829661238999
+                                          "height": 25.1
                                         },
                                         {
                                           "type": "rectangle",
@@ -941,7 +839,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 55.39031388568577
+                                          "height": 32.97
                                         },
                                         {
                                           "type": "rectangle",
@@ -950,7 +848,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 29.350019273115592
+                                          "height": 17.47
                                         },
                                         {
                                           "type": "rectangle",
@@ -959,7 +857,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-warning",
                                           "width": "fill_container",
-                                          "height": 58.10745044948913
+                                          "height": 34.59
                                         }
                                       ]
                                     }
@@ -1053,7 +951,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 73.35246766925613
+                                          "height": 41.49
                                         },
                                         {
                                           "type": "rectangle",
@@ -1062,7 +960,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 46.699645004867065
+                                          "height": 26.41
                                         },
                                         {
                                           "type": "rectangle",
@@ -1071,7 +969,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 22.089489017728702
+                                          "height": 12.49
                                         },
                                         {
                                           "type": "rectangle",
@@ -1080,7 +978,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 29.13209682050534
+                                          "height": 16.48
                                         },
                                         {
                                           "type": "rectangle",
@@ -1089,7 +987,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 74.41355465413096
+                                          "height": 42.09
                                         },
                                         {
                                           "type": "rectangle",
@@ -1098,7 +996,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 79.53285895337291
+                                          "height": 44.98
                                         },
                                         {
                                           "type": "rectangle",
@@ -1107,7 +1005,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 42.942806884675214
+                                          "height": 24.29
                                         },
                                         {
                                           "type": "rectangle",
@@ -1116,7 +1014,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 77.89243436366908
+                                          "height": 44.06
                                         },
                                         {
                                           "type": "rectangle",
@@ -1125,7 +1023,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 29.151562223719523
+                                          "height": 16.49
                                         },
                                         {
                                           "type": "rectangle",
@@ -1134,7 +1032,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 48.582266822226046
+                                          "height": 27.48
                                         },
                                         {
                                           "type": "rectangle",
@@ -1143,7 +1041,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 45.64538836612652
+                                          "height": 25.82
                                         },
                                         {
                                           "type": "rectangle",
@@ -1152,7 +1050,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 41.64320107927564
+                                          "height": 23.55
                                         },
                                         {
                                           "type": "rectangle",
@@ -1161,7 +1059,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 20.06748303399981
+                                          "height": 11.35
                                         },
                                         {
                                           "type": "rectangle",
@@ -1170,7 +1068,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 27.6201129821966
+                                          "height": 15.62
                                         },
                                         {
                                           "type": "rectangle",
@@ -1179,7 +1077,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 28.97346668873294
+                                          "height": 16.39
                                         },
                                         {
                                           "type": "rectangle",
@@ -1188,7 +1086,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 23.606130639038735
+                                          "height": 13.35
                                         },
                                         {
                                           "type": "rectangle",
@@ -1197,7 +1095,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 54.412887146335095
+                                          "height": 30.78
                                         },
                                         {
                                           "type": "rectangle",
@@ -1206,7 +1104,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 35.03123616018056
+                                          "height": 19.81
                                         },
                                         {
                                           "type": "rectangle",
@@ -1215,7 +1113,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 42.487920180389146
+                                          "height": 24.03
                                         },
                                         {
                                           "type": "rectangle",
@@ -1224,7 +1122,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-success",
                                           "width": "fill_container",
-                                          "height": 30.19398553047017
+                                          "height": 17.08
                                         }
                                       ]
                                     }
@@ -1308,7 +1206,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 36.37366239012799
+                                          "height": 20.55
                                         },
                                         {
                                           "type": "rectangle",
@@ -1317,7 +1215,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 79.6417524315269
+                                          "height": 44.99
                                         },
                                         {
                                           "type": "rectangle",
@@ -1326,7 +1224,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 55.488876385277834
+                                          "height": 31.35
                                         },
                                         {
                                           "type": "rectangle",
@@ -1335,7 +1233,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 76.56010410145907
+                                          "height": 43.25
                                         },
                                         {
                                           "type": "rectangle",
@@ -1344,7 +1242,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 72.78390367915705
+                                          "height": 41.12
                                         },
                                         {
                                           "type": "rectangle",
@@ -1353,7 +1251,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 42.114987317461136
+                                          "height": 23.79
                                         },
                                         {
                                           "type": "rectangle",
@@ -1362,7 +1260,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 73.85865010348815
+                                          "height": 41.72
                                         },
                                         {
                                           "type": "rectangle",
@@ -1371,7 +1269,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 37.184412910919164
+                                          "height": 21.01
                                         },
                                         {
                                           "type": "rectangle",
@@ -1380,7 +1278,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 50.54289631858846
+                                          "height": 28.55
                                         },
                                         {
                                           "type": "rectangle",
@@ -1389,7 +1287,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 55.981320033676894
+                                          "height": 31.62
                                         },
                                         {
                                           "type": "rectangle",
@@ -1398,7 +1296,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 71.943076436134
+                                          "height": 40.64
                                         },
                                         {
                                           "type": "rectangle",
@@ -1407,7 +1305,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 70.50125475290989
+                                          "height": 39.83
                                         },
                                         {
                                           "type": "rectangle",
@@ -1416,7 +1314,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 45.63217484485406
+                                          "height": 25.78
                                         },
                                         {
                                           "type": "rectangle",
@@ -1425,7 +1323,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 57.34863799154204
+                                          "height": 32.4
                                         },
                                         {
                                           "type": "rectangle",
@@ -1434,7 +1332,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 61.32094161756266
+                                          "height": 34.64
                                         },
                                         {
                                           "type": "rectangle",
@@ -1443,7 +1341,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 57.10754543572242
+                                          "height": 32.26
                                         },
                                         {
                                           "type": "rectangle",
@@ -1452,7 +1350,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 51.1799714896198
+                                          "height": 28.91
                                         },
                                         {
                                           "type": "rectangle",
@@ -1461,7 +1359,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 33.55128888948663
+                                          "height": 18.95
                                         },
                                         {
                                           "type": "rectangle",
@@ -1470,7 +1368,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 71.00519786323508
+                                          "height": 40.11
                                         },
                                         {
                                           "type": "rectangle",
@@ -1479,7 +1377,7 @@
                                           "opacity": 0.7,
                                           "fill": "$accent-primary",
                                           "width": "fill_container",
-                                          "height": 39.326579136322025
+                                          "height": 22.22
                                         }
                                       ]
                                     }
@@ -1726,16 +1624,16 @@
                                   "x": 0,
                                   "y": 0,
                                   "name": "Line",
-                                  "geometry": "M0 77l14.3-2 14.3 3 14.3-6 14.2 2 14.3 2 14.3-3 14.3 4",
+                                  "geometry": "M0 11.55l14.3-0.3 14.3 0.45 14.3-0.9 14.2 0.3 14.3 0.3 14.3-0.45 14.3 0.6",
                                   "viewBox": [
                                     0,
                                     0,
                                     100,
-                                    100
+                                    15
                                   ],
                                   "fill": "#00000000",
                                   "width": 600,
-                                  "height": 90,
+                                  "height": 89,
                                   "stroke": "$accent-primary",
                                   "strokeWidth": 1.5,
                                   "strokeLinejoin": "round",
@@ -1747,16 +1645,16 @@
                                   "x": 0,
                                   "y": 0,
                                   "name": "Line",
-                                  "geometry": "M0 88l14.3-3 14.3 4 14.3-2 14.2-1 14.3 2 14.3-4 14.3 4",
+                                  "geometry": "M0 13.2l14.3-0.45 14.3 0.6 14.3-0.3 14.2-0.15 14.3 0.3 14.3-0.6 14.3 0.6",
                                   "viewBox": [
                                     0,
                                     0,
                                     100,
-                                    100
+                                    15
                                   ],
                                   "fill": "#00000000",
                                   "width": 600,
-                                  "height": 90,
+                                  "height": 89,
                                   "stroke": "$accent-success",
                                   "strokeWidth": 1.5,
                                   "strokeLinejoin": "round",
@@ -1768,16 +1666,16 @@
                                   "x": 0,
                                   "y": 0,
                                   "name": "Line",
-                                  "geometry": "M0 55l14.3-3 14.3 4 14.3-6 14.2 3 14.3 1 14.3-3 14.3 4",
+                                  "geometry": "M0 8.25l14.3-0.45 14.3 0.6 14.3-0.9 14.2 0.45 14.3 0.15 14.3-0.45 14.3 0.6",
                                   "viewBox": [
                                     0,
                                     0,
                                     100,
-                                    100
+                                    15
                                   ],
                                   "fill": "#00000000",
                                   "width": 600,
-                                  "height": 90,
+                                  "height": 89,
                                   "stroke": "$accent-warning",
                                   "strokeWidth": 1.5,
                                   "strokeLinejoin": "round",
@@ -1789,16 +1687,16 @@
                                   "x": 0,
                                   "y": 0,
                                   "name": "Line",
-                                  "geometry": "M0 92l14.3-1 14.3 2 14.3-3 14.2 1 14.3 1 14.3-3 14.3 2",
+                                  "geometry": "M0 13.8l14.3-0.15 14.3 0.3 14.3-0.45 14.2 0.15 14.3 0.15 14.3-0.45 14.3 0.3",
                                   "viewBox": [
                                     0,
                                     0,
                                     100,
-                                    100
+                                    15
                                   ],
                                   "fill": "#00000000",
                                   "width": 600,
-                                  "height": 90,
+                                  "height": 89,
                                   "stroke": "$accent-danger",
                                   "strokeWidth": 1.5,
                                   "strokeLinejoin": "round",
@@ -1974,16 +1872,16 @@
                                   "x": 0,
                                   "y": 0,
                                   "name": "Line",
-                                  "geometry": "M0 32l14.3 1 14.3-2 14.3 1 14.2-2 14.3 2 14.3 1 14.3-1",
+                                  "geometry": "M0 4.8l14.3 0.15 14.3-0.3 14.3 0.15 14.2-0.3 14.3 0.3 14.3 0.15 14.3-0.15",
                                   "viewBox": [
                                     0,
                                     0,
                                     100,
-                                    100
+                                    15
                                   ],
                                   "fill": "#00000000",
                                   "width": 600,
-                                  "height": 90,
+                                  "height": 89,
                                   "stroke": "$accent-primary",
                                   "strokeWidth": 1.5,
                                   "strokeLinejoin": "round",
@@ -1995,16 +1893,16 @@
                                   "x": 0,
                                   "y": 0,
                                   "name": "Line",
-                                  "geometry": "M0 66l14.3-1 14.3 2 14.3-1 14.2-2 14.3 2 14.3-1 14.3 1",
+                                  "geometry": "M0 9.9l14.3-0.15 14.3 0.3 14.3-0.15 14.2-0.3 14.3 0.3 14.3-0.15 14.3 0.15",
                                   "viewBox": [
                                     0,
                                     0,
                                     100,
-                                    100
+                                    15
                                   ],
                                   "fill": "#00000000",
                                   "width": 600,
-                                  "height": 90,
+                                  "height": 89,
                                   "stroke": "$accent-success",
                                   "strokeWidth": 1.5,
                                   "strokeLinejoin": "round",
@@ -2016,16 +1914,16 @@
                                   "x": 0,
                                   "y": 0,
                                   "name": "Line",
-                                  "geometry": "M0 28l14.3-1 14.3 2 14.3-1 14.2-2 14.3 2 14.3-1 14.3 1",
+                                  "geometry": "M0 4.2l14.3-0.15 14.3 0.3 14.3-0.15 14.2-0.3 14.3 0.3 14.3-0.15 14.3 0.15",
                                   "viewBox": [
                                     0,
                                     0,
                                     100,
-                                    100
+                                    15
                                   ],
                                   "fill": "#00000000",
                                   "width": 600,
-                                  "height": 90,
+                                  "height": 89,
                                   "stroke": "$accent-warning",
                                   "strokeWidth": 1.5,
                                   "strokeLinejoin": "round",
@@ -2037,16 +1935,16 @@
                                   "x": 0,
                                   "y": 0,
                                   "name": "Line",
-                                  "geometry": "M0 78l14.3-1 14.3 2 14.3-1 14.2-2 14.3 2 14.3-1 14.3 1",
+                                  "geometry": "M0 11.7l14.3-0.15 14.3 0.3 14.3-0.15 14.2-0.3 14.3 0.3 14.3-0.15 14.3 0.15",
                                   "viewBox": [
                                     0,
                                     0,
                                     100,
-                                    100
+                                    15
                                   ],
                                   "fill": "#00000000",
                                   "width": 600,
-                                  "height": 90,
+                                  "height": 89,
                                   "stroke": "$accent-danger",
                                   "strokeWidth": 1.5,
                                   "strokeLinejoin": "round",
@@ -2232,16 +2130,16 @@
                                   "x": 0,
                                   "y": 0,
                                   "name": "Line",
-                                  "geometry": "M0 44l14.3-2 14.3 3 14.3-5 14.2 3 14.3 1 14.3-3 14.3 3",
+                                  "geometry": "M0 6.6l14.3-0.3 14.3 0.45 14.3-0.75 14.2 0.45 14.3 0.15 14.3-0.45 14.3 0.45",
                                   "viewBox": [
                                     0,
                                     0,
                                     100,
-                                    100
+                                    15
                                   ],
                                   "fill": "#00000000",
                                   "width": 600,
-                                  "height": 90,
+                                  "height": 89,
                                   "stroke": "$accent-primary",
                                   "strokeWidth": 1.5,
                                   "strokeLinejoin": "round",
@@ -2253,16 +2151,16 @@
                                   "x": 0,
                                   "y": 0,
                                   "name": "Line",
-                                  "geometry": "M0 68l14.3-2 14.3 3 14.3-2 14.2-2 14.3 3 14.3-2 14.3 2",
+                                  "geometry": "M0 10.2l14.3-0.3 14.3 0.45 14.3-0.3 14.2-0.3 14.3 0.45 14.3-0.3 14.3 0.3",
                                   "viewBox": [
                                     0,
                                     0,
                                     100,
-                                    100
+                                    15
                                   ],
                                   "fill": "#00000000",
                                   "width": 600,
-                                  "height": 90,
+                                  "height": 89,
                                   "stroke": "$accent-success",
                                   "strokeWidth": 1.5,
                                   "strokeLinejoin": "round",
@@ -2274,16 +2172,16 @@
                                   "x": 0,
                                   "y": 0,
                                   "name": "Line",
-                                  "geometry": "M0 16l14.3-2 14.3 3 14.3-2 14.2-2 14.3 3 14.3-2 14.3 2",
+                                  "geometry": "M0 2.4l14.3-0.3 14.3 0.45 14.3-0.3 14.2-0.3 14.3 0.45 14.3-0.3 14.3 0.3",
                                   "viewBox": [
                                     0,
                                     0,
                                     100,
-                                    100
+                                    15
                                   ],
                                   "fill": "#00000000",
                                   "width": 600,
-                                  "height": 90,
+                                  "height": 89,
                                   "stroke": "$accent-warning",
                                   "strokeWidth": 1.5,
                                   "strokeLinejoin": "round",
@@ -2295,16 +2193,16 @@
                                   "x": 0,
                                   "y": 0,
                                   "name": "Line",
-                                  "geometry": "M0 82l14.3-1 14.3 2 14.3-1 14.2-2 14.3 2 14.3-1 14.3 1",
+                                  "geometry": "M0 12.3l14.3-0.15 14.3 0.3 14.3-0.15 14.2-0.3 14.3 0.3 14.3-0.15 14.3 0.15",
                                   "viewBox": [
                                     0,
                                     0,
                                     100,
-                                    100
+                                    15
                                   ],
                                   "fill": "#00000000",
                                   "width": 600,
-                                  "height": 90,
+                                  "height": 89,
                                   "stroke": "$accent-danger",
                                   "strokeWidth": 1.5,
                                   "strokeLinejoin": "round",
@@ -2480,16 +2378,16 @@
                                   "x": 0,
                                   "y": 0,
                                   "name": "Line",
-                                  "geometry": "M0 88l14.3-22 14.3 19 14.3-13 14.2 8 14.3-10 14.3 12 14.3-7",
+                                  "geometry": "M0 13.2l14.3-3.3 14.3 2.85 14.3-1.95 14.2 1.2 14.3-1.5 14.3 1.8 14.3-1.05",
                                   "viewBox": [
                                     0,
                                     0,
                                     100,
-                                    100
+                                    15
                                   ],
                                   "fill": "#00000000",
                                   "width": 600,
-                                  "height": 90,
+                                  "height": 89,
                                   "stroke": "$accent-primary",
                                   "strokeWidth": 1.5,
                                   "strokeLinejoin": "round",
@@ -2501,16 +2399,16 @@
                                   "x": 0,
                                   "y": 0,
                                   "name": "Line",
-                                  "geometry": "M0 92l14.3-13 14.3 11 14.3-8 14.2 6 14.3-4 14.3 2 14.3-1",
+                                  "geometry": "M0 13.8l14.3-1.95 14.3 1.65 14.3-1.2 14.2 0.9 14.3-0.6 14.3 0.3 14.3-0.15",
                                   "viewBox": [
                                     0,
                                     0,
                                     100,
-                                    100
+                                    15
                                   ],
                                   "fill": "#00000000",
                                   "width": 600,
-                                  "height": 90,
+                                  "height": 89,
                                   "stroke": "$accent-success",
                                   "strokeWidth": 1.5,
                                   "strokeLinejoin": "round",
@@ -2522,16 +2420,16 @@
                                   "x": 0,
                                   "y": 0,
                                   "name": "Line",
-                                  "geometry": "M0 79l14.3-35 14.3 26 14.3-15 14.2 7 14.3-12 14.3 15 14.3-7",
+                                  "geometry": "M0 11.85l14.3-5.25 14.3 3.9 14.3-2.25 14.2 1.05 14.3-1.8 14.3 2.25 14.3-1.05",
                                   "viewBox": [
                                     0,
                                     0,
                                     100,
-                                    100
+                                    15
                                   ],
                                   "fill": "#00000000",
                                   "width": 600,
-                                  "height": 90,
+                                  "height": 89,
                                   "stroke": "$accent-warning",
                                   "strokeWidth": 1.5,
                                   "strokeLinejoin": "round",
@@ -2543,16 +2441,16 @@
                                   "x": 0,
                                   "y": 0,
                                   "name": "Line",
-                                  "geometry": "M0 97l14.3-12 14.3 10 14.3-5 14.2 3 14.3-5 14.3 4 14.3-1",
+                                  "geometry": "M0 14.55l14.3-1.8 14.3 1.5 14.3-0.75 14.2 0.45 14.3-0.75 14.3 0.6 14.3-0.15",
                                   "viewBox": [
                                     0,
                                     0,
                                     100,
-                                    100
+                                    15
                                   ],
                                   "fill": "#00000000",
                                   "width": 600,
-                                  "height": 90,
+                                  "height": 89,
                                   "stroke": "$accent-danger",
                                   "strokeWidth": 1.5,
                                   "strokeLinejoin": "round",
@@ -3676,7 +3574,7 @@
           "type": "text",
           "id": "dxljC",
           "name": "Label",
-          "fill": "$foreground-primary",
+          "fill": "$foreground-on-accent",
           "content": "运行中",
           "fontFamily": "Inter",
           "fontSize": "$font-size-xs",
@@ -5671,7 +5569,7 @@
                           "content": "3000:3000"
                         },
                         "IXstN": {
-                          "fill": "$accent-warning"
+                          "fill": "$accent-danger"
                         },
                         "IXstN/dxljC": {
                           "content": "已停止"
@@ -6699,10 +6597,10 @@
                           "content": "null"
                         },
                         "yo0Rl": {
-                          "content": ""
+                          "content": "—"
                         },
                         "ZUDfP": {
-                          "content": ""
+                          "content": "—"
                         },
                         "FoTGG": {
                           "content": "2024-06-16 21:10:01"
@@ -6723,15 +6621,164 @@
                           "content": "host"
                         },
                         "yo0Rl": {
-                          "content": ""
+                          "content": "—"
                         },
                         "ZUDfP": {
-                          "content": ""
+                          "content": "—"
                         },
                         "FoTGG": {
                           "content": "2024-06-16 21:10:01"
                         }
                       }
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "GbvYA",
+                  "name": "Pagination",
+                  "width": "fill_container",
+                  "gap": "$spacing-sm",
+                  "padding": [
+                    8,
+                    0
+                  ],
+                  "justifyContent": "end",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "So8tK",
+                      "name": "Total Text",
+                      "fill": "$foreground-muted",
+                      "content": "共 6 条",
+                      "fontFamily": "Inter",
+                      "fontSize": "$font-size-sm",
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "m1CQhr",
+                      "name": "Page Buttons",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "NMHLh",
+                          "name": "Page Btn <",
+                          "fill": "$surface-card",
+                          "padding": [
+                            6,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "g2znN",
+                              "name": "Page Num <",
+                              "fill": "$foreground-primary",
+                              "content": "<",
+                              "fontFamily": "Inter",
+                              "fontSize": "$font-size-sm",
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "MUaLa",
+                          "name": "Page Btn 1",
+                          "fill": "$accent-primary",
+                          "padding": [
+                            6,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "yeIQV",
+                              "name": "Page Num 1",
+                              "fill": "$foreground-primary",
+                              "content": "1",
+                              "fontFamily": "Inter",
+                              "fontSize": "$font-size-sm",
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "k7fJfd",
+                          "name": "Page Btn 2",
+                          "fill": "$surface-card",
+                          "padding": [
+                            6,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "q8yn8",
+                              "name": "Page Num 2",
+                              "fill": "$foreground-primary",
+                              "content": "2",
+                              "fontFamily": "Inter",
+                              "fontSize": "$font-size-sm",
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "F4z7Qq",
+                          "name": "Page Btn >",
+                          "fill": "$surface-card",
+                          "padding": [
+                            6,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "svTG7",
+                              "name": "Page Num >",
+                              "fill": "$foreground-primary",
+                              "content": ">",
+                              "fontFamily": "Inter",
+                              "fontSize": "$font-size-sm",
+                              "fontWeight": "500"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "tbk6Y",
+                      "name": "Size Selector",
+                      "width": 100,
+                      "fill": "$surface-card",
+                      "padding": [
+                        6,
+                        8
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "BmsJY",
+                          "name": "Size Text",
+                          "fill": "$foreground-muted",
+                          "content": "10条/页 ▼",
+                          "fontFamily": "Inter",
+                          "fontSize": "$font-size-sm",
+                          "fontWeight": "normal"
+                        }
+                      ]
                     }
                   ]
                 }
@@ -6756,7 +6803,7 @@
       "name": "Add Container Drawer",
       "width": 1440,
       "height": 900,
-      "fill": "#00000099",
+      "fill": "$overlay-scrim",
       "justifyContent": "end",
       "children": [
         {
@@ -6765,7 +6812,7 @@
           "name": "Drawer Panel",
           "clip": true,
           "width": 480,
-          "height": 850,
+          "height": 900,
           "fill": "$surface-primary",
           "layout": "vertical",
           "children": [
@@ -7167,7 +7214,7 @@
                       "type": "text",
                       "id": "K0FnEj",
                       "name": "Label",
-                      "fill": "$foreground-primary",
+                      "fill": "$foreground-on-accent",
                       "content": "确认添加",
                       "fontFamily": "Inter",
                       "fontSize": "$font-size-sm",
@@ -7189,7 +7236,7 @@
       "name": "Pull Image Modal",
       "width": 1440,
       "height": 900,
-      "fill": "#00000099",
+      "fill": "$overlay-scrim",
       "justifyContent": "center",
       "alignItems": "center",
       "children": [
@@ -7395,7 +7442,7 @@
                       "type": "text",
                       "id": "VtyOa",
                       "name": "Label",
-                      "fill": "$foreground-primary",
+                      "fill": "$foreground-on-accent",
                       "content": "拉取",
                       "fontFamily": "Inter",
                       "fontSize": "$font-size-sm",
@@ -7417,15 +7464,13 @@
       "name": "New Network Modal",
       "width": 1440,
       "height": 900,
-      "fill": "#00000099",
-      "layout": "none",
+      "fill": "$overlay-scrim",
+      "justifyContent": "center",
+      "alignItems": "center",
       "children": [
         {
           "type": "frame",
           "id": "q0WANW",
-          "layoutPosition": "absolute",
-          "x": 480,
-          "y": 200,
           "name": "Modal Panel",
           "clip": true,
           "width": 480,
@@ -7726,7 +7771,7 @@
                       "type": "text",
                       "id": "U3wTh",
                       "name": "Label",
-                      "fill": "$foreground-primary",
+                      "fill": "$foreground-on-accent",
                       "content": "创建",
                       "fontFamily": "Inter",
                       "fontSize": "$font-size-sm",
@@ -7748,7 +7793,7 @@
       "name": "Edit Container Drawer",
       "width": 1440,
       "height": 900,
-      "fill": "#00000099",
+      "fill": "$overlay-scrim",
       "justifyContent": "end",
       "children": [
         {
@@ -7757,7 +7802,7 @@
           "name": "Drawer Panel",
           "clip": true,
           "width": 480,
-          "height": 850,
+          "height": 900,
           "fill": "$surface-primary",
           "layout": "vertical",
           "children": [
@@ -8159,7 +8204,7 @@
                       "type": "text",
                       "id": "wTFiQ",
                       "name": "Label",
-                      "fill": "$foreground-primary",
+                      "fill": "$foreground-on-accent",
                       "content": "保存修改",
                       "fontFamily": "Inter",
                       "fontSize": "$font-size-sm",
@@ -8181,15 +8226,13 @@
       "name": "Import Image Modal",
       "width": 1440,
       "height": 900,
-      "fill": "#00000099",
-      "layout": "none",
+      "fill": "$overlay-scrim",
+      "justifyContent": "center",
+      "alignItems": "center",
       "children": [
         {
           "type": "frame",
           "id": "qoIiI",
-          "layoutPosition": "absolute",
-          "x": 480,
-          "y": 200,
           "name": "Modal Panel",
           "clip": true,
           "width": 480,
@@ -8397,13 +8440,13 @@
                       "height": 14,
                       "icon": "upload",
                       "library": "lucide",
-                      "fill": "$foreground-primary"
+                      "fill": "$foreground-on-accent"
                     },
                     {
                       "type": "text",
                       "id": "HNB0V",
                       "name": "Label",
-                      "fill": "$foreground-primary",
+                      "fill": "$foreground-on-accent",
                       "content": "导入",
                       "fontFamily": "Inter",
                       "fontSize": "$font-size-sm",
@@ -8422,18 +8465,16 @@
       "id": "GPPhy",
       "x": 11200,
       "y": 1700,
-      "name": "编辑告警邮箱",
+      "name": "Edit Alarm Email Modal",
       "width": 1440,
       "height": 900,
-      "fill": "#00000099",
-      "layout": "none",
+      "fill": "$overlay-scrim",
+      "justifyContent": "center",
+      "alignItems": "center",
       "children": [
         {
           "type": "frame",
           "id": "UZhcz",
-          "layoutPosition": "absolute",
-          "x": 480,
-          "y": 250,
           "name": "Modal Panel",
           "clip": true,
           "width": 480,
@@ -8620,7 +8661,7 @@
                       "type": "text",
                       "id": "UCJOl",
                       "name": "Label",
-                      "fill": "$foreground-primary",
+                      "fill": "$foreground-on-accent",
                       "content": "保存",
                       "fontFamily": "Inter",
                       "fontSize": "$font-size-sm",
@@ -8639,18 +8680,16 @@
       "id": "WbCVs",
       "x": 12800,
       "y": 1700,
-      "name": "编辑 CPU 告警阈值",
+      "name": "Edit CPU Threshold Modal",
       "width": 1440,
       "height": 900,
-      "fill": "#00000099",
-      "layout": "none",
+      "fill": "$overlay-scrim",
+      "justifyContent": "center",
+      "alignItems": "center",
       "children": [
         {
           "type": "frame",
           "id": "seruJ",
-          "layoutPosition": "absolute",
-          "x": 480,
-          "y": 250,
           "name": "Modal Panel",
           "clip": true,
           "width": 480,
@@ -8958,7 +8997,7 @@
                       "type": "text",
                       "id": "MEdem",
                       "name": "Label",
-                      "fill": "$foreground-primary",
+                      "fill": "$foreground-on-accent",
                       "content": "保存",
                       "fontFamily": "Inter",
                       "fontSize": "$font-size-sm",
@@ -8973,30 +9012,101 @@
       ]
     }
   ],
+  "themes": {
+    "mode": [
+      "dark",
+      "light"
+    ]
+  },
   "variables": {
     "accent-danger": {
       "type": "color",
-      "value": "#F56C6CFF"
+      "value": [
+        {
+          "value": "#F56C6CFF",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#DB5050",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
     },
     "accent-primary": {
       "type": "color",
-      "value": "#409EFFFF"
+      "value": "#409EFF"
     },
     "accent-success": {
       "type": "color",
-      "value": "#67C23AFF"
+      "value": [
+        {
+          "value": "#67C23AFF",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#569A2E",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
     },
     "accent-warning": {
       "type": "color",
-      "value": "#E6A23CFF"
+      "value": [
+        {
+          "value": "#E6A23CFF",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#C28014",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
     },
     "border-primary": {
       "type": "color",
-      "value": "#414243FF"
+      "value": [
+        {
+          "value": "#414243FF",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#DCDFE6",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
     },
     "border-subtle": {
       "type": "color",
-      "value": "#363637FF"
+      "value": [
+        {
+          "value": "#363637FF",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#E4E7ED",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
     },
     "font-size-2xl": {
       "type": "number",
@@ -9024,19 +9134,54 @@
     },
     "foreground-muted": {
       "type": "color",
-      "value": "#909399FF"
+      "value": [
+        {
+          "value": "#909399FF",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#86909C",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
     },
     "foreground-primary": {
       "type": "color",
-      "value": "#FFFFFFFF"
+      "value": [
+        {
+          "value": "#FFFFFFFF",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#1F2329",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
     },
     "foreground-secondary": {
       "type": "color",
-      "value": "#CFD3DCFF"
-    },
-    "sidebar-width": {
-      "type": "number",
-      "value": 210
+      "value": [
+        {
+          "value": "#CFD3DCFF",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#4E5969",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
     },
     "spacing-lg": {
       "type": "number",
@@ -9060,15 +9205,76 @@
     },
     "surface-card": {
       "type": "color",
-      "value": "#1D1E1FFF"
+      "value": [
+        {
+          "value": "#1D1E1FFF",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#F7F8FA",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
     },
     "surface-primary": {
       "type": "color",
-      "value": "#141414FF"
+      "value": [
+        {
+          "value": "#141414FF",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#FFFFFF",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
     },
     "surface-secondary": {
       "type": "color",
-      "value": "#262727FF"
+      "value": [
+        {
+          "value": "#262727FF",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#F0F2F5",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
+    },
+    "foreground-on-accent": {
+      "type": "color",
+      "value": "#FFFFFF"
+    },
+    "overlay-scrim": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#00000099",
+          "theme": {
+            "mode": "dark"
+          }
+        },
+        {
+          "value": "#00000066",
+          "theme": {
+            "mode": "light"
+          }
+        }
+      ]
     }
-  }
+  },
+  "fileToken": "175cb861-bb3d-4e5d-8870-f402712cb850"
 }
