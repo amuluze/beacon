@@ -711,7 +711,37 @@ paths:
       tags: [audit]
       summary: 获取审计日志
       operationId: auditQuery
-      responses: { '200': { description: Audit log page } }
+      parameters:
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [system, operator]
+          description: system = system-generated alarms; operator = user actions
+        - in: query
+          name: agent_id
+          schema: { type: string }
+          description: Optional Agent scope; omit to return rows from all Agents.
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 10 }
+      responses:
+        '200':
+          description: Audit log page
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Audit' }
+                  total: { type: integer }
+                  page: { type: integer }
+                  size: { type: integer }
 
   /api/v1/mail/mail_create:
     post: { tags: [mail], summary: 创建邮件告警配置, operationId: mailCreate, responses: { '200': { description: Created } } }
@@ -725,9 +755,34 @@ paths:
     post: { tags: [mail], summary: 测试邮件告警, operationId: mailTest, responses: { '200': { description: Test sent } } }
 
   /api/v1/alarm/alarm_update:
-    post: { tags: [alarm], summary: 更新告警阈值, operationId: alarmUpdate, responses: { '200': { description: Updated } } }
+    post:
+      tags: [alarm]
+      summary: 更新告警阈值
+      operationId: alarmUpdate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AlarmThresholdUpdateArgs' }
+      responses:
+        '200': { description: Updated }
+        '400': { description: Invalid threshold spec }
   /api/v1/alarm/alarm_query:
-    get: { tags: [alarm], summary: 查询告警阈值, operationId: alarmQuery, responses: { '200': { description: Threshold configs } } }
+    get:
+      tags: [alarm]
+      summary: 查询告警阈值
+      operationId: alarmQuery
+      responses:
+        '200':
+          description: Threshold configs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AlarmThreshold' }
 
 components:
   parameters:
@@ -893,7 +948,7 @@ components:
       properties:
         agent_id:
           type: string
-          description: Agent identifier (format: alphanumeric + dots/dashes/underscores, max 128 chars)
+          description: 'Agent identifier (format: alphanumeric + dots/dashes/underscores, max 128 chars)'
         host:
           type: object
           properties:
@@ -953,16 +1008,53 @@ components:
           items:
             $ref: '#/components/schemas/Network'
 
+    Audit:
+      description: |
+        Operator / system audit row. `agent_id` is empty for operator
+        actions and populated for system-generated alarms (Domain Spec
+        I004).
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        username: { type: string, description: Operator name or 'system' }
+        agent_id: { type: string, nullable: true }
+        operate: { type: string, description: Human-readable audit message }
+        created: { type: string, description: Formatted timestamp }
+
     AgentItem:
-      description: Agent registration record returned by /api/v1/agent/list.
+      description: Agent observed by the Server; mirrors `schema.AgentItem`.
       type: object
       properties:
         agent_id: { type: string }
-        version: { type: string }
+        hostname: { type: string }
         os: { type: string }
         arch: { type: string }
-        status: { type: string, enum: [online, offline] }
+        version: { type: string }
         last_seen: { type: string, format: date-time }
+        status:
+          type: string
+          enum: [online, offline, connecting]
+
+    AlarmThreshold:
+      description: |
+        Per-resource alarm threshold (CPU / memory / disk / memory usage).
+        Mirrors `schema.AlarmThreshold`.
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        type: { type: string, enum: [cpu, memory, disk] }
+        duration: { type: integer, description: Consecutive minutes above threshold }
+        threshold: { type: integer, description: Trigger threshold percentage }
+
+    AlarmThresholdUpdateArgs:
+      description: Request body for `POST /api/v1/alarm/alarm_update`.
+      type: object
+      required: [id]
+      properties:
+        id: { type: integer, format: int64 }
+        type: { type: string, enum: [cpu, memory, disk] }
+        duration: { type: integer }
+        threshold: { type: integer }
 
   securitySchemes:
     BearerAuth:

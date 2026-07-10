@@ -16,11 +16,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 // Stub-pinia store handle exposed via the shared store.
 type StubStore = {
     user: { token: string; refresh: string; setToken: ReturnType<typeof vi.fn> }
-    agent: { currentAgentID: string }
+    agent: { selectedAgentID: string }
 }
 const stubStore: StubStore = {
     user: { token: '', refresh: '', setToken: vi.fn() },
-    agent: { currentAgentID: '' },
+    agent: { selectedAgentID: '' },
 }
 
 vi.mock('@/store', () => ({
@@ -78,7 +78,7 @@ beforeEach(() => {
     stubStore.user.token = ''
     stubStore.user.refresh = ''
     stubStore.user.setToken = vi.fn()
-    stubStore.agent.currentAgentID = ''
+    stubStore.agent.selectedAgentID = ''
     requestHandlers.length = 0
     responseErrHandlers.length = 0
     lastHref = null
@@ -99,8 +99,8 @@ async function loadRequest() {
 }
 
 describe('api/index — request interceptor', () => {
-    it('injects X-Agent-ID from stubStore.agent.currentAgentID', async () => {
-        stubStore.agent.currentAgentID = 'agent-1'
+    it('injects X-Agent-ID from stubStore.agent.selectedAgentID', async () => {
+        stubStore.agent.selectedAgentID = 'agent-1'
         stubStore.user.token = ''
 
         await loadRequest()
@@ -112,7 +112,7 @@ describe('api/index — request interceptor', () => {
 
     it('injects Authorization from stubStore.user.token', async () => {
         stubStore.user.token = 'abc123'
-        stubStore.agent.currentAgentID = ''
+        stubStore.agent.selectedAgentID = ''
 
         await loadRequest()
         const out = await requestHandlers[0]({ headers: {}, url: '/api/v1/host/info' })
@@ -121,13 +121,12 @@ describe('api/index — request interceptor', () => {
 
     it('rewrites Content-Type for the login endpoint', async () => {
         stubStore.user.token = 'should-stay'
-        stubStore.agent.currentAgentID = 'agent-x'
+        stubStore.agent.selectedAgentID = 'agent-x'
 
         await loadRequest()
         const out = await requestHandlers[0]({ headers: {}, url: '/api/v1/auth/login' })
         expect(out.headers['Content-Type']).toContain('multipart/form-data')
-        // Other headers still applied.
-        expect(out.headers['X-Agent-ID']).toBe('agent-x')
+        expect(out.headers['X-Agent-ID']).toBeUndefined()
         expect(out.headers.Authorization).toBe('Bearer should-stay')
     })
 })

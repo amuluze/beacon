@@ -26,9 +26,16 @@ type ITask interface {
 	ServiceTask(context.Context) error
 }
 
+// MailSender abstracts the email delivery so unit tests can stub it out
+// without dialing a real SMTP server.
+type MailSender interface {
+	Send(msg string) error
+}
+
 type Task struct {
-	db    *database.DB
-	cache *cache.Cache
+	db         *database.DB
+	cache      *cache.Cache
+	mailSender MailSender
 }
 
 func NewTask(db *database.DB) *Task {
@@ -36,6 +43,12 @@ func NewTask(db *database.DB) *Task {
 		db:    db,
 		cache: cache.New(5*time.Minute, 10*time.Minute),
 	}
+}
+
+// SetMailSender overrides the default SMTP-based mail sender. Useful for
+// tests; not expected to be called in production.
+func (t *Task) SetMailSender(s MailSender) {
+	t.mailSender = s
 }
 
 func (t *Task) threshold(alarmType string) (model.AlarmThreshold, error) {
@@ -112,7 +125,7 @@ func (t *Task) CPUAlarmTask(ctx context.Context) error {
 		}
 		if len(cpuData) > 0 && int(utils.Decimal(total/float64(len(cpuData)))*100) > threshold.Threshold {
 			msg := fmt.Sprintf("[%s] %s CPU 使用率连续 %d 分钟超过 %d%%", agentID, t.hostname(ctx, agentID), threshold.Duration, threshold.Threshold)
-			if err := t.triggerAlarm("cpu:"+agentID, msg); err != nil {
+			if err := t.triggerAlarm("cpu:"+agentID, msg, agentID); err != nil {
 				return err
 			}
 		}
@@ -145,7 +158,7 @@ func (t *Task) MemoryAlarmTask(ctx context.Context) error {
 		}
 		if len(memData) > 0 && int(utils.Decimal(total/float64(len(memData)))*100) > threshold.Threshold {
 			msg := fmt.Sprintf("[%s] %s 内存使用率连续 %d 分钟超过 %d%%", agentID, t.hostname(ctx, agentID), threshold.Duration, threshold.Threshold)
-			if err := t.triggerAlarm("memory:"+agentID, msg); err != nil {
+			if err := t.triggerAlarm("memory:"+agentID, msg, agentID); err != nil {
 				return err
 			}
 		}
@@ -179,7 +192,7 @@ func (t *Task) DiskAlarmTask(ctx context.Context) error {
 		for _, item := range diskData {
 			if int(utils.Decimal(item.DiskPercent)*100) > threshold.Threshold {
 				msg := fmt.Sprintf("[%s] %s 磁盘 %s 使用率超过 %d%%", agentID, t.hostname(ctx, agentID), item.Device, threshold.Threshold)
-				if err := t.triggerAlarm("disk:"+agentID+":"+item.Device, msg); err != nil {
+				if err := t.triggerAlarm("disk:"+agentID+":"+item.Device, msg, agentID); err != nil {
 					return err
 				}
 			}
@@ -212,7 +225,7 @@ func (t *Task) ServiceTask(ctx context.Context) error {
 			if containerStateBytes, ok := t.cache.Get(cacheKey); ok {
 				if containerStateBytes.(string) != item.State {
 					msg := fmt.Sprintf("[%s] 容器 %s 的状态由 %s 变为 %s", agentID, item.Name, containerStateBytes.(string), item.State)
-					if err := t.sendAlarmAudit(msg); err != nil {
+					if err := t.sendAlarmAudit(msg, agentID); err != nil {
 						return err
 					}
 				}
@@ -223,10 +236,14 @@ func (t *Task) ServiceTask(ctx context.Context) error {
 	return nil
 }
 
-func (t *Task) triggerAlarm(key string, msg string) error {
+// triggerAlarm records the alarm message in the Audit log (tagged with
+// agentID), and sends an email notification once per cache window so the
+// same Agent does not flood the receiver with duplicate alerts.
+func (t *Task) triggerAlarm(key string, msg string, agentID string) error {
 	return t.db.RunInTransaction(func(tx *gorm.DB) error {
 		operateLog := model.Audit{
 			Username: "system",
+			AgentID:  agentID,
 			Operate:  msg,
 		}
 		if err := tx.Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
@@ -243,10 +260,11 @@ func (t *Task) triggerAlarm(key string, msg string) error {
 	})
 }
 
-func (t *Task) sendAlarmAudit(msg string) error {
+func (t *Task) sendAlarmAudit(msg string, agentID string) error {
 	return t.db.RunInTransaction(func(tx *gorm.DB) error {
 		operateLog := model.Audit{
 			Username: "system",
+			AgentID:  agentID,
 			Operate:  msg,
 		}
 		if err := tx.Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
@@ -260,6 +278,11 @@ func (t *Task) sendAlarmAudit(msg string) error {
 }
 
 func (t *Task) sendMail(msg string) error {
+	// If a test injected a MailSender, prefer it (avoids dialing a real SMTP
+	// server during unit tests).
+	if t.mailSender != nil {
+		return t.mailSender.Send(msg)
+	}
 	var mail model.Mail
 	if err := t.db.Model(&model.Mail{}).First(&mail).Error; err != nil {
 		// No mail config configured — skip silently
