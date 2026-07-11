@@ -6,6 +6,8 @@ import { WebLinksAddon } from '@xterm/addon-web-links'
 import '@xterm/xterm/css/xterm.css'
 import { useUserStore } from '@/store/modules/user'
 
+export type TerminalStatus = 'idle' | 'connecting' | 'connected' | 'closed' | 'error'
+
 interface Props {
   agentId: string
 }
@@ -13,9 +15,16 @@ interface Props {
 const props = defineProps<Props>()
 const terminalRef = ref<HTMLDivElement>()
 
+const status = ref<TerminalStatus>('idle')
+const cols = ref(0)
+const rows = ref(0)
+
 let term: Terminal | null = null
 let fitAddon: FitAddon | null = null
 let ws: WebSocket | null = null
+// 连接代际：递增后旧连接的回调一律丢弃，避免 newSession/agentId 切换时
+// 旧 ws 的异步 onclose/onerror 覆盖新连接的 connecting/connected 状态。
+let wsGeneration = 0
 
 function buildURL(agentId: string): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -35,6 +44,13 @@ function sendResize(rows: number, cols: number): void {
   if (!ws || ws.readyState !== WebSocket.OPEN)
     return
   ws.send(JSON.stringify({ type: 'resize', rows, cols }))
+}
+
+function syncDims(): void {
+  if (!term)
+    return
+  cols.value = term.cols
+  rows.value = term.rows
 }
 
 function initTerminal(): void {
@@ -61,22 +77,33 @@ function initTerminal(): void {
   })
 
   fitAddon.fit()
-  const dims = term
-  sendResize(dims.rows, dims.cols)
+  syncDims()
+  sendResize(term.rows, term.cols)
 }
 
 function connect(): void {
   if (!term)
     return
 
+  const gen = ++wsGeneration
+  function guard<T extends (...args: any[]) => void>(fn: T): T {
+    return ((...args: any[]) => {
+      if (gen !== wsGeneration)
+        return
+      fn(...args)
+    }) as T
+  }
+
+  status.value = 'connecting'
   const url = buildURL(props.agentId)
   ws = new WebSocket(url)
 
-  ws.onopen = () => {
+  ws.onopen = guard(() => {
+    status.value = 'connected'
     term?.writeln('\r\n\x1B[32mConnected to agent terminal.\x1B[0m')
-  }
+  })
 
-  ws.onmessage = (event: MessageEvent) => {
+  ws.onmessage = guard((event: MessageEvent) => {
     let msg
     try {
       msg = JSON.parse(event.data)
@@ -98,22 +125,35 @@ function connect(): void {
     else if (msg.type === 'error') {
       term?.writeln(`\r\n\x1B[31mError: ${msg.msg}\x1B[0m`)
     }
-  }
+  })
 
-  ws.onclose = () => {
+  ws.onclose = guard(() => {
+    status.value = 'closed'
     term?.writeln('\r\n\x1B[31mConnection closed.\x1B[0m')
-  }
+  })
 
-  ws.onerror = (err: Event) => {
-    console.error('terminal websocket error', err)
+  ws.onerror = guard(() => {
+    status.value = 'error'
     term?.writeln('\r\n\x1B[31mWebSocket error.\x1B[0m')
-  }
+  })
+}
+
+function clear(): void {
+  term?.clear()
+}
+
+function newSession(): void {
+  if (ws && ws.readyState !== WebSocket.CLOSED)
+    ws.close()
+  term?.clear()
+  connect()
 }
 
 function onResize(): void {
   if (!term || !fitAddon)
     return
   fitAddon.fit()
+  syncDims()
   sendResize(term.rows, term.cols)
 }
 
@@ -124,6 +164,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  wsGeneration++
   window.removeEventListener('resize', onResize)
   ws?.close()
   term?.dispose()
@@ -131,8 +172,11 @@ onBeforeUnmount(() => {
 
 watch(() => props.agentId, () => {
   ws?.close()
+  term?.clear()
   connect()
 })
+
+defineExpose({ status, cols, rows, clear, newSession })
 </script>
 
 <template>
@@ -143,9 +187,8 @@ watch(() => props.agentId, () => {
 .am-terminal {
   width: 100%;
   height: 100%;
-  min-height: 400px;
+  min-height: 0;
+  padding: 8px 12px;
   background: #1e1e1e;
-  padding: 8px;
-  border-radius: 4px;
 }
 </style>
