@@ -77,7 +77,7 @@ func (a *Router) registerHealthProbes(app *fiber.App) {
 // WebSocket upgrade, auth, and casbin.
 // commonAuthSkipperPaths lists paths that are exempt from authentication and authorization checks.
 // These are typically public endpoints (health probes, login, token refresh) and agent installation.
-var commonAuthSkipperPaths = []string{"/health", "/ready", "/api/v1/index/index", "/api/v1/auth/login", "/api/v1/auth/token_update", "/api/v1/host/install"}
+var commonAuthSkipperPaths = []string{"/health", "/ready", "/api/v1/index/index", "/api/v1/auth/login", "/api/v1/auth/token_update", "/api/v1/host/install", "/api/v1/host/report"}
 
 func (a *Router) registerMiddlewares(app *fiber.App) {
 	app.Use("/api/v1/auth/login", limiter.New(limiter.Config{

@@ -39,7 +39,7 @@ func (a *Router) AgentInstallScript(ctx *fiber.Ctx) error {
 	}
 
 	ctx.Type("sh")
-	return ctx.SendString(buildAgentInstallScript(baseURL, node, a.config.Control.TLS.Enable))
+	return ctx.Status(http.StatusOK).SendString(buildAgentInstallScript(baseURL, node, a.config.Control.TLS.Enable))
 }
 
 func (a *Router) AgentInstallPackage(ctx *fiber.Ctx) error {
@@ -59,7 +59,7 @@ func (a *Router) AgentInstallPackage(ctx *fiber.Ctx) error {
 	if _, err := os.Stat(packagePath); err != nil {
 		return fiber.NewError(http.StatusNotFound, "collia binary not found")
 	}
-	return ctx.Download(packagePath, colliaBinaryName)
+	return ctx.Status(http.StatusOK).Download(packagePath, colliaBinaryName)
 }
 
 func (a *Router) AgentInstallConfig(ctx *fiber.Ctx) error {
@@ -73,7 +73,7 @@ func (a *Router) AgentInstallConfig(ctx *fiber.Ctx) error {
 	}
 
 	ctx.Type("yaml")
-	return ctx.SendString(a.buildColliaConfig(node))
+	return ctx.Status(http.StatusOK).SendString(a.buildColliaConfig(node))
 }
 
 func (a *Router) AgentInstallCerts(ctx *fiber.Ctx) error {
@@ -93,7 +93,7 @@ func (a *Router) AgentInstallCerts(ctx *fiber.Ctx) error {
 	if _, err := os.Stat(certsPath); err != nil {
 		return fiber.NewError(http.StatusNotFound, "collia cert package not found")
 	}
-	return ctx.Download(certsPath, node+"-certs.tar.gz")
+	return ctx.Status(http.StatusOK).Download(certsPath, node+"-certs.tar.gz")
 }
 
 func (a *Router) AgentInstallToken(ctx *fiber.Ctx) error {

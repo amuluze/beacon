@@ -62,7 +62,9 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		cleanup()
 		return nil, nil, err
 	}
-	caller, err := NewRPCClient(config)
+	agentRepository := agent.NewAgentRepo(db)
+	agentService := agent.NewAgentService(agentRepository)
+	caller, err := NewRPCClient(config, agentService)
 	if err != nil {
 		cleanup3()
 		cleanup2()
@@ -91,8 +93,6 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	alarmRepository := repository7.NewAlarmRepository(db)
 	alarmService := service7.NewAlarmService(alarmRepository)
 	alarmAPI := api7.NewAlarmAPI(alarmService)
-	agentRepository := agent.NewAgentRepo(db)
-	agentService := agent.NewAgentService(agentRepository)
 	agentAPI := agent.NewAgentAPI(agentService)
 	reportService, err := NewReportService(config, db)
 	if err != nil {
