@@ -7,6 +7,12 @@
 export default {
     login: {
         login: 'Login',
+        slogan: 'Observability platform for Server-Agent architectures',
+        subline: 'Real-time monitoring · Container orchestration · Secure tunneling',
+        usernamePlaceholder: 'Enter username',
+        passwordPlaceholder: 'Enter password',
+        passwordRequired: 'password is required',
+        passwordMinLength: 'The password can not be less than 6 digits',
     },
     header: {
         language: 'Language',
