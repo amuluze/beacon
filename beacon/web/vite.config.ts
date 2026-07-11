@@ -28,7 +28,7 @@ export default defineConfig({
                 // 自动导入 Element Plus 相关函数，如：ElMessage(带样式)
                 ElementPlusResolver(),
                 IconsResolver({
-                    enabledCollections: ['ep'],
+                    enabledCollections: ['ep', 'lucide'],
                 }),
             ],
             vueTemplate: true, // 是否在 vue 模板中自动导入
