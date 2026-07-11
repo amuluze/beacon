@@ -1,8 +1,16 @@
 package service
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	servicemiddleware "beacon/service/middleware"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func TestSafeInstallName(t *testing.T) {
@@ -79,5 +87,88 @@ func TestBuildColliaConfigUsesControlTLSFlag(t *testing.T) {
 	}
 	if !strings.Contains(config, `cert_dir: /etc/collia/certs`) {
 		t.Fatalf("expected TLS cert dir in config, got:\n%s", config)
+	}
+}
+
+func TestAgentInstallEndpointsResetSuccessStatus(t *testing.T) {
+	packageDir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(packageDir, "amd64"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(packageDir, "certs"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(packageDir, "amd64", colliaBinaryName), []byte("collia"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(packageDir, "certs", "node-01.tar.gz"), []byte("certs"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	router := &Router{config: &Config{
+		Control: Control{},
+		AgentInstall: AgentInstall{
+			Enable:     true,
+			Token:      "install-secret",
+			PackageDir: packageDir,
+		},
+	}}
+	app := fiber.New()
+	app.Use(func(c *fiber.Ctx) error {
+		c.Status(http.StatusNotFound)
+		return c.Next()
+	})
+	app.Get("/api/v1/host/install", router.AgentInstallScript)
+	app.Get("/api/v1/host/install/package", router.AgentInstallPackage)
+	app.Get("/api/v1/host/install/config", router.AgentInstallConfig)
+	app.Get("/api/v1/host/install/certs", router.AgentInstallCerts)
+
+	tests := []struct {
+		name  string
+		path  string
+		token bool
+	}{
+		{name: "script", path: "/api/v1/host/install?node=node-01"},
+		{name: "package", path: "/api/v1/host/install/package?arch=amd64", token: true},
+		{name: "config", path: "/api/v1/host/install/config?node=node-01", token: true},
+		{name: "certs", path: "/api/v1/host/install/certs?node=node-01", token: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, tt.path, nil)
+			if tt.token {
+				req.Header.Set("X-Install-Token", "install-secret")
+			}
+			resp, err := app.Test(req, -1)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := resp.Body.Close(); err != nil {
+				t.Fatalf("close response body: %v", err)
+			}
+			if resp.StatusCode != http.StatusOK {
+				t.Fatalf("status = %d, want %d", resp.StatusCode, http.StatusOK)
+			}
+		})
+	}
+}
+
+func TestCommonAuthSkipperAllowsAgentReport(t *testing.T) {
+	var skipped bool
+	app := fiber.New()
+	app.Get("/api/v1/host/report", func(c *fiber.Ctx) error {
+		skipped = servicemiddleware.SkipHandler(c, servicemiddleware.AllowPathPrefixSkipper(commonAuthSkipperPaths...))
+		return c.SendStatus(http.StatusOK)
+	})
+
+	resp, err := app.Test(httptest.NewRequest(http.MethodGet, "/api/v1/host/report", nil), -1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := resp.Body.Close(); err != nil {
+		t.Fatalf("close response body: %v", err)
+	}
+	if !skipped {
+		t.Fatal("agent report endpoint must bypass user JWT middleware and use its install-token authentication")
 	}
 }

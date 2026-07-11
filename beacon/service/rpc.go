@@ -6,7 +6,6 @@ package service
 
 import (
 	"log/slog"
-	"sync"
 
 	"beacon/pkg/rpc"
 	"beacon/service/agent"
@@ -16,14 +15,11 @@ import (
 
 // globalTunnel guards the singleton tunnel instance.
 // Set once during initialization; read safely by health probes and lifecycle hooks.
-var (
-	globalTunnelOnce sync.Once
-	globalTunnel     *tunnelpkg.ServerTunnel
-)
+var globalTunnel *tunnelpkg.ServerTunnel
 
 // NewRPCClient creates the tunnel-based RPC client.
 // Server listens for reverse connections from Agents.
-func NewRPCClient(config *Config) (rpc.Caller, error) {
+func NewRPCClient(config *Config, agentService *agent.Service) (rpc.Caller, error) {
 	addr := config.Control.Address
 	if addr == "" {
 		addr = ":17000"
@@ -32,6 +28,7 @@ func NewRPCClient(config *Config) (rpc.Caller, error) {
 
 	tun := tunnelpkg.NewServerTunnel()
 	tun.SetJoinToken(controlJoinToken(config))
+	agentService.SetTunnel(tun)
 	if config.Control.TLS.Enable {
 		tlsCfg, err := transporttls.ServerConfig(config.Control.TLS.CertDir, config.Control.TLS.ClientNames)
 		if err != nil {
@@ -56,13 +53,6 @@ func controlJoinToken(config *Config) string {
 		return config.Control.JoinToken
 	}
 	return config.AgentInstall.Token
-}
-
-// SetAgentLifecycle wires the agent service into the tunnel lifecycle hooks.
-func SetAgentLifecycle(svc *agent.Service) {
-	if globalTunnel != nil {
-		svc.SetTunnel(globalTunnel)
-	}
 }
 
 // ServerTunnelFromHolder returns the singleton tunnel instance held by globalTunnel.
