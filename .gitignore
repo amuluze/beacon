@@ -11,3 +11,6 @@
 .codegraph/
 .pnpm-store/
 .agents/
+
+# Local deployment secrets
+deploy/.env
