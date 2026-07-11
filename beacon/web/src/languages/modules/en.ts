@@ -40,6 +40,7 @@ export default {
         alarmSetting: 'Alarm Setting',
         systemSetting: 'System Setting',
         systemDocker: 'Docker Setting',
+        terminal: 'Terminal',
     },
     avatar: {
         updatePassword: 'Update Password',
