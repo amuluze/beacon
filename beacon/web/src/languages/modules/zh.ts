@@ -33,10 +33,11 @@ export default {
         userManager: '用户管理',
         roleManager: '角色管理',
         apiManager: '接口管理',
-        setting: ' 设置',
+        setting: '设置',
         alarmSetting: '告警设置',
         systemSetting: '系统设置',
         systemDocker: 'Docker 设置',
+        terminal: '终端',
     },
     avatar: {
         updatePassword: '更新密码',
