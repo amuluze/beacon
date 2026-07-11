@@ -7,6 +7,12 @@
 export default {
     login: {
         login: '登录',
+        slogan: '面向 Server-Agent 的可观测性平台',
+        subline: '实时监控 · 容器编排 · 安全隧道',
+        usernamePlaceholder: '请输入用户名',
+        passwordPlaceholder: '请输入密码',
+        passwordRequired: 'password is required',
+        passwordMinLength: 'The password can not be less than 6 digits',
     },
     header: {
         language: '国际化',
