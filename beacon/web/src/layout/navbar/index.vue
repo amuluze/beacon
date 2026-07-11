@@ -7,10 +7,26 @@ import ThemeChange from '@/layout/navbar/ThemeChange.vue'
 import { dynamicRoutes } from '@/router/dynamic.ts'
 import type { RouteRecordRaw } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import type { Component } from 'vue'
+import IconActivity from '~icons/lucide/activity'
+import IconPackage from '~icons/lucide/package'
+import IconSettings from '~icons/lucide/settings'
+import IconTerminal from '~icons/lucide/terminal'
+import IconUsers from '~icons/lucide/users'
+import IconMenu from '~icons/lucide/menu'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
+
+const iconMap: Record<string, Component> = {
+  activity: IconActivity,
+  package: IconPackage,
+  settings: IconSettings,
+  terminal: IconTerminal,
+  users: IconUsers,
+  menu: IconMenu,
+}
 
 const visibleRoutes = computed(() => dynamicRoutes.filter(item => item.meta?.show))
 
@@ -22,8 +38,9 @@ function isRouteActive(item: RouteRecordRaw): boolean {
   return route.path === item.path || route.path.startsWith(`${item.path}/`)
 }
 
-function menuIcon(item: RouteRecordRaw): string {
-  return String(item.meta?.icon || 'menu')
+function menuIcon(item: RouteRecordRaw): Component {
+  const name = String(item.meta?.icon || 'menu')
+  return iconMap[name] || IconMenu
 }
 
 function menuTitle(item: RouteRecordRaw): string {
@@ -51,7 +68,7 @@ function goRoute(item: RouteRecordRaw): void {
                 type="button"
                 @click="goRoute(item)"
             >
-                <svg-icon :icon-class="menuIcon(item)" size="15px" />
+                <component :is="menuIcon(item)" class="am-navbar__menu-icon" />
                 <span>{{ menuTitle(item) }}</span>
             </button>
         </nav>
@@ -117,6 +134,12 @@ function goRoute(item: RouteRecordRaw): void {
     &::-webkit-scrollbar {
       display: none;
     }
+  }
+
+  @include e(menu-icon) {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 auto;
   }
 
   @include e(menu-item) {

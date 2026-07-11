@@ -7,7 +7,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         component: async () => import('@/views/monitor/index.vue'),
         meta: {
             title: 'menu.monitor',
-            icon: 'menu-data',
+            icon: 'activity',
             show: true,
         },
     },
@@ -29,7 +29,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         component: async () => import('@/views/container/index.vue'),
         meta: {
             title: 'menu.container',
-            icon: 'menu-multi',
+            icon: 'package',
             show: true,
         },
     },
@@ -57,7 +57,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         component: async () => import('@/views/setting/index.vue'),
         meta: {
             title: 'menu.setting',
-            icon: 'menu-system',
+            icon: 'settings',
             show: true,
         },
     },
@@ -85,7 +85,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         redirect: '/account/user',
         meta: {
             title: 'menu.account',
-            icon: 'menu-user',
+            icon: 'users',
             show: false,
         },
         children: [
@@ -121,7 +121,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         component: async () => import('@/views/terminal/index.vue'),
         meta: {
             title: 'menu.terminal',
-            icon: 'menu-terminal',
+            icon: 'terminal',
             show: true,
         },
     },

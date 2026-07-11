@@ -35,14 +35,14 @@ const termTitle = computed(() => {
 
 const statusMeta = computed(() => {
   switch (status.value) {
-    case 'connected':
-      return { dot: 'var(--am-accent-success)', text: t('agent.terminalStatusConnected'), tone: 'success' }
-    case 'connecting':
-      return { dot: 'var(--am-accent-warning, #f59e0b)', text: t('agent.terminalStatusConnecting'), tone: 'warning' }
-    case 'error':
-      return { dot: 'var(--am-accent-danger, #ef4444)', text: t('agent.terminalStatusError'), tone: 'danger' }
-    default:
-      return { dot: 'var(--am-foreground-muted)', text: t('agent.terminalStatusDisconnected'), tone: 'muted' }
+  case 'connected':
+    return { dot: 'var(--am-accent-success)', text: t('agent.terminalStatusConnected'), tone: 'success' }
+  case 'connecting':
+    return { dot: 'var(--am-accent-warning, #f59e0b)', text: t('agent.terminalStatusConnecting'), tone: 'warning' }
+  case 'error':
+    return { dot: 'var(--am-accent-danger, #ef4444)', text: t('agent.terminalStatusError'), tone: 'danger' }
+  default:
+    return { dot: 'var(--am-foreground-muted)', text: t('agent.terminalStatusDisconnected'), tone: 'muted' }
   }
 })
 
@@ -92,6 +92,9 @@ onMounted(async () => {
                     filterable
                     class="am-terminal-page__host"
                 >
+                    <template #prefix>
+                        <i-lucide-server class="am-terminal-page__host-icon" />
+                    </template>
                     <ElOption
                         v-for="item in agentList"
                         :key="item.agent_id"
@@ -111,7 +114,7 @@ onMounted(async () => {
                     :disabled="!actionable"
                     @click="handleClear"
                 >
-                    <svg-icon icon-class="delete" size="14px" />
+                    <i-lucide-eraser class="am-terminal-page__btn-icon" />
                     <span>{{ $t('agent.terminalClear') }}</span>
                 </button>
                 <button
@@ -120,7 +123,7 @@ onMounted(async () => {
                     :disabled="!actionable"
                     @click="handleNewSession"
                 >
-                    <svg-icon icon-class="plus" size="14px" />
+                    <i-lucide-plus class="am-terminal-page__btn-icon" />
                     <span>{{ $t('agent.terminalNewSession') }}</span>
                 </button>
             </div>
@@ -172,15 +175,18 @@ onMounted(async () => {
 
 .am-terminal-page__title {
   margin: 0;
-  font-size: var(--am-font-xl);
+  font-size: var(--am-font-2xl);
   font-weight: 700;
   color: var(--am-foreground-primary);
 }
 
 .am-terminal-page__hint {
   margin: 0;
+  width: 100%;
+  max-width: 560px;
   color: var(--am-foreground-muted);
   font-size: var(--am-font-sm);
+  line-height: 1.5;
 }
 
 .am-terminal-page__toolbar {
@@ -200,6 +206,31 @@ onMounted(async () => {
 
 .am-terminal-page__host {
   width: 220px;
+}
+
+.am-terminal-page__host :deep(.el-input__wrapper) {
+  background: var(--am-surface-card);
+  border: 1px solid var(--am-border-subtle);
+  border-radius: 6px;
+  box-shadow: none;
+  height: 32px;
+  padding: 0 10px;
+}
+
+.am-terminal-page__host :deep(.el-input__wrapper):hover {
+  border-color: var(--am-border-primary);
+}
+
+.am-terminal-page__host-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--am-foreground-secondary);
+}
+
+.am-terminal-page__btn-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
 }
 
 .am-terminal-page__status {
@@ -230,7 +261,9 @@ onMounted(async () => {
   font-size: var(--am-font-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s ease, background-color 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    background-color 0.2s ease;
 
   &:disabled {
     cursor: not-allowed;
@@ -263,6 +296,8 @@ onMounted(async () => {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  gap: 10px;
+  padding: 20px;
   border-radius: 8px;
   overflow: hidden;
   background: #1e1e1e;
@@ -273,9 +308,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 14px;
-  background: #2d2d2d;
-  border-bottom: 1px solid #1e1e1e;
+  padding: 0;
 }
 
 .am-terminal-page__dot {
@@ -284,9 +317,15 @@ onMounted(async () => {
   border-radius: 50%;
   flex: 0 0 auto;
 
-  &--red { background: #FF5F56; }
-  &--yellow { background: #FFBD2E; }
-  &--green { background: #27C93F; }
+  &--red {
+    background: #ff5f56;
+  }
+  &--yellow {
+    background: #ffbd2e;
+  }
+  &--green {
+    background: #27c93f;
+  }
 }
 
 .am-terminal-page__panel-title {
