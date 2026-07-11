@@ -10,7 +10,7 @@ import { useAgentSelection } from '@/hooks/useAgentSelection'
 import { useI18n } from 'vue-i18n'
 
 // Agent switcher
-const { agentList, selectedAgentID: currentAgent, loading: agentLoading, isAgentEmpty, agentParams, ensureSelectedAgent, loadAgents } = useAgentSelection({ immediate: false })
+const { selectedAgentID: currentAgent, isAgentEmpty, agentParams, ensureSelectedAgent, loadAgents } = useAgentSelection({ immediate: false })
 const { t } = useI18n()
 watch(currentAgent, () => {
   render()
@@ -116,12 +116,6 @@ onUnmounted(() => {
         <div class="am-section-header">
             <div class="am-section-title-group">
                 <span class="am-section-title">{{ t('menu.containerMonitor') }}</span>
-                <el-select v-model="currentAgent" :loading="agentLoading" :disabled="isAgentEmpty" :no-data-text="t('agent.noData')" size="small" style="width: 200px" :placeholder="t('agent.selectHost')">
-                    <el-option v-for="item in agentList" :key="item.agent_id" :label="item.hostname || item.agent_id" :value="item.agent_id">
-                        <span>{{ item.hostname || item.agent_id }}</span>
-                        <span style="float: right; color: var(--el-text-color-secondary); font-size: 12px">{{ item.version || 'unknown' }}</span>
-                    </el-option>
-                </el-select>
             </div>
             <div class="am-density-group">
                 <span class="am-density-label">时间密度：</span>

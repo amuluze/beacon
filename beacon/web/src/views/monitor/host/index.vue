@@ -16,7 +16,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 // Agent switcher
-const { agentList, selectedAgentID: currentAgent, loading: agentLoading, isAgentEmpty, agentParams, ensureSelectedAgent, loadAgents } = useAgentSelection({ immediate: false })
+const { selectedAgentID: currentAgent, isAgentEmpty, agentParams, ensureSelectedAgent, loadAgents } = useAgentSelection({ immediate: false })
 function openTerminal(): void {
   if (!currentAgent.value)
     return
@@ -176,17 +176,6 @@ const { t } = useI18n()
         <div class="am-section-header">
             <div class="am-section-title-group">
                 <span class="am-section-title">{{ t('menu.hostMonitor') }}</span>
-                <el-select v-model="currentAgent" :loading="agentLoading" :disabled="isAgentEmpty" :no-data-text="t('agent.noData')" size="small" style="width: 200px" :placeholder="t('agent.selectHost')">
-                    <el-option
-                        v-for="item in agentList"
-                        :key="item.agent_id"
-                        :label="item.hostname || item.agent_id"
-                        :value="item.agent_id"
-                    >
-                        <span>{{ item.hostname || item.agent_id }}</span>
-                        <span style="float: right; color: var(--el-text-color-secondary); font-size: 12px">{{ item.version || 'unknown' }}</span>
-                    </el-option>
-                </el-select>
                 <el-button size="small" type="primary" plain :disabled="!currentAgent" @click="openTerminal">
                     {{ t('agent.openTerminal') }}
                 </el-button>

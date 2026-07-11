@@ -58,7 +58,6 @@ export default {
         emptyTitle: '暂无可用 Agent',
         emptyDescription: 'Agent 连接后会自动展示当前节点数据',
         selectAgent: '选择 Agent',
-        selectHost: '选择主机',
         noData: '暂无 Agent',
         refresh: '刷新',
         openTerminal: '打开终端',

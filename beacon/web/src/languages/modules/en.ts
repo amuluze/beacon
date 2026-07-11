@@ -61,7 +61,6 @@ export default {
         emptyTitle: 'No Available Agent',
         emptyDescription: 'Node data will appear after an Agent connects.',
         selectAgent: 'Select Agent',
-        selectHost: 'Select Host',
         noData: 'No Agent',
         refresh: 'Refresh',
         openTerminal: 'Open Terminal',
