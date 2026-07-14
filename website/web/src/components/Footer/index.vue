@@ -14,7 +14,7 @@
                 <div class="site-footer__column">
                     <strong>关注我们</strong>
                     <NuxtLink to="/wechat">微信公众号</NuxtLink>
-                    <a href="https://github.com/amuluze/amprobe" target="_blank" rel="noopener noreferrer">GitHub</a>
+                    <a href="https://github.com/amuluze/beacon" target="_blank" rel="noopener noreferrer">GitHub</a>
                 </div>
             </div>
             <div class="site-footer__links">

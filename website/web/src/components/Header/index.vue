@@ -16,7 +16,7 @@ const links = [
                 <NuxtLink v-for="link in links" :key="link.to" :to="link.to" class="site-header__link">
                     {{ link.label }}
                 </NuxtLink>
-                <a class="site-header__link" href="https://github.com/amuluze/amprobe" target="_blank" rel="noopener noreferrer">
+                <a class="site-header__link" href="https://github.com/amuluze/beacon" target="_blank" rel="noopener noreferrer">
                     GitHub
                 </a>
             </nav>

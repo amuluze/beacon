@@ -72,7 +72,7 @@ CertDir = "/etc/collia/certs"
 
 [InstallReport]
 Enable = false
-URL = "https://official.beacon.amuluze.com/api/v1/install/report"
+URL = "https://help.beacon.amuluze.com/api/v1/install/report"
 InstallDir = "/data/beacon"
 IDFile = "/app/data/install.id"
 Timeout = 5

@@ -4965,7 +4965,7 @@
           "fill": "$foreground-secondary",
           "textGrowth": "fixed-width",
           "width": "fill_container",
-          "content": "registry.cn-hangzhou.aliyuncs.com/amuluze/amprobe",
+          "content": "registry.cn-hangzhou.aliyuncs.com/amuluze/beacon",
           "fontFamily": "Geist Mono",
           "fontSize": "$font-size-sm",
           "fontWeight": "normal"
@@ -6782,7 +6782,7 @@
                       "width": "fill_container",
                       "descendants": {
                         "lDFmM": {
-                          "content": "registry.cn-hangzhou.aliyuncs.com/amuluze/amprobe"
+                          "content": "registry.cn-hangzhou.aliyuncs.com/amuluze/beacon"
                         },
                         "fku0B": {
                           "content": "1"
@@ -6806,7 +6806,7 @@
                       "width": "fill_container",
                       "descendants": {
                         "lDFmM": {
-                          "content": "registry.cn-hangzhou.aliyuncs.com/amuluze/amprobe"
+                          "content": "registry.cn-hangzhou.aliyuncs.com/amuluze/beacon"
                         },
                         "fku0B": {
                           "content": "0"
@@ -6830,7 +6830,7 @@
                       "width": "fill_container",
                       "descendants": {
                         "lDFmM": {
-                          "content": "registry.cn-hangzhou.aliyuncs.com/amuluze/amprobe"
+                          "content": "registry.cn-hangzhou.aliyuncs.com/amuluze/beacon"
                         },
                         "fku0B": {
                           "content": "1"
@@ -6854,7 +6854,7 @@
                       "width": "fill_container",
                       "descendants": {
                         "lDFmM": {
-                          "content": "registry.cn-hangzhou.aliyuncs.com/amuluze/amprobe"
+                          "content": "registry.cn-hangzhou.aliyuncs.com/amuluze/beacon"
                         },
                         "fku0B": {
                           "content": "0"
@@ -6878,7 +6878,7 @@
                       "width": "fill_container",
                       "descendants": {
                         "lDFmM": {
-                          "content": "registry.cn-hangzhou.aliyuncs.com/amuluze/amprobe"
+                          "content": "registry.cn-hangzhou.aliyuncs.com/amuluze/beacon"
                         },
                         "fku0B": {
                           "content": "0"
@@ -6902,7 +6902,7 @@
                       "width": "fill_container",
                       "descendants": {
                         "lDFmM": {
-                          "content": "registry.cn-hangzhou.aliyuncs.com/amuluze/amprobe"
+                          "content": "registry.cn-hangzhou.aliyuncs.com/amuluze/beacon"
                         },
                         "fku0B": {
                           "content": "0"
@@ -7910,7 +7910,7 @@
                               "id": "WRB0i",
                               "name": "Placeholder",
                               "fill": "$foreground-muted",
-                              "content": "registry.cn-hangzhou.aliyuncs.com/amuluze/amprobe",
+                              "content": "registry.cn-hangzhou.aliyuncs.com/amuluze/beacon",
                               "fontFamily": "$font-mono",
                               "fontSize": "$font-size-sm",
                               "fontWeight": "normal"

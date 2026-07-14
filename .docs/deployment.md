@@ -15,15 +15,16 @@
 ```bash
 task beacon:dev
 task beacon-web:dev
-cd beacon/web && npm install && npm run dev
-docker compose -f compose.yaml up
+cd beacon/web && pnpm install && pnpm run dev
+docker build -f beacon/Dockerfile -t beacon:latest .
+docker compose -f deploy/docker-compose.yml up -d
 ```
 
 ## 部署方式
 
 - Taskfile 承载模块内开发、构建、镜像或安装包命令。
 - 前端包通过 package scripts 运行本地开发、类型检查、lint 和构建。
-- `compose.yaml` 提供 Docker Compose 启动入口。
+- `deploy/docker-compose.yml` 提供本地 Docker Compose 启动入口；官网安装脚本会生成独立的生产部署 Compose 配置。
 - `beacon/Dockerfile` 提供镜像构建上下文。
 - Go workspace 根目录不是一个 Go module；验证时应进入 `beacon`、`collia`、`common` 模块分别执行 `go test ./...` 或 `go build ./...`。
 
@@ -41,7 +42,7 @@ docker compose -f compose.yaml up
 - `beacon` 的 `[Control] Address` 是 Agent 反向连接的 tunnel 监听地址；`Control.JoinToken` 是 Agent 注册鉴权凭据。
 - `collia` 的 `control.server` / `control.agent_id` 用于建立反向 tunnel；`task.report.url` / `task.report.agent_id` 用于 HTTP 监控上报。两处 Agent 标识必须保持同一节点语义，避免监控查询和控制调用指向不同节点。
 - `AgentInstall.Token` 与 `task.report.token` 属于敏感凭据，只记录语义，不在文档中写入真实值。
-- 敏感凭据生产模式强校验：当 `App.Env = production` 时，`Auth.SigningKey`、`Control.JoinToken`、`AgentInstall.Token` 在空值、已知弱默认值（如 `amprobe`/`change-me`）或长度不足时一律拒绝启动；可用环境变量 `AMPROBE_AUTH_SIGNINGKEY`、`AMPROBE_CONTROL_JOINTOKEN`、`AMPROBE_AGENTINSTALL_TOKEN` 覆盖。
+- 敏感凭据生产模式强校验：当 `App.Env = production` 时，`Auth.SigningKey`、`Control.JoinToken`、`AgentInstall.Token` 在空值、已知弱默认值（如历史值 `amprobe` 或 `change-me`）或长度不足时一律拒绝启动；优先使用 `BEACON_AUTH_SIGNING_KEY`、`BEACON_CONTROL_JOIN_TOKEN`、`BEACON_AGENT_INSTALL_TOKEN` 覆盖。旧 `AMPROBE_*` 名称仅作为已有部署的兼容别名保留。
 - 数据库配置必须说明驱动、地址、库名、凭据加载边界和迁移策略。
 - 容器运行时操作配置必须说明运行权限、运行时访问方式和失败回滚语义。
 

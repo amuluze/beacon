@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const contacts = [
     { icon: 'mdi:wechat', label: '微信', value: 'Amuluze' },
-    { icon: 'mdi:github', label: 'GitHub', value: 'amuluze/amprobe', href: 'https://github.com/amuluze/amprobe' },
+    { icon: 'mdi:github', label: 'GitHub', value: 'amuluze/beacon', href: 'https://github.com/amuluze/beacon' },
     { icon: 'mdi:qrcode', label: '公众号', value: '阿慕的订阅', href: '/wechat' },
 ]
 

@@ -124,7 +124,7 @@
 - 配置、凭据和外部副作用只记录语义边界，不记录真实敏感值。
 - 监控查询默认读取 Server 本地监控表；控制操作才走反向 tunnel。新增接口时必须明确属于查询路径、上报路径还是控制路径。
 - Agent 上报必须携带 Agent 标识并保持批次一致性；失败不得伪装为成功空结果。
-- Agent 标识解析与校验由 `amprobe/pkg/contextx` 统一持有（`ErrMissingAgentID`/`ErrInvalidAgentID`/`IsValidAgentID`/`ResolveAgentID`）；监控查询读路径（`host`/`container` 的 `agentDB`）与控制调用写路径（`rpc.Call`）行为一致：缺失或非法 `agent_id` 返回明确错误，不再回退默认节点或全表查询。
+- Agent 标识解析与校验由 `beacon/pkg/contextx` 统一持有（`ErrMissingAgentID`/`ErrInvalidAgentID`/`IsValidAgentID`/`ResolveAgentID`）；监控查询读路径（`host`/`container` 的 `agentDB`）与控制调用写路径（`rpc.Call`）行为一致：缺失或非法 `agent_id` 返回明确错误，不再回退默认节点或全表查询。
 - 敏感凭据启动期强校验：`App.Env = production` 时 `Auth.SigningKey`、`Control.JoinToken`、`AgentInstall.Token` 在空值、已知弱默认值或长度不足时由 `resolveSigningKey`/`resolveControlToken`/`resolveInstallToken` 拒绝启动。`Control.DefaultAgentID` 已废弃，仅为配置兼容保留。
 
 ## 验证命令

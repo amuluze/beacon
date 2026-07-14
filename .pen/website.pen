@@ -669,7 +669,7 @@
                   "fill": "$foreground-secondary",
                   "textGrowth": "fixed-width",
                   "width": 430,
-                  "content": "curl -fsSL https://official.beacon.amuluze.com/download/install.sh | sh",
+                  "content": "curl -fsSL https://help.beacon.amuluze.com/download/install.sh | sh",
                   "fontFamily": "$font-mono",
                   "fontSize": "$font-size-sm",
                   "fontWeight": "normal"
@@ -4001,7 +4001,7 @@
                       "id": "obyuy",
                       "name": "C Value",
                       "fill": "$foreground-primary",
-                      "content": "amuluze/amprobe",
+                      "content": "amuluze/beacon",
                       "fontFamily": "$font-mono",
                       "fontSize": "$font-size-sm",
                       "fontWeight": "600"
@@ -5569,7 +5569,7 @@
                               "fill": "$foreground-secondary",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "content": "curl -fsSL https://official.beacon.amuluze.com/download/install.sh -o install.sh",
+                              "content": "curl -fsSL https://help.beacon.amuluze.com/download/install.sh -o install.sh",
                               "fontFamily": "$font-mono",
                               "fontSize": "$font-size-sm",
                               "fontWeight": "normal"
@@ -5726,7 +5726,7 @@
                               "fill": "$foreground-secondary",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "content": "curl -fsSL https://official.beacon.amuluze.com/download/compose.yaml -o compose.yaml",
+                              "content": "curl -fsSL https://help.beacon.amuluze.com/download/compose.yaml -o compose.yaml",
                               "fontFamily": "$font-mono",
                               "fontSize": "$font-size-sm",
                               "fontWeight": "normal"

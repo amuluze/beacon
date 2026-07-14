@@ -15,6 +15,7 @@ import EditContainer from '@/views/container/container/components/EditContainer.
 import RestartContainer from '@/views/container/container/components/RestartContainer.vue'
 import StartContainer from '@/views/container/container/components/StartContainer.vue'
 import StopContainer from '@/views/container/container/components/StopContainer.vue'
+import { isProtectedContainerName } from '@/views/container/container/containerProtection'
 
 import useStore from '@/store'
 import { getBrowserLanguage } from '@/utils'
@@ -39,9 +40,6 @@ const tableRef = ref<TableInstance>()
 const tableSelection = ref<Container[]>([])
 const selectable = (row: Container) => !['1', '2'].includes(row.id)
 
-function enableEdit(containerName: string) {
-  return containerName === 'amprobe'
-}
 function handleSelectionChange(val: Container[]) {
   tableSelection.value = val
 }
@@ -111,7 +109,7 @@ const locale = computed(() => {
                 <!--                <el-table-column prop="memory_limit" :label="t('container.memLimited')" align="center" min-width="160" show-overflow-tooltip /> -->
                 <el-table-column :label="t('container.operator')" width="190" fixed="right" align="center">
                     <template #default="scope">
-                        <el-button type="primary" size="small" text :disabled="isAgentEmpty || enableEdit(scope.row.name)" @click="startContainer({ title: 'container.startContainer', id: scope.row.id, update: search })">
+                        <el-button type="primary" size="small" text :disabled="isAgentEmpty || isProtectedContainerName(scope.row.name)" @click="startContainer({ title: 'container.startContainer', id: scope.row.id, update: search })">
                             <svg-icon icon-class="start" />
                             {{ t('container.start') }}
                         </el-button>
@@ -123,25 +121,25 @@ const locale = computed(() => {
                             <template #dropdown>
                                 <el-dropdown-menu>
                                     <el-dropdown-item>
-                                        <el-button type="primary" size="small" text :disabled="isAgentEmpty || enableEdit(scope.row.name)" @click="editContainer({ title: 'container.editContainer', container: scope.row, update: search })">
+                                        <el-button type="primary" size="small" text :disabled="isAgentEmpty || isProtectedContainerName(scope.row.name)" @click="editContainer({ title: 'container.editContainer', container: scope.row, update: search })">
                                             <svg-icon icon-class="edit" />
                                             {{ t('container.edit') }}
                                         </el-button>
                                     </el-dropdown-item>
                                     <el-dropdown-item>
-                                        <el-button type="warning" size="small" text :disabled="isAgentEmpty || enableEdit(scope.row.name)" @click="stopContainer({ title: 'container.stopContainer', id: scope.row.id, update: search })">
+                                        <el-button type="warning" size="small" text :disabled="isAgentEmpty || isProtectedContainerName(scope.row.name)" @click="stopContainer({ title: 'container.stopContainer', id: scope.row.id, update: search })">
                                             <svg-icon icon-class="stop" />
                                             {{ t('container.stop') }}
                                         </el-button>
                                     </el-dropdown-item>
                                     <el-dropdown-item>
-                                        <el-button type="warning" size="small" text :disabled="isAgentEmpty || enableEdit(scope.row.name)" @click="restartContainer({ title: 'container.restartContainer', id: scope.row.id, update: search })">
+                                        <el-button type="warning" size="small" text :disabled="isAgentEmpty || isProtectedContainerName(scope.row.name)" @click="restartContainer({ title: 'container.restartContainer', id: scope.row.id, update: search })">
                                             <svg-icon icon-class="update" />
                                             {{ t('container.restart') }}
                                         </el-button>
                                     </el-dropdown-item>
                                     <el-dropdown-item>
-                                        <el-button type="danger" size="small" text :disabled="isAgentEmpty || enableEdit(scope.row.name)" @click="deleteContainer({ title: 'container.deleteContainer', id: scope.row.id, update: search })">
+                                        <el-button type="danger" size="small" text :disabled="isAgentEmpty || isProtectedContainerName(scope.row.name)" @click="deleteContainer({ title: 'container.deleteContainer', id: scope.row.id, update: search })">
                                             <svg-icon icon-class="delete" />
                                             {{ t('container.delete') }}
                                         </el-button>

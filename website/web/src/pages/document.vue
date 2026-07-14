@@ -52,7 +52,7 @@ useHead({ title: 'Beacon 使用手册' })
                     <article class="site-card docs__card">
                         <h3>一键安装</h3>
                         <pre class="site-code"><code># 下载并执行安装脚本
-curl -fsSL https://official.beacon.amuluze.com/download/install.sh -o install.sh
+curl -fsSL https://help.beacon.amuluze.com/download/install.sh -o install.sh
 sh install.sh
 
 # 非交互安装示例
@@ -60,7 +60,7 @@ BEACON_HTTP_PORT=1443 sh install.sh</code></pre>
 
                         <h3>手动安装</h3>
                         <pre class="site-code"><code>mkdir -p /data/beacon && cd /data/beacon
-curl -fsSL https://official.beacon.amuluze.com/download/compose.yaml -o compose.yaml
+curl -fsSL https://help.beacon.amuluze.com/download/compose.yaml -o compose.yaml
 # 编辑 .env 配置端口 / Token / 密钥
 docker compose up -d</code></pre>
 
@@ -100,7 +100,7 @@ docker compose down         # 停止服务</code></pre>
                         <h2>技术支持</h2>
                         <p>在 GitHub Issues 描述问题、版本与复现步骤，我们会尽快跟进。</p>
                     </div>
-                    <a href="https://github.com/amuluze/amprobe/issues" target="_blank" rel="noopener noreferrer">提交 Issue</a>
+                    <a href="https://github.com/amuluze/beacon/issues" target="_blank" rel="noopener noreferrer">提交 Issue</a>
                 </section>
             </div>
         </main>

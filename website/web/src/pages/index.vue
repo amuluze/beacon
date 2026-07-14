@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { statisticQuery, statisticUpdate } from '~/api/statistics'
 
-const officialBaseURL = 'https://official.beacon.amuluze.com'
+const officialBaseURL = 'https://help.beacon.amuluze.com'
 const installCommand = `curl -fsSL ${officialBaseURL}/download/install.sh | sh`
 const statisticID = shallowRef<number | null>(null)
 const statistic = shallowRef<number | null>(null)
@@ -80,7 +80,7 @@ useHead({
                 </div>
                 <div class="hero__actions">
                     <button class="button button--primary" type="button" @click="downloadInstallScript">立即体验</button>
-                    <a class="button" href="https://github.com/amuluze/amprobe" target="_blank" rel="noopener noreferrer">GitHub</a>
+                    <a class="button" href="https://github.com/amuluze/beacon" target="_blank" rel="noopener noreferrer">GitHub</a>
                 </div>
                 <div class="hero__stats">
                     <span>累计获取</span>
@@ -129,7 +129,7 @@ useHead({
                 <p>一行命令安装 Agent，几分钟完成接入，开箱即用</p>
                 <div class="hero__actions">
                     <NuxtLink class="button button--primary" to="/document">查看使用手册</NuxtLink>
-                    <a class="button" href="https://github.com/amuluze/amprobe" target="_blank" rel="noopener noreferrer">访问 GitHub</a>
+                    <a class="button" href="https://github.com/amuluze/beacon" target="_blank" rel="noopener noreferrer">访问 GitHub</a>
                 </div>
             </div>
         </section>

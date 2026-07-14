@@ -71,7 +71,7 @@ var ErrInsecureInstallToken = errors.New("insecure agent install token for produ
 func resolveSigningKey(configured, env string) (string, error) {
 	if strings.EqualFold(env, productionEnv) {
 		if configured == "" {
-			return "", fmt.Errorf("%w: SigningKey is empty, set AMPROBE_AUTH_SIGNINGKEY", ErrInsecureSigningKey)
+			return "", fmt.Errorf("%w: SigningKey is empty, set BEACON_AUTH_SIGNING_KEY", ErrInsecureSigningKey)
 		}
 		if configured == weakDefaultSigningKey {
 			return "", fmt.Errorf("%w: SigningKey is the built-in weak default", ErrInsecureSigningKey)
@@ -90,11 +90,11 @@ func resolveSigningKey(configured, env string) (string, error) {
 			return time.Now().String(), nil
 		}
 		key := base64.StdEncoding.EncodeToString(b)
-		slog.Warn("auth: SigningKey not configured; generated an ephemeral key (all tokens invalid on restart). Set AMPROBE_AUTH_SIGNINGKEY in production.")
+		slog.Warn("auth: SigningKey not configured; generated an ephemeral key (all tokens invalid on restart). Set BEACON_AUTH_SIGNING_KEY in production.")
 		return key, nil
 	}
 	if configured == weakDefaultSigningKey {
-		slog.Warn("auth: SigningKey is the built-in weak default. Override it via AMPROBE_AUTH_SIGNINGKEY in production.")
+		slog.Warn("auth: SigningKey is the built-in weak default. Override it via BEACON_AUTH_SIGNING_KEY in production.")
 	}
 	return configured, nil
 }
@@ -109,7 +109,7 @@ func resolveSigningKey(configured, env string) (string, error) {
 func resolveControlToken(configured, env string) (string, error) {
 	if strings.EqualFold(env, productionEnv) {
 		if configured == "" {
-			return "", fmt.Errorf("%w: JoinToken is empty, set Control.JoinToken or AMPROBE_CONTROL_JOINTOKEN", ErrInsecureControlToken)
+			return "", fmt.Errorf("%w: JoinToken is empty, set Control.JoinToken or BEACON_CONTROL_JOIN_TOKEN", ErrInsecureControlToken)
 		}
 		if isWeakDefaultSecret(configured) {
 			return "", fmt.Errorf("%w: JoinToken is a known weak default", ErrInsecureControlToken)
@@ -120,7 +120,7 @@ func resolveControlToken(configured, env string) (string, error) {
 		return configured, nil
 	}
 	if configured == "" {
-		slog.Warn("auth: control JoinToken not configured; agents can register without authentication. Set Control.JoinToken or AMPROBE_CONTROL_JOINTOKEN in production.")
+		slog.Warn("auth: control JoinToken not configured; agents can register without authentication. Set Control.JoinToken or BEACON_CONTROL_JOIN_TOKEN in production.")
 	} else if isWeakDefaultSecret(configured) {
 		slog.Warn("auth: control JoinToken is a known weak default. Override it before deploying to production.")
 	}
@@ -134,7 +134,7 @@ func resolveControlToken(configured, env string) (string, error) {
 func resolveInstallToken(configured, env string) (string, error) {
 	if strings.EqualFold(env, productionEnv) {
 		if configured == "" {
-			return "", fmt.Errorf("%w: Token is empty, set AgentInstall.Token or AMPROBE_AGENTINSTALL_TOKEN", ErrInsecureInstallToken)
+			return "", fmt.Errorf("%w: Token is empty, set AgentInstall.Token or BEACON_AGENT_INSTALL_TOKEN", ErrInsecureInstallToken)
 		}
 		if isWeakDefaultSecret(configured) {
 			return "", fmt.Errorf("%w: Token is a known weak default", ErrInsecureInstallToken)
@@ -145,7 +145,7 @@ func resolveInstallToken(configured, env string) (string, error) {
 		return configured, nil
 	}
 	if configured == "" {
-		slog.Warn("auth: agent install token not configured; report endpoints reject all uploads. Set AgentInstall.Token or AMPROBE_AGENTINSTALL_TOKEN in production.")
+		slog.Warn("auth: agent install token not configured; report endpoints reject all uploads. Set AgentInstall.Token or BEACON_AGENT_INSTALL_TOKEN in production.")
 	} else if isWeakDefaultSecret(configured) {
 		slog.Warn("auth: agent install token is a known weak default. Override it before deploying to production.")
 	}

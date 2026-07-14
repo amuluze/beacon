@@ -1,15 +1,15 @@
 openapi: 3.0.3
 info:
-  title: Amprobe API
+  title: Beacon API
   description: |
-    Amprobe Server-Agent monitoring platform HTTP API.
+    Beacon Server-Agent monitoring platform HTTP API.
 
     All monitoring queries require an `X-Agent-ID` header or `agent_id` query parameter;
     the repository layer rejects requests that do not name a target Agent (see
     Domain Spec I001 + R005). Control operations are dispatched to the target Agent
     via a reverse gRPC tunnel (`common/rpc/tunnel`) keyed on agent_id.
 
-    This file describes every endpoint registered in `amprobe/service/router.go`.
+    This file describes every endpoint registered in `beacon/service/router.go`.
     Request and response schemas are expressed as `additionalProperties: true`
     placeholders for paths that have not yet been formalized into concrete
     components. The five paths originally documented (health, login, agent list,
@@ -17,7 +17,7 @@ info:
     schema references; new paths follow the lighter `additionalProperties` style.
   version: 0.0.1
   contact:
-    name: Amprobe
+    name: Beacon
 servers:
   - url: http://localhost:8000
     description: Local development server
@@ -801,7 +801,7 @@ components:
       description: |
         Identifies the target Agent for control-plane endpoints. Required for
         any host.* or container.* path; the repository layer (see
-        RequireAgentID in amprobe/pkg/contextx) rejects the request with
+        RequireAgentID in beacon/pkg/contextx) rejects the request with
         HTTP 400 when missing.
 
   schemas:
