@@ -1,6 +1,6 @@
-# Amprobe Web
+# Beacon Web
 
-`amprobe/web` 模块入口文档，由 `/sdd doc update` 根据当前 workspace 事实重写。
+`beacon/web` 模块入口文档，由 `/sdd doc update` 根据当前 workspace 事实重写。
 
 该模块当前角色：frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互。
 
@@ -8,7 +8,7 @@
 
 模块协作入口以本 AGENTS.md 为准；项目级文档见根 AGENTS 文档地图。
 
-- 模块实现事实见 [`.docs/modules/amprobe-web.md`](../../.docs/modules/amprobe-web.md)。
+- 模块实现事实见 [`.docs/modules/beacon-web.md`](../../.docs/modules/beacon-web.md)。
 
 ## 开发导航
 
@@ -20,16 +20,16 @@
 
 ## 模块路径
 
-`amprobe/web/package.json`
+`beacon/web/package.json`
 
 ## 关键目录
 
 | 目录/文件             | 职责                                                                            |
 | --------------------- | ------------------------------------------------------------------------------- |
-| `amprobe/web/`        | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 |
-| `amprobe/web/public/` | static assets or embedded resources                                             |
-| `amprobe/web/src/`    | application source code                                                         |
-| `amprobe/web/types/`  | supporting project directory                                                    |
+| `beacon/web/`        | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 |
+| `beacon/web/public/` | static assets or embedded resources                                             |
+| `beacon/web/src/`    | application source code                                                         |
+| `beacon/web/types/`  | supporting project directory                                                    |
 
 ## 依赖
 
@@ -79,8 +79,8 @@
 ## 开发命令
 
 ```bash
-cd amprobe/web && npm run lint
-cd amprobe/web && npm run ts
-cd amprobe/web && npm run build
-cd amprobe/web && npm run dev
+cd beacon/web && pnpm run lint
+cd beacon/web && pnpm run ts
+cd beacon/web && pnpm run build
+cd beacon/web && pnpm run dev
 ```
