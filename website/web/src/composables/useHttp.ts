@@ -38,14 +38,11 @@ const fetch = $fetch.create({
     // 请求拦截器
     onRequest({ options }) {
         const { public: { baseUrl } } = useRuntimeConfig()
-        console.log('public: ', baseUrl)
-        options.baseURL = baseUrl as string
-        console.log('base url: ', options.baseURL)
-        // 添加请求头
-        // const store = useStore()
-        // if (store.user.token !== '') {
-        //     options.headers.set('Authorization', `Bearer ${store.user.token}`)
-        // }
+        // 仅在显式配置时设置 baseURL；留空则走相对路径，
+        // 由同源 nitro routeRules 代理到后端，避免 SPA 中 localhost 误指向用户本机。
+        if (baseUrl) {
+            options.baseURL = baseUrl as string
+        }
     },
     onResponse({ response }) {
         const contentType = response.headers.get('Content-Type')
@@ -53,7 +50,6 @@ const fetch = $fetch.create({
             handleError(response)
             return Promise.resolve(response._data)
         }
-        console.log('response: ', response)
         if (!contentType) {
             response._data = { code: -1, data: '返回数据不符合预期' }
             return

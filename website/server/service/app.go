@@ -5,12 +5,22 @@
 package service
 
 import (
+	"strings"
+	"time"
+
 	"server/service/middleware"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/pprof"
+)
+
+// 写接口的访问频率上限，避免统计/上报被脚本刷量
+const (
+	writeLimiterMax    = 30
+	writeLimiterExpiry = 1 * time.Minute
 )
 
 func NewFiberApp(config *Config, r IRouter) *fiber.App {
@@ -18,17 +28,44 @@ func NewFiberApp(config *Config, r IRouter) *fiber.App {
 		Prefork:      config.Fiber.Prefork,
 		AppName:      config.Fiber.AppName,
 		ServerHeader: config.Fiber.SeverHeader,
-		BodyLimit:    1000 * 1024 * 1024,
+		// 官网后端仅承载统计与脚本下发，收窄请求体上限以降低 DoS 面
+		BodyLimit: 4 * 1024 * 1024,
 	}
 
 	app := fiber.New(fiberConfig)
 
-	// 添加中间件
-	app.Use(cors.New())
+	// 跨域：按白名单放行，未配置来源时仅允许同源
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: strings.Join(config.App.CORSAllowOrigins, ","),
+		AllowMethods: strings.Join([]string{"GET", "POST", "OPTIONS"}, ","),
+		AllowHeaders: "Origin, Content-Type, Accept",
+	}))
 	app.Use(compress.New())
-	app.Use(pprof.New())
+
+	// pprof 仅在非生产环境暴露，避免公网读取运行时/堆信息
+	if !config.App.IsProduction() {
+		app.Use(pprof.New())
+	}
+
 	app.Use(middleware.PanicMiddleware())
 	app.Use(middleware.StackMiddleware)
+
+	// 对写接口施加 IP 级速率限制
+	writeLimiter := limiter.New(limiter.Config{
+		Max:        writeLimiterMax,
+		Expiration: writeLimiterExpiry,
+		KeyGenerator: func(c *fiber.Ctx) string {
+			return c.IP()
+		},
+		LimitReached: func(c *fiber.Ctx) error {
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"code":    429,
+				"message": "请求过于频繁，请稍后再试",
+			})
+		},
+	})
+	app.Use("/api/v1/statistics/update", writeLimiter)
+	app.Use("/api/v1/install/report", writeLimiter)
 
 	err := r.Register(app)
 	if err != nil {

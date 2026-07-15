@@ -1,9 +1,12 @@
 services:
   official:
-    image: registry.cn-hangzhou.aliyuncs.com/amuluze/beacon-offical:v0.1.4
+    image: registry.cn-hangzhou.aliyuncs.com/amuluze/beacon-offical:v0.1.7
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       NODE_ENV: production
-      NUXT_PUBLIC_BASE_URL: http://localhost:3000
+      # 留空：SPA 在浏览器中通过相对路径走同源 nitro 代理到后端，
+      # 避免 localhost:3000 指向用户本机导致请求失败。
+      NUXT_PUBLIC_BASE_URL: ""
+      APP_ENV: production
