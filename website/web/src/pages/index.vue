@@ -7,6 +7,12 @@ const statisticID = shallowRef<number | null>(null)
 const statistic = shallowRef<number | null>(null)
 const copying = shallowRef(false)
 
+const heroTags = [
+    { icon: 'mdi:package-variant-closed', label: 'Docker 管理' },
+    { icon: 'mdi:chart-line-variant', label: '实时监控' },
+    { icon: 'mdi:feather', label: '轻量部署' },
+]
+
 const statisticLabel = computed(() => statistic.value === null ? '--' : statistic.value.toLocaleString())
 
 async function loadStatistic() {
@@ -66,23 +72,48 @@ useHead({
 <template>
     <div class="landing">
         <section class="hero">
+            <div class="hero__glow" aria-hidden="true" />
             <div class="site-container hero__inner">
-                <div class="hero__badge">开源 · MIT License · 持续维护</div>
+                <div class="hero__badge">
+                    <Icon name="mdi:sparkles" />
+                    <span>开源 · MIT License · 持续维护</span>
+                </div>
                 <h1>Beacon</h1>
-                <p class="hero__subtitle">开源 · 轻量 · 现代化</p>
-                <p class="hero__description">轻量级主机及容器监控管理工具，实时掌控服务器与 Docker 资源</p>
+                <p class="hero__subtitle">
+                    开源 · 轻量 · 现代化
+                </p>
+                <p class="hero__description">
+                    轻量级主机及容器监控管理工具，实时掌控服务器与 Docker 资源
+                </p>
+                <div class="hero__tags">
+                    <span v-for="tag in heroTags" :key="tag.label" class="hero__tag">
+                        <Icon :name="tag.icon" />
+                        {{ tag.label }}
+                    </span>
+                </div>
                 <div class="hero__command site-code">
-                    <span>$</span>
+                    <span class="hero__prompt">$</span>
                     <code>{{ installCommand }}</code>
-                    <button type="button" :aria-label="copying ? '正在复制' : '复制安装命令'" @click="copyInstallCommand">
+                    <button type="button" class="hero__copy" :aria-label="copying ? '正在复制' : '复制安装命令'" @click="copyInstallCommand">
                         <Icon :name="copying ? 'mdi:loading' : 'mdi:content-copy'" />
                     </button>
                 </div>
                 <div class="hero__actions">
-                    <button class="button button--primary" type="button" @click="downloadInstallScript">立即体验</button>
-                    <a class="button" href="https://github.com/amuluze/beacon" target="_blank" rel="noopener noreferrer">GitHub</a>
+                    <button class="site-button site-button--primary" type="button" @click="copyInstallCommand">
+                        <Icon name="mdi:console-line" />
+                        <span>复制安装命令</span>
+                    </button>
+                    <button class="site-button site-button--ghost" type="button" @click="downloadInstallScript">
+                        <Icon name="mdi:download-outline" />
+                        <span>下载安装脚本</span>
+                    </button>
+                    <a class="site-button site-button--card" href="https://github.com/amuluze/beacon" target="_blank" rel="noopener noreferrer">
+                        <Icon name="mdi:github" />
+                        <span>GitHub 400+ ★</span>
+                    </a>
                 </div>
                 <div class="hero__stats">
+                    <Icon name="mdi:cloud-download-outline" />
                     <span>累计获取</span>
                     <strong>{{ statisticLabel }}</strong>
                     <span>次</span>
@@ -90,7 +121,7 @@ useHead({
             </div>
         </section>
 
-        <div class="site-container">
+        <div>
             <HomeFeatureSection
                 overline="容器管理"
                 title="全面的 Docker 容器管理"
@@ -105,6 +136,7 @@ useHead({
                 title="实时监控主机系统资源"
                 description="采集主机核心指标，远程运维与管理触手可及"
                 :points="['CPU、内存、磁盘与网络趋势', '系统时间与时区管理', '远程终端、重启与关机控制']"
+                variant="muted"
                 reverse
             >
                 <HomeProductPreview type="host" />
@@ -123,13 +155,23 @@ useHead({
         </div>
 
         <section class="cta">
+            <div class="cta__glow" aria-hidden="true" />
             <div class="site-container cta__inner">
-                <p class="site-overline">快速开始</p>
+                <div class="hero__badge">
+                    <Icon name="mdi:flash-outline" />
+                    <span>快速开始</span>
+                </div>
                 <h2>立即开始监控你的主机与容器</h2>
                 <p>一行命令安装 Agent，几分钟完成接入，开箱即用</p>
                 <div class="hero__actions">
-                    <NuxtLink class="button button--primary" to="/document">查看使用手册</NuxtLink>
-                    <a class="button" href="https://github.com/amuluze/beacon" target="_blank" rel="noopener noreferrer">访问 GitHub</a>
+                    <NuxtLink class="site-button site-button--primary" to="/document">
+                        <Icon name="mdi:rocket-launch-outline" />
+                        <span>立即体验</span>
+                    </NuxtLink>
+                    <a class="site-button site-button--card" href="https://github.com/amuluze/beacon" target="_blank" rel="noopener noreferrer">
+                        <Icon name="mdi:star-outline" />
+                        <span>Star on GitHub</span>
+                    </a>
                 </div>
             </div>
         </section>
@@ -137,63 +179,174 @@ useHead({
 </template>
 
 <style scoped lang="scss">
+.site-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-width: 112px;
+  height: 40px;
+  padding: 0 20px;
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.site-button--primary {
+  color: var(--color-text-inverse);
+  background: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+.site-button--primary:hover {
+  background: var(--color-brand-hover);
+  border-color: var(--color-brand-hover);
+}
+
+.site-button--ghost {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--border);
+}
+
+.site-button--ghost:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.site-button--card {
+  color: var(--color-text-secondary);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+.site-button--card:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
 .hero {
+  position: relative;
+  overflow: hidden;
   padding: 112px 0 80px;
   text-align: center;
-  background: var(--site-surface-secondary);
-  border-bottom: 1px solid var(--site-border-subtle);
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+}
+
+.hero__glow,
+.cta__glow {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 680px;
+  height: 560px;
+  background: var(--primary);
+  filter: blur(130px);
+  opacity: 0.13;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.cta__glow {
+  width: 500px;
+  height: 340px;
+  opacity: 0.11;
 }
 
 .hero__inner {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .hero__badge {
-  padding: 5px 10px;
-  color: var(--site-accent);
-  background: var(--site-accent-soft);
-  border: 1px solid rgba(64, 158, 255, 0.28);
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.hero__badge :deep(svg) {
+  color: var(--color-warning);
+  font-size: 14px;
 }
 
 .hero h1 {
-  margin: 24px 0 0;
-  font-size: clamp(56px, 10vw, 88px);
+  margin: var(--space-6) 0 0;
+  font-size: clamp(56px, 10vw, 80px);
+  font-weight: 800;
   line-height: 1;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.04em;
 }
 
 .hero__subtitle {
-  margin: var(--site-space-md) 0 0;
-  color: var(--site-foreground-secondary);
-  font-size: clamp(18px, 3vw, 24px);
-  letter-spacing: 0.08em;
+  margin: var(--space-4) 0 0;
+  color: var(--color-text-secondary);
+  font-size: clamp(18px, 3vw, 22px);
+  font-weight: 500;
+  letter-spacing: 0.24em;
 }
 
 .hero__description {
   max-width: 640px;
-  margin: var(--site-space-md) 0 0;
-  color: var(--site-foreground-muted);
+  margin: var(--space-4) 0 0;
+  color: var(--muted-foreground);
+  font-size: var(--font-size-lg);
+  line-height: 1.6;
+}
+
+.hero__tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.hero__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.hero__tag :deep(svg) {
+  color: var(--primary);
   font-size: 16px;
 }
 
 .hero__command {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: center;
   width: min(680px, 100%);
-  margin-top: var(--site-space-xl);
-  padding: 13px 16px;
+  margin-top: var(--space-8);
+  padding: 14px 16px;
   text-align: left;
 }
 
-.hero__command > span {
-  color: var(--site-success);
+.hero__prompt {
+  color: var(--color-success);
+  font-weight: 700;
 }
 
 .hero__command code {
@@ -201,67 +354,82 @@ useHead({
   text-overflow: ellipsis;
 }
 
-.hero__command button {
-  padding: 2px;
-  color: var(--site-foreground-muted);
-  background: transparent;
+.hero__copy {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--color-text-secondary);
+  background: var(--border);
   border: 0;
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.hero__copy:hover {
+  color: var(--primary);
 }
 
 .hero__actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: var(--site-space-sm);
-  margin-top: var(--site-space-lg);
-}
-
-.button {
-  min-width: 112px;
-  padding: 9px 16px;
-  color: var(--site-foreground-secondary);
-  background: var(--site-surface-card);
-  border: 1px solid var(--site-border-primary);
-  border-radius: var(--site-radius-sm);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.button--primary {
-  color: var(--site-on-accent);
-  background: var(--site-accent);
-  border-color: var(--site-accent);
+  gap: var(--space-3);
+  margin-top: var(--space-6);
 }
 
 .hero__stats {
-  display: flex;
-  align-items: baseline;
-  gap: var(--site-space-sm);
-  margin-top: var(--site-space-xl);
-  color: var(--site-foreground-muted);
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-8);
+  padding: 10px 18px;
+  color: var(--muted-foreground);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm);
+}
+
+.hero__stats :deep(svg) {
+  color: var(--primary);
+  font-size: 16px;
 }
 
 .hero__stats strong {
-  color: var(--site-foreground-primary);
-  font-family: var(--site-font-mono);
-  font-size: 24px;
+  color: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-lg);
 }
 
 .cta {
-  padding: 80px 0;
+  position: relative;
+  overflow: hidden;
+  padding: 88px 0;
   text-align: center;
-  background: var(--site-surface-secondary);
-  border-top: 1px solid var(--site-border-subtle);
+  background: var(--color-surface-muted);
+  border-top: 1px solid var(--border);
+}
+
+.cta__inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .cta h2 {
-  margin: 0;
-  font-size: clamp(28px, 5vw, 40px);
+  margin: var(--space-5) 0 0;
+  font-size: clamp(28px, 5vw, 36px);
+  line-height: 1.2;
 }
 
-.cta p:not(.site-overline) {
-  color: var(--site-foreground-secondary);
+.cta p {
+  max-width: 520px;
+  margin: var(--space-3) 0 0;
+  color: var(--muted-foreground);
 }
 
 @media (max-width: 640px) {
@@ -282,16 +450,21 @@ useHead({
     align-self: flex-start;
   }
 
+  .hero__tags {
+    justify-content: flex-start;
+  }
+
   .hero__command {
-    font-size: 11px;
+    font-size: var(--font-size-xs);
   }
 
   .hero__actions {
-    justify-content: flex-start;
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .hero__stats {
-    justify-content: flex-start;
+    align-self: flex-start;
   }
 
   .cta {
@@ -299,12 +472,12 @@ useHead({
     text-align: left;
   }
 
-  .cta .hero__actions {
-    flex-direction: column;
+  .cta__inner {
+    align-items: stretch;
   }
 
-  .cta .button {
-    text-align: center;
+  .cta .hero__actions {
+    flex-direction: column;
   }
 }
 </style>

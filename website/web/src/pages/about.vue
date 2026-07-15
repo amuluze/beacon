@@ -12,9 +12,15 @@ useHead({ title: '团队故事 - Beacon' })
     <div class="about-page">
         <header class="site-page-header">
             <div class="site-container">
-                <p class="site-overline">关于 Beacon</p>
-                <h1 class="site-page-title">团队故事</h1>
-                <p class="site-page-description">一名见习独立开发者的开源练手之作</p>
+                <p class="site-overline">
+                    关于 Beacon
+                </p>
+                <h1 class="site-page-title">
+                    团队故事
+                </h1>
+                <p class="site-page-description">
+                    一名见习独立开发者的开源练手之作
+                </p>
             </div>
         </header>
 
@@ -32,7 +38,9 @@ useHead({ title: '团队故事 - Beacon' })
             </article>
 
             <section class="contact">
-                <p class="site-overline">与我联系</p>
+                <p class="site-overline">
+                    与我联系
+                </p>
                 <div class="contact__grid">
                     <component
                         :is="item.href ? (item.href.startsWith('/') ? 'NuxtLink' : 'a') : 'div'"
@@ -78,8 +86,8 @@ useHead({ title: '团队故事 - Beacon' })
 }
 
 .letter p {
-  margin: 0 0 var(--site-space-lg);
-  color: var(--site-foreground-secondary);
+  margin: 0 0 var(--space-6);
+  color: var(--color-text-secondary);
   font-size: 16px;
   line-height: 1.9;
 }
@@ -88,12 +96,12 @@ useHead({ title: '团队故事 - Beacon' })
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: var(--site-space-xs);
-  color: var(--site-foreground-muted);
+  gap: var(--space-1);
+  color: var(--muted-foreground);
 }
 
 .letter__signature strong {
-  color: var(--site-foreground-primary);
+  color: var(--foreground);
 }
 
 .contact {
@@ -103,16 +111,16 @@ useHead({ title: '团队故事 - Beacon' })
 .contact__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--site-space-md);
-  margin-top: var(--site-space-lg);
+  gap: var(--space-4);
+  margin-top: var(--space-6);
 }
 
 .contact__card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--site-space-xs);
-  padding: var(--site-space-lg);
+  gap: var(--space-1);
+  padding: var(--space-6);
 }
 
 .contact__icon {
@@ -120,15 +128,15 @@ useHead({ title: '团队故事 - Beacon' })
   place-items: center;
   width: 44px;
   height: 44px;
-  margin-bottom: var(--site-space-sm);
-  color: var(--site-accent);
-  background: var(--site-accent-soft);
-  border-radius: var(--site-radius-md);
+  margin-bottom: var(--space-2);
+  color: var(--primary);
+  background: var(--color-primary-soft);
+  border-radius: var(--radius-m);
   font-size: 22px;
 }
 
 .contact__card > span:not(.contact__icon) {
-  color: var(--site-foreground-muted);
+  color: var(--muted-foreground);
   font-size: 12px;
 }
 
@@ -140,10 +148,10 @@ useHead({ title: '团队故事 - Beacon' })
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--site-space-lg);
+  gap: var(--space-6);
   max-width: 520px;
   margin: 0 auto;
-  padding: var(--site-space-lg);
+  padding: var(--space-6);
 }
 
 .qrcode-card img {
@@ -153,8 +161,8 @@ useHead({ title: '团队故事 - Beacon' })
 }
 
 .qrcode-card p {
-  margin: var(--site-space-xs) 0 0;
-  color: var(--site-foreground-muted);
+  margin: var(--space-1) 0 0;
+  color: var(--muted-foreground);
 }
 
 @media (max-width: 640px) {
@@ -165,7 +173,7 @@ useHead({ title: '团队故事 - Beacon' })
   }
 
   .letter {
-    padding: var(--site-space-lg);
+    padding: var(--space-6);
   }
 
   .letter p {

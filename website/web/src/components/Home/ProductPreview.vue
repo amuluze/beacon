@@ -49,7 +49,9 @@ const hostMetrics = [
                 <article v-for="metric in hostMetrics" :key="metric.label" class="preview__tile">
                     <span>{{ metric.label }}</span>
                     <strong>{{ metric.value }}</strong>
-                    <div class="preview__track"><span :style="{ width: `${metric.width}%` }" /></div>
+                    <div class="preview__track">
+                        <span :style="{ width: `${metric.width}%` }" />
+                    </div>
                     <small>{{ metric.sub }}</small>
                 </article>
             </div>
@@ -73,7 +75,7 @@ const hostMetrics = [
 <style scoped lang="scss">
 .preview {
   min-height: 360px;
-  padding: var(--site-space-lg);
+  padding: var(--space-6);
 }
 
 .preview__header,
@@ -84,18 +86,18 @@ const hostMetrics = [
 
 .preview__header {
   justify-content: space-between;
-  padding-bottom: var(--site-space-md);
-  border-bottom: 1px solid var(--site-border-subtle);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
 }
 
 .preview__badge,
 .preview__tag {
   padding: 2px 8px;
-  color: var(--site-accent);
-  background: var(--site-accent-soft);
-  border-radius: 999px;
-  font-family: var(--site-font-mono);
-  font-size: 11px;
+  color: var(--primary);
+  background: var(--color-primary-soft);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
 }
 
 .preview__list {
@@ -105,27 +107,27 @@ const hostMetrics = [
 
 .preview__row {
   min-height: 56px;
-  gap: var(--site-space-sm);
-  border-bottom: 1px solid var(--site-border-subtle);
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--border);
 }
 
 .preview__row strong {
   flex: 1;
-  font-size: 13px;
+  font-size: var(--font-size-sm);
 }
 
 .preview__status {
   width: 8px;
   height: 8px;
-  background: var(--site-success);
+  background: var(--color-success);
   border-radius: 50%;
 }
 
 .preview__metric,
 .preview__row small {
-  color: var(--site-foreground-muted);
-  font-family: var(--site-font-mono);
-  font-size: 10px;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
 }
 
 .preview__avatar {
@@ -133,57 +135,57 @@ const hostMetrics = [
   place-items: center;
   width: 30px;
   height: 30px;
-  color: var(--site-on-accent);
-  background: var(--site-accent);
+  color: var(--color-text-inverse);
+  background: var(--primary);
   border-radius: 50%;
-  font-size: 11px;
+  font-size: var(--font-size-xs);
 }
 
 .preview__metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--site-space-md);
-  padding-top: var(--site-space-lg);
+  gap: var(--space-4);
+  padding-top: var(--space-6);
 }
 
 .preview__tile {
   display: flex;
   flex-direction: column;
-  gap: var(--site-space-sm);
-  padding: var(--site-space-md);
-  background: var(--site-surface-primary);
-  border: 1px solid var(--site-border-subtle);
-  border-radius: var(--site-radius-sm);
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
 }
 
 .preview__tile span,
 .preview__tile small {
-  color: var(--site-foreground-muted);
-  font-size: 11px;
+  color: var(--muted-foreground);
+  font-size: var(--font-size-xs);
 }
 
 .preview__tile strong {
-  font-family: var(--site-font-mono);
-  font-size: 18px;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-lg);
 }
 
 .preview__track {
   height: 6px;
   overflow: hidden;
-  background: var(--site-surface-secondary);
-  border-radius: 999px;
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-pill);
 }
 
 .preview__track span {
   display: block;
   height: 100%;
-  background: var(--site-accent);
+  background: var(--primary);
 }
 
 @media (max-width: 640px) {
   .preview {
     min-height: auto;
-    padding: var(--site-space-md);
+    padding: var(--space-4);
   }
 
   .preview__row {

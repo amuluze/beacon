@@ -7,28 +7,28 @@ $element-sel: '__' !default;
 $modifier-sel: '--' !default;
 
 @mixin b($block) {
-    .#{ $namespace + $block-sel + $block } {
-        // 差值语法 #{}
-        @content; // 内容替换
-    }
+  .#{ $namespace + $block-sel + $block } {
+    // 差值语法 #{}
+    @content; // 内容替换
+  }
 }
 
 @mixin e($element) {
-    $selector: &;
+  $selector: &;
 
-    @at-root {
-        #{$selector + $element-sel + $element} {
-            @content;
-        }
+  @at-root {
+    #{$selector + $element-sel + $element} {
+      @content;
     }
+  }
 }
 
 @mixin m($modifier) {
-    $selector: &;
+  $selector: &;
 
-    @at-root {
-        #{$selector + $modifier-sel + $modifier} {
-            @content;
-        }
+  @at-root {
+    #{$selector + $modifier-sel + $modifier} {
+      @content;
     }
+  }
 }

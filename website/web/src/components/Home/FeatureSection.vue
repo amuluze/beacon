@@ -1,41 +1,62 @@
 <script setup lang="ts">
 interface Props {
     overline: string
+    overlineIcon?: string
     title: string
     description: string
     points: string[]
     reverse?: boolean
+    variant?: 'default' | 'muted'
 }
 
 const props = withDefaults(defineProps<Props>(), {
+    overlineIcon: 'mdi:star-four-points-outline',
     reverse: false,
+    variant: 'default',
 })
 </script>
 
 <template>
-    <section class="feature" :class="{ 'feature--reverse': props.reverse }">
-        <div class="feature__preview"><slot /></div>
-        <div class="feature__content">
-            <p class="site-overline">{{ props.overline }}</p>
-            <h2>{{ props.title }}</h2>
-            <p class="feature__description">{{ props.description }}</p>
-            <ul>
-                <li v-for="point in props.points" :key="point">
-                    <Icon name="mdi:check-circle" />
-                    <span>{{ point }}</span>
-                </li>
-            </ul>
+    <section class="feature" :class="[`feature--${props.variant}`, { 'feature--reverse': props.reverse }]">
+        <div class="site-container feature__inner">
+            <div class="feature__preview">
+                <slot />
+            </div>
+            <div class="feature__content">
+                <p class="site-overline">
+                    <Icon :name="props.overlineIcon" />
+                    {{ props.overline }}
+                </p>
+                <h2>{{ props.title }}</h2>
+                <p class="feature__description">
+                    {{ props.description }}
+                </p>
+                <ul>
+                    <li v-for="point in props.points" :key="point">
+                        <span class="feature__check"><Icon name="mdi:check" /></span>
+                        <span>{{ point }}</span>
+                    </li>
+                </ul>
+            </div>
         </div>
     </section>
 </template>
 
 <style scoped lang="scss">
 .feature {
+  border-top: 1px solid var(--border);
+}
+
+.feature--muted {
+  background: var(--color-surface-muted);
+}
+
+.feature__inner {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  grid-template-columns: minmax(0, 580px) minmax(320px, 460px);
   gap: 80px;
   align-items: center;
-  padding: 72px 0;
+  padding: 96px 0;
 }
 
 .feature--reverse .feature__preview {
@@ -44,20 +65,22 @@ const props = withDefaults(defineProps<Props>(), {
 
 .feature__content h2 {
   margin: 0;
-  font-size: clamp(26px, 4vw, 36px);
-  line-height: 1.25;
+  font-size: clamp(26px, 4vw, 30px);
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .feature__description {
-  margin: var(--site-space-md) 0 var(--site-space-lg);
-  color: var(--site-foreground-secondary);
-  font-size: 16px;
+  margin: var(--space-4) 0 var(--space-5);
+  color: var(--muted-foreground);
+  font-size: var(--font-size-md);
+  line-height: 1.6;
 }
 
 .feature__content ul {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -66,20 +89,27 @@ const props = withDefaults(defineProps<Props>(), {
 .feature__content li {
   display: flex;
   align-items: flex-start;
-  gap: var(--site-space-sm);
-  color: var(--site-foreground-secondary);
+  gap: 10px;
+  color: var(--color-text-secondary);
 }
 
-.feature__content li :deep(svg) {
+.feature__check {
+  display: inline-grid;
+  place-items: center;
   flex: 0 0 auto;
-  margin-top: 3px;
-  color: var(--site-success);
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  color: var(--color-text-inverse);
+  background: var(--color-success);
+  border-radius: var(--radius-pill);
+  font-size: 13px;
 }
 
 @media (max-width: 800px) {
-  .feature {
+  .feature__inner {
     grid-template-columns: 1fr;
-    gap: var(--site-space-xl);
+    gap: var(--space-8);
     padding: 48px 0;
   }
 

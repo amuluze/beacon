@@ -25,9 +25,15 @@ useHead({ title: 'Beacon 使用手册' })
     <div>
         <header class="site-page-header">
             <div class="site-container">
-                <p class="site-overline">使用手册</p>
-                <h1 class="site-page-title">Beacon 使用手册</h1>
-                <p class="site-page-description">基于 Docker Compose，几分钟完成部署，开箱即用</p>
+                <p class="site-overline">
+                    使用手册
+                </p>
+                <h1 class="site-page-title">
+                    Beacon 使用手册
+                </h1>
+                <p class="site-page-description">
+                    基于 Docker Compose，几分钟完成部署，开箱即用
+                </p>
             </div>
         </header>
 
@@ -71,7 +77,9 @@ docker compose ps           # 查看状态
 docker compose logs -f      # 查看日志
 docker compose down         # 停止服务</code></pre>
 
-                        <p class="docs__callout">启动 beacon 容器后，浏览器访问 <code>http://服务器IP:1443</code> 即可进入管理面板。初始账号 admin / admin123。</p>
+                        <p class="docs__callout">
+                            启动 beacon 容器后，浏览器访问 <code>http://服务器IP:1443</code> 即可进入管理面板。初始账号 admin / admin123。
+                        </p>
                     </article>
                 </section>
 
@@ -85,7 +93,9 @@ docker compose down         # 停止服务</code></pre>
                     </header>
                     <div class="docs__faq">
                         <article v-for="item in faq" :key="item.question" class="site-card docs__faq-item">
-                            <div class="docs__qa">Q</div>
+                            <div class="docs__qa">
+                                Q
+                            </div>
                             <div>
                                 <h3>{{ item.question }}</h3>
                                 <p>{{ item.answer }}</p>
@@ -122,20 +132,20 @@ docker compose down         # 停止服务</code></pre>
   top: 88px;
   display: flex;
   flex-direction: column;
-  gap: var(--site-space-sm);
-  padding: var(--site-space-md);
+  gap: var(--space-2);
+  padding: var(--space-4);
 }
 
 .docs__toc strong {
-  margin-bottom: var(--site-space-xs);
+  margin-bottom: var(--space-1);
 }
 
 .docs__toc a {
-  color: var(--site-foreground-secondary);
+  color: var(--color-text-secondary);
 }
 
 .docs__toc a:hover {
-  color: var(--site-accent);
+  color: var(--primary);
 }
 
 .docs__content,
@@ -150,14 +160,14 @@ docker compose down         # 停止服务</code></pre>
 }
 
 .docs__section {
-  gap: var(--site-space-lg);
+  gap: var(--space-6);
   scroll-margin-top: 88px;
 }
 
 .docs__section-header {
   display: flex;
   align-items: flex-start;
-  gap: var(--site-space-md);
+  gap: var(--space-4);
 }
 
 .docs__section-header > span {
@@ -166,10 +176,10 @@ docker compose down         # 停止服务</code></pre>
   flex: 0 0 auto;
   width: 48px;
   height: 48px;
-  color: var(--site-on-accent);
-  background: var(--site-accent);
+  color: var(--color-text-inverse);
+  background: var(--primary);
   border-radius: 50%;
-  font-family: var(--site-font-mono);
+  font-family: var(--font-mono);
   font-weight: 700;
 }
 
@@ -183,11 +193,11 @@ docker compose down         # 停止服务</code></pre>
 }
 
 .docs__section-header p {
-  color: var(--site-foreground-secondary);
+  color: var(--color-text-secondary);
 }
 
 .docs__card {
-  padding: var(--site-space-xl);
+  padding: var(--space-8);
 }
 
 .docs__card h3 {
@@ -200,28 +210,28 @@ docker compose down         # 停止服务</code></pre>
 
 .docs__card pre {
   margin: 0;
-  padding: var(--site-space-md);
+  padding: var(--space-4);
   font-size: 12px;
   line-height: 1.7;
 }
 
 .docs__callout {
-  margin: var(--site-space-lg) 0 0;
-  padding: var(--site-space-md);
-  color: var(--site-foreground-secondary);
-  background: var(--site-accent-soft);
-  border-left: 3px solid var(--site-accent);
+  margin: var(--space-6) 0 0;
+  padding: var(--space-4);
+  color: var(--color-text-secondary);
+  background: var(--color-primary-soft);
+  border-left: 3px solid var(--primary);
 }
 
 .docs__faq {
-  gap: var(--site-space-md);
+  gap: var(--space-4);
 }
 
 .docs__faq-item {
   display: grid;
   grid-template-columns: 36px minmax(0, 1fr);
-  gap: var(--site-space-md);
-  padding: var(--site-space-lg);
+  gap: var(--space-4);
+  padding: var(--space-6);
 }
 
 .docs__qa {
@@ -229,8 +239,8 @@ docker compose down         # 停止服务</code></pre>
   place-items: center;
   width: 32px;
   height: 32px;
-  color: var(--site-accent);
-  background: var(--site-accent-soft);
+  color: var(--primary);
+  background: var(--color-primary-soft);
   border-radius: 50%;
   font-weight: 700;
 }
@@ -245,21 +255,21 @@ docker compose down         # 停止服务</code></pre>
 }
 
 .docs__faq-item p {
-  margin-top: var(--site-space-sm);
-  color: var(--site-foreground-secondary);
+  margin-top: var(--space-2);
+  color: var(--color-text-secondary);
 }
 
 .docs__support {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: var(--site-space-md);
+  gap: var(--space-4);
   align-items: center;
-  padding: var(--site-space-lg);
+  padding: var(--space-6);
   scroll-margin-top: 88px;
 }
 
 .docs__support > :deep(svg) {
-  color: var(--site-accent);
+  color: var(--primary);
   font-size: 28px;
 }
 
@@ -269,20 +279,20 @@ docker compose down         # 停止服务</code></pre>
 }
 
 .docs__support p {
-  color: var(--site-foreground-secondary);
+  color: var(--color-text-secondary);
 }
 
 .docs__support a {
   padding: 8px 12px;
-  color: var(--site-on-accent);
-  background: var(--site-accent);
-  border-radius: var(--site-radius-sm);
+  color: var(--color-text-inverse);
+  background: var(--primary);
+  border-radius: var(--radius-sm);
 }
 
 @media (max-width: 800px) {
   .docs {
     grid-template-columns: 1fr;
-    gap: var(--site-space-xl);
+    gap: var(--space-8);
     padding-top: 32px;
     padding-bottom: 48px;
   }
@@ -304,7 +314,7 @@ docker compose down         # 停止服务</code></pre>
   }
 
   .docs__card {
-    padding: var(--site-space-md);
+    padding: var(--space-4);
   }
 
   .docs__support {

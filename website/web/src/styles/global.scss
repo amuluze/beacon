@@ -1,28 +1,75 @@
 :root {
-  --site-surface-primary: #fbfcfe;
-  --site-surface-secondary: #f0f2f5;
-  --site-surface-card: #f7f8fa;
-  --site-foreground-primary: #1f2329;
-  --site-foreground-secondary: #4e5969;
-  --site-foreground-muted: #86909c;
-  --site-border-primary: #dcdfe6;
-  --site-border-subtle: #e4e7ed;
-  --site-accent: #409eff;
-  --site-accent-soft: #e8f3ff;
-  --site-success: #569a2e;
-  --site-warning: #c28014;
-  --site-danger: #db5050;
-  --site-on-accent: #fbfcfe;
-  --site-font-ui: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
-  --site-font-mono: 'Geist Mono', 'SFMono-Regular', Consolas, monospace;
-  --site-radius-sm: 4px;
-  --site-radius-md: 8px;
-  --site-space-xs: 4px;
-  --site-space-sm: 8px;
-  --site-space-md: 16px;
-  --site-space-lg: 24px;
-  --site-space-xl: 32px;
-  --site-shadow: 0 12px 32px rgba(31, 35, 41, 0.07);
+  /* 颜色 - 浅色（来源 .pen/beacon-website.pen variables） */
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --primary: #2c9678;
+  --muted-foreground: #94a3b8;
+  --color-text-secondary: #475569;
+  --color-text-inverse: #ffffff;
+  --color-surface-muted: #f1f5f9;
+  --color-primary-soft: #eaf5f2;
+  --color-bg-hover: #f1f5f9;
+  --color-brand-hover: #25a885;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+  --color-link: #2563eb;
+  --color-overlay: rgba(15, 23, 42, 0.5);
+  --color-shadow: rgba(15, 23, 42, 0.1);
+
+  /* 圆角 */
+  --radius-sm: 6px;
+  --radius-m: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* 字体 */
+  --font-primary: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+  --font-mono: 'Geist Mono', 'SFMono-Regular', Consolas, monospace;
+
+  /* 字号 */
+  --font-size-xs: 11px;
+  --font-size-sm: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 18px;
+  --font-size-xl: 24px;
+
+  /* 间距 */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* 阴影 */
+  --shadow-card: 0 12px 32px var(--color-shadow);
+}
+
+html.dark {
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  --card: #1e293b;
+  --border: #334155;
+  --muted-foreground: #64748b;
+  --color-text-secondary: #94a3b8;
+  --color-text-inverse: #0f172a;
+  --color-surface-muted: #111827;
+  --color-primary-soft: #0f2a25;
+  --color-bg-hover: #1e293b;
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --color-error: #f87171;
+  --color-link: #60a5fa;
+  --color-overlay: rgba(15, 23, 42, 0.8);
+  --color-shadow: rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.4);
 }
 
 html {
@@ -32,12 +79,15 @@ html {
 body {
   margin: 0;
   overflow-x: hidden;
-  color: var(--site-foreground-primary);
-  background: var(--site-surface-primary);
-  font-family: var(--site-font-ui);
-  font-size: 14px;
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-primary);
+  font-size: var(--font-size-md);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
 }
 
 *,
@@ -64,18 +114,21 @@ select {
 }
 
 .site-overline {
-  margin: 0 0 var(--site-space-sm);
-  color: var(--site-accent);
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  color: var(--primary);
+  font-size: var(--font-size-xs);
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
 .site-page-header {
-  padding: 80px 0 48px;
+  padding: 80px 0 var(--space-12);
   text-align: center;
-  border-bottom: 1px solid var(--site-border-subtle);
+  border-bottom: 1px solid var(--border);
 }
 
 .site-page-title {
@@ -86,25 +139,25 @@ select {
 
 .site-page-description {
   max-width: 680px;
-  margin: var(--site-space-md) auto 0;
-  color: var(--site-foreground-secondary);
-  font-size: 16px;
+  margin: var(--space-4) auto 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-lg);
 }
 
 .site-card {
-  background: var(--site-surface-card);
-  border: 1px solid var(--site-border-subtle);
-  border-radius: var(--site-radius-md);
-  box-shadow: var(--site-shadow);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
 }
 
 .site-code {
   overflow-x: auto;
-  color: var(--site-foreground-primary);
-  background: var(--site-surface-secondary);
-  border: 1px solid var(--site-border-subtle);
-  border-radius: var(--site-radius-md);
-  font-family: var(--site-font-mono);
+  color: var(--foreground);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  font-family: var(--font-mono);
   white-space: pre;
 }
 
@@ -114,7 +167,7 @@ select {
   }
 
   .site-page-header {
-    padding: 56px 0 32px;
+    padding: 56px 0 var(--space-8);
     text-align: left;
   }
 }

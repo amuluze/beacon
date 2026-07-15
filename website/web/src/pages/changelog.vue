@@ -93,12 +93,12 @@ useHead({ title: '更新日志 - Beacon' })
   bottom: 80px;
   left: 7px;
   width: 1px;
-  background: var(--site-border-primary);
+  background: var(--border);
 }
 
 .timeline__item {
   position: relative;
-  padding: 0 0 var(--site-space-xl) 40px;
+  padding: 0 0 var(--space-8) 40px;
 }
 
 .timeline__marker {
@@ -107,13 +107,13 @@ useHead({ title: '更新日志 - Beacon' })
   left: 0;
   width: 15px;
   height: 15px;
-  background: var(--site-accent);
-  border: 4px solid var(--site-accent-soft);
+  background: var(--primary);
+  border: 4px solid var(--color-primary-soft);
   border-radius: 50%;
 }
 
 .timeline__card {
-  padding: var(--site-space-lg);
+  padding: var(--space-6);
 }
 
 .timeline__card header,
@@ -125,31 +125,31 @@ useHead({ title: '更新日志 - Beacon' })
 
 .timeline__card header {
   justify-content: space-between;
-  gap: var(--site-space-md);
-  padding-bottom: var(--site-space-md);
-  border-bottom: 1px solid var(--site-border-subtle);
+  gap: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
 }
 
 .timeline__card header > div {
-  gap: var(--site-space-sm);
+  gap: var(--space-2);
 }
 
 .timeline__card header strong {
-  font-family: var(--site-font-mono);
+  font-family: var(--font-mono);
   font-size: 20px;
 }
 
 .timeline__card header span {
   padding: 2px 8px;
-  color: var(--site-accent);
-  background: var(--site-accent-soft);
+  color: var(--primary);
+  background: var(--color-primary-soft);
   border-radius: 999px;
   font-size: 11px;
 }
 
 .timeline__card time {
-  color: var(--site-foreground-muted);
-  font-family: var(--site-font-mono);
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
   font-size: 12px;
 }
 
@@ -157,21 +157,21 @@ useHead({ title: '更新日志 - Beacon' })
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin: var(--site-space-md) 0 0;
+  margin: var(--space-4) 0 0;
   padding: 0;
   list-style: none;
 }
 
 .timeline__card li {
   align-items: flex-start;
-  gap: var(--site-space-sm);
-  color: var(--site-foreground-secondary);
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
 }
 
 .timeline__card li :deep(svg) {
   flex: 0 0 auto;
   margin-top: 4px;
-  color: var(--site-success);
+  color: var(--color-success);
 }
 
 @media (max-width: 640px) {
@@ -190,7 +190,7 @@ useHead({ title: '更新日志 - Beacon' })
   }
 
   .timeline__card {
-    padding: var(--site-space-md);
+    padding: var(--space-4);
   }
 
   .timeline__card header {
