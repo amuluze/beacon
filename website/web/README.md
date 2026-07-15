@@ -1,18 +1,20 @@
 # beacon official
 
-beacon 官网
+beacon 官网（Nuxt 4 SPA + Go Fiber 后端）。
+
+## 开发
 
 ```bash
-$ cd src
-$ npx prisma generate
-$ cd .. && task build
+task web:dev      # 安装依赖并启动前端 dev server
+task web:build    # 构建前端
 ```
+
+后端开发（根 `go.work` 未纳入 `website/server`，构建需 `GOWORK=off`）：
 
 ```bash
-https://www.bytezonex.com/archives/6.html
-https://juejin.cn/post/7219189558902423612
+cd server && GOWORK=off go run . run -c configs/config.dev.toml
 ```
 
-## 目录结构
+## 部署
 
-https://www.xxhzm.cn/archives/794/
+根目录 `task amd64` / `task arm64` 构建镜像，详见根 `Taskfile.yml`。

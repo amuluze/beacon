@@ -3,16 +3,15 @@
     "type": "module",
     "private": true,
     "scripts": {
-        "init": "ts-node ./initialize.ts",
-        "start": "node /app/server/index.mjs",
-        "test": "node .output/server/index.mjs",
+        "start": "node .output/server/index.mjs",
         "build": "nuxt build",
         "dev": "nuxt dev -o",
         "generate": "nuxt generate",
         "preview": "nuxt preview",
         "postinstall": "nuxt prepare",
         "lint": "eslint .",
-        "lint:fix": "eslint . --fix"
+        "lint:fix": "eslint . --fix",
+        "test": "echo \"尚未配置测试，参见 P2 计划\" && exit 0"
     },
     "dependencies": {
         "@nuxt/icon": "^1.15.0",

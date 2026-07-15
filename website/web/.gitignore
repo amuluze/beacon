@@ -131,6 +131,5 @@ node_modules
 .DS_Store
 deploy.sh
 pwd
-pnpm-lock.yaml
 .idea
 .output

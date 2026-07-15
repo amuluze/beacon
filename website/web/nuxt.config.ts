@@ -3,7 +3,6 @@ import { defineNuxtConfig } from 'nuxt/config'
 import IconsResolver from 'unplugin-icons/resolver'
 import Icons from 'unplugin-icons/vite'
 
-import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import Components from 'unplugin-vue-components/vite'
 
 const serverProxyTarget = process.env.NUXT_SERVER_PROXY_TARGET || 'http://127.0.0.1:8000'
@@ -70,10 +69,9 @@ export default defineNuxtConfig({
             },
         },
         plugins: [
-            // 自动导入
+            // 自动导入（Element Plus 由 @element-plus/nuxt 模块负责，此处仅处理图标）
             Components({
                 resolvers: [
-                    ElementPlusResolver(),
                     IconsResolver({
                         enabledCollections: ['mdi'],
                     }),
