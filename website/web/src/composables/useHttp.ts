@@ -27,8 +27,9 @@ function handleError<T>(response: FetchResponse<RequestOptions<T>> & FetchRespon
             navigateTo('/')
         },
     }
-    if (handleMap[response.status])
-        handleMap[response.status]()
+    const handler = handleMap[response.status]
+    if (handler)
+        handler()
     else
         err('未知错误！')
 }
