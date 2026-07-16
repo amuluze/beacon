@@ -9,8 +9,8 @@ const serverProxyTarget = process.env.NUXT_SERVER_PROXY_TARGET || 'http://127.0.
 
 export default defineNuxtConfig({
     srcDir: 'src/',
-    // 打包部署时需要置为 false
-    ssr: false,
+    // 开启 SSR 并预渲染静态页，让搜索引擎抓取到首页/文档/changelog 正文
+    ssr: true,
     devtools: { enabled: true },
     compatibilityDate: '2024-09-23',
 
@@ -107,6 +107,12 @@ export default defineNuxtConfig({
             '/download/**': {
                 proxy: `${serverProxyTarget}/download/**`,
             },
+            // 静态营销/文档页构建时预渲染为完整 HTML，利于 SEO 且运行时零渲染开销
+            '/': { prerender: true },
+            '/document': { prerender: true },
+            '/changelog': { prerender: true },
+            '/about': { prerender: true },
+            '/wechat': { prerender: true },
         },
     },
 })
