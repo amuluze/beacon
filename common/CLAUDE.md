@@ -1,8 +1,8 @@
 # Common
 
-`common` 模块入口文档，由 `/sdd doc update` 根据当前 workspace 事实重写。
+`common` 模块入口文档，由 `/doc update` 根据当前 workspace 事实重写。
 
-该模块当前角色：shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型。
+该模块当前角色：shared contract library: 复用 schema、数据库封装、RPC 参数/返回值和跨模块类型。
 
 ## 文档
 
@@ -15,7 +15,7 @@
 - 先读本文件确认模块边界，再读对应 `.docs/modules/` 文档获取当前实现事实；导出符号只作为入口线索，不自动等同跨模块公开 API。
 - 涉及长期行为、不变量、状态或错误语义时，必须回到下方相关 Domain Spec；若现有 Domain Spec 不覆盖，应先补可验证约束。
 - 代码变更后按本文件“开发命令”执行最小验证；跨模块、配置、接口或副作用变更还要运行项目级质量门禁或 `task sdd:refs`。
-- 更新公开 API、配置键、事件、持久化格式或用户可见工作流时，重新运行 `/sdd doc update` 并检查 `AGENTS.md` / `CLAUDE.md` 同步。
+- 更新公开 API、配置键、事件、持久化格式或用户可见工作流时，重新运行 `/doc update` 并检查 `AGENTS.md` / `CLAUDE.md` 同步。
 
 ## 模块路径
 
@@ -25,17 +25,19 @@
 
 | 目录/文件 | 职责 |
 |-----------|------|
-| `common/` | shared contract library: 复用 schema、数据库封装、反向 tunnel transport、RPC 参数/返回值和跨模块类型 |
+| `common/` | shared contract library: 复用 schema、数据库封装、RPC 参数/返回值和跨模块类型 |
 | `common/database/` | supporting project directory |
 | `common/rpc/` | RPC client/server 封装 |
 | `common/transport/` | supporting project directory |
-| `common/rpc/schema/` | Go package `schema`，源码 5，测试 0 |
-| `common/rpc/tunnel/` | Go package `tunnel`，源码 4，测试 0 |
+| `common/rpc/schema/` | Go package `schema`，源码 7，测试 1 |
+| `common/rpc/tunnel/` | Go package `tunnel`，源码 4，测试 1 |
 | `common/transport/tlsconfig/` | Go package `tlsconfig`，源码 1，测试 1 |
 
 ## 依赖
 
 - `github.com/glebarez/sqlite` `v1.11.0`
+- `google.golang.org/grpc` `v1.81.1`
+- `google.golang.org/protobuf` `v1.36.11`
 - `gorm.io/driver/clickhouse` `v0.6.1`
 - `gorm.io/driver/mysql` `v1.5.7`
 - `gorm.io/driver/postgres` `v1.5.9`
@@ -46,12 +48,9 @@
 - 仅通过公开接口与其他模块协作，不依赖其他模块内部实现细节。
 - 修改公开 API、配置或副作用边界时，同步更新 `.docs/modules/` 中对应文档。
 - 若模块承载长期领域语义，相关约束应在 `.specs/domain/` 中可追踪。
-- `common/rpc/schema` 是 Server-Agent 契约边界；字段变更必须同步检查 Server、Agent、前端 API 类型和 Domain Spec。
-- `common/rpc/tunnel` 承载反向控制通道，错误必须保留 Agent 不在线、调用失败和超时的可区分语义。
 
 ## 开发命令
 
 ```bash
-cd common && go test ./...
-cd common && go build ./...
+# 未检测到该模块来自 CI、Taskfile 或 Makefile 的开发/验证命令。
 ```
