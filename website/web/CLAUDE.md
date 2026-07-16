@@ -29,10 +29,10 @@
 | `website/web/` | frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互 |
 | `website/web/.output/server/chunks/` | supporting project directory |
 | `website/server/cmd/server/` | Go package `main`，源码 1，测试 0 |
-| `website/server/pkg/database/` | Go package `database`，源码 3，测试 0 |
+| `website/server/pkg/database/` | Go package `database`，源码 3，测试 1 |
 | `website/server/pkg/errors/` | Go package `errors`，源码 1，测试 1 |
-| `website/server/pkg/fiberx/` | Go package `fiberx`，源码 1，测试 0 |
-| `website/server/pkg/utils/` | Go package `utils`，源码 1，测试 0 |
+| `website/server/pkg/fiberx/` | Go package `fiberx`，源码 1，测试 1 |
+| `website/server/pkg/utils/` | Go package `utils`，源码 1，测试 1 |
 | `website/server/pkg/utils/hash/` | Go package `hash`，源码 1，测试 0 |
 
 ## 依赖
