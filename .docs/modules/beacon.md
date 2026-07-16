@@ -65,7 +65,7 @@
 - `github.com/spf13/viper` `v1.19.0`
 - `github.com/stretchr/testify` `v1.9.0`
 - `github.com/urfave/cli/v2` `v2.27.4`
-- `golang.org/x/crypto` `v0.26.0`
+- `golang.org/x/crypto` `v0.54.0`
 - `gopkg.in/gomail.v2` `v2.0.0-20160411212932-81ebce5c23df`
 - `gorm.io/gorm` `v1.25.12`
 - 间接依赖 70 个，完整列表以模块 `go.mod` 为准。
@@ -74,12 +74,12 @@
 
 - 配置：`BASE_URL` at `beacon/service/agent_install.go:247`
 - 配置：`BEACON_AGENT_INSTALL_TOKEN` at `beacon/service/auth.go:148`
-- 配置：`BEACON_AGENT_INSTALL_TOKEN` at `beacon/service/config.go:56`
+- 配置：`BEACON_AGENT_INSTALL_TOKEN` at `beacon/service/config.go:80`
 - 配置：`BEACON_AUTH_SIGNING_KEY` at `beacon/service/auth.go:93`
-- 配置：`BEACON_AUTH_SIGNING_KEY` at `beacon/service/config.go:53`
+- 配置：`BEACON_AUTH_SIGNING_KEY` at `beacon/service/config.go:77`
 - 配置：`BEACON_CONTAINER_NAME` at `beacon/service/install_report.go:97`
 - 配置：`BEACON_CONTROL_JOIN_TOKEN` at `beacon/service/auth.go:123`
-- 配置：`BEACON_CONTROL_JOIN_TOKEN` at `beacon/service/config.go:59`
+- 配置：`BEACON_CONTROL_JOIN_TOKEN` at `beacon/service/config.go:83`
 - 配置：`BEACON_CONTROL_PORT` at `beacon/service/install_report.go:96`
 - 配置：`BEACON_HTTP_PORT` at `beacon/service/install_report.go:95`
 - 配置：`BEACON_IMAGE` at `beacon/service/install_report.go:91`

@@ -12,7 +12,7 @@
 | `common` | `common` | Go `1.25.0` |
 | `beacon/web/package.json` | `beacon-web` | pinia/typescript/vite/vue |
 | `website/web/.output/server/package.json` | `beacon-offical-prod` | pinia/vue |
-| `website/web/package.json` | `beacon-offical` | pinia/vue |
+| `website/web/package.json` | `beacon-offical` | vue |
 
 ## Top-Level Directories
 
