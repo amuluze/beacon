@@ -60,7 +60,7 @@
 - `github.com/spf13/viper` `v1.19.0`
 - `github.com/stretchr/testify` `v1.9.0`
 - `github.com/urfave/cli/v2` `v2.27.4`
-- `golang.org/x/crypto` `v0.26.0`
+- `golang.org/x/crypto` `v0.54.0`
 - `gopkg.in/gomail.v2` `v2.0.0-20160411212932-81ebce5c23df`
 - `gorm.io/gorm` `v1.25.12`
 

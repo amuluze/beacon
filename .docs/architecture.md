@@ -111,7 +111,7 @@
 - `github.com/stretchr/testify` `v1.9.0`（beacon/go.mod）
 - `github.com/takama/daemon` `v1.0.0`（collia/go.mod）
 - `github.com/urfave/cli/v2` `v2.27.4`（beacon/go.mod）
-- `golang.org/x/crypto` `v0.26.0`（beacon/go.mod）
+- `golang.org/x/crypto` `v0.54.0`（beacon/go.mod）
 - `google.golang.org/grpc` `v1.81.1`（collia/go.mod）
 - `google.golang.org/protobuf` `v1.36.11`（common/go.mod）
 - `gopkg.in/gomail.v2` `v2.0.0-20160411212932-81ebce5c23df`（beacon/go.mod）
