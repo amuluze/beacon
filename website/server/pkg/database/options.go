@@ -14,6 +14,7 @@ type option struct {
 	UserName     string
 	Password     string
 	DBName       string
+	SSLMode      string
 	MaxLifetime  int
 	MaxOpenConns int
 	MaxIdleConns int
@@ -58,6 +59,13 @@ func WithPassword(password string) Option {
 func WithDBName(name string) Option {
 	return func(o *option) {
 		o.DBName = name
+	}
+}
+
+// WithSSLMode 设置 postgres 的 sslmode；为空时回退 disable，便于生产开启 TLS 到数据库。
+func WithSSLMode(mode string) Option {
+	return func(o *option) {
+		o.SSLMode = mode
 	}
 }
 

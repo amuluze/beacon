@@ -48,6 +48,21 @@ func (e Error) Error() string {
 	return e.Msg
 }
 
+// Is 支持以 errors.Is(err, errors.NotFoundError) 形式做领域判定：
+// 仅当目标同为 Error 且 Status、Msg 一致时视为同一错误，避免靠字符串匹配。
+func (e Error) Is(target error) bool {
+	t, ok := target.(Error)
+	if !ok {
+		return false
+	}
+	return e.Status == t.Status && e.Msg == t.Msg
+}
+
+// Unwrap 表明 Error 是叶子错误，不包装其他 error，配合 errors.Is / errors.As 使用。
+func (e Error) Unwrap() error {
+	return nil
+}
+
 func newError(status int, message string) Error {
 	return Error{
 		Msg:    message,

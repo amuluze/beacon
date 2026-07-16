@@ -5,14 +5,16 @@
 package service
 
 import (
+	"log/slog"
 	"server/pkg/database"
 	"server/service/model"
 	"strings"
 )
 
-func NewDB(config *Config, models *model.Models) (*database.DB, error) {
+// NewDB 构造数据库连接并返回清理函数，供依赖注入的 cleanup 链在退出时关闭连接。
+func NewDB(config *Config, models *model.Models) (*database.DB, func(), error) {
 	if config.Gorm.GenDoc {
-		return nil, nil
+		return nil, func() {}, nil
 	}
 	gormConfig := config.Gorm
 	dbConfig := config.DB
@@ -26,15 +28,18 @@ func NewDB(config *Config, models *model.Models) (*database.DB, error) {
 		database.WithUsername(dbConfig.User),
 		database.WithPassword(dbConfig.Password),
 		database.WithDBName(dbConfig.DBName),
+		database.WithSSLMode(dbConfig.SSLMode),
 		database.WithMaxLifetime(gormConfig.MaxLifetime),
 		database.WithMaxOpenConns(gormConfig.MaxOpenConns),
 		database.WithMaxIdleConns(gormConfig.MaxIdleConns),
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	// SQLite 启用WAL模式
-	db.Exec("PRAGMA journal_mode=WAL;")
+	// PRAGMA 仅 SQLite 支持；DBType 为空时默认走 sqlite 驱动
+	if gormConfig.DBType == "" || strings.EqualFold(gormConfig.DBType, "sqlite") {
+		db.Exec("PRAGMA journal_mode=WAL;")
+	}
 
 	if gormConfig.EnableAutoMigrate {
 		if dbType := gormConfig.DBType; strings.ToLower(dbType) == "mysql" {
@@ -42,8 +47,14 @@ func NewDB(config *Config, models *model.Models) (*database.DB, error) {
 		}
 		err := db.AutoMigrate(models.GetAllModels()...)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
-	return db, nil
+	cleanup := func() {
+		slog.Info("closing database connection")
+		if err := db.Close(); err != nil {
+			slog.Warn("close db error", "err", err)
+		}
+	}
+	return db, cleanup, nil
 }

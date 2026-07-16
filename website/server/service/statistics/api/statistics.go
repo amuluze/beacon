@@ -32,7 +32,7 @@ func (api *StatisticsAPI) StatisticsQuery(ctx *fiber.Ctx) error {
 func (api *StatisticsAPI) StatisticsUpdate(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	var args schema.StatisticsUpdateArgs
-	if err := fiberx.ParseBody(ctx, &args); err != nil {
+	if err := fiberx.ParseBodyValidate(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	result, err := api.StatisticsService.StatisticsUpdate(c, args)
@@ -45,7 +45,7 @@ func (api *StatisticsAPI) StatisticsUpdate(ctx *fiber.Ctx) error {
 func (api *StatisticsAPI) InstallationReport(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	var args schema.InstallationReportArgs
-	if err := fiberx.ParseBody(ctx, &args); err != nil {
+	if err := fiberx.ParseBodyValidate(ctx, &args); err != nil {
 		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
 	}
 	args.ClientIP = ctx.IP()

@@ -21,7 +21,7 @@ func BuildInjector(configFile string) (*Injector, func(), error) {
 		return nil, nil, err
 	}
 	models := model.NewModels()
-	db, err := NewDB(config, models)
+	db, dbCleanup, err := NewDB(config, models)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -36,8 +36,10 @@ func BuildInjector(configFile string) (*Injector, func(), error) {
 	logger := NewLogger(config)
 	injector, err := NewInjector(app, router, config, logger)
 	if err != nil {
+		dbCleanup()
 		return nil, nil, err
 	}
 	return injector, func() {
+		dbCleanup()
 	}, nil
 }

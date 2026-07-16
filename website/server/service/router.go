@@ -5,6 +5,8 @@
 package service
 
 import (
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/wire"
 
@@ -26,8 +28,13 @@ type Router struct {
 }
 
 func (a *Router) RegisterAPI(app *fiber.App) {
-	app.Get("/download/install.sh", a.WebsiteInstallScript)
-	app.Get("/download/compose.yaml", a.WebsiteCompose)
+	// 健康检查：进程存活即 200，供 docker / 编排器探活，不依赖下游 DB 以避免抖动重启
+	app.Get("/healthz", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{"status": "ok"})
+	})
+
+	// 发布物静态托管：manager.sh / compose.yaml / version.json 等对外暴露在 /release/*
+	a.registerReleaseStatic(app)
 
 	api := app.Group("api")
 	{
@@ -42,6 +49,10 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 			{
 				gInstall.Post("/report", a.statisticsAPI.InstallationReport)
 			}
+			gVersion := v1.Group("version")
+			{
+				gVersion.Get("/latest", a.VersionLatest)
+			}
 		}
 	}
 }
@@ -49,6 +60,22 @@ func (a *Router) RegisterAPI(app *fiber.App) {
 func (a *Router) Register(app *fiber.App) error {
 	a.RegisterAPI(app)
 	return nil
+}
+
+// registerReleaseStatic 将发布物目录以 /release/* 暴露为静态资源；
+// 目录未配置时跳过注册，避免启动期因路径缺失 panic。
+func (a *Router) registerReleaseStatic(app *fiber.App) {
+	dir := a.config.Release.Dir
+	if dir == "" {
+		return
+	}
+	app.Static("/release", dir, fiber.Static{
+		Compress:      true,
+		ByteRange:     true,
+		Browse:        false, // 禁止目录列表，避免泄露发布物清单
+		MaxAge:        300,
+		CacheDuration: 10 * time.Second,
+	})
 }
 func (a *Router) Prefixes() []string {
 	return []string{"/api/"}

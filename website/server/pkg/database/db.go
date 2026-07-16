@@ -75,12 +75,17 @@ func dial(opt *option) gorm.Dialector {
 			SkipInitializeWithVersion: false, // auto configure based on currently MySQL version
 		})
 	case "postgres":
-		dsn = fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=disable TimeZone=Asia/Shanghai",
+		sslmode := opt.SSLMode
+		if sslmode == "" {
+			sslmode = "disable"
+		}
+		dsn = fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=%s TimeZone=Asia/Shanghai",
 			opt.Host,
 			opt.Port,
 			opt.UserName,
 			opt.DBName,
 			opt.Password,
+			sslmode,
 		)
 		dialector = postgres.New(postgres.Config{
 			DSN:                  dsn,
@@ -103,17 +108,16 @@ func dial(opt *option) gorm.Dialector {
 	return dialector
 }
 
-func (db *DB) Close() {
-	if db != nil {
-		conn, err := db.DB.DB()
-		if err != nil {
-			return
-		}
-		err = conn.Close()
-		if err != nil {
-			return
-		}
+// Close 关闭底层连接池并返回错误，供调用方记录与决策。
+func (db *DB) Close() error {
+	if db == nil {
+		return nil
 	}
+	conn, err := db.DB.DB()
+	if err != nil {
+		return err
+	}
+	return conn.Close()
 }
 
 func (db *DB) RunInTransaction(fn func(tx *gorm.DB) error) error {

@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"server/pkg/database"
 	"server/service/model"
 	"server/service/schema"
@@ -33,27 +34,37 @@ func NewStatisticsRepository(db *database.DB) *StatisticsRepository {
 	return &StatisticsRepository{DB: db}
 }
 
+// StatisticsQuery 读取唯一的统计记录；不存在时幂等播种为 Times=0。
+// 所有底层错误（连接、SQL）必须向上冒泡，禁止吞错。
 func (s *StatisticsRepository) StatisticsQuery(ctx context.Context) (model.Statistics, error) {
 	var statistics model.Statistics
-	if err := s.DB.Model(&model.Statistics{}).First(&statistics).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			statistics = model.Statistics{
-				Times: 0,
-			}
-			s.DB.Model(&model.Statistics{}).Create(&statistics)
-		}
+	err := s.DB.WithContext(ctx).
+		Model(&model.Statistics{}).
+		FirstOrCreate(&statistics, model.Statistics{Times: 0}).Error
+	if err != nil {
+		return model.Statistics{}, err
 	}
 	return statistics, nil
 }
 
+// StatisticsUpdate 将指定记录的 times 自增 1；
+// 当目标记录不存在（RowsAffected=0）时返回 ErrRecordNotFound，避免静默失败。
 func (s *StatisticsRepository) StatisticsUpdate(ctx context.Context, args schema.StatisticsUpdateArgs) error {
-	// 更新 times 字段 + 1
-	if err := s.DB.Model(&model.Statistics{}).Where("id = ?", args.ID).UpdateColumn("times", gorm.Expr("times + ?", 1)).Error; err != nil {
-		return err
+	res := s.DB.WithContext(ctx).
+		Model(&model.Statistics{}).
+		Where("id = ?", args.ID).
+		UpdateColumn("times", gorm.Expr("times + ?", 1))
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return errors.New("statistics record not found")
 	}
 	return nil
 }
 
+// InstallationReport 落库一次安装上报；InstallID 的唯一约束 + OnConflict 幂等，
+// 保证安装脚本重试/网络抖动不会产生重复记录。
 func (s *StatisticsRepository) InstallationReport(ctx context.Context, args schema.InstallationReportArgs) error {
 	report := model.InstallationReport{
 		InstallID:     args.InstallID,
@@ -68,5 +79,7 @@ func (s *StatisticsRepository) InstallationReport(ctx context.Context, args sche
 		ClientIP:      args.ClientIP,
 		UserAgent:     args.UserAgent,
 	}
-	return s.DB.WithContext(ctx).Create(&report).Error
+	return s.DB.WithContext(ctx).
+		Clauses(clause.OnConflict{DoNothing: true}).
+		Create(&report).Error
 }

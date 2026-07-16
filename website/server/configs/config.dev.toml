@@ -32,3 +32,6 @@ Output = "/Users/amu/Desktop/probe/logs/server.log" # 日志存放路径
 Level = "debug"                                     # 日志等级
 Rotation = 1                                        # 每天切分一个日志文件
 MaxAge = 7
+
+[Release]
+Dir = "/Users/amu/Desktop/github/beacon/website/release" # 发布物静态资源根目录，对外暴露在 /release/* 路径下

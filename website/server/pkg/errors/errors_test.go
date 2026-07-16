@@ -119,3 +119,33 @@ func TestPredefinedErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestError_Is(t *testing.T) {
+	// 同 Status+Msg 的工厂错误应能与预定义哨兵通过 errors.Is 判等
+	if !Is(New404Error("any detail"), NotFoundError) {
+		t.Errorf("Is(New404Error, NotFoundError) = false, want true")
+	}
+	if !Is(New401Error("x"), UnauthorizedError) {
+		t.Errorf("Is(New401Error, UnauthorizedError) = false, want true")
+	}
+	// 不同类别不应匹配
+	if Is(New400Error("x"), NotFoundError) {
+		t.Errorf("Is(New400Error, NotFoundError) = true, want false")
+	}
+	// 与非 Error 类型目标不应匹配
+	if Is(New404Error("x"), errString("boom")) {
+		t.Errorf("Is(New404Error, non-Error) = true, want false")
+	}
+}
+
+func TestError_Unwrap(t *testing.T) {
+	err := New500Error("boom")
+	if unwrapped := err.Unwrap(); unwrapped != nil {
+		t.Errorf("Unwrap() = %v, want nil", unwrapped)
+	}
+}
+
+// errString 仅用于测试 Is 对非 Error 类型的拒绝。
+type errString string
+
+func (e errString) Error() string { return string(e) }

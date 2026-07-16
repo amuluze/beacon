@@ -100,3 +100,26 @@ func TestInstallationReport_Persist(t *testing.T) {
 		t.Errorf("入库条数 = %d, want 1", count)
 	}
 }
+
+func TestInstallationReport_Idempotent(t *testing.T) {
+	repo := newTestRepo(t)
+	ctx := context.Background()
+
+	args := schema.InstallationReportArgs{InstallID: "install-dup", Image: "img:latest"}
+
+	// 相同 InstallID 重复上报两次，均不应报错，且最终只入库一条
+	if err := repo.InstallationReport(ctx, args); err != nil {
+		t.Fatalf("首次 InstallationReport 失败: %v", err)
+	}
+	if err := repo.InstallationReport(ctx, args); err != nil {
+		t.Fatalf("重复 InstallationReport 应幂等，但返回错误: %v", err)
+	}
+
+	var count int64
+	if err := repo.DB.Model(&model.InstallationReport{}).Count(&count).Error; err != nil {
+		t.Fatalf("Count 失败: %v", err)
+	}
+	if count != 1 {
+		t.Errorf("重复上报后入库条数 = %d, want 1", count)
+	}
+}

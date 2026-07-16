@@ -8,7 +8,10 @@ type QueryOption func(db *DB) *DB
 
 func OptionDB(db *DB, options ...QueryOption) *DB {
 	for _, option := range options {
-		db = option(db)
+		// 跳过 nil option（个别 QueryOption 工厂在非法入参时可能返回 nil），避免 panic
+		if option != nil {
+			db = option(db)
+		}
 	}
 	return db
 }
@@ -91,20 +94,20 @@ func WithStatus(status int) QueryOption {
 }
 
 func WithOffset(offset int) QueryOption {
-	if offset < 0 {
-		return nil
-	}
 	return func(db *DB) *DB {
+		if offset < 0 {
+			return db
+		}
 		db.DB = db.DB.Offset(offset)
 		return db
 	}
 }
 
 func WithLimit(limit int) QueryOption {
-	if limit <= 0 {
-		return nil
-	}
 	return func(db *DB) *DB {
+		if limit <= 0 {
+			return db
+		}
 		db.DB = db.DB.Limit(limit)
 		return db
 	}

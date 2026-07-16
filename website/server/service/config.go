@@ -7,11 +7,12 @@ package service
 import "github.com/spf13/viper"
 
 type Config struct {
-	App   App
-	Fiber Fiber
-	Gorm  Gorm
-	DB    DB
-	Log   Log
+	App     App
+	Fiber   Fiber
+	Gorm    Gorm
+	DB      DB
+	Log     Log
+	Release Release
 }
 
 // NewConfig Load config file (toml/json/yaml)
@@ -86,4 +87,10 @@ type Log struct {
 	Level    string
 	Rotation int
 	MaxAge   int
+}
+
+// Release 发布物静态托管配置
+type Release struct {
+	// Dir 静态资源根目录，对外暴露在 /release/* 路径下（manager.sh / compose.yaml / version.json 等）
+	Dir string
 }

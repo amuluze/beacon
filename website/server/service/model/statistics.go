@@ -17,7 +17,7 @@ func (d *Statistics) TableName() string {
 
 type InstallationReport struct {
 	gorm.Model
-	InstallID     string `gorm:"index;size:128;comment:安装标识"`
+	InstallID     string `gorm:"uniqueIndex;size:128;comment:安装标识"`
 	Image         string `gorm:"size:255;comment:镜像"`
 	Version       string `gorm:"size:64;comment:版本"`
 	PublicBaseURL string `gorm:"size:255;comment:公开访问地址"`

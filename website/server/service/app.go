@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"server/pkg/errors"
+	"server/pkg/fiberx"
 	"server/service/middleware"
 
 	"github.com/gofiber/fiber/v2"
@@ -41,14 +43,17 @@ func NewFiberApp(config *Config, r IRouter) *fiber.App {
 		AllowHeaders: "Origin, Content-Type, Accept",
 	}))
 	app.Use(compress.New())
+	// 基础安全响应头：nosniff / 防点击劫持 / Referrer 策略 / HSTS
+	app.Use(middleware.SecurityHeadersMiddleware())
 
 	// pprof 仅在非生产环境暴露，避免公网读取运行时/堆信息
 	if !config.App.IsProduction() {
 		app.Use(pprof.New())
 	}
 
+	// PanicMiddleware 必须是包裹业务路由的最外层 recover，
+	// 不能再叠加 fiber 官方 recover（其内层 defer 会先吞掉 panic，使本中间件失效）
 	app.Use(middleware.PanicMiddleware())
-	app.Use(middleware.StackMiddleware)
 
 	// 对写接口施加 IP 级速率限制
 	writeLimiter := limiter.New(limiter.Config{
@@ -58,10 +63,8 @@ func NewFiberApp(config *Config, r IRouter) *fiber.App {
 			return c.IP()
 		},
 		LimitReached: func(c *fiber.Ctx) error {
-			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-				"code":    429,
-				"message": "请求过于频繁，请稍后再试",
-			})
+			// 统一走 fiberx 信封，前端可用一致的 {err,msg} 结构处理
+			return fiberx.Failure(c, errors.TooManyRequestsError)
 		},
 	})
 	app.Use("/api/v1/statistics/update", writeLimiter)

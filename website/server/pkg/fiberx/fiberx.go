@@ -7,6 +7,7 @@ package fiberx
 import (
 	"net/http"
 	"server/pkg/errors"
+	"server/pkg/validatex"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -14,13 +15,12 @@ import (
 
 // GetToken Get jwt token from header (Authorization: Bearer xxx)
 func GetToken(c *fiber.Ctx) string {
-	var token string
-	auth := c.GetReqHeaders()["Authorization"][0]
+	auth := c.Get("Authorization")
 	prefix := "Bearer "
-	if auth != "" && strings.HasPrefix(auth, prefix) {
-		token = auth[len(prefix):]
+	if strings.HasPrefix(auth, prefix) {
+		return auth[len(prefix):]
 	}
-	return token
+	return ""
 }
 
 // Success response.status = 200
@@ -65,4 +65,12 @@ func ParseQuery(c *fiber.Ctx, obj interface{}) error {
 
 func ParseBody(c *fiber.Ctx, obj interface{}) error {
 	return c.BodyParser(obj)
+}
+
+// ParseBodyValidate 解析请求体后立即做 schema 校验，在系统边界快速失败。
+func ParseBodyValidate(c *fiber.Ctx, obj interface{}) error {
+	if err := c.BodyParser(obj); err != nil {
+		return err
+	}
+	return validatex.ValidateStruct(obj)
 }
