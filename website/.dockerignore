@@ -1,0 +1,23 @@
+# 构建产物与缓存（由 Docker 多阶段内部产出，避免污染上下文）
+web/node_modules
+web/.nuxt
+web/.output
+web/.cache
+
+# Go 本地构建产物与测试缓存
+server/server
+server/statistic.db
+server/statistic.db-*
+
+# 日志与系统文件
+**/.DS_Store
+*.log
+logs/
+
+# 密钥与环境
+**/.env
+**/.env.*
+
+# 版本控制与文档
+**/.git
+**/.gitignore
