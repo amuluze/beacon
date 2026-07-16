@@ -1,3 +1,7 @@
+[App]
+Env = "dev"                       # 运行环境：dev / production
+CORSAllowOrigins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+
 [Fiber]
 Host = "0.0.0.0"       # http监听地址
 Port = 8000            # http监听端口

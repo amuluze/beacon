@@ -7,6 +7,7 @@ package service
 import "github.com/spf13/viper"
 
 type Config struct {
+	App   App
 	Fiber Fiber
 	Gorm  Gorm
 	DB    DB
@@ -19,6 +20,11 @@ func NewConfig(configFile string) (*Config, error) {
 
 	viper.SetConfigFile(configFile)
 
+	// 允许通过环境变量覆盖运行环境，便于容器化部署
+	viper.SetEnvPrefix("APP")
+	viper.BindEnv("App.Env", "APP_ENV")
+	viper.AutomaticEnv()
+
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, err
 	}
@@ -26,7 +32,24 @@ func NewConfig(configFile string) (*Config, error) {
 		return nil, err
 	}
 
+	if config.App.Env == "" {
+		config.App.Env = "production"
+	}
+
 	return config, nil
+}
+
+// App 全局应用配置
+type App struct {
+	// Env 运行环境：dev / production；production 下关闭 pprof 等调试面
+	Env string
+	// CORSAllowOrigins 允许的跨域来源；为空时回退为同源不开放跨域
+	CORSAllowOrigins []string
+}
+
+// IsProduction 是否为生产环境
+func (a *App) IsProduction() bool {
+	return a.Env == "production"
 }
 
 type Fiber struct {

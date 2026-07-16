@@ -16,8 +16,10 @@ func NewDB(config *Config, models *model.Models) (*database.DB, error) {
 	}
 	gormConfig := config.Gorm
 	dbConfig := config.DB
+	// 生产环境强制关闭 SQL 调试输出，避免日志泄露与体积膨胀
+	debug := gormConfig.Debug && !config.App.IsProduction()
 	db, err := database.NewDB(
-		database.WithDebug(gormConfig.Debug),
+		database.WithDebug(debug),
 		database.WithType(gormConfig.DBType),
 		database.WithHost(dbConfig.Host),
 		database.WithPort(dbConfig.Port),

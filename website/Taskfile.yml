@@ -26,8 +26,6 @@ tasks:
 
   arm64:
     desc: Build linux/arm64 website Docker image into local Docker
-    env:
-      DOCKER_BUILDKIT: '0'
     cmds:
       - docker buildx build --platform linux/arm64 -t {{.IMAGE}}:{{.TAG}} -o type=docker .
 
