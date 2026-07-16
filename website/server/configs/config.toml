@@ -24,7 +24,7 @@ Host = ""                 # 连接地址
 Port = ""                 # 连接端口
 User = ""                 # 用户名
 Password = ""             # 密码
-DBName = "/app/statistic" # 数据库
+DBName = "/app/data/statistic" # 数据库（持久化卷）
 SSLMode = ""              # SSL模式
 
 [Log]

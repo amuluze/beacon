@@ -51,7 +51,7 @@ func (a *Router) VersionLatest(ctx *fiber.Ctx) error {
 		PublishedAt:        manifest.PublishedAt,
 	}
 
-	if current := strings.TrimSpace(ctx.Query("current")); current != "" {
+	if current := strings.TrimSpace(ctx.Query("current")); parseVersion(current) != nil {
 		resp.UpdateAvailable = compareVersions(current, manifest.LatestVersion) < 0
 	}
 
@@ -72,6 +72,9 @@ func loadVersionManifest(releaseDir string) (VersionManifest, error) {
 	}
 	if strings.TrimSpace(manifest.LatestVersion) == "" {
 		return VersionManifest{}, fmt.Errorf("%s: latest_version 为空", path)
+	}
+	if parseVersion(manifest.LatestVersion) == nil {
+		return VersionManifest{}, fmt.Errorf("%s: latest_version 不是合法语义化版本", path)
 	}
 	return manifest, nil
 }
@@ -126,7 +129,7 @@ func parseVersion(v string) []int {
 	nums := make([]int, 0, len(parts))
 	for _, p := range parts {
 		n, err := strconv.Atoi(strings.TrimSpace(p))
-		if err != nil {
+		if err != nil || n < 0 {
 			return nil
 		}
 		nums = append(nums, n)

@@ -5,9 +5,13 @@
 package service
 
 import (
+	"encoding/json"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func TestCompareVersions(t *testing.T) {
@@ -92,4 +96,31 @@ func TestLoadVersionManifest(t *testing.T) {
 			t.Errorf("文件缺失应返回错误")
 		}
 	})
+}
+
+func TestVersionLatestInvalidCurrentDoesNotReportUpdate(t *testing.T) {
+	dir := t.TempDir()
+	latestDir := filepath.Join(dir, "latest")
+	if err := os.MkdirAll(latestDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	content := `{"latest_version":"v3.0.4","min_required_version":"v3.0.0","release_notes":"fix","published_at":"2026-07-16"}`
+	if err := os.WriteFile(filepath.Join(latestDir, "version.json"), []byte(content), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	router := &Router{config: &Config{Release: Release{Dir: dir}}}
+	app := fiber.New()
+	app.Get("/version", router.VersionLatest)
+	resp, err := app.Test(httptest.NewRequest("GET", "/version?current=not-semver", nil), -1)
+	if err != nil {
+		t.Fatalf("app.Test: %v", err)
+	}
+	var body VersionLatestResponse
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if body.UpdateAvailable {
+		t.Fatal("非法 current 版本不应报告可更新")
+	}
 }

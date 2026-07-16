@@ -10,13 +10,14 @@
 # 所有部署步骤（依赖检查 / 目录生成 / 拉 compose / 生成 .env / 拉镜像 / 启动容器）
 # 均在本脚本内完成。通过环境变量或 KEY=VAL 参数覆盖默认值，支持：
 #   BEACON_BASE_URL / INSTALL_DIR / BEACON_IMAGE
-#   BEACON_HTTP_PORT / BEACON_CONTROL_PORT / BEACON_PUBLIC_BASE_URL
+#   BEACON_VERSION / BEACON_HTTP_PORT / BEACON_CONTROL_PORT / BEACON_PUBLIC_BASE_URL
 #   BEACON_AGENT_INSTALL_TOKEN / BEACON_AUTH_SIGNING_KEY / BEACON_CONTROL_JOIN_TOKEN
 set -eu
+umask 077
 
 DEFAULT_BASE_URL="https://help.beacon.amuluze.com"
 DEFAULT_INSTALL_DIR="/data/beacon"
-DEFAULT_IMAGE="registry.cn-hangzhou.aliyuncs.com/amuluze/beacon:latest"
+DEFAULT_VERSION="v3.0.4"
 DEFAULT_HTTP_PORT="1443"
 DEFAULT_CONTROL_PORT="17000"
 
@@ -53,13 +54,36 @@ else
     die "未检测到 docker compose 插件或 docker-compose，请先安装。"
 fi
 
-# 随机密钥：openssl 优先，回退 cksum
+# 随机密钥：仅接受密码学安全随机源，禁止时间戳等可预测回退。
 random_secret() {
     if command -v openssl >/dev/null 2>&1; then
-        openssl rand -hex 24
-    else
-        date +%s | cksum | awk '{ print $1 }'
+        openssl rand -hex 32
+        return
     fi
+    if [ -r /dev/urandom ] && command -v od >/dev/null 2>&1 && command -v tr >/dev/null 2>&1; then
+        od -An -N32 -tx1 /dev/urandom | tr -d ' \n'
+        return
+    fi
+    die "无法获得密码学安全随机源（需要 openssl 或 /dev/urandom + od）"
+}
+
+validate_secret() {
+    name="$1"; value="$2"
+    if [ "${#value}" -lt 48 ]; then
+        die "$name 长度不足，请提供至少 48 个字符的随机值"
+    fi
+}
+
+verify_sha256() {
+    expected="$1"; file="$2"
+    if command -v sha256sum >/dev/null 2>&1; then
+        actual="$(sha256sum "$file" | awk '{ print $1 }')"
+    elif command -v shasum >/dev/null 2>&1; then
+        actual="$(shasum -a 256 "$file" | awk '{ print $1 }')"
+    else
+        die "缺少 sha256sum 或 shasum，无法校验发布物"
+    fi
+    [ "$actual" = "$expected" ] || die "$file SHA-256 校验失败"
 }
 
 # 交互读取：TTY 时提示，否则用默认值
@@ -82,6 +106,8 @@ BASE_URL="${BASE_URL%/}"
 
 # 参数收集（环境变量优先 → 交互 → 默认）
 INSTALL_DIR="${INSTALL_DIR:-$(prompt "安装目录" "$DEFAULT_INSTALL_DIR")}"
+BEACON_VERSION="${BEACON_VERSION:-$DEFAULT_VERSION}"
+DEFAULT_IMAGE="registry.cn-hangzhou.aliyuncs.com/amuluze/beacon:$BEACON_VERSION"
 BEACON_IMAGE="${BEACON_IMAGE:-$(prompt "Beacon 镜像" "$DEFAULT_IMAGE")}"
 BEACON_HTTP_PORT="${BEACON_HTTP_PORT:-$(prompt "Web 控制台宿主端口" "$DEFAULT_HTTP_PORT")}"
 BEACON_CONTROL_PORT="${BEACON_CONTROL_PORT:-$(prompt "Agent 控制端口" "$DEFAULT_CONTROL_PORT")}"
@@ -89,6 +115,10 @@ BEACON_PUBLIC_BASE_URL="${BEACON_PUBLIC_BASE_URL:-$(prompt "对外访问地址" 
 BEACON_AGENT_INSTALL_TOKEN="${BEACON_AGENT_INSTALL_TOKEN:-$(random_secret)}"
 BEACON_AUTH_SIGNING_KEY="${BEACON_AUTH_SIGNING_KEY:-$(random_secret)}"
 BEACON_CONTROL_JOIN_TOKEN="${BEACON_CONTROL_JOIN_TOKEN:-$(random_secret)}"
+
+validate_secret "BEACON_AGENT_INSTALL_TOKEN" "$BEACON_AGENT_INSTALL_TOKEN"
+validate_secret "BEACON_AUTH_SIGNING_KEY" "$BEACON_AUTH_SIGNING_KEY"
+validate_secret "BEACON_CONTROL_JOIN_TOKEN" "$BEACON_CONTROL_JOIN_TOKEN"
 
 log "安装目录：$INSTALL_DIR"
 log "镜像：$BEACON_IMAGE"
@@ -99,10 +129,15 @@ cd "$INSTALL_DIR"
 
 log "拉取 compose.yaml ..."
 curl -fsSL "$BASE_URL/release/latest/compose.yaml" -o compose.yaml
+curl -fsSL "$BASE_URL/release/latest/SHA256SUMS" -o SHA256SUMS
+COMPOSE_SHA256="$(awk '$2 == "compose.yaml" { print $1 }' SHA256SUMS)"
+[ -n "$COMPOSE_SHA256" ] || die "SHA256SUMS 中缺少 compose.yaml"
+verify_sha256 "$COMPOSE_SHA256" compose.yaml
 
 log "生成 .env ..."
 cat > .env <<EOF
 BEACON_IMAGE=$BEACON_IMAGE
+BEACON_VERSION=$BEACON_VERSION
 BEACON_CONTAINER_NAME=beacon
 BEACON_HTTP_PORT=$BEACON_HTTP_PORT
 BEACON_CONTROL_PORT=$BEACON_CONTROL_PORT
@@ -114,6 +149,7 @@ BEACON_AGENT_INSTALL_TOKEN=$BEACON_AGENT_INSTALL_TOKEN
 BEACON_AUTH_SIGNING_KEY=$BEACON_AUTH_SIGNING_KEY
 BEACON_CONTROL_JOIN_TOKEN=$BEACON_CONTROL_JOIN_TOKEN
 EOF
+chmod 600 .env compose.yaml SHA256SUMS
 
 mkdir -p data logs
 

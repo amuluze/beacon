@@ -1,9 +1,9 @@
 ############################
 # Stage 1: 构建前端（Nuxt）
 ############################
-FROM node:20.18.3-bullseye-slim AS web-builder
+FROM node:22.22.2-bookworm-slim AS web-builder
 WORKDIR /build/web
-RUN corepack enable
+RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 # 先装依赖以利用 Docker 层缓存
 COPY web/package.json web/pnpm-lock.yaml web/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
@@ -29,7 +29,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
 ############################
 # Stage 3: 运行时（Node + Go + supervisor）
 ############################
-FROM node:20.18.3-bullseye-slim AS runtime
+FROM node:22.22.2-bookworm-slim AS runtime
 WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends supervisor \

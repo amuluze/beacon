@@ -1,6 +1,6 @@
 services:
   official:
-    image: registry.cn-hangzhou.aliyuncs.com/amuluze/beacon-offical:v0.1.7
+    image: registry.cn-hangzhou.aliyuncs.com/amuluze/beacon-offical:v0.1.8
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -10,3 +10,16 @@ services:
       # 避免 localhost:3000 指向用户本机导致请求失败。
       NUXT_PUBLIC_BASE_URL: ""
       APP_ENV: production
+    volumes:
+      - official-data:/app/data
+      - official-logs:/app/logs
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  official-data:
+  official-logs:

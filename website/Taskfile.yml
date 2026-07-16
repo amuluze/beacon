@@ -3,7 +3,7 @@ version: '3'
 vars:
   REGISTRY: registry.cn-hangzhou.aliyuncs.com
   IMAGE: '{{.REGISTRY}}/amuluze/beacon-offical'
-  TAG: v0.1.7
+  TAG: v0.1.8
 
 includes:
   server:
@@ -19,17 +19,28 @@ tasks:
     cmds:
       - task --list
 
+  verify:
+    desc: Verify website release scripts, checksums, and Compose files
+    cmds:
+      - sh -n release/latest/manager.sh
+      - cd release/latest && if command -v sha256sum >/dev/null 2>&1; then sha256sum -c SHA256SUMS; else shasum -a 256 -c SHA256SUMS; fi
+      - docker compose -f compose.yml config >/dev/null
+      - BEACON_AGENT_INSTALL_TOKEN=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa BEACON_AUTH_SIGNING_KEY=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb BEACON_CONTROL_JOIN_TOKEN=cccccccccccccccccccccccccccccccccccccccccccccccc docker compose -f release/latest/compose.yaml config >/dev/null
+
   amd64:
     desc: Build linux/amd64 website Docker image into local Docker
+    deps: [verify]
     cmds:
       - docker buildx build --platform linux/amd64 -t {{.IMAGE}}:{{.TAG}} -o type=docker .
 
   arm64:
     desc: Build linux/arm64 website Docker image into local Docker
+    deps: [verify]
     cmds:
       - docker buildx build --platform linux/arm64 -t {{.IMAGE}}:{{.TAG}} -o type=docker .
 
   push:
     desc: Build and push linux/amd64 website Docker image
+    deps: [verify]
     cmds:
       - docker buildx build --platform linux/amd64 -t {{.IMAGE}}:{{.TAG}} . --push

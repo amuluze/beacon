@@ -27,9 +27,16 @@ const (
 
 func NewFiberApp(config *Config, r IRouter) *fiber.App {
 	fiberConfig := fiber.Config{
-		Prefork:      config.Fiber.Prefork,
-		AppName:      config.Fiber.AppName,
-		ServerHeader: config.Fiber.SeverHeader,
+		Prefork:                 config.Fiber.Prefork,
+		AppName:                 config.Fiber.AppName,
+		ServerHeader:            config.Fiber.SeverHeader,
+		ProxyHeader:             fiber.HeaderXForwardedFor,
+		EnableTrustedProxyCheck: true,
+		EnableIPValidation:      true,
+		TrustedProxies:          []string{"127.0.0.1", "::1"},
+		ReadTimeout:             15 * time.Second,
+		WriteTimeout:            30 * time.Second,
+		IdleTimeout:             60 * time.Second,
 		// 官网后端仅承载统计与脚本下发，收窄请求体上限以降低 DoS 面
 		BodyLimit: 4 * 1024 * 1024,
 	}
