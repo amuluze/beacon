@@ -1,3 +1,6 @@
 {
-    "latest_version": "v3.0.4"
+    "latest_version": "v3.0.4",
+    "min_required_version": "v3.0.0",
+    "release_notes": "监控平台稳定性与安全优化，建议升级。",
+    "published_at": "2026-07-16"
 }

@@ -17,6 +17,8 @@ logs/
 # 密钥与环境
 **/.env
 **/.env.*
+# 放行发布物中的示例环境文件，供 manager.sh 一键部署参考
+!release/**/.env.example
 
 # 版本控制与文档
 **/.git

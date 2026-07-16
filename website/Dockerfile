@@ -33,7 +33,9 @@ FROM node:20.18.3-bullseye-slim AS runtime
 WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends supervisor \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system --gid 10001 app \
+    && useradd --system --uid 10001 --gid 10001 --no-create-home --home-dir /app app
 
 # 前端产物（nitro 自包含）
 COPY --from=web-builder /build/web/.output/ /app/.output/
@@ -42,8 +44,16 @@ COPY --from=server-builder /out/server /app/server
 # 配置与 supervisor 编排
 COPY server/configs/ /app/configs/
 COPY supervisor/ /etc/supervisor/conf.d
+# 发布物静态资源（/release/* 对外暴露 manager.sh 等）
+COPY release/ /app/release/
+
+# 运行期可写目录（应用日志、sqlite 数据），归属降权用户 app
+RUN mkdir -p /app/logs /app/data \
+    && chown -R app:app /app
 
 EXPOSE 3000
 
+# supervisord 作为 PID1 保留 root 以管理 socket 与日志句柄；
+# 实际业务进程（node / server）通过 program 的 user=app 降权运行（见 supervisor/*.conf）。
 # 这里有点坑，不加 -n 服务启动不了
 CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]

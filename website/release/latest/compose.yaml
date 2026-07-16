@@ -1,0 +1,38 @@
+# Beacon 官方部署编排
+# 由 manager.sh 拉取，配合同目录 .env 使用。变量缺省值仅为兜底，
+# 生产环境的镜像 / 端口 / 密钥应通过 .env 显式注入。
+services:
+  beacon:
+    image: ${BEACON_IMAGE:-registry.cn-hangzhou.aliyuncs.com/amuluze/beacon:latest}
+    container_name: ${BEACON_CONTAINER_NAME:-beacon}
+    restart: unless-stopped
+    ports:
+      - "${BEACON_HTTP_PORT:-1443}:80"
+      - "${BEACON_CONTROL_PORT:-17000}:${BEACON_CONTROL_PORT:-17000}"
+    volumes:
+      - ${BEACON_DATA_DIR:-./data}:/app/data
+      - ${BEACON_LOG_DIR:-./logs}:/app/logs
+    environment:
+      BEACON_DB_NAME: ${BEACON_DB_NAME:-/app/data/beacon}
+      BEACON_PUBLIC_BASE_URL: ${BEACON_PUBLIC_BASE_URL:-}
+      # 关键密钥不再提供弱兜底；未通过 .env 注入时 compose 直接拒绝启动。
+      BEACON_AGENT_INSTALL_TOKEN: ${BEACON_AGENT_INSTALL_TOKEN:?BEACON_AGENT_INSTALL_TOKEN must be set (run manager.sh or set in .env)}
+      BEACON_AUTH_SIGNING_KEY: ${BEACON_AUTH_SIGNING_KEY:?BEACON_AUTH_SIGNING_KEY must be set (run manager.sh or set in .env)}
+      BEACON_CONTROL_JOIN_TOKEN: ${BEACON_CONTROL_JOIN_TOKEN:-}
+      BEACON_CONTROL_PORT: ${BEACON_CONTROL_PORT:-17000}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -eu
+        # 深度防御：即便误把弱值显式写入 .env，也在此拦截
+        case "$${BEACON_AUTH_SIGNING_KEY}" in beacon|change-me|"") echo "ERROR: BEACON_AUTH_SIGNING_KEY must be a strong value" >&2; exit 1 ;; esac
+        case "$${BEACON_AGENT_INSTALL_TOKEN}" in beacon|change-me|"") echo "ERROR: BEACON_AGENT_INSTALL_TOKEN must be a strong value" >&2; exit 1 ;; esac
+        sed -i "s|DBName = \".*\"|DBName = \"$${BEACON_DB_NAME}\"|" /app/configs/config.toml
+        sed -i "s|SigningKey = \".*\"|SigningKey = \"$${BEACON_AUTH_SIGNING_KEY}\"|" /app/configs/config.toml
+        sed -i "s|JoinToken = \".*\"|JoinToken = \"$${BEACON_CONTROL_JOIN_TOKEN}\"|" /app/configs/config.toml
+        sed -i "s|Address = \".*\"|Address = \":$${BEACON_CONTROL_PORT}\"|" /app/configs/config.toml
+        sed -i "s|Token = \".*\"|Token = \"$${BEACON_AGENT_INSTALL_TOKEN}\"|" /app/configs/config.toml
+        sed -i "s|PublicBaseURL = \".*\"|PublicBaseURL = \"$${BEACON_PUBLIC_BASE_URL}\"|" /app/configs/config.toml
+        sed -i "s|ControlPort = .*|ControlPort = $${BEACON_CONTROL_PORT}|" /app/configs/config.toml
+        exec /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
