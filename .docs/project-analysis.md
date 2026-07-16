@@ -44,7 +44,7 @@
 
 - `beacon/web/package.json (beacon-web)`: `build`, `dev`, `lint`, `lint:fix`, `preview`, `test`, `test:coverage`, `test:run`, `ts`
 - `website/web/.output/server/package.json (beacon-offical-prod)`: no scripts detected
-- `website/web/package.json (beacon-offical)`: `build`, `dev`, `generate`, `lint`, `lint:fix`, `postinstall`, `preview`, `start`, `test`, `test:watch`
+- `website/web/package.json (beacon-offical)`: `build`, `dev`, `generate`, `lint`, `lint:fix`, `postinstall`, `preview`, `start`, `test`, `test:watch`, `typecheck`
 
 ## Documentation Inventory
 
@@ -70,7 +70,7 @@
 
 本节只列出静态发现的测试入口；Domain Spec 中的验收方式是建议验证路径，不代表这些测试已经证明约束成立。
 
-- Test files discovered: 72
+- Test files discovered: 81
 - `beacon/pkg/auth/jwtauth/auth_test.go`
 - `beacon/pkg/auth/jwtauth/options_test.go`
 - `beacon/pkg/auth/jwtauth/store_test.go`
@@ -95,7 +95,7 @@
 - `beacon/service/host/repository/host_test.go`
 - `beacon/service/host/service/host_test.go`
 - `beacon/service/install_report_test.go`
-- 另有 48 个测试文件未在本节展开。
+- 另有 57 个测试文件未在本节展开。
 
 ### Domain Spec Evidence Notes
 

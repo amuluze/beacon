@@ -138,6 +138,7 @@ cd website/web && npm run build
 cd website/web && npm run lint
 cd website/web && npm run test
 cd website/web && npm run test:watch
+cd website/web && npm run typecheck
 npm run build
 npm run lint || true  # lint errors are non-blocking pending cleanup
 npm run ts

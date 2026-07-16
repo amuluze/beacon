@@ -45,7 +45,7 @@
 - `func New504Error (website/server/pkg/errors/errors.go)`
 - `func NewDB (website/server/pkg/database/db.go)`
 - `func NoContent (website/server/pkg/fiberx/fiberx.go)`
-- 另有 34 个导出符号未展开；请用 `rg`、codegraph 或 IDE 按需查看完整清单。
+- 另有 36 个导出符号未展开；请用 `rg`、codegraph 或 IDE 按需查看完整清单。
 
 ## 依赖关系
 

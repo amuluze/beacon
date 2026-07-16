@@ -83,7 +83,7 @@ docker compose -f website/release/latest/compose.yaml up
 
 - `beacon/web/package.json (beacon-web)`: `build`, `dev`, `lint`, `lint:fix`, `preview`, `test`, `test:coverage`, `test:run`, `ts`
 - `website/web/.output/server/package.json (beacon-offical-prod)`: no scripts detected
-- `website/web/package.json (beacon-offical)`: `build`, `dev`, `generate`, `lint`, `lint:fix`, `postinstall`, `preview`, `start`, `test`, `test:watch`
+- `website/web/package.json (beacon-offical)`: `build`, `dev`, `generate`, `lint`, `lint:fix`, `postinstall`, `preview`, `start`, `test`, `test:watch`, `typecheck`
 ## Workspace Modules
 
 | Path | Unit | Runtime |
