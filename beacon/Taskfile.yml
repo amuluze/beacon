@@ -5,7 +5,8 @@ vars:
   SERVER: ./cmd/{{.APP}}
   VERSION:
     sh: cat VERSION
-  IMAGE: amuluze/beacon
+  REGISTRY: registry.cn-hangzhou.aliyuncs.com
+  IMAGE: '{{.REGISTRY}}/amuluze/beacon'
   TAG: '{{.VERSION}}'
   DEV_CONFIG_FILE: '{{.TASKFILE_DIR}}/configs/config.dev.toml'
   MODEL_FILE: '{{.TASKFILE_DIR}}/configs/model.conf'
