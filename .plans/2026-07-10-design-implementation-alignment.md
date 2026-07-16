@@ -6,7 +6,7 @@
 
 ## 技术上下文
 
-- 后台为 Vue 3 + Element Plus + Vite；官网为 Nuxt 3 SPA + Element Plus。
+- 后台为 Vue 3 + Element Plus + Vite；官网为 Nuxt 4 SSR/预渲染站点，使用自有设计令牌与轻量站内组件。
 - 后台新版顶栏仅展示一级路由，旧路由仍拆成 children，造成多个页面无可见入口。
 - Server 已具备 `ContainerUpdate` service/repository 契约，但缺 HTTP route/API；Agent RPC 当前明确返回未实现。
 - 依赖的 `github.com/amuluze/docker` 把 create restart policy 写死为 `always`，Agent 层需增加本地 runtime adapter，直接调用 Docker SDK 更新策略，并用可替换接口测试重建/回滚。
@@ -115,7 +115,7 @@
 - **依赖**: 无
 - **涉及文件**: `website/web/src/styles/`、`website/web/src/components/{Header,Footer}/`、`website/web/src/layouts/default.vue`
 - **风险**: 中 — 全站视觉基线变化
-- [ ] 建立与 `.pen/website.pen` 对应的 surface/foreground/border/accent/spacing 字段
+- [ ] 建立与 `.pen/beacon-website.pen` 对应的 surface/foreground/border/accent/spacing 字段
 - [ ] Header 增加首页、使用手册、GitHub；Footer 增加团队故事、使用手册、微信公众号、GitHub
 - [ ] 移除紫蓝渐变、渐变文本和旧玻璃发光 mixin 的页面依赖
 - [ ] 布局改用标准 slot，保持固定导航与内容顶部间距一致
@@ -173,7 +173,7 @@
 
 ### 任务 4.2: 桌面与移动视觉对照
 - **依赖**: 4.1
-- **涉及文件**: `.pen/beacon.pen`、`.pen/website.pen` 与运行页面
+- **涉及文件**: `.pen/beacon.pen`、`.pen/beacon-website.pen` 与运行页面
 - **风险**: 高 — 视觉验收依赖可用浏览器环境
 - [ ] 1440px 截图对照后台 Monitor/Container/Settings 与官网 Landing/About/Changelog/Docs
 - [ ] 375px 截图对照 Landing Mobile 并检查无水平溢出

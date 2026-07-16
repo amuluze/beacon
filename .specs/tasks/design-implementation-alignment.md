@@ -1,7 +1,7 @@
 # Task: Beacon 设计稿实现对齐
 
 > 依赖: Domain Spec [.specs/domain/monitoring-platform.md](../domain/monitoring-platform.md)
-> 设计来源: [`.pen/beacon.pen`](../../.pen/beacon.pen)、[`.pen/website.pen`](../../.pen/website.pen)
+> 设计来源: [`.pen/beacon.pen`](../../.pen/beacon.pen)、[`.pen/beacon-website.pen`](../../.pen/beacon-website.pen)
 > 状态: approved
 > 优先级: P0 — 主要工作区可达性与官网设计一致性
 

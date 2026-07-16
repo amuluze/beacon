@@ -38,3 +38,48 @@
   - 聚合工作区共享 Agent 列表请求，避免首次加载请求风暴。
   - 官网移除无引用 Carousel、旧发光/渐变组件和失效 SvgIcon 插件。
   - 后台与官网编译、相关/全量测试全部通过；视觉截图因无浏览器单独记录为阻塞。
+
+## 官网修复（2026-07-16）
+
+### RED
+
+- 状态：✅ DONE
+- `website/web/src/api/statistics.spec.ts`
+  - 后端 `data` 信封必须被显式解包。
+  - 首页装饰性统计查询必须静默失败。
+  - 非法响应必须在 API 边界被拒绝。
+- `website/server/service/app_test.go`
+  - 仅信任环回 Nitro 代理传入的 `X-Forwarded-For`。
+  - 不同真实客户端 IP 不共享写限流额度。
+- `website/server/service/version_test.go`
+  - 非法 `current` 版本不得报告可更新。
+- RED 结果：前端 2 条断言失败；Go 代理与版本判断各 1 条断言失败，均为预期行为缺口。
+
+### GREEN
+
+- 状态：✅ DONE
+- 前端验证：
+  - `pnpm test`：5 个测试文件、13 个测试全部通过。
+  - `pnpm typecheck`、`pnpm lint`、`pnpm build` 全部通过。
+  - Nuxt 预渲染 6 个页面、12 条路由，Nitro 产物 5.66 MB。
+- Go 验证：
+  - 官网后端 `GOWORK=off go test -race ./...`、`go vet ./...`、`go build ./...` 全部通过。
+  - 官网后端 `govulncheck ./...`：`No vulnerabilities found`；Fiber、pgx、ch-go/clickhouse-go 已升级到兼容的安全版本。
+  - `common`、`collia`、`beacon` 全量 test/vet/build 通过；仅保留第三方 `go-m1cpu` 已知 clang warning。
+- 发布验证：
+  - `task website:verify` 通过，安装脚本语法、SHA-256 清单和两份 Compose 配置均有效。
+  - `pnpm audit --audit-level high`：`No known vulnerabilities found`。
+
+### REFACTOR
+
+- 状态：✅ DONE
+- 完成内容：
+  - 统计 API 的 `data` 信封在 API 边界显式解包并校验，装饰性请求保持静默降级。
+  - 通用 HTTP 层改用自研 Toast，并明确不猜测或改写各接口响应契约。
+  - 写限流增加真实 loopback 代理回归测试，验证不同 `X-Forwarded-For` 客户端独立计数。
+  - Nuxt 依赖、静态安全头、SEO、移动导航和发布脚本已完成收口，无需继续扩大重构范围。
+- 浏览器复验：
+  - 375px 首页菜单可点击展开；统计失败显示 `--` 且无 Toast。
+  - 375px 文档页宽度 375px、仅一个 `<main>`，三个代码块均为内部横向滚动。
+  - 1440px 首页桌面导航可见、移动菜单按钮隐藏，页面无横向溢出。
+  - 最新构建在两种视口下均无 hydration、图标或控制台 warning/error。
