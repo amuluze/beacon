@@ -1,10 +1,12 @@
 <template>
     <div class="site-layout">
+        <a class="site-skip-link" href="#main-content">跳转到主要内容</a>
         <Header />
-        <main class="site-layout__main">
+        <main id="main-content" class="site-layout__main" tabindex="-1">
             <slot />
         </main>
         <Footer />
+        <SiteToast />
     </div>
 </template>
 

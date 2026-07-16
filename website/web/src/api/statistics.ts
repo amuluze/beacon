@@ -10,7 +10,18 @@ import { useHttp } from '~/composables/useHttp'
 import { API } from '~/config/api'
 
 export async function statisticQuery() {
-    return useHttp.get<StatisticsQueryReply>(API.statistics_query, {})
+    const reply = await useHttp.get<StatisticsQueryReply>(API.statistics_query, {}, { silent: true })
+    const statistic = reply?.data
+    if (
+        !statistic
+        || !Number.isInteger(statistic.id)
+        || statistic.id <= 0
+        || !Number.isInteger(statistic.times)
+        || statistic.times < 0
+    ) {
+        throw new Error('统计响应格式错误')
+    }
+    return statistic
 }
 
 export async function statisticUpdate(params: StatisticsUpdateParams) {

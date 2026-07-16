@@ -9,8 +9,7 @@ export interface Statistics {
 }
 
 export interface StatisticsQueryReply {
-    id: number
-    times: number
+    data: Statistics
 }
 
 export interface StatisticsUpdateParams {

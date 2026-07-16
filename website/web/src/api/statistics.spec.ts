@@ -15,13 +15,19 @@ vi.mock('~/composables/useHttp', () => ({
 afterEach(() => vi.clearAllMocks())
 
 describe('api/statistics', () => {
-    it('statisticQuery 透传到 useHttp.get 并返回业务体', async () => {
-        (useHttp.get as any).mockResolvedValue({ id: 9, times: 3 })
+    it('statisticQuery 解包后端 data 信封并静默返回业务体', async () => {
+        (useHttp.get as any).mockResolvedValue({ data: { id: 9, times: 3 } })
 
         const r = await statisticQuery()
 
-        expect(useHttp.get).toHaveBeenCalledWith('/api/v1/statistics/query', {})
+        expect(useHttp.get).toHaveBeenCalledWith('/api/v1/statistics/query', {}, { silent: true })
         expect(r).toEqual({ id: 9, times: 3 })
+    })
+
+    it('statisticQuery 拒绝不符合后端契约的响应', async () => {
+        (useHttp.get as any).mockResolvedValue({ id: 9, times: 3 })
+
+        await expect(statisticQuery()).rejects.toThrow('统计响应格式错误')
     })
 
     it('statisticUpdate 成功时透传参数', async () => {

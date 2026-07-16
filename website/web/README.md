@@ -1,6 +1,6 @@
 # beacon official
 
-beacon 官网（Nuxt 4 SPA + Go Fiber 后端）。
+Beacon 官网（Nuxt 4 SSR/预渲染前端 + Go Fiber API/发布物后端）。
 
 ## 开发
 

@@ -6,7 +6,23 @@ const links = [
     { label: '使用手册', to: '/document' },
 ]
 
+const mobileLinks = [
+    ...links,
+    { label: '团队故事', to: '/about' },
+    { label: '更新日志', to: '/changelog' },
+    { label: '微信公众号', to: '/wechat' },
+]
+
 const { isDark, toggleTheme } = useTheme()
+const isMenuOpen = shallowRef(false)
+
+function closeMenu() {
+    isMenuOpen.value = false
+}
+
+function toggleMenu() {
+    isMenuOpen.value = !isMenuOpen.value
+}
 </script>
 
 <template>
@@ -16,7 +32,7 @@ const { isDark, toggleTheme } = useTheme()
                 <span class="site-header__mark" />
                 <span>Beacon</span>
             </NuxtLink>
-            <nav class="site-header__nav" aria-label="主导航">
+            <nav class="site-header__nav site-header__nav--desktop" aria-label="主导航">
                 <NuxtLink v-for="link in links" :key="link.to" :to="link.to" class="site-header__link">
                     {{ link.label }}
                 </NuxtLink>
@@ -24,14 +40,34 @@ const { isDark, toggleTheme } = useTheme()
                     GitHub
                 </a>
                 <button type="button" class="site-header__toggle" :aria-label="isDark ? '切换到浅色模式' : '切换到暗色模式'" @click="toggleTheme">
-                    <Icon :name="isDark ? 'mdi:white-sunny' : 'mdi:weather-night'" />
+                    <Icon :name="isDark ? 'mdi:white-balance-sunny' : 'mdi:weather-night'" />
                 </button>
                 <NuxtLink to="/document" class="site-button site-button--primary site-header__cta">
                     <Icon name="mdi:rocket-launch-outline" />
-                    <span>立即体验</span>
+                    <span>开始安装</span>
                 </NuxtLink>
             </nav>
+            <button
+                type="button"
+                class="site-header__menu-toggle"
+                aria-label="打开主导航"
+                aria-controls="mobile-navigation"
+                :aria-expanded="isMenuOpen"
+                @click="toggleMenu"
+            >
+                <Icon :name="isMenuOpen ? 'mdi:close' : 'mdi:menu'" />
+            </button>
         </div>
+        <nav v-if="isMenuOpen" id="mobile-navigation" class="site-header__mobile-menu" aria-label="移动端主导航">
+            <NuxtLink v-for="link in mobileLinks" :key="link.to" :to="link.to" @click="closeMenu">
+                {{ link.label }}
+            </NuxtLink>
+            <a href="https://github.com/amuluze/beacon" target="_blank" rel="noopener noreferrer" @click="closeMenu">GitHub</a>
+            <button type="button" @click="toggleTheme">
+                <Icon :name="isDark ? 'mdi:white-balance-sunny' : 'mdi:weather-night'" />
+                <span>{{ isDark ? '浅色模式' : '暗色模式' }}</span>
+            </button>
+        </nav>
     </header>
 </template>
 
@@ -108,6 +144,11 @@ const { isDark, toggleTheme } = useTheme()
   border-color: var(--primary);
 }
 
+.site-header__menu-toggle,
+.site-header__mobile-menu {
+  display: none;
+}
+
 .site-button {
   display: inline-flex;
   align-items: center;
@@ -132,21 +173,55 @@ const { isDark, toggleTheme } = useTheme()
 }
 
 @media (max-width: 720px) {
-  .site-header__nav {
-    gap: var(--space-4);
-  }
-
-  .site-header__link {
+  .site-header__nav--desktop {
     display: none;
   }
 
-  .site-header__cta span {
-    display: none;
-  }
-
-  .site-header__cta {
+  .site-header__menu-toggle {
+    display: inline-grid;
+    place-items: center;
     width: 40px;
+    height: 40px;
     padding: 0;
+    color: var(--foreground);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 22px;
+  }
+
+  .site-header__mobile-menu {
+    position: absolute;
+    inset: 64px 0 auto;
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-3) 16px var(--space-4);
+    background: var(--background);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow-card);
+  }
+
+  .site-header__mobile-menu a,
+  .site-header__mobile-menu button {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    color: var(--color-text-secondary);
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-sm);
+    font: inherit;
+    text-align: left;
+  }
+
+  .site-header__mobile-menu a:hover,
+  .site-header__mobile-menu a.router-link-active,
+  .site-header__mobile-menu button:hover {
+    color: var(--primary);
+    background: var(--color-bg-hover);
   }
 }
 </style>

@@ -1,15 +1,15 @@
 import type { FetchResponse } from 'ofetch'
 
-// 官网后端直接返回业务对象（如 { id, times }），不使用统一信封。
-// 因此 useHttp 的泛型 T 即为响应体类型，调用方直接读取业务字段。
+import { showToast } from '~/composables/useToast'
+
+// useHttp 的泛型 T 对应接口的真实响应体；是否存在 data 信封由各 API 边界显式处理，
+// 避免在通用请求层猜测并改写后端契约。
 
 function handleError(response: FetchResponse<any>) {
-    // ElMessage 仅在浏览器上下文可用；SSR 阶段跳过，避免访问 window/document 崩溃
+    // Toast 仅在浏览器上下文展示；SSR 阶段跳过，避免跨请求共享用户可见状态。
     if (import.meta.server)
         return
-    const err = (text: string) => {
-        ElMessage.error({ message: response?._data?.msg ?? text })
-    }
+    const err = (text: string) => showToast(response?._data?.msg ?? text, 'error')
     if (!response._data) {
         err('请求超时，服务器无响应！')
         return
@@ -27,6 +27,10 @@ function handleError(response: FetchResponse<any>) {
         err('请求失败，请稍后再试')
 }
 
+export interface HttpRequestOptions {
+    silent?: boolean
+}
+
 const fetch = $fetch.create({
     onRequest({ options }) {
         const { public: { baseUrl } } = useRuntimeConfig()
@@ -37,18 +41,23 @@ const fetch = $fetch.create({
     },
     // 成功响应直接透传业务对象，不在 _data 上附加 headers 等运行时字段（保持类型与运行时一致）；
     // 错误响应统一交给 onResponseError 处理，避免重复弹窗。
-    onResponseError({ response }) {
-        handleError(response)
+    onResponseError({ response, options }) {
+        if (!(options as HttpRequestOptions).silent)
+            handleError(response)
         return Promise.reject(response?._data ?? null)
     },
 })
 
+type CreatedFetchOptions = NonNullable<Parameters<typeof fetch>[1]>
+
 // 自动导出
 export const useHttp = {
-    get: <T>(url: string, params?: Record<string, unknown>) => {
-        return fetch<T>(url, { method: 'get', params })
+    get: <T>(url: string, params?: Record<string, unknown>, requestOptions: HttpRequestOptions = {}) => {
+        const options = { method: 'get' as const, params, ...requestOptions } as CreatedFetchOptions & HttpRequestOptions
+        return fetch<T>(url, options)
     },
-    post: <T>(url: string, body?: BodyInit | Record<string, any> | null) => {
-        return fetch<T>(url, { method: 'post', body })
+    post: <T>(url: string, body?: BodyInit | Record<string, any> | null, requestOptions: HttpRequestOptions = {}) => {
+        const options = { method: 'post' as const, body, ...requestOptions } as CreatedFetchOptions & HttpRequestOptions
+        return fetch<T>(url, options)
     },
 }

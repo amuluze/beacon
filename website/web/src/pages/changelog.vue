@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { usePageSeo } from '~/composables/usePageSeo'
+
 const releases = [
     {
         version: 'v3.0.4',
@@ -41,7 +43,11 @@ const releases = [
     },
 ]
 
-useHead({ title: '更新日志 - Beacon' })
+usePageSeo({
+    title: '更新日志 - Beacon',
+    description: '查看 Beacon 主机监控与 Docker 管理平台的版本演进和重要改进。',
+    path: '/changelog',
+})
 </script>
 
 <template>
@@ -59,7 +65,7 @@ useHead({ title: '更新日志 - Beacon' })
                 </p>
             </div>
         </header>
-        <main class="site-container timeline">
+        <div class="site-container timeline">
             <article v-for="release in releases" :key="release.version" class="timeline__item">
                 <div class="timeline__marker" />
                 <div class="site-card timeline__card">
@@ -74,7 +80,7 @@ useHead({ title: '更新日志 - Beacon' })
                     </ul>
                 </div>
             </article>
-        </main>
+        </div>
     </div>
 </template>
 

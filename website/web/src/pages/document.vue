@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { usePageSeo } from '~/composables/usePageSeo'
+
 const faq = [
     {
         question: '如何备份和恢复配置？',
@@ -18,7 +20,11 @@ const faq = [
     },
 ]
 
-useHead({ title: 'Beacon 使用手册' })
+usePageSeo({
+    title: 'Beacon 使用手册',
+    description: '使用安全的一键安装流程部署 Beacon，并了解备份、升级与日常运维方式。',
+    path: '/document',
+})
 </script>
 
 <template>
@@ -37,7 +43,7 @@ useHead({ title: 'Beacon 使用手册' })
             </div>
         </header>
 
-        <main class="site-container docs">
+        <div class="site-container docs">
             <aside class="site-card docs__toc">
                 <strong>目录</strong>
                 <a href="#install">安装使用</a>
@@ -57,17 +63,22 @@ useHead({ title: 'Beacon 使用手册' })
 
                     <article class="site-card docs__card">
                         <h3>一键安装</h3>
-                        <pre class="site-code"><code># 下载并执行安装脚本
-curl -fsSL https://help.beacon.amuluze.com/release/latest/manager.sh -o manager.sh
-sh manager.sh
+                        <pre class="site-code"><code># 下载脚本与官方 SHA-256 清单
+curl -fsSLO https://help.beacon.amuluze.com/release/latest/manager.sh
+curl -fsSLO https://help.beacon.amuluze.com/release/latest/SHA256SUMS
+grep ' manager.sh$' SHA256SUMS | sha256sum -c -
+sudo sh manager.sh
 
 # 非交互安装示例
-BEACON_HTTP_PORT=1443 sh manager.sh</code></pre>
+sudo sh manager.sh BEACON_HTTP_PORT=1443 BEACON_PUBLIC_BASE_URL=https://beacon.example.com</code></pre>
 
                         <h3>手动安装</h3>
                         <pre class="site-code"><code>mkdir -p /data/beacon && cd /data/beacon
-curl -fsSL https://help.beacon.amuluze.com/release/latest/compose.yaml -o compose.yaml
-# 编辑 .env 配置端口 / Token / 密钥
+umask 077
+curl -fsSLO https://help.beacon.amuluze.com/release/latest/compose.yaml
+curl -fsSLO https://help.beacon.amuluze.com/release/latest/.env.example
+cp .env.example .env && chmod 600 .env
+# 使用 openssl rand -hex 32 为三个密钥生成独立随机值并填入 .env
 docker compose up -d</code></pre>
 
                         <h3>运维命令</h3>
@@ -113,7 +124,7 @@ docker compose down         # 停止服务</code></pre>
                     <a href="https://github.com/amuluze/beacon/issues" target="_blank" rel="noopener noreferrer">提交 Issue</a>
                 </section>
             </div>
-        </main>
+        </div>
     </div>
 </template>
 
@@ -153,6 +164,7 @@ docker compose down         # 停止服务</code></pre>
 .docs__faq {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .docs__content {
@@ -197,6 +209,7 @@ docker compose down         # 停止服务</code></pre>
 }
 
 .docs__card {
+  min-width: 0;
   padding: var(--space-8);
 }
 
@@ -209,6 +222,7 @@ docker compose down         # 停止服务</code></pre>
 }
 
 .docs__card pre {
+  max-width: 100%;
   margin: 0;
   padding: var(--space-4);
   font-size: 12px;

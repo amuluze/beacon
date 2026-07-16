@@ -4,9 +4,9 @@ import antfu from '@antfu/eslint-config'
 export default antfu(
     {
         typescript: true,
-        unocss: true,
+        unocss: false,
         vue: true,
-        ignores: ['**/fixtures', '.nuxt/'],
+        ignores: ['**/fixtures', '.nuxt/', '.output/', 'AGENTS.md', 'CLAUDE.md'],
         formatters: {
             /**
              * Format CSS, LESS, SCSS files, also the `<style>` blocks in Vue

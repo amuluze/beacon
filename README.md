@@ -50,14 +50,14 @@
 
 ## 🖼️ 产品截图
 
-![Beacon overview](website/web/src/public/images/overview.png)
+![Beacon overview](website/web/public/images/overview.png)
 
 <details>
 <summary>查看更多界面</summary>
 
 | 容器监控 | 主机监控 |
 |---|---|
-| ![Container monitoring](website/web/src/public/images/container_monitor.png) | ![Host monitoring](website/web/src/public/images/host_monitor.png) |
+| ![Container monitoring](website/web/public/images/container_monitor.png) | ![Host monitoring](website/web/public/images/host_monitor.png) |
 
 </details>
 

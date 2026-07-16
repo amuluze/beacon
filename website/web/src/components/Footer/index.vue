@@ -14,6 +14,9 @@
                     <NuxtLink to="/document">
                         使用手册
                     </NuxtLink>
+                    <NuxtLink to="/changelog">
+                        更新日志
+                    </NuxtLink>
                 </div>
                 <div class="site-footer__column">
                     <strong>关注我们</strong>
@@ -30,7 +33,10 @@
                 <a href="https://www.coverpage.one" target="_blank" rel="noopener noreferrer">coverpage</a>
             </div>
             <p class="site-footer__legal">
-                Copyright © 2024-present 阿慕 | 京ICP备2023024485号 | 京公网安备11011402053925号
+                <span>Copyright © 2024-present 阿慕 | 京ICP备2023024485号 | 京公网安备11011402053925号</span>
+                <NuxtLink to="/privacy">
+                    隐私说明
+                </NuxtLink>
             </p>
         </div>
     </footer>
@@ -84,6 +90,7 @@
 }
 
 .site-footer__legal {
+  justify-content: space-between;
   margin: var(--space-4) 0 0;
 }
 

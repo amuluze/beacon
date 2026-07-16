@@ -1,9 +1,15 @@
 <script setup lang="ts">
-useHead({ title: '微信公众号 - Beacon' })
+import { usePageSeo } from '~/composables/usePageSeo'
+
+usePageSeo({
+    title: '微信公众号 - Beacon',
+    description: '关注 Beacon 公众号，获取版本更新和开源项目动态。',
+    path: '/wechat',
+})
 </script>
 
 <template>
-    <main class="wechat-page site-container">
+    <div class="wechat-page site-container">
         <section class="site-card wechat-card">
             <img src="/images/wechat.jpg" alt="微信公众号二维码">
             <div>
@@ -14,7 +20,7 @@ useHead({ title: '微信公众号 - Beacon' })
                 <p>获取 Beacon 最新动态与版本更新</p>
             </div>
         </section>
-    </main>
+    </div>
 </template>
 
 <style scoped lang="scss">

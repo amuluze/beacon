@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { statisticQuery, statisticUpdate } from '~/api/statistics'
+import { usePageSeo } from '~/composables/usePageSeo'
+import { showToast } from '~/composables/useToast'
 
 const officialBaseURL = 'https://help.beacon.amuluze.com'
-const installCommand = `curl -fsSL ${officialBaseURL}/release/latest/manager.sh | sh`
+const installCommand = `curl -fsSLO ${officialBaseURL}/release/latest/manager.sh && curl -fsSLO ${officialBaseURL}/release/latest/SHA256SUMS && grep ' manager.sh$' SHA256SUMS | sha256sum -c - && sudo sh manager.sh`
 const statisticID = shallowRef<number | null>(null)
 const statistic = shallowRef<number | null>(null)
 const copying = shallowRef(false)
@@ -13,7 +15,7 @@ const heroTags = [
     { icon: 'mdi:feather', label: '轻量部署' },
 ]
 
-const statisticLabel = computed(() => statistic.value === null ? '--' : statistic.value.toLocaleString())
+const statisticLabel = computed(() => typeof statistic.value === 'number' ? statistic.value.toLocaleString() : '--')
 
 async function loadStatistic() {
     try {
@@ -33,10 +35,10 @@ async function copyInstallCommand() {
     copying.value = true
     try {
         await navigator.clipboard.writeText(installCommand)
-        ElMessage.success('安装命令已复制')
+        showToast('安装命令已复制', 'success')
     }
     catch {
-        ElMessage.error('复制失败，请手动选择命令')
+        showToast('复制失败，请手动选择命令', 'error')
     }
     finally {
         copying.value = false
@@ -60,12 +62,10 @@ onMounted(() => {
     void loadStatistic()
 })
 
-useHead({
+usePageSeo({
     title: 'Beacon - 开源轻量级主机与容器监控工具',
-    meta: [{
-        name: 'description',
-        content: 'Beacon 是轻量级 Server-Agent 主机监控及 Docker 容器管理工具。',
-    }],
+    description: 'Beacon 是轻量级 Server-Agent 主机监控及 Docker 容器管理工具。',
+    path: '/',
 })
 </script>
 
@@ -109,7 +109,7 @@ useHead({
                     </button>
                     <a class="site-button site-button--card" href="https://github.com/amuluze/beacon" target="_blank" rel="noopener noreferrer">
                         <Icon name="mdi:github" />
-                        <span>GitHub 400+ ★</span>
+                        <span>GitHub 开源仓库</span>
                     </a>
                 </div>
                 <div class="hero__stats">
@@ -162,11 +162,11 @@ useHead({
                     <span>快速开始</span>
                 </div>
                 <h2>立即开始监控你的主机与容器</h2>
-                <p>一行命令安装 Agent，几分钟完成接入，开箱即用</p>
+                <p>一行命令安装 Beacon Server，几分钟完成接入，开箱即用</p>
                 <div class="hero__actions">
                     <NuxtLink class="site-button site-button--primary" to="/document">
                         <Icon name="mdi:rocket-launch-outline" />
-                        <span>立即体验</span>
+                        <span>开始安装</span>
                     </NuxtLink>
                     <a class="site-button site-button--card" href="https://github.com/amuluze/beacon" target="_blank" rel="noopener noreferrer">
                         <Icon name="mdi:star-outline" />

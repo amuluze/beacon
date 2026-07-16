@@ -2,16 +2,16 @@
   /* 颜色 - 浅色（来源 .pen/beacon-website.pen variables） */
   --background: #f8fafc;
   --foreground: #0f172a;
-  --card: #ffffff;
+  --card: #fefefe;
   --border: #e2e8f0;
-  --primary: #2c9678;
-  --muted-foreground: #94a3b8;
+  --primary: #237a62;
+  --muted-foreground: #64748b;
   --color-text-secondary: #475569;
-  --color-text-inverse: #ffffff;
+  --color-text-inverse: #f8fafc;
   --color-surface-muted: #f1f5f9;
   --color-primary-soft: #eaf5f2;
   --color-bg-hover: #f1f5f9;
-  --color-brand-hover: #25a885;
+  --color-brand-hover: #1b654f;
   --color-success: #16a34a;
   --color-warning: #d97706;
   --color-error: #dc2626;
@@ -53,13 +53,15 @@
 }
 
 html.dark {
+  --primary: #2c9678;
   --background: #0f172a;
   --foreground: #f1f5f9;
   --card: #1e293b;
   --border: #334155;
-  --muted-foreground: #64748b;
+  --muted-foreground: #94a3b8;
   --color-text-secondary: #94a3b8;
   --color-text-inverse: #0f172a;
+  --color-brand-hover: #35a98a;
   --color-surface-muted: #111827;
   --color-primary-soft: #0f2a25;
   --color-bg-hover: #1e293b;
@@ -99,6 +101,27 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary) 70%, transparent);
+  outline-offset: 3px;
+}
+
+.site-skip-link {
+  position: fixed;
+  z-index: 500;
+  top: var(--space-2);
+  left: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-inverse);
+  background: var(--primary);
+  border-radius: var(--radius-sm);
+  transform: translateY(-160%);
+}
+
+.site-skip-link:focus {
+  transform: translateY(0);
 }
 
 button,
@@ -169,5 +192,20 @@ select {
   .site-page-header {
     padding: 56px 0 var(--space-8);
     text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

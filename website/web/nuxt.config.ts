@@ -1,33 +1,44 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { defineNuxtConfig } from 'nuxt/config'
-import IconsResolver from 'unplugin-icons/resolver'
-import Icons from 'unplugin-icons/vite'
-
-import Components from 'unplugin-vue-components/vite'
 
 const serverProxyTarget = process.env.NUXT_SERVER_PROXY_TARGET || 'http://127.0.0.1:8000'
-
-// 主题引导脚本：在 hydration 之前同步读取偏好并打上 dark class，消除主题闪烁（FOUC）
-const themeBootstrapScript = `(function(){try{var s=localStorage.getItem('beacon-theme');var m=window.matchMedia('(prefers-color-scheme: dark)').matches;var d=s==='dark'||(s===null&&m);if(d){document.documentElement.classList.add('dark');}}catch(e){}})();`
+const securityHeaders = {
+    'Content-Security-Policy': [
+        `default-src 'self'`,
+        `script-src 'self' 'unsafe-inline'`,
+        `script-src-attr 'none'`,
+        `style-src 'self' 'unsafe-inline'`,
+        `img-src 'self' data:`,
+        `font-src 'self' data:`,
+        `connect-src 'self'`,
+        `object-src 'none'`,
+        `base-uri 'self'`,
+        `frame-ancestors 'none'`,
+        `form-action 'self'`,
+        'upgrade-insecure-requests',
+    ].join('; '),
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+}
 
 export default defineNuxtConfig({
     srcDir: 'src/',
     // 开启 SSR 并预渲染静态页，让搜索引擎抓取到首页/文档/changelog 正文
     ssr: true,
-    devtools: { enabled: true },
+    devtools: { enabled: process.env.NODE_ENV !== 'production' },
     compatibilityDate: '2024-09-23',
 
     typescript: { typeCheck: true },
 
     // 注入全局样式
     css: ['@/styles/index.scss'],
-    unocss: {
-        nuxtLayers: true,
-    },
-
     app: {
         baseURL: '/',
         head: {
+            htmlAttrs: { lang: 'zh-CN' },
             title: 'Beacon - 轻量级主机及容器监控管理工具',
             meta: [
                 { charset: 'utf-8' },
@@ -35,33 +46,20 @@ export default defineNuxtConfig({
                 { name: 'description', content: 'Beacon 是一款开源的轻量级主机监控及 Docker 容器管理工具，支持实时监控服务器资源使用情况，管理 Docker 容器、镜像和网络。' },
                 { name: 'keywords', content: '主机监控,Docker管理,容器管理,服务器监控,开源监控工具' },
                 { name: 'author', content: 'Beacon Team' },
-                // Open Graph tags
-                { property: 'og:title', content: 'Beacon - 轻量级主机及容器监控管理工具' },
-                { property: 'og:description', content: 'Beacon 是一款开源的轻量级主机监控及 Docker 容器管理工具' },
-                { property: 'og:type', content: 'website' },
-                { property: 'og:url', content: 'https://help.beacon.amuluze.com' },
-                { property: 'og:image', content: '/images/beacon.png' },
+                { name: 'theme-color', content: '#237a62' },
             ],
             link: [
                 { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-                { rel: 'canonical', href: 'https://help.beacon.amuluze.com' },
             ],
             script: [
-                { innerHTML: themeBootstrapScript, tagPosition: 'head' },
+                { src: '/theme-bootstrap.js', tagPosition: 'head' },
             ],
         },
     },
 
     modules: [
-        '@unocss/nuxt',
-        '@element-plus/nuxt',
         '@nuxt/icon',
-        '@nuxt/image',
     ],
-
-    build: {
-        transpile: ['element-plus/nuxt'],
-    },
 
     vite: {
         css: {
@@ -71,21 +69,6 @@ export default defineNuxtConfig({
                 },
             },
         },
-        plugins: [
-            // 自动导入（Element Plus 由 @element-plus/nuxt 模块负责，此处仅处理图标）
-            Components({
-                resolvers: [
-                    IconsResolver({
-                        enabledCollections: ['mdi'],
-                    }),
-                ],
-            }),
-            Icons({
-                // 自动安装图标库
-                autoInstall: true,
-                compiler: 'vue3',
-            }),
-        ],
     },
 
     icon: {
@@ -96,12 +79,14 @@ export default defineNuxtConfig({
     // https://blog.csdn.net/qq_43231248/article/details/137127500
     runtimeConfig: {
         public: {
-            baseUrl: process.env.NUXT_BASE_URL,
+            // 运行时通过 NUXT_PUBLIC_BASE_URL 覆盖；默认同源代理。
+            baseUrl: '',
         },
     },
 
     nitro: {
         routeRules: {
+            '/**': { headers: securityHeaders },
             // 直接使用 /api/** 会导致图标加载失败
             '/api/v1/**': {
                 proxy: `${serverProxyTarget}/api/v1/**`,
@@ -110,12 +95,16 @@ export default defineNuxtConfig({
             '/release/**': {
                 proxy: `${serverProxyTarget}/release/**`,
             },
+            '/healthz': {
+                proxy: `${serverProxyTarget}/healthz`,
+            },
             // 静态营销/文档页构建时预渲染为完整 HTML，利于 SEO 且运行时零渲染开销
             '/': { prerender: true },
             '/document': { prerender: true },
             '/changelog': { prerender: true },
             '/about': { prerender: true },
             '/wechat': { prerender: true },
+            '/privacy': { prerender: true },
         },
     },
 })

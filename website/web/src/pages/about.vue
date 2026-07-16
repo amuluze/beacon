@@ -1,11 +1,17 @@
 <script setup lang="ts">
+import { usePageSeo } from '~/composables/usePageSeo'
+
 const contacts = [
     { icon: 'mdi:wechat', label: '微信', value: 'Amuluze' },
     { icon: 'mdi:github', label: 'GitHub', value: 'amuluze/beacon', href: 'https://github.com/amuluze/beacon' },
     { icon: 'mdi:qrcode', label: '公众号', value: '阿慕的订阅', href: '/wechat' },
 ]
 
-useHead({ title: '团队故事 - Beacon' })
+usePageSeo({
+    title: '团队故事 - Beacon',
+    description: '了解 Beacon 的开源初心、独立开发故事与维护者联系方式。',
+    path: '/about',
+})
 </script>
 
 <template>
@@ -24,7 +30,7 @@ useHead({ title: '团队故事 - Beacon' })
             </div>
         </header>
 
-        <main class="site-container about-page__content">
+        <div class="site-container about-page__content">
             <article class="site-card letter">
                 <p>你好，我是阿慕 —— 一个 35 岁的临“退”程序员，一名见习独立开发者。</p>
                 <p>程序员生涯的进度条已快到头，下一步打算成为一名独立开发者，做自己喜欢的事，也能养家糊口。如果你也面临职业生涯的窘境，想探索新的可能，欢迎加我微信 Amuluze 交流。</p>
@@ -66,7 +72,7 @@ useHead({ title: '团队故事 - Beacon' })
                     <p>获取 Beacon 最新动态与版本更新</p>
                 </div>
             </section>
-        </main>
+        </div>
     </div>
 </template>
 
