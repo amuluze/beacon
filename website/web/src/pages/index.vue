@@ -2,7 +2,7 @@
 import { statisticQuery, statisticUpdate } from '~/api/statistics'
 
 const officialBaseURL = 'https://help.beacon.amuluze.com'
-const installCommand = `curl -fsSL ${officialBaseURL}/download/install.sh | sh`
+const installCommand = `curl -fsSL ${officialBaseURL}/release/latest/manager.sh | sh`
 const statisticID = shallowRef<number | null>(null)
 const statistic = shallowRef<number | null>(null)
 const copying = shallowRef(false)
@@ -18,8 +18,8 @@ const statisticLabel = computed(() => statistic.value === null ? '--' : statisti
 async function loadStatistic() {
     try {
         const reply = await statisticQuery()
-        statisticID.value = reply.data.id
-        statistic.value = reply.data.times
+        statisticID.value = reply.id
+        statistic.value = reply.times
     }
     catch {
         statisticID.value = null
@@ -44,7 +44,7 @@ async function copyInstallCommand() {
 }
 
 async function downloadInstallScript() {
-    window.open('/download/install.sh', '_blank')
+    window.open('/release/latest/manager.sh', '_blank')
     if (statisticID.value === null)
         return
     try {

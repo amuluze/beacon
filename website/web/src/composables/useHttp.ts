@@ -1,87 +1,54 @@
 import type { FetchResponse } from 'ofetch'
 
-export interface RequestOptions<T> {
-    data: T
-    code: number
-    message: string
-    success: boolean
-}
+// 官网后端直接返回业务对象（如 { id, times }），不使用统一信封。
+// 因此 useHttp 的泛型 T 即为响应体类型，调用方直接读取业务字段。
 
-function handleError<T>(response: FetchResponse<RequestOptions<T>> & FetchResponse<ResponseType>) {
+function handleError(response: FetchResponse<any>) {
+    // ElMessage 仅在浏览器上下文可用；SSR 阶段跳过，避免访问 window/document 崩溃
+    if (import.meta.server)
+        return
     const err = (text: string) => {
-        ElMessage.error({ message: response?._data?.message ?? text })
+        ElMessage.error({ message: response?._data?.msg ?? text })
     }
     if (!response._data) {
         err('请求超时，服务器无响应！')
         return
     }
-    // const store = useStore()
-    const handleMap: { [key: number]: () => void } = {
+    const handleMap: Record<number, () => void> = {
+        400: () => err(response._data?.msg ?? '请求参数有误'),
         404: () => err('服务器资源不存在'),
-        500: () => err('服务器内部错误'),
         403: () => err('没有权限访问该资源'),
-        401: () => {
-            err('登录状态已过期，需要重新登录')
-            // store.user.setToken('', '')
-            // 跳转实际登录页
-            navigateTo('/')
-        },
+        500: () => err('服务器内部错误'),
     }
     const handler = handleMap[response.status]
     if (handler)
         handler()
     else
-        err('未知错误！')
+        err('请求失败，请稍后再试')
 }
 
 const fetch = $fetch.create({
-    // 请求拦截器
     onRequest({ options }) {
         const { public: { baseUrl } } = useRuntimeConfig()
         // 仅在显式配置时设置 baseURL；留空则走相对路径，
         // 由同源 nitro routeRules 代理到后端，避免 SPA 中 localhost 误指向用户本机。
-        if (baseUrl) {
+        if (baseUrl)
             options.baseURL = baseUrl as string
-        }
     },
-    onResponse({ response }) {
-        const contentType = response.headers.get('Content-Type')
-        if (!response.ok) {
-            handleError(response)
-            return Promise.resolve(response._data)
-        }
-        if (!contentType) {
-            response._data = { code: -1, data: '返回数据不符合预期' }
-            return
-        }
-
-        if (contentType === 'application/json') {
-            response._data.headers = response.headers
-        }
-        else {
-            const disposition = response.headers.get('content-disposition')
-            if (!disposition) {
-                response._data = { code: -2, data: '返回数据不符合预期' }
-                return
-            }
-            // 切割文件名
-            const blob = new Blob([response._data], { type: contentType })
-            const blobURL = URL.createObjectURL(blob)
-            response._data = { code: 1, data: blobURL, headers: response.headers }
-        }
-    },
+    // 成功响应直接透传业务对象，不在 _data 上附加 headers 等运行时字段（保持类型与运行时一致）；
+    // 错误响应统一交给 onResponseError 处理，避免重复弹窗。
     onResponseError({ response }) {
         handleError(response)
-        return Promise.resolve(response?._data ?? null)
+        return Promise.reject(response?._data ?? null)
     },
 })
 
 // 自动导出
 export const useHttp = {
-    get: <T>(url: string, params?: any) => {
-        return fetch<RequestOptions<T>>(url, { method: 'get', params })
+    get: <T>(url: string, params?: Record<string, unknown>) => {
+        return fetch<T>(url, { method: 'get', params })
     },
-    post: <T>(url: string, body?: any) => {
-        return fetch<RequestOptions<T>>(url, { method: 'post', body })
+    post: <T>(url: string, body?: BodyInit | Record<string, any> | null) => {
+        return fetch<T>(url, { method: 'post', body })
     },
 }

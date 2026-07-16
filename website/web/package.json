@@ -12,7 +12,8 @@
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
         "test": "vitest run",
-        "test:watch": "vitest"
+        "test:watch": "vitest",
+        "typecheck": "vue-tsc --noEmit -p .nuxt/tsconfig.json"
     },
     "dependencies": {
         "@nuxt/icon": "^1.15.0",

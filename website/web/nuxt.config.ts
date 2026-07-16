@@ -7,6 +7,9 @@ import Components from 'unplugin-vue-components/vite'
 
 const serverProxyTarget = process.env.NUXT_SERVER_PROXY_TARGET || 'http://127.0.0.1:8000'
 
+// 主题引导脚本：在 hydration 之前同步读取偏好并打上 dark class，消除主题闪烁（FOUC）
+const themeBootstrapScript = `(function(){try{var s=localStorage.getItem('beacon-theme');var m=window.matchMedia('(prefers-color-scheme: dark)').matches;var d=s==='dark'||(s===null&&m);if(d){document.documentElement.classList.add('dark');}}catch(e){}})();`
+
 export default defineNuxtConfig({
     srcDir: 'src/',
     // 开启 SSR 并预渲染静态页，让搜索引擎抓取到首页/文档/changelog 正文
@@ -40,15 +43,16 @@ export default defineNuxtConfig({
                 { property: 'og:image', content: '/images/beacon.png' },
             ],
             link: [
-                { rel: 'icon', type: 'image/x-icon', href: 'favicon.ico' },
+                { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
                 { rel: 'canonical', href: 'https://help.beacon.amuluze.com' },
+            ],
+            script: [
+                { innerHTML: themeBootstrapScript, tagPosition: 'head' },
             ],
         },
     },
 
     modules: [
-        '@pinia/nuxt',
-        'pinia-plugin-persistedstate/nuxt',
         '@unocss/nuxt',
         '@element-plus/nuxt',
         '@nuxt/icon',
@@ -56,8 +60,7 @@ export default defineNuxtConfig({
     ],
 
     build: {
-        // 持久化插件配置，必须
-        transpile: ['element-plus/nuxt', 'pinia-plugin-persistedstate/nuxt'],
+        transpile: ['element-plus/nuxt'],
     },
 
     vite: {
@@ -85,10 +88,9 @@ export default defineNuxtConfig({
         ],
     },
 
-    plugins: [],
     icon: {
         serverBundle: {
-            collections: ['uil', 'mdi'],
+            collections: ['mdi'],
         },
     },
     // https://blog.csdn.net/qq_43231248/article/details/137127500
@@ -104,8 +106,9 @@ export default defineNuxtConfig({
             '/api/v1/**': {
                 proxy: `${serverProxyTarget}/api/v1/**`,
             },
-            '/download/**': {
-                proxy: `${serverProxyTarget}/download/**`,
+            // 发布物（manager.sh / compose.yaml / version.json 等）由官网 Go server 静态托管
+            '/release/**': {
+                proxy: `${serverProxyTarget}/release/**`,
             },
             // 静态营销/文档页构建时预渲染为完整 HTML，利于 SEO 且运行时零渲染开销
             '/': { prerender: true },

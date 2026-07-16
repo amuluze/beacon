@@ -10,7 +10,7 @@ const faq = [
     },
     {
         question: '初始化用户有哪些？密码是什么？',
-        answer: '管理员 admin / admin123，普通用户 beacon / 123456；管理员可管理普通用户，请上线后及时修改默认密码。',
+        answer: '初始管理员 admin / admin123，普通用户 beacon / 123456。⚠️ 默认密码已对外公开、极不安全，首次登录后请立刻在「设置」中修改，否则任何人都可能直接登录你的实例。',
     },
     {
         question: '如何获取技术支持？',
@@ -58,15 +58,15 @@ useHead({ title: 'Beacon 使用手册' })
                     <article class="site-card docs__card">
                         <h3>一键安装</h3>
                         <pre class="site-code"><code># 下载并执行安装脚本
-curl -fsSL https://help.beacon.amuluze.com/download/install.sh -o install.sh
-sh install.sh
+curl -fsSL https://help.beacon.amuluze.com/release/latest/manager.sh -o manager.sh
+sh manager.sh
 
 # 非交互安装示例
-BEACON_HTTP_PORT=1443 sh install.sh</code></pre>
+BEACON_HTTP_PORT=1443 sh manager.sh</code></pre>
 
                         <h3>手动安装</h3>
                         <pre class="site-code"><code>mkdir -p /data/beacon && cd /data/beacon
-curl -fsSL https://help.beacon.amuluze.com/download/compose.yaml -o compose.yaml
+curl -fsSL https://help.beacon.amuluze.com/release/latest/compose.yaml -o compose.yaml
 # 编辑 .env 配置端口 / Token / 密钥
 docker compose up -d</code></pre>
 
@@ -78,7 +78,7 @@ docker compose logs -f      # 查看日志
 docker compose down         # 停止服务</code></pre>
 
                         <p class="docs__callout">
-                            启动 beacon 容器后，浏览器访问 <code>http://服务器IP:1443</code> 即可进入管理面板。初始账号 admin / admin123。
+                            启动 beacon 容器后，浏览器访问 <code>http://服务器IP:1443</code> 即可进入管理面板。初始管理员账号 admin / admin123（默认密码已公开，登录后请立即修改）。
                         </p>
                     </article>
                 </section>
