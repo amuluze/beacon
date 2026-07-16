@@ -19,20 +19,17 @@ services:
       BEACON_AGENT_INSTALL_TOKEN: ${BEACON_AGENT_INSTALL_TOKEN:?BEACON_AGENT_INSTALL_TOKEN must be set (run manager.sh or set in .env)}
       BEACON_AUTH_SIGNING_KEY: ${BEACON_AUTH_SIGNING_KEY:?BEACON_AUTH_SIGNING_KEY must be set (run manager.sh or set in .env)}
       BEACON_CONTROL_JOIN_TOKEN: ${BEACON_CONTROL_JOIN_TOKEN:-}
+      # AgentInstall.ControlPort 直接读取 BEACON_CONTROL_PORT。
+      # Control.Address 读取 BEACON_CONTROL_ADDRESS，未显式设置时默认由 PORT 派生（保持与端口一致）。
+      BEACON_CONTROL_ADDRESS: "${BEACON_CONTROL_ADDRESS:-:${BEACON_CONTROL_PORT:-17000}}"
       BEACON_CONTROL_PORT: ${BEACON_CONTROL_PORT:-17000}
     command:
       - /bin/sh
       - -c
       - |
         set -eu
-        # 深度防御：即便误把弱值显式写入 .env，也在此拦截
+        # 深度防御：即便误把弱值显式写入 .env，也在此拦截。
+        # 配置注入由 Beacon 进程通过 viper.BindEnv 读取 BEACON_* 环境变量完成，无需 sed 改写 config.toml。
         case "$${BEACON_AUTH_SIGNING_KEY}" in beacon|change-me|"") echo "ERROR: BEACON_AUTH_SIGNING_KEY must be a strong value" >&2; exit 1 ;; esac
         case "$${BEACON_AGENT_INSTALL_TOKEN}" in beacon|change-me|"") echo "ERROR: BEACON_AGENT_INSTALL_TOKEN must be a strong value" >&2; exit 1 ;; esac
-        sed -i "s|DBName = \".*\"|DBName = \"$${BEACON_DB_NAME}\"|" /app/configs/config.toml
-        sed -i "s|SigningKey = \".*\"|SigningKey = \"$${BEACON_AUTH_SIGNING_KEY}\"|" /app/configs/config.toml
-        sed -i "s|JoinToken = \".*\"|JoinToken = \"$${BEACON_CONTROL_JOIN_TOKEN}\"|" /app/configs/config.toml
-        sed -i "s|Address = \".*\"|Address = \":$${BEACON_CONTROL_PORT}\"|" /app/configs/config.toml
-        sed -i "s|Token = \".*\"|Token = \"$${BEACON_AGENT_INSTALL_TOKEN}\"|" /app/configs/config.toml
-        sed -i "s|PublicBaseURL = \".*\"|PublicBaseURL = \"$${BEACON_PUBLIC_BASE_URL}\"|" /app/configs/config.toml
-        sed -i "s|ControlPort = .*|ControlPort = $${BEACON_CONTROL_PORT}|" /app/configs/config.toml
         exec /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
