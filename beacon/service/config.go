@@ -34,6 +34,10 @@ func NewConfig(configFile string) (*Config, error) {
 
 	viper.SetConfigFile(configFile)
 
+	// 注册部署期 env 覆盖，替代容器启动时 sed 改写 config.toml。
+	// 必须在 ReadInConfig/Unmarshal 之前注册，Unmarshal 才会拾取 env 值。
+	bindEnvs()
+
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, err
 	}
@@ -41,10 +45,30 @@ func NewConfig(configFile string) (*Config, error) {
 		return nil, err
 	}
 
+	// 历史环境变量别名兼容（AMPROBE_* 等多命名），优先级高于 BindEnv。
 	overrideFromEnv(config)
 	warnInsecureDefaults(config)
 
 	return config, nil
+}
+
+// bindEnvs 将部署期可变字段绑定到 BEACON_* 环境变量。
+// viper.BindEnv 单次只支持一个 env key；历史多命名兼容由 overrideFromEnv 处理。
+func bindEnvs() {
+	bindings := map[string]string{
+		"db.dbname":                  "BEACON_DB_NAME",
+		"auth.signingkey":            "BEACON_AUTH_SIGNING_KEY",
+		"control.jointoken":          "BEACON_CONTROL_JOIN_TOKEN",
+		"control.address":            "BEACON_CONTROL_ADDRESS",
+		"agentinstall.token":         "BEACON_AGENT_INSTALL_TOKEN",
+		"agentinstall.publicbaseurl": "BEACON_PUBLIC_BASE_URL",
+		"agentinstall.controlport":   "BEACON_CONTROL_PORT",
+	}
+	for key, env := range bindings {
+		if err := viper.BindEnv(key, env); err != nil {
+			slog.Warn("failed to bind env override", "key", key, "env", env, "err", err)
+		}
+	}
 }
 
 // overrideFromEnv overrides sensitive config values from environment variables

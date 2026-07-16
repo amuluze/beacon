@@ -59,6 +59,55 @@ JoinToken = "from-file"
 	}
 }
 
+// TestNewConfig_BindEnvOverrides 验证 bindEnvs 绑定的 BEACON_* 字段可经环境变量覆盖，
+// 这是替代容器启动 sed 改写 config.toml 的契约。
+func TestNewConfig_BindEnvOverrides(t *testing.T) {
+	const toml = `
+[DB]
+Host = ""
+Port = ""
+User = ""
+Password = ""
+DBName = "from-file"
+SSLMode = ""
+
+[Control]
+Enable = true
+Address = "0.0.0.0:8081"
+JoinToken = ""
+
+[AgentInstall]
+Enable = true
+Token = "change-me"
+PublicBaseURL = ""
+PackageDir = "/app/downloads/collia"
+ControlPort = 18080
+TLSEnable = true
+CertDir = "/etc/collia/certs"
+`
+	t.Setenv("BEACON_DB_NAME", "/data/beacon-prod")
+	t.Setenv("BEACON_CONTROL_ADDRESS", ":17000")
+	t.Setenv("BEACON_PUBLIC_BASE_URL", "https://beacon.example.com")
+	t.Setenv("BEACON_CONTROL_PORT", "17000")
+
+	cfg, err := NewConfig(writeConfig(t, toml))
+	if err != nil {
+		t.Fatalf("NewConfig: %v", err)
+	}
+	if cfg.DB.DBName != "/data/beacon-prod" {
+		t.Fatalf("expected DB.DBName overridden by env, got %q", cfg.DB.DBName)
+	}
+	if cfg.Control.Address != ":17000" {
+		t.Fatalf("expected Control.Address overridden by env, got %q", cfg.Control.Address)
+	}
+	if cfg.AgentInstall.PublicBaseURL != "https://beacon.example.com" {
+		t.Fatalf("expected AgentInstall.PublicBaseURL overridden by env, got %q", cfg.AgentInstall.PublicBaseURL)
+	}
+	if cfg.AgentInstall.ControlPort != 17000 {
+		t.Fatalf("expected AgentInstall.ControlPort overridden by env, got %d", cfg.AgentInstall.ControlPort)
+	}
+}
+
 // TestResolveSigningKey_EmptyGenerates 验证非生产模式下空密钥生成非空临时密钥。
 func TestResolveSigningKey_EmptyGenerates(t *testing.T) {
 	k, err := resolveSigningKey("", "development")
