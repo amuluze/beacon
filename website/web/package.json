@@ -11,7 +11,8 @@
         "postinstall": "nuxt prepare",
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
-        "test": "echo \"尚未配置测试，参见 P2 计划\" && exit 0"
+        "test": "vitest run",
+        "test:watch": "vitest"
     },
     "dependencies": {
         "@nuxt/icon": "^1.15.0",
@@ -28,12 +29,15 @@
         "@antfu/eslint-config": "^4.19.0",
         "@element-plus/nuxt": "^1.1.5",
         "@iconify-json/mdi": "^1.2.3",
+        "@nuxt/test-utils": "^4.0.3",
         "@unocss/eslint-plugin": "^66.7.5",
         "@unocss/nuxt": "^66.7.5",
         "@unocss/preset-web-fonts": "^66.7.5",
+        "@vue/test-utils": "^2.4.11",
         "dayjs": "^1.11.21",
         "eslint": "^9.39.5",
         "eslint-plugin-format": "^1.5.0",
+        "happy-dom": "^20.10.6",
         "lodash-unified": "^1.0.3",
         "sass": "^1.101.0",
         "sass-loader": "^16.0.8",
@@ -41,6 +45,7 @@
         "unplugin-icons": "^22.5.0",
         "unplugin-vue-components": "^28.8.0",
         "vite-plugin-svg-icons": "^2.0.1",
+        "vitest": "^4.1.10",
         "vue-tsc": "^3.3.7"
     },
     "pnpm": {
