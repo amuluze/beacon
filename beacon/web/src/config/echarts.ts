@@ -5,6 +5,18 @@
  */
 import type { EChartsOption } from '@/components/Echarts/echarts.ts'
 
+const bytesPerSecondUnits = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s']
+
+export function formatBytesPerSecond(bytesPerSecond: number): string {
+    let value = bytesPerSecond
+    let unitIndex = 0
+    while (Math.abs(value) >= 1024 && unitIndex < bytesPerSecondUnits.length - 1) {
+        value /= 1024
+        unitIndex++
+    }
+    return `${value.toFixed(2)} ${bytesPerSecondUnits[unitIndex]}`
+}
+
 export const cpuOption = {
     title: {
         text: 'CPU 使用率',
@@ -211,6 +223,9 @@ export const cpuTrendingOption = {
     yAxis: [
         {
             type: 'value',
+            min: 0,
+            max: 100,
+            interval: 20,
             axisLabel: {
                 show: true,
                 formatter: '{value} %',
@@ -262,6 +277,9 @@ export const memTrendingOption = {
     yAxis: [
         {
             type: 'value',
+            min: 0,
+            max: 100,
+            interval: 20,
             axisLabel: {
                 show: true,
                 formatter: '{value} %',
@@ -287,13 +305,7 @@ export const diskTrendingOption = {
         formatter(params: any): string {
             let res = ''
             params.forEach((item: any) => {
-                const units = ['bps', 'Kbps', 'Mbps', 'Gbps']
-                let unitIndex = 0
-                while (item.value >= 1024 && unitIndex < units.length - 1) {
-                    item.value /= 1024
-                    unitIndex++
-                }
-                res += `${item.seriesName}: ${item.value.toFixed(2)} ${units[unitIndex]}<br/>`
+                res += `${item.seriesName}: ${formatBytesPerSecond(Number(item.value))}<br/>`
             })
             return res
         },
@@ -322,17 +334,10 @@ export const diskTrendingOption = {
     yAxis: [
         {
             type: 'value',
+            min: 0,
             axisLabel: {
                 show: true,
-                formatter: function yAxisLabelFormatter(value: number): string {
-                    const units = ['bps', 'Kbps', 'Mbps', 'Gbps']
-                    let unitIndex = 0
-                    while (value >= 1024 && unitIndex < units.length - 1) {
-                        value /= 1024
-                        unitIndex++
-                    }
-                    return `${value.toFixed(2)} ${units[unitIndex]}`
-                },
+                formatter: formatBytesPerSecond,
             },
         },
     ],
@@ -364,13 +369,7 @@ export const netTrendingOption = {
         formatter(params: any): string {
             let res = ''
             params.forEach((item: any) => {
-                const units = ['bps', 'Kbps', 'Mbps', 'Gbps']
-                let unitIndex = 0
-                while (item.value >= 1024 && unitIndex < units.length - 1) {
-                    item.value /= 1024
-                    unitIndex++
-                }
-                res += `${item.seriesName}: ${item.value.toFixed(2)} ${units[unitIndex]}<br/>`
+                res += `${item.seriesName}: ${formatBytesPerSecond(Number(item.value))}<br/>`
             })
             return res
         },
@@ -399,17 +398,10 @@ export const netTrendingOption = {
     yAxis: [
         {
             type: 'value',
+            min: 0,
             axisLabel: {
                 show: true,
-                formatter: function yAxisLabelFormatter(value: number): string {
-                    const units = ['bps', 'Kbps', 'Mbps', 'Gbps']
-                    let unitIndex = 0
-                    while (value >= 1024 && unitIndex < units.length - 1) {
-                        value /= 1024
-                        unitIndex++
-                    }
-                    return `${value.toFixed(2)} ${units[unitIndex]}`
-                },
+                formatter: formatBytesPerSecond,
             },
         },
     ],

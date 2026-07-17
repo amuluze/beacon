@@ -61,6 +61,52 @@ func TestHostInfoMarksStaleData(t *testing.T) {
 	}
 }
 
+func TestCPUAndMemInfoReturnLatestSampleTimestampForSelectedAgent(t *testing.T) {
+	db, err := database.NewDB(database.WithDBName(filepath.Join(t.TempDir(), "probe")))
+	if err != nil {
+		t.Fatalf("new db: %v", err)
+	}
+	t.Cleanup(db.Close)
+	if err := db.AutoMigrate(new(model.MonitorCPU), new(model.MonitorMemory)); err != nil {
+		t.Fatalf("auto migrate: %v", err)
+	}
+
+	latest := time.Now().Add(-time.Minute).Truncate(time.Second)
+	older := latest.Add(-time.Minute)
+	if err := db.Create(&[]model.MonitorCPU{
+		{AgentID: "agent-a", Timestamp: older, CPUPercent: 10},
+		{AgentID: "agent-a", Timestamp: latest, CPUPercent: 20},
+		{AgentID: "agent-b", Timestamp: latest.Add(time.Minute), CPUPercent: 90},
+	}).Error; err != nil {
+		t.Fatalf("create CPU samples: %v", err)
+	}
+	if err := db.Create(&[]model.MonitorMemory{
+		{AgentID: "agent-a", Timestamp: older, MemPercent: 30},
+		{AgentID: "agent-a", Timestamp: latest, MemPercent: 40},
+		{AgentID: "agent-b", Timestamp: latest.Add(time.Minute), MemPercent: 90},
+	}).Error; err != nil {
+		t.Fatalf("create memory samples: %v", err)
+	}
+
+	repo := &HostRepo{DB: db}
+	ctx := contextx.NewAgentID(context.Background(), "agent-a")
+	cpuReply, err := repo.CPUInfo(ctx, rpcSchema.CPUInfoArgs{})
+	if err != nil {
+		t.Fatalf("CPUInfo returned error: %v", err)
+	}
+	if cpuReply.Timestamp != latest.Unix() || cpuReply.Freshness.CollectedAt != latest.Unix() {
+		t.Fatalf("CPU timestamps = (%d, %d), want %d", cpuReply.Timestamp, cpuReply.Freshness.CollectedAt, latest.Unix())
+	}
+
+	memReply, err := repo.MemInfo(ctx, rpcSchema.MemoryInfoArgs{})
+	if err != nil {
+		t.Fatalf("MemInfo returned error: %v", err)
+	}
+	if memReply.Timestamp != latest.Unix() || memReply.Freshness.CollectedAt != latest.Unix() {
+		t.Fatalf("memory timestamps = (%d, %d), want %d", memReply.Timestamp, memReply.Freshness.CollectedAt, latest.Unix())
+	}
+}
+
 func TestDiskInfoReturnsLatestPerDeviceForSelectedAgent(t *testing.T) {
 	db, err := database.NewDB(database.WithDBName(filepath.Join(t.TempDir(), "probe")))
 	if err != nil {

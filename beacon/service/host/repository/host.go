@@ -100,7 +100,11 @@ func (h *HostRepo) CPUInfo(ctx context.Context, args rpcSchema.CPUInfoArgs) (rpc
 	if err := db.Model(&model.MonitorCPU{}).Order("timestamp desc").First(&info).Error; err != nil {
 		return rpcSchema.CPUInfoReply{}, err
 	}
-	return rpcSchema.CPUInfoReply{Percent: info.CPUPercent, Freshness: rpcSchema.ComputeFreshness(info.Timestamp)}, nil
+	return rpcSchema.CPUInfoReply{
+		Percent:   info.CPUPercent,
+		Timestamp: info.Timestamp.Unix(),
+		Freshness: rpcSchema.ComputeFreshness(info.Timestamp),
+	}, nil
 }
 
 func (h *HostRepo) CPUUsage(ctx context.Context, args rpcSchema.CPUUsageArgs) (rpcSchema.CPUUsageReply, error) {
@@ -130,7 +134,13 @@ func (h *HostRepo) MemInfo(ctx context.Context, args rpcSchema.MemoryInfoArgs) (
 	if err := db.Model(&model.MonitorMemory{}).Order("timestamp desc").First(&info).Error; err != nil {
 		return rpcSchema.MemoryInfoReply{}, err
 	}
-	return rpcSchema.MemoryInfoReply{Percent: info.MemPercent, Total: info.MemTotal, Used: info.MemUsed, Freshness: rpcSchema.ComputeFreshness(info.Timestamp)}, nil
+	return rpcSchema.MemoryInfoReply{
+		Percent:   info.MemPercent,
+		Total:     info.MemTotal,
+		Used:      info.MemUsed,
+		Timestamp: info.Timestamp.Unix(),
+		Freshness: rpcSchema.ComputeFreshness(info.Timestamp),
+	}, nil
 }
 
 func (h *HostRepo) MemUsage(ctx context.Context, args rpcSchema.MemoryUsageArgs) (rpcSchema.MemoryUsageReply, error) {
