@@ -1,6 +1,6 @@
 FROM --platform=$BUILDPLATFORM golang:1.25 AS beacon-builder
 ARG TARGETARCH
-ENV GOPROXY=https://goproxy.cn
+ENV GOPROXY=https://goproxy.cn|https://goproxy.io|direct
 ENV GOSUMDB=sum.golang.google.cn
 
 WORKDIR /src
@@ -17,7 +17,7 @@ RUN for attempt in 1 2 3 4 5; do \
     GOARCH=$TARGETARCH go build -o /out/beacon ./cmd/beacon
 
 FROM --platform=$BUILDPLATFORM golang:1.25 AS collia-builder
-ENV GOPROXY=https://goproxy.cn
+ENV GOPROXY=https://goproxy.cn|https://goproxy.io|direct
 ENV GOSUMDB=sum.golang.google.cn
 
 # collia 要下发到各种架构的 agent 机器，与 beacon 自身架构无关，
