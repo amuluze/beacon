@@ -9,14 +9,16 @@ COPY web/package.json web/pnpm-lock.yaml web/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 # 再拷源码触发构建
 COPY web/ ./
-RUN pnpm run build
+# 依赖层的 postinstall 在源码复制前执行，此处需按真实 Nuxt 配置刷新类型与别名。
+RUN pnpm run postinstall && pnpm run build
 
 ############################
 # Stage 2: 构建 Go server
 ############################
 FROM golang:1.25-alpine AS server-builder
-ARG TARGETOS=linux
-ARG TARGETARCH=amd64
+ARG TARGETOS
+ARG TARGETARCH
+ARG GOPROXY=https://goproxy.cn,direct
 WORKDIR /build/server
 # 先下载依赖以利用层缓存
 COPY server/go.mod server/go.sum ./

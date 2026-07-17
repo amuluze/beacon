@@ -15,7 +15,7 @@ const menus = computed(() => {
 <template>
     <el-aside :width="store.app.isCollapse ? '64px' : '210px'">
         <div class="am-logo">
-            <img class="am-logo__img" src="@/assets/images/beacon.png" alt="template" />
+            <img class="am-logo__img" src="/beacon.svg" alt="Beacon" />
             <span v-show="!store.app.isCollapse" class="am-logo__text">Beacon</span>
         </div>
         <div class="am-menu">
@@ -52,7 +52,8 @@ const menus = computed(() => {
   border-bottom: var(--el-aside-border-color) 1px solid;
 
   @include e(img) {
-    height: 28px;
+    width: 32px;
+    height: 32px;
     object-fit: contain;
   }
 

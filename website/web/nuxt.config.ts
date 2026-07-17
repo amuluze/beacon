@@ -49,7 +49,7 @@ export default defineNuxtConfig({
                 { name: 'theme-color', content: '#237a62' },
             ],
             link: [
-                { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+                { rel: 'icon', type: 'image/svg+xml', href: '/beacon.svg' },
             ],
             script: [
                 { src: '/theme-bootstrap.js', tagPosition: 'head' },
@@ -102,7 +102,6 @@ export default defineNuxtConfig({
             '/': { prerender: true },
             '/document': { prerender: true },
             '/changelog': { prerender: true },
-            '/about': { prerender: true },
             '/wechat': { prerender: true },
             '/privacy': { prerender: true },
         },

@@ -4380,10 +4380,18 @@
           "children": [
             {
               "type": "rectangle",
-              "cornerRadius": 5,
+              "cornerRadius": 999,
               "id": "YCHK0",
               "name": "Logo Icon",
-              "fill": "$accent-primary",
+              "fill": [
+                "#3b82f6",
+                {
+                  "type": "image",
+                  "enabled": true,
+                  "url": "beacon-logo.png",
+                  "mode": "fit"
+                }
+              ],
               "width": 24,
               "height": 24
             },
@@ -10485,10 +10493,18 @@
               "children": [
                 {
                   "type": "rectangle",
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": 999,
                   "id": "xMA0l",
                   "name": "LogoIcon",
-                  "fill": "#FFFFFF",
+                  "fill": [
+                    "#3b82f6",
+                    {
+                      "type": "image",
+                      "enabled": true,
+                      "url": "beacon-logo.png",
+                      "mode": "fit"
+                    }
+                  ],
                   "width": 32,
                   "height": 32
                 },

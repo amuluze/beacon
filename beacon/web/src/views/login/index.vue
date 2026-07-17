@@ -59,7 +59,7 @@ function changeLanguage(lang: string) {
     <div class="am-login">
         <aside class="am-login__brand">
             <div class="am-login__logo">
-                <span class="am-login__logo-mark" />
+                <img class="am-login__logo-mark" src="/beacon.svg" alt="" aria-hidden="true" />
                 <span class="am-login__logo-text">Beacon</span>
             </div>
             <p class="am-login__slogan">
@@ -146,10 +146,9 @@ function changeLanguage(lang: string) {
 }
 
 .am-login__logo-mark {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--am-radius-sm);
-  background: #fff;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
 }
 
 .am-login__logo-text {

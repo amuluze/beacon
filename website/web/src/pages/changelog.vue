@@ -1,44 +1,62 @@
 <script setup lang="ts">
 import { usePageSeo } from '~/composables/usePageSeo'
 
-const releases = [
+type ChangeType = '新功能' | '改进' | '安全' | '修复'
+
+interface ReleaseChange {
+    type: ChangeType
+    text: string
+}
+
+interface Release {
+    version: string
+    badge: string
+    date: string
+    datetime: string
+    changes: ReleaseChange[]
+}
+
+const releases: Release[] = [
     {
         version: 'v3.0.4',
         badge: '最新',
         date: '2026 · 07',
+        datetime: '2026-07',
         changes: [
-            '告警按 Agent 作用域评估，支持多节点独立阈值',
-            'System Audit 页面支持按 Agent 过滤',
-            'MailSender 接口与告警通知能力',
-            'OpenAPI 类型自动生成（openapi-typescript）',
-            'Health Probe 注入 DB / Tunnel 健康检查',
-            '凭据强校验：空值、弱默认、长度不足拒绝启动',
-            '并发安全与残留二进制清理',
+            { type: '新功能', text: '告警按 Agent 作用域评估，支持多节点独立阈值' },
+            { type: '新功能', text: 'System Audit 页面支持按 Agent 过滤' },
+            { type: '新功能', text: 'MailSender 接口与告警通知能力' },
+            { type: '改进', text: 'OpenAPI 类型自动生成（openapi-typescript）' },
+            { type: '改进', text: 'Health Probe 注入 DB / Tunnel 健康检查' },
+            { type: '安全', text: '凭据强校验：空值、弱默认、长度不足拒绝启动' },
+            { type: '修复', text: '并发安全与残留二进制清理' },
         ],
     },
     {
         version: 'v3.0.0',
         badge: '里程碑',
         date: '2026 · 05',
+        datetime: '2026-05',
         changes: [
-            '重命名 amprobe → Beacon，品牌与命名统一',
-            '统一 Agent 选择（X-Agent-ID / agent_id）',
-            'Agent 版本上报、远程更新与自更新卸载',
-            '反向 gRPC tunnel 控制通道重构',
-            'CORS 白名单化、JWT 生产模式强密钥',
-            '分层限流与 WS / report / tunnel 鉴权加固',
+            { type: '新功能', text: '重命名 amprobe → Beacon，品牌与命名统一' },
+            { type: '新功能', text: '统一 Agent 选择（X-Agent-ID / agent_id）' },
+            { type: '新功能', text: 'Agent 版本上报、远程更新与自更新卸载' },
+            { type: '改进', text: '反向 gRPC tunnel 控制通道重构' },
+            { type: '安全', text: 'CORS 白名单化、JWT 生产模式强密钥' },
+            { type: '安全', text: '分层限流与 WS / report / tunnel 鉴权加固' },
         ],
     },
     {
         version: 'v2.0.0',
         badge: '稳定版',
         date: '2025',
+        datetime: '2025',
         changes: [
-            '主机 CPU、内存、磁盘、网络实时监控',
-            'Docker 容器全生命周期管理',
-            '用户、角色与 API 接口权限管理',
-            '操作审计与登录登出记录',
-            'Vue 3 + TypeScript + Element Plus 前端架构',
+            { type: '新功能', text: '主机 CPU、内存、磁盘、网络实时监控' },
+            { type: '新功能', text: 'Docker 容器全生命周期管理' },
+            { type: '新功能', text: '用户、角色与 API 接口权限管理' },
+            { type: '新功能', text: '操作审计与登录登出记录' },
+            { type: '改进', text: 'Vue 3 + TypeScript + Element Plus 前端架构' },
         ],
     },
 ]
@@ -71,11 +89,12 @@ usePageSeo({
                 <div class="site-card timeline__card">
                     <header>
                         <div><strong>{{ release.version }}</strong><span>{{ release.badge }}</span></div>
-                        <time>{{ release.date }}</time>
+                        <time :datetime="release.datetime">{{ release.date }}</time>
                     </header>
                     <ul>
-                        <li v-for="change in release.changes" :key="change">
-                            <Icon name="mdi:check-circle" /><span>{{ change }}</span>
+                        <li v-for="change in release.changes" :key="change.text" class="release-change">
+                            <span class="release-change__type" :data-type="change.type">{{ change.type }}</span>
+                            <span>{{ change.text }}</span>
                         </li>
                     </ul>
                 </div>
@@ -174,10 +193,31 @@ usePageSeo({
   color: var(--color-text-secondary);
 }
 
-.timeline__card li :deep(svg) {
+.release-change__type {
   flex: 0 0 auto;
-  margin-top: 4px;
-  color: var(--color-success);
+  min-width: 48px;
+  padding: 2px 8px;
+  color: var(--primary);
+  background: var(--color-primary-soft);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-align: center;
+}
+
+.release-change__type[data-type='改进'] {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+}
+
+.release-change__type[data-type='安全'] {
+  color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+}
+
+.release-change__type[data-type='修复'] {
+  color: var(--color-error);
+  background: color-mix(in srgb, var(--color-error) 12%, transparent);
 }
 
 @media (max-width: 640px) {

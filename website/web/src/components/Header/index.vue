@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { useTheme } from '~/composables/useTheme'
 
+const logoSrc = '/beacon.svg'
+
 const links = [
     { label: '首页', to: '/' },
     { label: '使用手册', to: '/document' },
+    { label: '更新日志', to: '/changelog' },
 ]
 
 const mobileLinks = [
     ...links,
-    { label: '团队故事', to: '/about' },
-    { label: '更新日志', to: '/changelog' },
     { label: '微信公众号', to: '/wechat' },
 ]
 
@@ -29,7 +30,7 @@ function toggleMenu() {
     <header class="site-header">
         <div class="site-header__inner site-container">
             <NuxtLink to="/" class="site-header__brand" aria-label="Beacon 首页">
-                <span class="site-header__mark" />
+                <img class="site-header__mark" :src="logoSrc" alt="" aria-hidden="true">
                 <span>Beacon</span>
             </NuxtLink>
             <nav class="site-header__nav site-header__nav--desktop" aria-label="主导航">
@@ -98,10 +99,9 @@ function toggleMenu() {
 }
 
 .site-header__mark {
-  width: 26px;
-  height: 26px;
-  background: var(--primary);
-  border-radius: var(--radius-sm);
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
 }
 
 .site-header__nav {

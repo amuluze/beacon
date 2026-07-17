@@ -1,9 +1,9 @@
-version: '3'
+version: "3"
 
 vars:
   REGISTRY: registry.cn-hangzhou.aliyuncs.com
-  IMAGE: '{{.REGISTRY}}/amuluze/beacon-offical'
-  TAG: v0.1.8
+  IMAGE: "{{.REGISTRY}}/amuluze/beacon-offical"
+  TAG: v3.0.4
 
 includes:
   server:
