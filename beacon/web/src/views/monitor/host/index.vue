@@ -5,10 +5,10 @@ import type { DiskIO, DiskUsage, NetIO, NetUsage } from '@/interface/host.ts'
 import { queryCPUInfo, queryCPUUsage, queryDiskInfo, queryDiskUsage, queryMemInfo, queryMemUsage, queryNetworkUsage } from '@/api/host'
 import AgentEmptyState from '@/components/Agent/AgentEmptyState.vue'
 import DataStaleTag from '@/components/Agent/DataStaleTag.vue'
-import { cpuTrendingOption, diskTrendingOption, memTrendingOption, netTrendingOption } from '@/config/echarts.ts'
+import { cpuTrendingOption, diskTrendingOption, formatBytesPerSecond, memTrendingOption, netTrendingOption } from '@/config/echarts.ts'
 import { convertBytesToReadable } from '@/utils/convert.ts'
 import { dayjs } from 'element-plus'
-import { set } from 'lodash-es'
+import { cloneDeep, set } from 'lodash-es'
 import { useAgentSelection } from '@/hooks/useAgentSelection'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -23,7 +23,7 @@ function openTerminal(): void {
   router.push({ path: '/terminal', query: { agent_id: currentAgent.value } })
 }
 watch(currentAgent, () => {
-  refreshAll()
+  void refreshAll()
 })
 
 // Time density
@@ -38,58 +38,78 @@ const options = [
   { value: 86400, label: '24小时' },
 ]
 watch(timeDensity, () => {
-  refreshAll()
+  void refreshAll()
 })
+
+interface TrendRange {
+  start_time: number
+  end_time: number
+  agent_id?: string
+}
+
+let latestRefreshID = 0
+
+function isLatestRefresh(refreshID: number): boolean {
+  return refreshID === latestRefreshID
+}
 
 // CPU
 const cpuPercent = ref('0.0%')
 const cpuStale = ref(false)
 const cpuTimestamp = ref(0)
-const cpuOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(cpuTrendingOption)))
-async function renderCPUPercent() {
+const cpuOption = reactive<EChartsOption>(cloneDeep(cpuTrendingOption))
+async function renderCPUPercent(refreshID: number) {
   const { data } = await queryCPUInfo({ ...agentParams.value } as any)
+  if (!isLatestRefresh(refreshID))
+    return
   cpuPercent.value = `${data.percent.toFixed(1)}%`
   cpuStale.value = Boolean(data.stale)
   cpuTimestamp.value = data.timestamp
 }
-async function renderCPU() {
-  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams.value }
+async function renderCPU(param: TrendRange, refreshID: number) {
   const { data } = await queryCPUUsage(param as any)
+  if (!isLatestRefresh(refreshID))
+    return
   const cpuData = data.data
   const labels = cpuData.map((item: any) => `${dayjs(item.timestamp * 1000).format('HH:mm')}`)
   set(cpuOption, 'xAxis.data', labels)
   set(cpuOption, 'legend.data', ['CPU 使用率'])
-  set(cpuOption, 'series', [{ name: 'CPU 使用率', data: cpuData.map((item: any) => item.value.toFixed(1)), type: 'line', smooth: true, showSymbol: false }])
+  set(cpuOption, 'series', [{ name: 'CPU 使用率', data: cpuData.map((item: any) => Number(item.value.toFixed(1))), type: 'line', smooth: true, showSymbol: false }])
 }
 
 // Memory
 const memInfo = ref({ percent: '0%', total: '0', used: '0', stale: false, timestamp: 0 })
-const memOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(memTrendingOption)))
-async function renderMemInfo() {
+const memOption = reactive<EChartsOption>(cloneDeep(memTrendingOption))
+async function renderMemInfo(refreshID: number) {
   const { data } = await queryMemInfo({ ...agentParams.value } as any)
+  if (!isLatestRefresh(refreshID))
+    return
   memInfo.value.percent = `${data.percent.toFixed(1)}%`
   memInfo.value.total = convertBytesToReadable(data.total)
   memInfo.value.used = convertBytesToReadable(data.used)
   memInfo.value.stale = Boolean(data.stale)
   memInfo.value.timestamp = data.timestamp
 }
-async function renderMem() {
-  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams.value }
+async function renderMem(param: TrendRange, refreshID: number) {
   const { data } = await queryMemUsage(param as any)
+  if (!isLatestRefresh(refreshID))
+    return
   const memData = data.data
   const labels = memData.map((item: any) => `${dayjs(item.timestamp * 1000).format('HH:mm')}`)
   set(memOption, 'xAxis.data', labels)
   set(memOption, 'legend.data', ['内存使用率'])
-  set(memOption, 'series', [{ name: '内存使用率', data: memData.map((item: any) => item.value.toFixed(1)), type: 'line', smooth: true, showSymbol: false }])
+  set(memOption, 'series', [{ name: '内存使用率', data: memData.map((item: any) => Number(item.value.toFixed(1))), type: 'line', smooth: true, showSymbol: false }])
 }
 
 // Disk
 const diskInfo = ref<{ device: string, total: string, used: string, percent: string, stale?: boolean, timestamp?: number }[]>([])
 const diskStale = computed(() => diskInfo.value.some(item => item.stale))
 const diskTimestamp = computed(() => diskInfo.value.find(item => item.stale)?.timestamp || diskInfo.value[0]?.timestamp || 0)
-const diskOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(diskTrendingOption)))
-async function renderDiskInfo() {
+const diskOption = reactive<EChartsOption>(cloneDeep(diskTrendingOption))
+async function renderDiskInfo(refreshID: number) {
   const { data } = await queryDiskInfo({ ...agentParams.value } as any)
+  if (!isLatestRefresh(refreshID))
+    return
   diskInfo.value = (data.info || []).map((item: any) => ({
     device: item.device,
     total: convertBytesToReadable(item.total),
@@ -107,11 +127,15 @@ function generateDiskSeriesData(data: DiskUsage[]) {
   })
   return series
 }
-async function renderDisk() {
-  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams.value }
+async function renderDisk(param: TrendRange, refreshID: number) {
   const { data } = await queryDiskUsage(param as any)
-  if (!data.usage || data.usage.length === 0)
+  if (!isLatestRefresh(refreshID))
     return
+  if (!data.usage || data.usage.length === 0) {
+    set(diskOption, 'xAxis.data', [])
+    set(diskOption, 'series', [])
+    return
+  }
   const labels = data.usage[0].data.map((item: DiskIO) => `${dayjs(item.timestamp * 1000).format('HH:mm')}`)
   set(diskOption, 'xAxis.data', labels)
   set(diskOption, 'series', generateDiskSeriesData(data.usage))
@@ -119,16 +143,21 @@ async function renderDisk() {
 
 // Network
 const netInfo = ref<{ ethernet: string, read: string, write: string }[]>([])
-const netOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(netTrendingOption)))
-async function renderNet() {
-  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams.value }
+const netOption = reactive<EChartsOption>(cloneDeep(netTrendingOption))
+async function renderNet(param: TrendRange, refreshID: number) {
   const { data } = await queryNetworkUsage(param as any)
-  if (!data.usage || data.usage.length === 0)
+  if (!isLatestRefresh(refreshID))
     return
+  if (!data.usage || data.usage.length === 0) {
+    netInfo.value = []
+    set(netOption, 'xAxis.data', [])
+    set(netOption, 'series', [])
+    return
+  }
   netInfo.value = data.usage.map((item: NetUsage) => ({
     ethernet: item.ethernet,
-    read: convertBytesToReadable(item.data[item.data.length - 1].bytes_recv),
-    write: convertBytesToReadable(item.data[item.data.length - 1].bytes_sent),
+    read: formatBytesPerSecond(item.data[item.data.length - 1]?.bytes_recv || 0),
+    write: formatBytesPerSecond(item.data[item.data.length - 1]?.bytes_sent || 0),
   }))
   const labels = data.usage[0].data.map((item: NetIO) => `${dayjs(item.timestamp * 1000).format('HH:mm')}`)
   set(netOption, 'xAxis.data', labels)
@@ -140,28 +169,37 @@ async function renderNet() {
   set(netOption, 'series', series)
 }
 
-function refreshAll() {
+async function refreshAll(): Promise<void> {
+  const refreshID = ++latestRefreshID
   if (!currentAgent.value)
     return
-  renderCPUPercent()
-  renderCPU()
-  renderMemInfo()
-  renderMem()
-  renderDiskInfo()
-  renderDisk()
-  renderNet()
+  const endTime = dayjs().unix()
+  const param: TrendRange = {
+    start_time: endTime - timeDensity.value,
+    end_time: endTime,
+    ...agentParams.value,
+  }
+  await Promise.allSettled([
+    renderCPUPercent(refreshID),
+    renderCPU(param, refreshID),
+    renderMemInfo(refreshID),
+    renderMem(param, refreshID),
+    renderDiskInfo(refreshID),
+    renderDisk(param, refreshID),
+    renderNet(param, refreshID),
+  ])
 }
 
 async function refreshAgents() {
   await loadAgents()
-  refreshAll()
+  await refreshAll()
 }
 
 const timer = ref()
 onMounted(async () => {
   await ensureSelectedAgent()
-  refreshAll()
-  timer.value = setInterval(refreshAll, 10000)
+  void refreshAll()
+  timer.value = setInterval(() => void refreshAll(), 10000)
 })
 onUnmounted(() => {
   clearInterval(timer.value)
@@ -172,7 +210,7 @@ const { t } = useI18n()
 
 <template>
     <!-- Host Section -->
-    <div class="am-section">
+    <div class="am-section host-monitor">
         <div class="am-section-header">
             <div class="am-section-title-group">
                 <span class="am-section-title">{{ t('menu.hostMonitor') }}</span>
@@ -189,8 +227,8 @@ const { t } = useI18n()
         </div>
 
         <AgentEmptyState v-if="isAgentEmpty" @refresh="refreshAgents" />
-        <div v-else class="am-chart-grid">
-            <div class="am-chart-row">
+        <div v-else class="am-chart-grid host-monitor__chart-grid">
+            <div class="am-chart-row host-monitor__chart-row">
                 <div class="am-chart-card">
                     <div class="am-chart-card-header">
                         <div class="am-chart-card-title-row">
@@ -199,7 +237,7 @@ const { t } = useI18n()
                         </div>
                         <span class="am-chart-card-percent accent-primary">{{ cpuPercent }}</span>
                     </div>
-                    <div class="am-chart-area">
+                    <div class="am-chart-area host-monitor__chart-area">
                         <echarts :option="cpuOption" />
                     </div>
                 </div>
@@ -211,12 +249,12 @@ const { t } = useI18n()
                         </div>
                         <span class="am-chart-card-percent accent-warning">{{ memInfo.percent }}</span>
                     </div>
-                    <div class="am-chart-area">
+                    <div class="am-chart-area host-monitor__chart-area">
                         <echarts :option="memOption" />
                     </div>
                 </div>
             </div>
-            <div class="am-chart-row">
+            <div class="am-chart-row host-monitor__chart-row">
                 <div class="am-chart-card">
                     <div class="am-chart-card-header">
                         <div class="am-chart-card-title-row">
@@ -225,7 +263,7 @@ const { t } = useI18n()
                         </div>
                         <span v-if="diskInfo.length > 0" class="am-chart-card-percent accent-success">{{ diskInfo[0].percent }}</span>
                     </div>
-                    <div class="am-chart-area">
+                    <div class="am-chart-area host-monitor__chart-area">
                         <echarts :option="diskOption" />
                     </div>
                 </div>
@@ -234,7 +272,7 @@ const { t } = useI18n()
                         <span class="am-chart-card-title">网络流量</span>
                         <span v-if="netInfo.length > 0" class="am-chart-card-percent accent-primary">{{ netInfo[0].read }} / {{ netInfo[0].write }}</span>
                     </div>
-                    <div class="am-chart-area">
+                    <div class="am-chart-area host-monitor__chart-area">
                         <echarts :option="netOption" />
                     </div>
                 </div>
@@ -244,6 +282,25 @@ const { t } = useI18n()
 </template>
 
 <style scoped lang="scss">
+.host-monitor {
+  height: auto;
+  min-height: 100%;
+}
+
+.host-monitor__chart-grid {
+  flex: 0 0 auto;
+}
+
+.host-monitor__chart-row {
+  flex: none;
+}
+
+.host-monitor__chart-area {
+  flex: 0 0 clamp(240px, 28vh, 320px);
+  height: clamp(240px, 28vh, 320px);
+  min-height: 240px;
+}
+
 .accent-primary {
   color: var(--am-accent-primary);
 }
