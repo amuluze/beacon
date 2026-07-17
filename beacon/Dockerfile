@@ -36,7 +36,7 @@ RUN for attempt in 1 2 3 4 5; do \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/collia-amd64 ./cmd/collia && \
     CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /out/collia-arm64 ./cmd/collia
 
-FROM ubuntu:22.04
+FROM public.ecr.aws/ubuntu/ubuntu:22.04
 WORKDIR /app
 
 RUN apt-get update && \
