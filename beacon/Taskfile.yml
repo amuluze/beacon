@@ -6,7 +6,11 @@ vars:
   VERSION:
     sh: cat VERSION
   REGISTRY: registry.cn-hangzhou.aliyuncs.com
+  # amd64 与 arm64 走不同的镜像仓库，对齐 manager.sh 中 BEACON_ARCH 分支：
+  #   amd64 -> amuluze/beacon
+  #   arm64 -> amuluze/beacon-arm
   IMAGE: '{{.REGISTRY}}/amuluze/beacon'
+  IMAGE_ARM: '{{.REGISTRY}}/amuluze/beacon-arm'
   TAG: '{{.VERSION}}'
   DEV_CONFIG_FILE: '{{.TASKFILE_DIR}}/configs/config.dev.toml'
   MODEL_FILE: '{{.TASKFILE_DIR}}/configs/model.conf'
@@ -51,9 +55,10 @@ tasks:
     deps:
       - bin
     cmds:
-      - docker buildx build --platform linux/arm64 -t {{.IMAGE}}:{{.TAG}} -o type=docker .
+      - docker buildx build --platform linux/arm64 -t {{.IMAGE_ARM}}:{{.TAG}} -o type=docker .
 
   build:
-    desc: Build and push multi-platform Docker image
+    desc: Build and push amd64/arm64 Docker images to their respective repos
     cmds:
-      - docker buildx build --platform linux/amd64,linux/arm64 -t {{.IMAGE}}:{{.TAG}} . --push
+      - docker buildx build --platform linux/amd64 -t {{.IMAGE}}:{{.TAG}} . --push
+      - docker buildx build --platform linux/arm64 -t {{.IMAGE_ARM}}:{{.TAG}} . --push
