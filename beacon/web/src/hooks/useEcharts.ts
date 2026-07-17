@@ -6,16 +6,17 @@
 
 import type { EChartsOption } from '@/components/Echarts/echarts'
 import echarts from '@/components/Echarts/echarts'
+import type { SetOptionOpts } from 'echarts/core'
 
 function useEcharts(elRef: Ref<HTMLDivElement>, options: EChartsOption): {
     initCharts: () => void
-    setOptions: (options: EChartsOption) => void
+    setOptions: (options: EChartsOption, opts?: SetOptionOpts) => void
     echartsResize: () => void
 } {
     const charts = shallowRef<echarts.ECharts>()
 
-    const setOptions = (options: EChartsOption): void => {
-        charts.value && charts.value.setOption(options)
+    const setOptions = (options: EChartsOption, opts?: SetOptionOpts): void => {
+        charts.value && charts.value.setOption(options, opts)
     }
 
     const initCharts = (): void => {

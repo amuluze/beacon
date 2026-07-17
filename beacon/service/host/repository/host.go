@@ -114,7 +114,7 @@ func (h *HostRepo) CPUUsage(ctx context.Context, args rpcSchema.CPUUsageArgs) (r
 		return rpcSchema.CPUUsageReply{}, err
 	}
 	if err := db.Model(&model.MonitorCPU{}).
-		Where("timestamp > ?", time.Unix(args.StartTime, 0)).
+		Where("timestamp >= ? AND timestamp <= ?", time.Unix(args.StartTime, 0), time.Unix(args.EndTime, 0)).
 		Order("timestamp asc").Find(&results).Error; err != nil {
 		return rpcSchema.CPUUsageReply{}, err
 	}
@@ -150,7 +150,7 @@ func (h *HostRepo) MemUsage(ctx context.Context, args rpcSchema.MemoryUsageArgs)
 		return rpcSchema.MemoryUsageReply{}, err
 	}
 	if err := db.Model(&model.MonitorMemory{}).
-		Where("timestamp > ?", time.Unix(args.StartTime, 0)).
+		Where("timestamp >= ? AND timestamp <= ?", time.Unix(args.StartTime, 0), time.Unix(args.EndTime, 0)).
 		Order("timestamp asc").Find(&results).Error; err != nil {
 		return rpcSchema.MemoryUsageReply{}, err
 	}
@@ -202,7 +202,7 @@ func (h *HostRepo) DiskUsage(ctx context.Context, args rpcSchema.DiskUsageArgs) 
 		return rpcSchema.DiskUsageReply{}, err
 	}
 	if err := db.Model(&model.MonitorDisk{}).
-		Where("timestamp > ?", time.Unix(args.StartTime, 0)).
+		Where("timestamp >= ? AND timestamp <= ?", time.Unix(args.StartTime, 0), time.Unix(args.EndTime, 0)).
 		Order("timestamp asc").Find(&results).Error; err != nil {
 		return rpcSchema.DiskUsageReply{}, err
 	}
@@ -226,7 +226,7 @@ func (h *HostRepo) NetUsage(ctx context.Context, args rpcSchema.NetUsageArgs) (r
 		return rpcSchema.NetUsageReply{}, err
 	}
 	if err := db.Model(&model.MonitorNet{}).
-		Where("timestamp > ?", time.Unix(args.StartTime, 0)).
+		Where("timestamp >= ? AND timestamp <= ?", time.Unix(args.StartTime, 0), time.Unix(args.EndTime, 0)).
 		Order("timestamp asc").Find(&results).Error; err != nil {
 		return rpcSchema.NetUsageReply{}, err
 	}

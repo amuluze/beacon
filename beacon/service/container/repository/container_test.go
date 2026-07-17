@@ -119,3 +119,53 @@ func TestContainerListReturnsLatestPerNameForSelectedAgent(t *testing.T) {
 		t.Fatalf("container count = %d, want 1", count.Count)
 	}
 }
+
+func TestContainerUsageRespectsClosedTimeWindow(t *testing.T) {
+	db, err := database.NewDB(database.WithDBName(filepath.Join(t.TempDir(), "probe")))
+	if err != nil {
+		t.Fatalf("new db: %v", err)
+	}
+	t.Cleanup(db.Close)
+	if err := db.AutoMigrate(new(model.MonitorContainer)); err != nil {
+		t.Fatalf("auto migrate: %v", err)
+	}
+
+	start := time.Unix(1_000, 0)
+	middle := time.Unix(1_100, 0)
+	end := time.Unix(1_200, 0)
+	after := time.Unix(1_300, 0)
+	for index, timestamp := range []time.Time{start, middle, end, after} {
+		if err := db.Create(&model.MonitorContainer{
+			AgentID: "agent-a", Timestamp: timestamp, Name: "app",
+			CPUPercent: float64(index), MemUsage: float64(index),
+		}).Error; err != nil {
+			t.Fatalf("create container sample: %v", err)
+		}
+	}
+
+	repo := &ContainerRepo{DB: db}
+	ctx := contextx.NewAgentID(context.Background(), "agent-a")
+	reply, err := repo.Usage(ctx, rpcSchema.ContainerUsageArgs{StartTime: start.Unix(), EndTime: end.Unix()})
+	if err != nil {
+		t.Fatalf("Usage returned error: %v", err)
+	}
+	want := []int64{start.Unix(), middle.Unix(), end.Unix()}
+	assertContainerUsageTimestamps(t, "CPU", want, reply.CPUUsage["app"])
+	assertContainerUsageTimestamps(t, "memory", want, reply.MemUsage["app"])
+}
+
+func assertContainerUsageTimestamps(t *testing.T, metric string, want []int64, items []rpcSchema.Usage) {
+	t.Helper()
+	got := make([]int64, 0, len(items))
+	for _, item := range items {
+		got = append(got, item.Timestamp)
+	}
+	if len(got) != len(want) {
+		t.Fatalf("%s timestamps = %v, want %v", metric, got, want)
+	}
+	for index := range want {
+		if got[index] != want[index] {
+			t.Fatalf("%s timestamps = %v, want %v", metric, got, want)
+		}
+	}
+}

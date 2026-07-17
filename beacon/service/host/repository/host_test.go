@@ -107,6 +107,104 @@ func TestCPUAndMemInfoReturnLatestSampleTimestampForSelectedAgent(t *testing.T) 
 	}
 }
 
+func TestUsageQueriesRespectClosedTimeWindow(t *testing.T) {
+	db, err := database.NewDB(database.WithDBName(filepath.Join(t.TempDir(), "probe")))
+	if err != nil {
+		t.Fatalf("new db: %v", err)
+	}
+	t.Cleanup(db.Close)
+	if err := db.AutoMigrate(
+		new(model.MonitorCPU),
+		new(model.MonitorMemory),
+		new(model.MonitorDisk),
+		new(model.MonitorNet),
+	); err != nil {
+		t.Fatalf("auto migrate: %v", err)
+	}
+
+	start := time.Unix(1_000, 0)
+	middle := time.Unix(1_100, 0)
+	end := time.Unix(1_200, 0)
+	after := time.Unix(1_300, 0)
+	timestamps := []time.Time{start, middle, end, after}
+	for index, timestamp := range timestamps {
+		if err := db.Create(&model.MonitorCPU{AgentID: "agent-a", Timestamp: timestamp, CPUPercent: float64(index)}).Error; err != nil {
+			t.Fatalf("create CPU sample: %v", err)
+		}
+		if err := db.Create(&model.MonitorMemory{AgentID: "agent-a", Timestamp: timestamp, MemPercent: float64(index)}).Error; err != nil {
+			t.Fatalf("create memory sample: %v", err)
+		}
+		if err := db.Create(&model.MonitorDisk{AgentID: "agent-a", Timestamp: timestamp, Device: "disk0", DiskRead: float64(index)}).Error; err != nil {
+			t.Fatalf("create disk sample: %v", err)
+		}
+		if err := db.Create(&model.MonitorNet{AgentID: "agent-a", Timestamp: timestamp, Ethernet: "eth0", NetRecv: float64(index)}).Error; err != nil {
+			t.Fatalf("create network sample: %v", err)
+		}
+	}
+
+	repo := &HostRepo{DB: db}
+	ctx := contextx.NewAgentID(context.Background(), "agent-a")
+	want := []int64{start.Unix(), middle.Unix(), end.Unix()}
+
+	cpuReply, err := repo.CPUUsage(ctx, rpcSchema.CPUUsageArgs{StartTime: start.Unix(), EndTime: end.Unix()})
+	if err != nil {
+		t.Fatalf("CPUUsage returned error: %v", err)
+	}
+	assertUsageTimestamps(t, "CPU", want, usageTimestamps(cpuReply.Data))
+
+	memReply, err := repo.MemUsage(ctx, rpcSchema.MemoryUsageArgs{StartTime: start.Unix(), EndTime: end.Unix()})
+	if err != nil {
+		t.Fatalf("MemUsage returned error: %v", err)
+	}
+	assertUsageTimestamps(t, "memory", want, usageTimestamps(memReply.Data))
+
+	diskReply, err := repo.DiskUsage(ctx, rpcSchema.DiskUsageArgs{StartTime: start.Unix(), EndTime: end.Unix()})
+	if err != nil {
+		t.Fatalf("DiskUsage returned error: %v", err)
+	}
+	if len(diskReply.Usage) != 1 {
+		t.Fatalf("len(disk usage) = %d, want 1", len(diskReply.Usage))
+	}
+	diskTimestamps := make([]int64, 0, len(diskReply.Usage[0].Data))
+	for _, item := range diskReply.Usage[0].Data {
+		diskTimestamps = append(diskTimestamps, item.Timestamp)
+	}
+	assertUsageTimestamps(t, "disk", want, diskTimestamps)
+
+	netReply, err := repo.NetUsage(ctx, rpcSchema.NetUsageArgs{StartTime: start.Unix(), EndTime: end.Unix()})
+	if err != nil {
+		t.Fatalf("NetUsage returned error: %v", err)
+	}
+	if len(netReply.Usage) != 1 {
+		t.Fatalf("len(network usage) = %d, want 1", len(netReply.Usage))
+	}
+	netTimestamps := make([]int64, 0, len(netReply.Usage[0].Data))
+	for _, item := range netReply.Usage[0].Data {
+		netTimestamps = append(netTimestamps, item.Timestamp)
+	}
+	assertUsageTimestamps(t, "network", want, netTimestamps)
+}
+
+func usageTimestamps(items []rpcSchema.Usage) []int64 {
+	timestamps := make([]int64, 0, len(items))
+	for _, item := range items {
+		timestamps = append(timestamps, item.Timestamp)
+	}
+	return timestamps
+}
+
+func assertUsageTimestamps(t *testing.T, metric string, want, got []int64) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Fatalf("%s timestamps = %v, want %v", metric, got, want)
+	}
+	for index := range want {
+		if got[index] != want[index] {
+			t.Fatalf("%s timestamps = %v, want %v", metric, got, want)
+		}
+	}
+}
+
 func TestDiskInfoReturnsLatestPerDeviceForSelectedAgent(t *testing.T) {
 	db, err := database.NewDB(database.WithDBName(filepath.Join(t.TempDir(), "probe")))
 	if err != nil {

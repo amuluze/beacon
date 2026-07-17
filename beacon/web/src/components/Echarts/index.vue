@@ -27,7 +27,7 @@ watch(
   (newVal) => {
     let targetOptions: EChartsOption = {}
     targetOptions = { ...newVal }
-    setOptions(targetOptions)
+    setOptions(targetOptions, { replaceMerge: ['series'] })
   },
   {
     deep: true,

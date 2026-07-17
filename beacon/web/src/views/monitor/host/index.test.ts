@@ -94,8 +94,8 @@ const EchartsStub = defineComponent({
     template: '<div class="echarts-stub" />',
 })
 
-function trendData(value: number) {
-    return { data: { data: [{ timestamp: 100, value }] } }
+function trendData(value: number, timestamp = 900) {
+    return { data: { data: [{ timestamp, value }] } }
 }
 
 const mountedWrappers: Array<{ unmount: () => void }> = []
@@ -135,10 +135,10 @@ beforeEach(() => {
     queryMemUsage.mockResolvedValue(trendData(45.6))
     queryDiskInfo.mockResolvedValue({ data: { info: [] } })
     queryDiskUsage.mockResolvedValue({
-        data: { usage: [{ device: 'disk0', data: [{ timestamp: 100, io_read: 1024, io_write: 2048 }] }] },
+        data: { usage: [{ device: 'disk0', data: [{ timestamp: 900, io_read: 1024, io_write: 2048 }] }] },
     })
     queryNetworkUsage.mockResolvedValue({
-        data: { usage: [{ ethernet: 'eth0', data: [{ timestamp: 100, bytes_recv: 4096, bytes_sent: 8192 }] }] },
+        data: { usage: [{ ethernet: 'eth0', data: [{ timestamp: 900, bytes_recv: 4096, bytes_sent: 8192 }] }] },
     })
 })
 
@@ -156,7 +156,7 @@ describe('host monitor time density', () => {
         expect(wrapper.findAll('.host-monitor__chart-area')).toHaveLength(4)
     })
 
-    it('preserves runtime axis formatters and numeric series values', async () => {
+    it('preserves runtime axis formatters and timestamped numeric series values', async () => {
         const wrapper = mountHostMonitor()
         await flushPromises()
 
@@ -166,24 +166,33 @@ describe('host monitor time density', () => {
         expect(typeof options[3].yAxis[0].axisLabel.formatter).toBe('function')
         options.forEach((option) => {
             option.series.forEach((series: { data: unknown[] }) => {
-                expect(series.data.every(value => typeof value === 'number')).toBe(true)
+                expect(series.data.every((point) => {
+                    return Array.isArray(point) && point[0] === 900_000 && typeof point[1] === 'number'
+                })).toBe(true)
             })
         })
     })
 
-    it('uses one shared time window for every trend request after density changes', async () => {
+    it('uses one shared five-minute window for every request and chart after density changes', async () => {
         const wrapper = mountHostMonitor()
         await flushPromises()
         clock.unixTime = 3_000
 
-        wrapper.findComponent(ElSelectStub).vm.$emit('update:modelValue', 120)
+        wrapper.findComponent(ElSelectStub).vm.$emit('update:modelValue', 300)
         await flushPromises()
 
-        const expectedRange = { agent_id: 'agent-a', start_time: 2_880, end_time: 3_000 }
+        const expectedRange = { agent_id: 'agent-a', start_time: 2_700, end_time: 3_000 }
         expect(queryCPUUsage).toHaveBeenLastCalledWith(expectedRange)
         expect(queryMemUsage).toHaveBeenLastCalledWith(expectedRange)
         expect(queryDiskUsage).toHaveBeenLastCalledWith(expectedRange)
         expect(queryNetworkUsage).toHaveBeenLastCalledWith(expectedRange)
+        chartOptions(wrapper).forEach((option) => {
+            expect(option.xAxis).toMatchObject({
+                type: 'time',
+                min: 2_700_000,
+                max: 3_000_000,
+            })
+        })
     })
 
     it('ignores a stale response from the previous density', async () => {
@@ -201,10 +210,10 @@ describe('host monitor time density', () => {
 
         resolveCurrent(trendData(22))
         await flushPromises()
-        expect(chartOptions(wrapper)[0].series[0].data.map(Number)).toEqual([22])
+        expect(chartOptions(wrapper)[0].series[0].data.map((point: [number, number]) => point[1])).toEqual([22])
 
         resolveOld(trendData(81))
         await flushPromises()
-        expect(chartOptions(wrapper)[0].series[0].data.map(Number)).toEqual([22])
+        expect(chartOptions(wrapper)[0].series[0].data.map((point: [number, number]) => point[1])).toEqual([22])
     })
 })

@@ -5,9 +5,11 @@ import { containerCpuOption, containerMemOption } from '@/config/echarts.ts'
 import type { Usage } from '@/interface/host.ts'
 import { dayjs } from 'element-plus'
 import { queryContainersUsage } from '@/api/container'
-import { set } from 'lodash-es'
+import { cloneDeep, set } from 'lodash-es'
 import { useAgentSelection } from '@/hooks/useAgentSelection'
 import { useI18n } from 'vue-i18n'
+import { applyMonitorTimeRange, toMonitorSeriesPoint } from '@/utils/monitorChart'
+import type { MonitorTimeRange } from '@/utils/monitorChart'
 
 // Agent switcher
 const { selectedAgentID: currentAgent, isAgentEmpty, agentParams, ensureSelectedAgent, loadAgents } = useAgentSelection({ immediate: false })
@@ -19,6 +21,7 @@ watch(currentAgent, () => {
 // Time density
 const timeDensity = ref(600)
 const options = [
+  { value: 300, label: '5分钟' },
   { value: 600, label: '10分钟' },
   { value: 1800, label: '30分钟' },
   { value: 3600, label: '1小时' },
@@ -30,8 +33,8 @@ watch(timeDensity, () => {
 })
 
 // Charts
-const cpuOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(containerCpuOption)))
-const memOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(containerMemOption)))
+const cpuOption = reactive<EChartsOption>(cloneDeep(containerCpuOption))
+const memOption = reactive<EChartsOption>(cloneDeep(containerMemOption))
 
 const containerNames = ref<string[]>([])
 const containerPalette = ['#409EFF', '#569A2E', '#C28014', '#DB5050']
@@ -41,8 +44,6 @@ function clearCharts(): void {
   containerNames.value = []
   set(cpuOption, 'legend.data', [])
   set(memOption, 'legend.data', [])
-  set(cpuOption, 'xAxis.data', [])
-  set(memOption, 'xAxis.data', [])
   set(cpuOption, 'series', [])
   set(memOption, 'series', [])
 }
@@ -52,7 +53,9 @@ async function render() {
   if (!currentAgent.value)
     return
   const endTime = dayjs().unix()
-  const param = { start_time: endTime - timeDensity.value, end_time: endTime, ...agentParams.value }
+  const param: MonitorTimeRange = { start_time: endTime - timeDensity.value, end_time: endTime, ...agentParams.value }
+  applyMonitorTimeRange(cpuOption, param)
+  applyMonitorTimeRange(memOption, param)
   const { data } = await queryContainersUsage(param as any)
   if (renderID !== latestRenderID)
     return
@@ -70,12 +73,6 @@ async function render() {
   set(cpuOption, 'legend.data', data.names.map((n: string, i: number) => ({ name: n, textStyle: { color: containerPalette[i % containerPalette.length] } })))
   set(memOption, 'legend.data', data.names.map((n: string, i: number) => ({ name: n, textStyle: { color: containerPalette[i % containerPalette.length] } })))
 
-  // X axis from first container
-  const cpuFirstKey = cpuData.keys().next().value as string
-  const xLabels = cpuData.get(cpuFirstKey)?.map(item => `${dayjs(item.timestamp * 1000).format('HH:mm')}`) || []
-  set(cpuOption, 'xAxis.data', xLabels)
-  set(memOption, 'xAxis.data', xLabels)
-
   // Series
   const cpuSeries: any[] = []
   data.names.forEach((name: string, i: number) => {
@@ -83,7 +80,7 @@ async function render() {
     if (values) {
       cpuSeries.push({
         name,
-        data: values.map(item => Number(item.value.toFixed(1))),
+        data: values.map(item => toMonitorSeriesPoint(item.timestamp, Number(item.value.toFixed(1)))),
         type: 'line',
         smooth: true,
         showSymbol: false,
@@ -100,7 +97,7 @@ async function render() {
     if (values) {
       memSeries.push({
         name,
-        data: values.map(item => Number(item.value.toFixed(1))),
+        data: values.map(item => toMonitorSeriesPoint(item.timestamp, Number(item.value.toFixed(1)))),
         type: 'line',
         smooth: true,
         showSymbol: false,

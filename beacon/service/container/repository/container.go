@@ -148,7 +148,7 @@ func (c *ContainerRepo) Usage(ctx context.Context, args rpcSchema.ContainerUsage
 	}
 	if err := db.Model(&model.MonitorContainer{}).
 		Order("timestamp asc").
-		Where("timestamp > ?", time.Unix(args.StartTime, 0)).Find(&containers).Error; err != nil {
+		Where("timestamp >= ? AND timestamp <= ?", time.Unix(args.StartTime, 0), time.Unix(args.EndTime, 0)).Find(&containers).Error; err != nil {
 		return rpcSchema.ContainerUsageReply{}, err
 	}
 	reply := rpcSchema.ContainerUsageReply{
