@@ -12,6 +12,8 @@ import { cloneDeep, set } from 'lodash-es'
 import { useAgentSelection } from '@/hooks/useAgentSelection'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import { applyMonitorTimeRange, toMonitorSeriesPoint } from '@/utils/monitorChart'
+import type { MonitorTimeRange } from '@/utils/monitorChart'
 
 const router = useRouter()
 
@@ -41,12 +43,6 @@ watch(timeDensity, () => {
   void refreshAll()
 })
 
-interface TrendRange {
-  start_time: number
-  end_time: number
-  agent_id?: string
-}
-
 let latestRefreshID = 0
 
 function isLatestRefresh(refreshID: number): boolean {
@@ -66,15 +62,19 @@ async function renderCPUPercent(refreshID: number) {
   cpuStale.value = Boolean(data.stale)
   cpuTimestamp.value = data.timestamp
 }
-async function renderCPU(param: TrendRange, refreshID: number) {
+async function renderCPU(param: MonitorTimeRange, refreshID: number) {
   const { data } = await queryCPUUsage(param as any)
   if (!isLatestRefresh(refreshID))
     return
   const cpuData = data.data
-  const labels = cpuData.map((item: any) => `${dayjs(item.timestamp * 1000).format('HH:mm')}`)
-  set(cpuOption, 'xAxis.data', labels)
   set(cpuOption, 'legend.data', ['CPU 使用率'])
-  set(cpuOption, 'series', [{ name: 'CPU 使用率', data: cpuData.map((item: any) => Number(item.value.toFixed(1))), type: 'line', smooth: true, showSymbol: false }])
+  set(cpuOption, 'series', [{
+    name: 'CPU 使用率',
+    data: cpuData.map((item: any) => toMonitorSeriesPoint(item.timestamp, Number(item.value.toFixed(1)))),
+    type: 'line',
+    smooth: true,
+    showSymbol: false,
+  }])
 }
 
 // Memory
@@ -90,15 +90,19 @@ async function renderMemInfo(refreshID: number) {
   memInfo.value.stale = Boolean(data.stale)
   memInfo.value.timestamp = data.timestamp
 }
-async function renderMem(param: TrendRange, refreshID: number) {
+async function renderMem(param: MonitorTimeRange, refreshID: number) {
   const { data } = await queryMemUsage(param as any)
   if (!isLatestRefresh(refreshID))
     return
   const memData = data.data
-  const labels = memData.map((item: any) => `${dayjs(item.timestamp * 1000).format('HH:mm')}`)
-  set(memOption, 'xAxis.data', labels)
   set(memOption, 'legend.data', ['内存使用率'])
-  set(memOption, 'series', [{ name: '内存使用率', data: memData.map((item: any) => Number(item.value.toFixed(1))), type: 'line', smooth: true, showSymbol: false }])
+  set(memOption, 'series', [{
+    name: '内存使用率',
+    data: memData.map((item: any) => toMonitorSeriesPoint(item.timestamp, Number(item.value.toFixed(1)))),
+    type: 'line',
+    smooth: true,
+    showSymbol: false,
+  }])
 }
 
 // Disk
@@ -122,35 +126,31 @@ async function renderDiskInfo(refreshID: number) {
 function generateDiskSeriesData(data: DiskUsage[]) {
   const series: any[] = []
   data.forEach((i: DiskUsage) => {
-    series.push({ name: `${i.device}_Read`, data: i.data.map((v: DiskIO) => v.io_read), type: 'line', smooth: true, showSymbol: false })
-    series.push({ name: `${i.device}_Write`, data: i.data.map((v: DiskIO) => v.io_write), type: 'line', smooth: true, showSymbol: false })
+    series.push({ name: `${i.device}_Read`, data: i.data.map((v: DiskIO) => toMonitorSeriesPoint(v.timestamp, v.io_read)), type: 'line', smooth: true, showSymbol: false })
+    series.push({ name: `${i.device}_Write`, data: i.data.map((v: DiskIO) => toMonitorSeriesPoint(v.timestamp, v.io_write)), type: 'line', smooth: true, showSymbol: false })
   })
   return series
 }
-async function renderDisk(param: TrendRange, refreshID: number) {
+async function renderDisk(param: MonitorTimeRange, refreshID: number) {
   const { data } = await queryDiskUsage(param as any)
   if (!isLatestRefresh(refreshID))
     return
   if (!data.usage || data.usage.length === 0) {
-    set(diskOption, 'xAxis.data', [])
     set(diskOption, 'series', [])
     return
   }
-  const labels = data.usage[0].data.map((item: DiskIO) => `${dayjs(item.timestamp * 1000).format('HH:mm')}`)
-  set(diskOption, 'xAxis.data', labels)
   set(diskOption, 'series', generateDiskSeriesData(data.usage))
 }
 
 // Network
 const netInfo = ref<{ ethernet: string, read: string, write: string }[]>([])
 const netOption = reactive<EChartsOption>(cloneDeep(netTrendingOption))
-async function renderNet(param: TrendRange, refreshID: number) {
+async function renderNet(param: MonitorTimeRange, refreshID: number) {
   const { data } = await queryNetworkUsage(param as any)
   if (!isLatestRefresh(refreshID))
     return
   if (!data.usage || data.usage.length === 0) {
     netInfo.value = []
-    set(netOption, 'xAxis.data', [])
     set(netOption, 'series', [])
     return
   }
@@ -159,12 +159,10 @@ async function renderNet(param: TrendRange, refreshID: number) {
     read: formatBytesPerSecond(item.data[item.data.length - 1]?.bytes_recv || 0),
     write: formatBytesPerSecond(item.data[item.data.length - 1]?.bytes_sent || 0),
   }))
-  const labels = data.usage[0].data.map((item: NetIO) => `${dayjs(item.timestamp * 1000).format('HH:mm')}`)
-  set(netOption, 'xAxis.data', labels)
   const series: any[] = []
   data.usage.forEach((i: NetUsage) => {
-    series.push({ name: `${i.ethernet}_Receive`, data: i.data.map((v: NetIO) => v.bytes_recv), type: 'line', smooth: true, showSymbol: false })
-    series.push({ name: `${i.ethernet}_Send`, data: i.data.map((v: NetIO) => v.bytes_sent), type: 'line', smooth: true, showSymbol: false })
+    series.push({ name: `${i.ethernet}_Receive`, data: i.data.map((v: NetIO) => toMonitorSeriesPoint(v.timestamp, v.bytes_recv)), type: 'line', smooth: true, showSymbol: false })
+    series.push({ name: `${i.ethernet}_Send`, data: i.data.map((v: NetIO) => toMonitorSeriesPoint(v.timestamp, v.bytes_sent)), type: 'line', smooth: true, showSymbol: false })
   })
   set(netOption, 'series', series)
 }
@@ -174,11 +172,15 @@ async function refreshAll(): Promise<void> {
   if (!currentAgent.value)
     return
   const endTime = dayjs().unix()
-  const param: TrendRange = {
+  const param: MonitorTimeRange = {
     start_time: endTime - timeDensity.value,
     end_time: endTime,
     ...agentParams.value,
   }
+  applyMonitorTimeRange(cpuOption, param)
+  applyMonitorTimeRange(memOption, param)
+  applyMonitorTimeRange(diskOption, param)
+  applyMonitorTimeRange(netOption, param)
   await Promise.allSettled([
     renderCPUPercent(refreshID),
     renderCPU(param, refreshID),

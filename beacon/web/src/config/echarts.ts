@@ -6,6 +6,34 @@
 import type { EChartsOption } from '@/components/Echarts/echarts.ts'
 
 const bytesPerSecondUnits = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s']
+const byteUnits = ['B', 'KB', 'MB', 'GB', 'TB']
+
+function seriesMetricValue(value: unknown): number {
+    if (Array.isArray(value))
+        return Number(value[1] ?? 0)
+    return Number(value)
+}
+
+function formatBytes(bytes: number): string {
+    let value = bytes
+    let unitIndex = 0
+    while (Math.abs(value) >= 1024 && unitIndex < byteUnits.length - 1) {
+        value /= 1024
+        unitIndex++
+    }
+    return `${value.toFixed(2)} ${byteUnits[unitIndex]}`
+}
+
+function formatPercentageTooltip(params: any[]): string {
+    return `${seriesMetricValue(params[0]?.value)}%`
+}
+
+function timeAxis() {
+    return {
+        type: 'time',
+        boundaryGap: false,
+    }
+}
 
 export function formatBytesPerSecond(bytesPerSecond: number): string {
     let value = bytesPerSecond
@@ -194,10 +222,7 @@ export const diskOption = {
 export const cpuTrendingOption = {
     tooltip: {
         trigger: 'axis',
-        formatter(params: any) {
-            params = params[0]
-            return `${params.value}%`
-        },
+        formatter: formatPercentageTooltip,
         axisPointer: {
             type: 'cross',
             label: {
@@ -215,11 +240,7 @@ export const cpuTrendingOption = {
         bottom: '3%',
         containLabel: true,
     },
-    xAxis: {
-        type: 'category',
-        boundaryGap: false,
-        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    },
+    xAxis: timeAxis(),
     yAxis: [
         {
             type: 'value',
@@ -240,7 +261,7 @@ export const cpuTrendingOption = {
             lineStyle: {
                 width: 2,
             },
-            data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            data: [],
         },
     ],
 } as EChartsOption
@@ -248,10 +269,7 @@ export const cpuTrendingOption = {
 export const memTrendingOption = {
     tooltip: {
         trigger: 'axis',
-        formatter(params: any) {
-            params = params[0]
-            return `${params.value}%`
-        },
+        formatter: formatPercentageTooltip,
         axisPointer: {
             type: 'cross',
             label: {
@@ -269,11 +287,7 @@ export const memTrendingOption = {
         bottom: '3%',
         containLabel: true,
     },
-    xAxis: {
-        type: 'category',
-        boundaryGap: false,
-        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    },
+    xAxis: timeAxis(),
     yAxis: [
         {
             type: 'value',
@@ -294,7 +308,7 @@ export const memTrendingOption = {
             lineStyle: {
                 width: 2,
             },
-            data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            data: [],
         },
     ],
 } as EChartsOption
@@ -305,7 +319,7 @@ export const diskTrendingOption = {
         formatter(params: any): string {
             let res = ''
             params.forEach((item: any) => {
-                res += `${item.seriesName}: ${formatBytesPerSecond(Number(item.value))}<br/>`
+                res += `${item.seriesName}: ${formatBytesPerSecond(seriesMetricValue(item.value))}<br/>`
             })
             return res
         },
@@ -326,11 +340,7 @@ export const diskTrendingOption = {
         bottom: '3%',
         containLabel: true,
     },
-    xAxis: {
-        type: 'category',
-        boundaryGap: false,
-        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    },
+    xAxis: timeAxis(),
     yAxis: [
         {
             type: 'value',
@@ -349,7 +359,7 @@ export const diskTrendingOption = {
             lineStyle: {
                 width: 2,
             },
-            data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            data: [],
         },
         {
             name: 'Write',
@@ -358,7 +368,7 @@ export const diskTrendingOption = {
             lineStyle: {
                 width: 2,
             },
-            data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            data: [],
         },
     ],
 } as EChartsOption
@@ -369,7 +379,7 @@ export const netTrendingOption = {
         formatter(params: any): string {
             let res = ''
             params.forEach((item: any) => {
-                res += `${item.seriesName}: ${formatBytesPerSecond(Number(item.value))}<br/>`
+                res += `${item.seriesName}: ${formatBytesPerSecond(seriesMetricValue(item.value))}<br/>`
             })
             return res
         },
@@ -390,11 +400,7 @@ export const netTrendingOption = {
         bottom: '3%',
         containLabel: true,
     },
-    xAxis: {
-        type: 'category',
-        boundaryGap: false,
-        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    },
+    xAxis: timeAxis(),
     yAxis: [
         {
             type: 'value',
@@ -413,7 +419,7 @@ export const netTrendingOption = {
             lineStyle: {
                 width: 2,
             },
-            data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            data: [],
         },
         {
             name: 'Send',
@@ -422,7 +428,7 @@ export const netTrendingOption = {
             lineStyle: {
                 width: 2,
             },
-            data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            data: [],
         },
     ],
 } as EChartsOption
@@ -436,10 +442,7 @@ export const containerCpuOption = {
     },
     tooltip: {
         trigger: 'axis',
-        formatter(params: any) {
-            params = params[0]
-            return `${params.value}%`
-        },
+        formatter: formatPercentageTooltip,
         axisPointer: {
             type: 'cross',
             label: {
@@ -456,11 +459,7 @@ export const containerCpuOption = {
         bottom: '3%',
         containLabel: true,
     },
-    xAxis: {
-        type: 'category',
-        boundaryGap: false,
-        data: [],
-    },
+    xAxis: timeAxis(),
     yAxis: {
         type: 'value',
     },
@@ -479,13 +478,7 @@ export const containerMemOption = {
         formatter(params: any): string {
             let res = ''
             params.forEach((item: any) => {
-                const units = ['B', 'KB', 'MB', 'GB']
-                let unitIndex = 0
-                while (item.value >= 1024 && unitIndex < units.length - 1) {
-                    item.value /= 1024
-                    unitIndex++
-                }
-                res += `${item.seriesName}: ${item.value.toFixed(2)} ${units[unitIndex]}<br/>`
+                res += `${item.seriesName}: ${formatBytes(seriesMetricValue(item.value))}<br/>`
             })
             return res
         },
@@ -505,24 +498,12 @@ export const containerMemOption = {
         bottom: '3%',
         containLabel: true,
     },
-    xAxis: {
-        type: 'category',
-        boundaryGap: false,
-        data: [],
-    },
+    xAxis: timeAxis(),
     yAxis: {
         type: 'value',
         axisLabel: {
             show: true,
-            formatter: function yAxisLabelFormatter(value: number): string {
-                const units = ['B', 'KB', 'MB', 'GB']
-                let unitIndex = 0
-                while (value >= 1024 && unitIndex < units.length - 1) {
-                    value /= 1024
-                    unitIndex++
-                }
-                return `${value.toFixed(2)} ${units[unitIndex]}`
-            },
+            formatter: formatBytes,
         },
     },
     series: [],

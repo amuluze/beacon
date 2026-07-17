@@ -65,6 +65,15 @@ const ElSelectStub = defineComponent({
     template: '<div data-testid="density-select"><slot /></div>',
 })
 
+const ElOptionStub = defineComponent({
+    name: 'ElOption',
+    props: {
+        label: String,
+        value: Number,
+    },
+    template: '<span />',
+})
+
 const EchartsStub = defineComponent({
     name: 'Echarts',
     props: {
@@ -76,12 +85,12 @@ const EchartsStub = defineComponent({
     template: '<div class="echarts-stub" />',
 })
 
-function usageData(name: string, cpuValue: number, memValue: number) {
+function usageData(name: string, cpuValue: number, memValue: number, timestamp = 900) {
     return {
         data: {
             names: [name],
-            cpu_usage: { [name]: [{ timestamp: 100, value: cpuValue }] },
-            mem_usage: { [name]: [{ timestamp: 100, value: memValue }] },
+            cpu_usage: { [name]: [{ timestamp, value: cpuValue }] },
+            mem_usage: { [name]: [{ timestamp, value: memValue }] },
         },
     }
 }
@@ -105,7 +114,7 @@ function mountContainerMonitor() {
                 AgentEmptyState: { template: '<div data-testid="agent-empty" />' },
                 Echarts: EchartsStub,
                 echarts: EchartsStub,
-                ElOption: { template: '<span />' },
+                ElOption: ElOptionStub,
                 ElSelect: ElSelectStub,
             },
         },
@@ -132,18 +141,26 @@ afterEach(() => {
 })
 
 describe('container monitor time density', () => {
-    it('uses one shared time window after density changes', async () => {
+    it('offers and renders one shared five-minute window after density changes', async () => {
         const wrapper = mountContainerMonitor()
         await flushPromises()
+        expect(wrapper.findAllComponents(ElOptionStub).map(option => option.props('value'))).toContain(300)
         clock.unixTime = 3_000
 
-        wrapper.findComponent(ElSelectStub).vm.$emit('update:modelValue', 1_800)
+        wrapper.findComponent(ElSelectStub).vm.$emit('update:modelValue', 300)
         await flushPromises()
 
         expect(queryContainersUsage).toHaveBeenLastCalledWith({
             agent_id: 'agent-a',
-            start_time: 1_200,
+            start_time: 2_700,
             end_time: 3_000,
+        })
+        chartOptions(wrapper).forEach((option) => {
+            expect(option.xAxis).toMatchObject({
+                type: 'time',
+                min: 2_700_000,
+                max: 3_000_000,
+            })
         })
     })
 
@@ -162,13 +179,13 @@ describe('container monitor time density', () => {
 
         resolveCurrent(usageData('current-container', 22, 4_096))
         await flushPromises()
-        expect(chartOptions(wrapper)[0].series[0].data).toEqual([22])
-        expect(chartOptions(wrapper)[1].series[0].data).toEqual([4_096])
+        expect(chartOptions(wrapper)[0].series[0].data).toEqual([[900_000, 22]])
+        expect(chartOptions(wrapper)[1].series[0].data).toEqual([[900_000, 4_096]])
 
         resolveOld(usageData('old-container', 81, 8_192))
         await flushPromises()
-        expect(chartOptions(wrapper)[0].series[0].data).toEqual([22])
-        expect(chartOptions(wrapper)[1].series[0].data).toEqual([4_096])
+        expect(chartOptions(wrapper)[0].series[0].data).toEqual([[900_000, 22]])
+        expect(chartOptions(wrapper)[1].series[0].data).toEqual([[900_000, 4_096]])
         expect(wrapper.findAll('.am-legend-label').map(label => label.text())).toEqual(['current-container', 'current-container'])
     })
 
@@ -178,13 +195,18 @@ describe('container monitor time density', () => {
         expect(wrapper.findAll('.am-legend-label')).toHaveLength(2)
 
         queryContainersUsage.mockResolvedValueOnce(emptyUsageData())
+        clock.unixTime = 3_000
         wrapper.findComponent(ElSelectStub).vm.$emit('update:modelValue', 1_800)
         await flushPromises()
 
         expect(wrapper.findAll('.am-legend-label')).toHaveLength(0)
         chartOptions(wrapper).forEach((option) => {
             expect(option.legend.data).toEqual([])
-            expect(option.xAxis.data).toEqual([])
+            expect(option.xAxis).toMatchObject({
+                type: 'time',
+                min: 1_200_000,
+                max: 3_000_000,
+            })
             expect(option.series).toEqual([])
         })
     })
