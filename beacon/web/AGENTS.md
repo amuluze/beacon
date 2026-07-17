@@ -2,7 +2,7 @@
 
 `beacon/web` 模块入口文档，由 `/doc update` 根据当前 workspace 事实重写。
 
-该模块当前角色：frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互。
+该模块当前角色：frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互。
 
 ## 文档
 
@@ -26,7 +26,7 @@
 
 | 目录/文件 | 职责 |
 |-----------|------|
-| `beacon/web/` | frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互 |
+| `beacon/web/` | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 |
 | `beacon/web/public/` | static assets or embedded resources |
 | `beacon/web/src/` | application source code |
 | `beacon/web/types/` | supporting project directory |
@@ -87,12 +87,9 @@
 ## 开发命令
 
 ```bash
+cd beacon/web && npm run lint
+cd beacon/web && npm run ts
+cd beacon/web && npm run test
 cd beacon/web && npm run build
 cd beacon/web && npm run dev
-cd beacon/web && npm run lint
-cd beacon/web && npm run preview
-cd beacon/web && npm run test
-cd beacon/web && npm run test:coverage
-cd beacon/web && npm run test:run
-cd beacon/web && npm run ts
 ```

@@ -2,7 +2,7 @@
 
 `website/web` 模块入口文档，由 `/doc update` 根据当前 workspace 事实重写。
 
-该模块当前角色：frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互。
+该模块当前角色：frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互。
 
 ## 文档
 
@@ -20,14 +20,15 @@
 
 ## 模块路径
 
-`website/web/.output/server/package.json`
+`website/web/package.json`
 
 ## 关键目录
 
 | 目录/文件 | 职责 |
 |-----------|------|
-| `website/web/` | frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互 |
-| `website/web/.output/server/chunks/` | supporting project directory |
+| `website/web/` | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 |
+| `website/web/public/` | static assets or embedded resources |
+| `website/web/src/` | application source code |
 | `website/server/cmd/server/` | Go package `main`，源码 1，测试 0 |
 | `website/server/pkg/database/` | Go package `database`，源码 3，测试 1 |
 | `website/server/pkg/errors/` | Go package `errors`，源码 1，测试 1 |
@@ -37,76 +38,21 @@
 
 ## 依赖
 
-- `@babel/parser`
-- `@fastify/accept-negotiator`
-- `@iconify/utils`
-- `@vue/compiler-core`
-- `@vue/compiler-dom`
-- `@vue/compiler-ssr`
-- `@vue/devtools-api`
-- `@vue/devtools-kit`
-- `@vue/devtools-shared`
-- `@vue/reactivity`
-- `@vue/runtime-core`
-- `@vue/runtime-dom`
-- `@vue/server-renderer`
-- `@vue/shared`
-- `birpc`
-- `boolbase`
-- `color`
-- `color-convert`
-- `color-name`
-- `color-string`
-- `consola`
-- `cookie-es`
-- `css-select`
-- `css-tree`
-- `css-what`
-- `csso`
-- `debug`
-- `defu`
-- `destr`
-- `detect-libc`
-- `devalue`
-- `dom-serializer`
-- `domelementtype`
-- `domhandler`
-- `domutils`
-- `entities`
-- `estree-walker`
-- `etag`
-- `h3`
-- `has-flag`
-- `hookable`
-- `image-meta`
-- `ipx`
-- `iron-webcrypto`
-- `is-arrayish`
-- `lodash-es`
-- `lodash-unified`
-- `mdn-data`
-- `ms`
-- `node-fetch-native`
-- `node-mock-http`
-- `nth-check`
-- `ofetch`
-- `pathe`
-- `perfect-debounce`
-- `pinia`
-- `radix3`
-- `sax`
-- `semver`
-- `sharp`
-- `simple-swizzle`
-- `source-map-js`
-- `supports-color`
-- `svgo`
-- `ufo`
-- `uncrypto`
-- `unhead`
+- `@antfu/eslint-config`
+- `@iconify-json/mdi`
+- `@nuxt/icon`
+- `@nuxt/test-utils`
+- `@vue/test-utils`
+- `eslint`
+- `eslint-plugin-format`
+- `happy-dom`
+- `nuxt`
+- `sass`
+- `typescript`
+- `vitest`
 - `vue`
-- `vue-bundle-renderer`
 - `vue-router`
+- `vue-tsc`
 
 ## 模块约束
 
@@ -117,4 +63,8 @@
 ## 开发命令
 
 ```bash
+cd website/web && npm run lint
+cd website/web && npm run test
+cd website/web && npm run build
+cd website/web && npm run dev
 ```

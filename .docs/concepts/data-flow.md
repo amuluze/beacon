@@ -21,9 +21,8 @@
 | `beacon` | HTTP/WebSocket 请求、认证上下文、目标资源或节点标识、运行时配置 | JSON/API 响应、实时事件、RPC 调用结果、审计或持久化副作用 | HTTP/API service module: Web/API 接入、路由注册、请求校验和服务协调 |
 | `collia` | 仓储查询条件、事务上下文、模型变更 | 持久化记录、查询结果、事务错误 | persistence-aware service module: 数据库模型、仓储和事务边界 |
 | `common` | 调用方传入的 schema、查询参数、数据库/传输配置 | 跨模块复用的结构体、RPC 参数/返回值、数据库或传输封装结果 | shared contract library: 复用 schema、数据库封装、RPC 参数/返回值和跨模块类型 |
-| `beacon-web` | 路由参数、表单输入、用户操作、API 响应、实时事件 | 页面状态、API 请求、组件事件、本地 store/cache 更新、实时通道订阅状态、HTTP client 调用 | frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互 |
-| `website-web-.output-server` | 路由参数、表单输入、用户操作、API 响应 | 页面状态、API 请求、组件事件、本地 store/cache 更新 | frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互 |
-| `website-web` | 路由参数、表单输入、用户操作、API 响应、实时事件 | 页面状态、API 请求、组件事件、本地 store/cache 更新、实时通道订阅状态 | frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互 |
+| `beacon-web` | 路由参数、表单输入、用户操作、API 响应、实时事件 | 页面状态、API 请求、组件事件、本地 store/cache 更新、实时通道订阅状态、HTTP client 调用 | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 |
+| `website-web` | 路由参数、表单输入、用户操作、API 响应、实时事件 | 页面状态、API 请求、组件事件、本地 store/cache 更新、实时通道订阅状态 | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 |
 
 ## 事件传播
 

@@ -5,7 +5,7 @@
 
 ## 模块职责
 
-`beacon-web` 的主要角色是：frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互。
+`beacon-web` 的主要角色是：frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互。
 
 - 承载 Vue 页面、路由、API client、状态管理和用户可见交互。
 - 相关源码包：`beacon/web`。
@@ -14,7 +14,7 @@
 
 | 职责 | 说明 | 是否负责 |
 |------|------|----------|
-| 模块内实现 | frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互 | yes |
+| 模块内实现 | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 | yes |
 | 跨模块协调 | 仅通过公开接口或项目约定完成 | conditional |
 | 其他模块内部状态 | 不直接读写其他模块私有实现 | no |
 
@@ -22,10 +22,10 @@
 
 - 前端包：`beacon/web/package.json`
 - package name：`beacon-web`
-- 前端源码文件：153
+- 前端源码文件：158
 - scripts：`build`, `dev`, `lint`, `lint:fix`, `preview`, `test`, `test:coverage`, `test:run`, `ts`
 - 前端信号：24 个
-- 推断角色：frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互
+- 推断角色：frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互
 
 ## 接口与符号信号
 
@@ -118,12 +118,9 @@
 ## 验证命令
 
 ```bash
-cd beacon/web && npm run build
 cd beacon/web && npm run lint
-cd beacon/web && npm run test
-cd beacon/web && npm run test:coverage
-cd beacon/web && npm run test:run
 cd beacon/web && npm run ts
+cd beacon/web && npm run build
 ```
 
 ## Taskfile Commands

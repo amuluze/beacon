@@ -7,7 +7,7 @@
 
 `Beacon` 是包含 Go 后端和前端包的应用，后端提供运行时能力，前端通过 API 与后端协作。
 
-当前检测到 3 个 Go workspace 模块，以及 3 个 package.json 驱动的前端/Node 模块；模块间边界以 `go.work`、各模块 `go.mod`、`package.json` 和 `.specs/domain/*.md` 为主要约束来源。
+当前检测到 3 个 Go workspace 模块，以及 2 个 package.json 驱动的前端/Node 模块；模块间边界以 `go.work`、各模块 `go.mod`、`package.json` 和 `.specs/domain/*.md` 为主要约束来源。
 
 ## 核心运行链路
 
@@ -18,16 +18,12 @@
 ## 技术栈
 
 - Docker/host operation boundary
-- Frontend workspace detected from positive framework/build-tool signals
+- Vue/Vite frontend
 - Fiber/HTTP API
 - GORM persistence
-- Pinia state management
-- TypeScript
-- Vite build tooling
-- Vue frontend
 - WebSocket realtime channel
 - Go modules detected from `go.mod`/`go.work`
-- Node.js package metadata and scripts detected from `package.json`
+- Node.js/Vue/TypeScript package metadata detected from `package.json`
 - Taskfile command entrypoints
 - Markdown documentation under `.docs/`
 - SDD domain specs under `.specs/domain/`
@@ -39,9 +35,8 @@
 | `beacon` | HTTP/API service module: Web/API 接入、路由注册、请求校验和服务协调 |
 | `collia` | persistence-aware service module: 数据库模型、仓储和事务边界 |
 | `common` | shared contract library: 复用 schema、数据库封装、RPC 参数/返回值和跨模块类型 |
-| `beacon-web` | frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互 |
-| `website-web-.output-server` | frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互 |
-| `website-web` | frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互 |
+| `beacon-web` | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 |
+| `website-web` | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 |
 
 ## 职责边界
 
@@ -58,14 +53,12 @@
 | `.docs/` | implementation documentation |
 | `.github/` | supporting project directory |
 | `.plans/` | SDD implementation plans |
-| `.playwright-mcp/` | supporting project directory |
-| `.pnpm-store/` | supporting project directory |
 | `.specs/` | SDD task, status, and domain specs |
 | `beacon/` | HTTP/API service module: Web/API 接入、路由注册、请求校验和服务协调 |
 | `collia/` | persistence-aware service module: 数据库模型、仓储和事务边界 |
 | `common/` | shared contract library: 复用 schema、数据库封装、RPC 参数/返回值和跨模块类型 |
 | `deploy/` | supporting project directory |
-| `website/` | frontend experience module: 页面、路由、API client、状态管理和用户交互 |
+| `website/` | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 |
 
 ## 调用关系
 
@@ -85,7 +78,6 @@
 ### Runtime Frontend Edges
 
 - `beacon-web` -> backend API/WebSocket boundary（runtime HTTP/WS edge, not a Go compile-time dependency）
-- `website-web-.output-server` -> backend API/WebSocket boundary（runtime HTTP/WS edge, not a Go compile-time dependency）
 - `website-web` -> backend API/WebSocket boundary（runtime HTTP/WS edge, not a Go compile-time dependency）
 
 ### Go Third-Party Dependencies
@@ -128,20 +120,8 @@
 ## 验证入口
 
 ```bash
-cd beacon/web && npm run build
-cd beacon/web && npm run lint
-cd beacon/web && npm run test
-cd beacon/web && npm run test:coverage
-cd beacon/web && npm run test:run
-cd beacon/web && npm run ts
-cd website/web && npm run build
-cd website/web && npm run lint
-cd website/web && npm run test
-cd website/web && npm run test:watch
-cd website/web && npm run typecheck
-npm run build
-npm run lint || true  # lint errors are non-blocking pending cleanup
-npm run ts
+go test ./...
+go build ./...
 ```
 
 ## Domain Specs

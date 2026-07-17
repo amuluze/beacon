@@ -113,7 +113,7 @@ See [System Architecture](./.docs/architecture.md) and [Data Flow](./.docs/conce
 ### Online installer (recommended)
 
 ```bash
-curl -fsSL https://help.beacon.amuluze.com/release/latest/manager.sh | sh
+bash -c "$(curl -fsSLk https://help.beacon.amuluze.com/release/latest/manager.sh)"
 ```
 
 The installer guides you through Web port, Agent control port, and security credential configuration.

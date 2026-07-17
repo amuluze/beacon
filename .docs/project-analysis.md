@@ -5,14 +5,11 @@
 
 ## Workspace Modules
 
-| Path | Unit | Runtime |
-|------|------|---------|
-| `beacon` | `beacon` | Go `1.25.0` |
-| `collia` | `collia` | Go `1.25.0` |
-| `common` | `common` | Go `1.25.0` |
-| `beacon/web/package.json` | `beacon-web` | pinia/typescript/vite/vue |
-| `website/web/.output/server/package.json` | `beacon-offical-prod` | pinia/vue |
-| `website/web/package.json` | `beacon-offical` | vue |
+| Path | Module | Go |
+|------|--------|----|
+| `beacon` | `beacon` | `1.25.0` |
+| `collia` | `collia` | `1.25.0` |
+| `common` | `common` | `1.25.0` |
 
 ## Top-Level Directories
 
@@ -21,14 +18,12 @@
 | `.docs/` | implementation documentation |
 | `.github/` | supporting project directory |
 | `.plans/` | SDD implementation plans |
-| `.playwright-mcp/` | supporting project directory |
-| `.pnpm-store/` | supporting project directory |
 | `.specs/` | SDD task, status, and domain specs |
 | `beacon/` | HTTP/API service module: Web/API 接入、路由注册、请求校验和服务协调 |
 | `collia/` | persistence-aware service module: 数据库模型、仓储和事务边界 |
 | `common/` | shared contract library: 复用 schema、数据库封装、RPC 参数/返回值和跨模块类型 |
 | `deploy/` | supporting project directory |
-| `website/` | frontend experience module: 页面、路由、API client、状态管理和用户交互 |
+| `website/` | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 |
 
 ## Taskfile Commands
 
@@ -43,7 +38,6 @@
 ## Package Scripts
 
 - `beacon/web/package.json (beacon-web)`: `build`, `dev`, `lint`, `lint:fix`, `preview`, `test`, `test:coverage`, `test:run`, `ts`
-- `website/web/.output/server/package.json (beacon-offical-prod)`: no scripts detected
 - `website/web/package.json (beacon-offical)`: `build`, `dev`, `generate`, `lint`, `lint:fix`, `postinstall`, `preview`, `start`, `test`, `test:watch`, `typecheck`
 
 ## Documentation Inventory
@@ -58,19 +52,22 @@
 - `.docs/modules/beacon.md`
 - `.docs/modules/collia.md`
 - `.docs/modules/common.md`
-- `.docs/modules/website-web-.output-server.md`
 - `.docs/modules/website-web.md`
 - `.docs/project-analysis.md`
 
 ## Unmanaged Documentation Signals
 
-- No unmanaged generated documentation or CLAUDE-only AI entries detected.
+### Stale generated `.docs` files
+
+这些文件带有 `/doc update` 或历史 `/sdd doc update` 生成标记，但不在当前确定性目标集合中；生成器只报告、不覆盖。请按语义删除、归档、迁移到受支持目标，或重新纳入 Manifest。
+
+- `.docs/modules/website-web-.output-server.md`
 
 ## Validation Evidence Inventory
 
 本节只列出静态发现的测试入口；Domain Spec 中的验收方式是建议验证路径，不代表这些测试已经证明约束成立。
 
-- Test files discovered: 81
+- Test files discovered: 90
 - `beacon/pkg/auth/jwtauth/auth_test.go`
 - `beacon/pkg/auth/jwtauth/options_test.go`
 - `beacon/pkg/auth/jwtauth/store_test.go`
@@ -95,7 +92,7 @@
 - `beacon/service/host/repository/host_test.go`
 - `beacon/service/host/service/host_test.go`
 - `beacon/service/install_report_test.go`
-- 另有 57 个测试文件未在本节展开。
+- 另有 66 个测试文件未在本节展开。
 
 ### Domain Spec Evidence Notes
 
@@ -129,27 +126,29 @@
 
 - For legacy-project SDD retrofits, use `/doc init` + `/doc update` once to bootstrap `.docs/`, managed entry files and Domain Spec scaffolds.
 - If code changes behavior, update `.docs/` and the relevant module/concept document.
-- Existing `.docs` Markdown without the `/doc update` generated notice is human-authored and must be preserved; update it from the combined evidence of its current content and the implementation instead of replacing it with a generic projection.
-- Deterministic full-file rewrites are limited to missing targets or documents that explicitly carry the `/doc update` generated notice.
 - After the initial retrofit, Domain Spec semantics are manually maintained; if a long-lived business or architecture constraint changes, update `.specs/domain/` with verifiable rules by hand.
 - If directories, modules, commands, or docs change, update `AGENTS.md` and synchronize `CLAUDE.md`.
 - Task Specs under `.specs/tasks/` are not maintained by this doc updater; they remain SDD planning artifacts.
 
 ## SDD Doc Health
 
-- Health status: pass (通过)
-- Checked docs: 27
-- Passing docs: 27
+- Health status: warn (警告)
+- Checked docs: 24
+- Passing docs: 24
 - Failing docs: 0
-- Governance warnings: 0
+- Governance warnings: 1
 - Health failures: 0
 - Domain specs audited: 2
-- Domain constraint IDs: 12
+- Domain constraint IDs: 13
 - Task Domain refs: 0
 - Reference errors: 0
 - Manifest structure failures: 0
 - Orphan CLAUDE entries: 0
-- Stale generated docs: 0
+- Stale generated docs: 1
+- Warnings:
+  - 1 个旧生成 `.docs` 文件不在当前目标集合中
+- Recommended actions:
+  - 确认陈旧生成文档应删除、归档、迁移到受支持目标，或重新纳入 Manifest；`/doc update` 不会自动覆盖它们。
 - Checked targets:
   - `.docs/api/routes.md`
   - `.docs/architecture.md`
@@ -159,7 +158,6 @@
   - `.docs/modules/beacon.md`
   - `.docs/modules/collia.md`
   - `.docs/modules/common.md`
-  - `.docs/modules/website-web-.output-server.md`
   - `.docs/modules/website-web.md`
   - `.docs/project-analysis.md`
   - `.specs/domain/agent-lifecycle-update.md`
@@ -174,7 +172,5 @@
   - `collia/CLAUDE.md`
   - `common/AGENTS.md`
   - `common/CLAUDE.md`
-  - `website/web/.output/server/AGENTS.md`
-  - `website/web/.output/server/CLAUDE.md`
   - `website/web/AGENTS.md`
   - `website/web/CLAUDE.md`

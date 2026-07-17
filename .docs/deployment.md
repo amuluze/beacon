@@ -40,7 +40,7 @@ docker compose -f website/release/latest/compose.yaml up
 | `collia/config.yml` | 运行时配置文件；检测到键/段：`agent_id`, `cert_dir`, `control`, `enable`, `join_token`, `level`, `log`, `output` |
 | `deploy/.env.example` | 运行或构建配置；检测到键/段：`BEACON_AGENT_INSTALL_TOKEN`, `BEACON_AUTH_SIGNING_KEY`, `BEACON_CONTROL_JOIN_TOKEN` |
 | `deploy/k8s/configmap.yaml` | 运行时配置文件；检测到键/段：`Address`, `AgentInstall`, `AppName`, `Auth`, `AutoLoad`, `AutoLoadInternal`, `Casbin`, `CertDir` |
-| `website/release/latest/.env.example` | 运行或构建配置；检测到键/段：`BEACON_AGENT_INSTALL_TOKEN`, `BEACON_AUTH_SIGNING_KEY`, `BEACON_CONTAINER_NAME`, `BEACON_CONTROL_JOIN_TOKEN`, `BEACON_CONTROL_PORT`, `BEACON_DATA_DIR`, `BEACON_DB_NAME`, `BEACON_HTTP_PORT` |
+| `website/release/latest/.env.example` | 运行或构建配置；检测到键/段：`BEACON_AGENT_INSTALL_TOKEN`, `BEACON_ARCH`, `BEACON_AUTH_SIGNING_KEY`, `BEACON_CONTAINER_NAME`, `BEACON_CONTROL_JOIN_TOKEN`, `BEACON_CONTROL_PORT`, `BEACON_DATA_DIR`, `BEACON_DB_NAME` |
 | `website/server/configs/config.dev.toml` | 开发环境配置，通常包含本地监听、数据库或 Agent 连接参数；检测到键/段：`App`, `AppName`, `CORSAllowOrigins`, `DB`, `DBName`, `DBType`, `Debug`, `Dir` |
 | `website/server/configs/config.toml` | 运行时配置文件；检测到键/段：`App`, `AppName`, `CORSAllowOrigins`, `DB`, `DBName`, `DBType`, `Debug`, `Dir` |
 | `website/web/.nuxt/tsconfig.app.json` | TypeScript 编译配置，用于类型检查或前端构建；检测到键/段：`@nuxt/devtools`, `@nuxt/schema`, `@unhead/vue`, `@vue/compiler-sfc`, `@vue/runtime-core`, `compilerOptions`, `consola`, `defu` |
@@ -82,15 +82,11 @@ docker compose -f website/release/latest/compose.yaml up
 ## Package Scripts
 
 - `beacon/web/package.json (beacon-web)`: `build`, `dev`, `lint`, `lint:fix`, `preview`, `test`, `test:coverage`, `test:run`, `ts`
-- `website/web/.output/server/package.json (beacon-offical-prod)`: no scripts detected
 - `website/web/package.json (beacon-offical)`: `build`, `dev`, `generate`, `lint`, `lint:fix`, `postinstall`, `preview`, `start`, `test`, `test:watch`, `typecheck`
 ## Workspace Modules
 
-| Path | Unit | Runtime |
-|------|------|---------|
-| `beacon` | `beacon` | Go `1.25.0` |
-| `collia` | `collia` | Go `1.25.0` |
-| `common` | `common` | Go `1.25.0` |
-| `beacon/web/package.json` | `beacon-web` | pinia/typescript/vite/vue |
-| `website/web/.output/server/package.json` | `beacon-offical-prod` | pinia/vue |
-| `website/web/package.json` | `beacon-offical` | vue |
+| Path | Module | Go |
+|------|--------|----|
+| `beacon` | `beacon` | `1.25.0` |
+| `collia` | `collia` | `1.25.0` |
+| `common` | `common` | `1.25.0` |
