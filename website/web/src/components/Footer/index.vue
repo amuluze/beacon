@@ -4,7 +4,7 @@ const logoSrc = '/beacon.svg'
 
 <template>
     <footer class="site-footer">
-        <div class="site-container">
+        <div class="site-container site-footer__inner">
             <div class="site-footer__columns">
                 <div class="site-footer__brand">
                     <div class="site-footer__brand-heading">
@@ -25,6 +25,7 @@ const logoSrc = '/beacon.svg'
                 <nav class="site-footer__column" aria-label="相关作品">
                     <strong>相关作品</strong>
                     <a href="https://www.amuluze.com" target="_blank" rel="noopener noreferrer">amuluze</a>
+                    <a href="https://amicon.amuluze.com" target="_blank" rel="noopener noreferrer">amicon</a>
                     <a href="https://www.coverpage.one" target="_blank" rel="noopener noreferrer">coverpage</a>
                 </nav>
                 <nav class="site-footer__column" aria-label="关注我们">
@@ -35,6 +36,7 @@ const logoSrc = '/beacon.svg'
                     <a href="https://github.com/amuluze/beacon" target="_blank" rel="noopener noreferrer">GitHub</a>
                 </nav>
             </div>
+            <div class="site-footer__divider" />
             <div class="site-footer__bottom">
                 <span>Copyright © 2024-present 阿慕 | 京ICP备2023024485号 | 京公网安备11011402053925号</span>
                 <NuxtLink to="/privacy">
@@ -48,56 +50,81 @@ const logoSrc = '/beacon.svg'
 <style scoped lang="scss">
 .site-footer {
   padding: 48px 0 28px;
-  color: var(--color-text-secondary);
   background: var(--background);
   border-top: 1px solid var(--border);
 }
 
-.site-footer__columns {
-  display: grid;
-  grid-template-columns: minmax(300px, 2.2fr) repeat(3, minmax(120px, 1fr));
-  gap: clamp(32px, 5vw, 72px);
-  padding-bottom: var(--space-8);
+.site-footer__inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
 }
 
-.site-footer__brand strong,
-.site-footer__column strong {
-  color: var(--foreground);
-  font-size: var(--font-size-md);
+.site-footer__columns {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-xl);
+}
+
+.site-footer__brand {
+  display: flex;
+  flex: 0 0 320px;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .site-footer__brand-heading {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 10px;
 }
 
 .site-footer__brand-logo {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   object-fit: contain;
 }
 
+.site-footer__brand-heading strong {
+  color: var(--foreground);
+  font-size: 24px;
+  font-weight: 700;
+}
+
 .site-footer__brand p {
-  max-width: 400px;
-  margin: var(--space-2) 0 0;
+  max-width: 320px;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
 }
 
 .site-footer__column {
   display: flex;
+  flex: 0 0 160px;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
+  gap: 14px;
 }
 
-.site-footer__column a,
-.site-footer__bottom a {
+.site-footer__column strong {
+  color: var(--foreground);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+}
+
+.site-footer__column a {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
   transition: color 0.2s ease;
 }
 
-.site-footer__column a:hover,
-.site-footer__bottom a:hover {
+.site-footer__column a:hover {
   color: var(--primary);
+}
+
+.site-footer__divider {
+  height: 1px;
+  background: var(--border);
 }
 
 .site-footer__bottom {
@@ -105,49 +132,43 @@ const logoSrc = '/beacon.svg'
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--border);
+  color: var(--muted-foreground);
   font-size: var(--font-size-xs);
 }
 
-@media (max-width: 900px) {
+.site-footer__bottom a {
+  color: var(--color-text-secondary);
+  transition: color 0.2s ease;
+}
+
+.site-footer__bottom a:hover {
+  color: var(--primary);
+}
+
+@media (max-width: 960px) {
   .site-footer__columns {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    flex-wrap: wrap;
+    gap: var(--space-8);
   }
 
   .site-footer__brand {
-    grid-column: 1 / -1;
+    flex: 1 1 100%;
+  }
+
+  .site-footer__column {
+    flex: 1 1 160px;
   }
 }
 
 @media (max-width: 640px) {
-  .site-footer {
-    padding-top: var(--space-8);
-  }
-
   .site-footer__columns {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-6);
-  }
-
-  .site-footer__brand {
-    grid-column: 1 / -1;
   }
 
   .site-footer__bottom {
     align-items: flex-start;
     flex-direction: column;
     gap: var(--space-3);
-  }
-}
-
-@media (max-width: 420px) {
-  .site-footer__columns {
-    grid-template-columns: 1fr;
-  }
-
-  .site-footer__brand {
-    grid-column: auto;
   }
 }
 </style>

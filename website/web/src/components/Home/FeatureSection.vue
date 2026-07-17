@@ -10,7 +10,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    overlineIcon: 'mdi:star-four-points-outline',
+    overlineIcon: 'lucide:package',
     reverse: false,
     variant: 'default',
 })
@@ -23,9 +23,9 @@ const props = withDefaults(defineProps<Props>(), {
                 <slot />
             </div>
             <div class="feature__content">
-                <p class="site-overline">
+                <p class="feature__overline">
                     <Icon :name="props.overlineIcon" />
-                    {{ props.overline }}
+                    <span>{{ props.overline }}</span>
                 </p>
                 <h2>{{ props.title }}</h2>
                 <p class="feature__description">
@@ -33,7 +33,7 @@ const props = withDefaults(defineProps<Props>(), {
                 </p>
                 <ul>
                     <li v-for="point in props.points" :key="point">
-                        <span class="feature__check"><Icon name="mdi:check" /></span>
+                        <span class="feature__check"><Icon name="lucide:check" /></span>
                         <span>{{ point }}</span>
                     </li>
                 </ul>
@@ -63,9 +63,25 @@ const props = withDefaults(defineProps<Props>(), {
   order: 2;
 }
 
+.feature__overline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  color: var(--primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.feature__overline :deep(svg) {
+  width: 16px;
+  height: 16px;
+}
+
 .feature__content h2 {
   margin: 0;
-  font-size: clamp(26px, 4vw, 30px);
+  font-size: 30px;
   font-weight: 700;
   line-height: 1.2;
 }
@@ -91,6 +107,8 @@ const props = withDefaults(defineProps<Props>(), {
   align-items: flex-start;
   gap: 10px;
   color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
 }
 
 .feature__check {

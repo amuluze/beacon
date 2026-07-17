@@ -69,179 +69,195 @@ usePageSeo({
 </script>
 
 <template>
-    <div>
-        <header class="site-page-header">
-            <div class="site-container">
-                <p class="site-overline">
-                    更新日志
-                </p>
-                <h1 class="site-page-title">
-                    Changelog
-                </h1>
-                <p class="site-page-description">
-                    持续迭代，记录每一次进步
-                </p>
+    <div class="changelog">
+        <header class="changelog__header">
+            <div class="site-container changelog__header-inner">
+                <h1>Changelog</h1>
+                <p>持续迭代，记录每一次进步</p>
             </div>
         </header>
-        <div class="site-container timeline">
-            <article v-for="release in releases" :key="release.version" class="timeline__item">
-                <div class="timeline__marker" />
-                <div class="site-card timeline__card">
-                    <header>
-                        <div><strong>{{ release.version }}</strong><span>{{ release.badge }}</span></div>
-                        <time :datetime="release.datetime">{{ release.date }}</time>
-                    </header>
-                    <ul>
-                        <li v-for="change in release.changes" :key="change.text" class="release-change">
-                            <span class="release-change__type" :data-type="change.type">{{ change.type }}</span>
-                            <span>{{ change.text }}</span>
-                        </li>
-                    </ul>
-                </div>
+        <div class="site-container changelog__body">
+            <article v-for="release in releases" :key="release.version" class="changelog__card">
+                <header class="changelog__version">
+                    <div class="changelog__version-info">
+                        <strong>{{ release.version }}</strong>
+                        <span class="changelog__badge">{{ release.badge }}</span>
+                    </div>
+                    <time :datetime="release.datetime">{{ release.date }}</time>
+                </header>
+                <div class="changelog__divider" />
+                <ul class="changelog__entries">
+                    <li v-for="change in release.changes" :key="change.text" class="release-change">
+                        <span class="release-change__type" :data-type="change.type">{{ change.type }}</span>
+                        <span class="release-change__text">{{ change.text }}</span>
+                    </li>
+                </ul>
             </article>
         </div>
     </div>
 </template>
 
 <style scoped lang="scss">
-.timeline {
-  position: relative;
-  max-width: 880px;
-  padding-top: 64px;
-  padding-bottom: 80px;
+.changelog {
+  background: var(--background);
 }
 
-.timeline::before {
-  content: '';
-  position: absolute;
-  top: 64px;
-  bottom: 80px;
-  left: 7px;
-  width: 1px;
+.changelog__header {
+  padding: 88px 0 40px;
+  background: var(--background);
+}
+
+.changelog__header-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  text-align: center;
+}
+
+.changelog__header h1 {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1.1;
+}
+
+.changelog__header p {
+  max-width: 480px;
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: var(--font-size-md);
+  line-height: 1.6;
+}
+
+.changelog__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-10);
+  padding: 0 0 96px;
+}
+
+.changelog__card {
+  width: 880px;
+  max-width: 100%;
+  padding: var(--space-8);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.changelog__version {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.changelog__version-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.changelog__version-info strong {
+  color: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.changelog__badge {
+  padding: 4px 9px;
+  color: var(--foreground);
+  background: var(--color-primary-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.changelog__version time {
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+}
+
+.changelog__divider {
+  height: 1px;
+  margin: var(--space-5) 0;
   background: var(--border);
 }
 
-.timeline__item {
-  position: relative;
-  padding: 0 0 var(--space-8) 40px;
-}
-
-.timeline__marker {
-  position: absolute;
-  top: 24px;
-  left: 0;
-  width: 15px;
-  height: 15px;
-  background: var(--primary);
-  border: 4px solid var(--color-primary-soft);
-  border-radius: 50%;
-}
-
-.timeline__card {
-  padding: var(--space-6);
-}
-
-.timeline__card header,
-.timeline__card header > div,
-.timeline__card li {
-  display: flex;
-  align-items: center;
-}
-
-.timeline__card header {
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding-bottom: var(--space-4);
-  border-bottom: 1px solid var(--border);
-}
-
-.timeline__card header > div {
-  gap: var(--space-2);
-}
-
-.timeline__card header strong {
-  font-family: var(--font-mono);
-  font-size: 20px;
-}
-
-.timeline__card header span {
-  padding: 2px 8px;
-  color: var(--primary);
-  background: var(--color-primary-soft);
-  border-radius: 999px;
-  font-size: 11px;
-}
-
-.timeline__card time {
-  color: var(--muted-foreground);
-  font-family: var(--font-mono);
-  font-size: 12px;
-}
-
-.timeline__card ul {
+.changelog__entries {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin: var(--space-4) 0 0;
+  gap: 14px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.timeline__card li {
+.release-change {
+  display: flex;
   align-items: flex-start;
-  gap: var(--space-2);
+  gap: var(--space-3);
   color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
 }
 
 .release-change__type {
   flex: 0 0 auto;
-  min-width: 48px;
-  padding: 2px 8px;
-  color: var(--primary);
+  padding: 4px 9px;
+  color: var(--foreground);
   background: var(--color-primary-soft);
-  border-radius: var(--radius-pill);
-  font-size: var(--font-size-xs);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
   font-weight: 600;
   text-align: center;
 }
 
 .release-change__type[data-type='改进'] {
-  color: var(--color-text-secondary);
-  background: var(--color-surface-muted);
+  color: var(--color-success);
+  background: var(--color-improvement-soft);
 }
 
 .release-change__type[data-type='安全'] {
   color: var(--color-warning);
-  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  background: var(--color-warning-soft);
 }
 
 .release-change__type[data-type='修复'] {
   color: var(--color-error);
-  background: color-mix(in srgb, var(--color-error) 12%, transparent);
+  background: var(--color-error-soft);
 }
 
-@media (max-width: 640px) {
-  .timeline {
-    padding-top: 32px;
-    padding-bottom: 48px;
+.release-change__text {
+  flex: 1;
+  padding-top: 2px;
+}
+
+@media (max-width: 720px) {
+  .changelog__header {
+    padding: 56px 0 var(--space-8);
   }
 
-  .timeline::before {
-    top: 32px;
-    bottom: 48px;
+  .changelog__header h1 {
+    font-size: 32px;
   }
 
-  .timeline__item {
-    padding-left: 28px;
+  .changelog__card {
+    padding: var(--space-6);
   }
 
-  .timeline__card {
-    padding: var(--space-4);
-  }
-
-  .timeline__card header {
-    align-items: flex-start;
+  .changelog__version {
     flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
   }
 }
 </style>

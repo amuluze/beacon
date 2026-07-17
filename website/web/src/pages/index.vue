@@ -1,33 +1,16 @@
 <script setup lang="ts">
-import { statisticQuery, statisticUpdate } from '~/api/statistics'
 import { usePageSeo } from '~/composables/usePageSeo'
 import { showToast } from '~/composables/useToast'
 
 const officialBaseURL = 'https://help.beacon.amuluze.com'
-const installCommand = `curl -fsSLO ${officialBaseURL}/release/latest/manager.sh && curl -fsSLO ${officialBaseURL}/release/latest/SHA256SUMS && grep ' manager.sh$' SHA256SUMS | sha256sum -c - && sudo sh manager.sh`
-const statisticID = shallowRef<number | null>(null)
-const statistic = shallowRef<number | null>(null)
+const installCommand = `bash -c "$(curl -fsSLk ${officialBaseURL}/release/latest/manager.sh)"`
 const copying = shallowRef(false)
 
 const heroTags = [
-    { icon: 'mdi:package-variant-closed', label: 'Docker 管理' },
-    { icon: 'mdi:chart-line-variant', label: '实时监控' },
-    { icon: 'mdi:feather', label: '轻量部署' },
+    { icon: 'lucide:package', label: 'Docker 管理' },
+    { icon: 'lucide:activity', label: '实时监控' },
+    { icon: 'lucide:feather', label: '轻量部署' },
 ]
-
-const statisticLabel = computed(() => typeof statistic.value === 'number' ? statistic.value.toLocaleString() : '--')
-
-async function loadStatistic() {
-    try {
-        const reply = await statisticQuery()
-        statisticID.value = reply.id
-        statistic.value = reply.times
-    }
-    catch {
-        statisticID.value = null
-        statistic.value = null
-    }
-}
 
 async function copyInstallCommand() {
     if (copying.value)
@@ -45,23 +28,6 @@ async function copyInstallCommand() {
     }
 }
 
-async function downloadInstallScript() {
-    window.open('/release/latest/manager.sh', '_blank')
-    if (statisticID.value === null)
-        return
-    try {
-        await statisticUpdate({ id: statisticID.value })
-        await loadStatistic()
-    }
-    catch {
-        // 统计失败不影响安装脚本下载与页面主体。
-    }
-}
-
-onMounted(() => {
-    void loadStatistic()
-})
-
 usePageSeo({
     title: 'Beacon - 开源轻量级主机与容器监控工具',
     description: 'Beacon 是轻量级 Server-Agent 主机监控及 Docker 容器管理工具。',
@@ -75,7 +41,7 @@ usePageSeo({
             <div class="hero__glow" aria-hidden="true" />
             <div class="site-container hero__inner">
                 <div class="hero__badge">
-                    <Icon name="mdi:sparkles" />
+                    <Icon name="lucide:sparkles" />
                     <span>开源 · MIT License · 持续维护</span>
                 </div>
                 <h1>Beacon</h1>
@@ -95,28 +61,14 @@ usePageSeo({
                     <span class="hero__prompt">$</span>
                     <code>{{ installCommand }}</code>
                     <button type="button" class="hero__copy" :aria-label="copying ? '正在复制' : '复制安装命令'" @click="copyInstallCommand">
-                        <Icon :name="copying ? 'mdi:loading' : 'mdi:content-copy'" />
+                        <Icon :name="copying ? 'lucide:loader-circle' : 'lucide:copy'" />
                     </button>
                 </div>
                 <div class="hero__actions">
                     <button class="site-button site-button--primary" type="button" @click="copyInstallCommand">
-                        <Icon name="mdi:console-line" />
-                        <span>复制安装命令</span>
+                        <Icon name="lucide:terminal" />
+                        <span>一键安装</span>
                     </button>
-                    <button class="site-button site-button--ghost" type="button" @click="downloadInstallScript">
-                        <Icon name="mdi:download-outline" />
-                        <span>下载安装脚本</span>
-                    </button>
-                    <a class="site-button site-button--card" href="https://github.com/amuluze/beacon" target="_blank" rel="noopener noreferrer">
-                        <Icon name="mdi:github" />
-                        <span>GitHub 开源仓库</span>
-                    </a>
-                </div>
-                <div class="hero__stats">
-                    <Icon name="mdi:cloud-download-outline" />
-                    <span>累计获取</span>
-                    <strong>{{ statisticLabel }}</strong>
-                    <span>次</span>
                 </div>
             </div>
         </section>
@@ -124,6 +76,7 @@ usePageSeo({
         <div>
             <HomeFeatureSection
                 overline="容器管理"
+                overline-icon="lucide:package"
                 title="全面的 Docker 容器管理"
                 description="覆盖容器全生命周期，运行状态与资源占用一目了然"
                 :points="['查看 Docker 版本与运行状态', '管理容器、镜像和网络', '按 Agent 安全执行远程控制']"
@@ -133,6 +86,7 @@ usePageSeo({
 
             <HomeFeatureSection
                 overline="主机管理"
+                overline-icon="lucide:cpu"
                 title="实时监控主机系统资源"
                 description="采集主机核心指标，远程运维与管理触手可及"
                 :points="['CPU、内存、磁盘与网络趋势', '系统时间与时区管理', '远程终端、重启与关机控制']"
@@ -144,6 +98,7 @@ usePageSeo({
 
             <HomeFeatureSection
                 overline="用户管理"
+                overline-icon="lucide:shield-check"
                 title="完善的权限与角色管理"
                 description="精细化权限控制，操作全程可审计、可追溯"
                 :points="['用户与角色权限管理', 'API 接口授权视图', '按 Agent 过滤的系统审计']"
@@ -158,18 +113,18 @@ usePageSeo({
             <div class="cta__glow" aria-hidden="true" />
             <div class="site-container cta__inner">
                 <div class="hero__badge">
-                    <Icon name="mdi:flash-outline" />
+                    <Icon name="lucide:zap" />
                     <span>快速开始</span>
                 </div>
                 <h2>立即开始监控你的主机与容器</h2>
                 <p>一行命令安装 Beacon Server，几分钟完成接入，开箱即用</p>
                 <div class="hero__actions">
                     <NuxtLink class="site-button site-button--primary" to="/document">
-                        <Icon name="mdi:rocket-launch-outline" />
+                        <Icon name="lucide:rocket" />
                         <span>开始安装</span>
                     </NuxtLink>
                     <a class="site-button site-button--card" href="https://github.com/amuluze/beacon" target="_blank" rel="noopener noreferrer">
-                        <Icon name="mdi:star-outline" />
+                        <Icon name="lucide:github" />
                         <span>Star on GitHub</span>
                     </a>
                 </div>
@@ -179,56 +134,6 @@ usePageSeo({
 </template>
 
 <style scoped lang="scss">
-.site-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  min-width: 112px;
-  height: 40px;
-  padding: 0 20px;
-  font-size: var(--font-size-md);
-  font-weight: 600;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.site-button--primary {
-  color: var(--color-text-inverse);
-  background: var(--primary);
-  border: 1px solid var(--primary);
-}
-
-.site-button--primary:hover {
-  background: var(--color-brand-hover);
-  border-color: var(--color-brand-hover);
-}
-
-.site-button--ghost {
-  color: var(--color-text-secondary);
-  background: var(--color-surface-muted);
-  border: 1px solid var(--border);
-}
-
-.site-button--ghost:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
-.site-button--card {
-  color: var(--color-text-secondary);
-  background: var(--card);
-  border: 1px solid var(--border);
-}
-
-.site-button--card:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
 .hero {
   position: relative;
   overflow: hidden;
@@ -380,30 +285,6 @@ usePageSeo({
   margin-top: var(--space-6);
 }
 
-.hero__stats {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-top: var(--space-8);
-  padding: 10px 18px;
-  color: var(--muted-foreground);
-  background: var(--color-surface-muted);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  font-size: var(--font-size-sm);
-}
-
-.hero__stats :deep(svg) {
-  color: var(--primary);
-  font-size: 16px;
-}
-
-.hero__stats strong {
-  color: var(--foreground);
-  font-family: var(--font-mono);
-  font-size: var(--font-size-lg);
-}
-
 .cta {
   position: relative;
   overflow: hidden;
@@ -461,10 +342,6 @@ usePageSeo({
   .hero__actions {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .hero__stats {
-    align-self: flex-start;
   }
 
   .cta {

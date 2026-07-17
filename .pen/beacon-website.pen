@@ -397,6 +397,16 @@
                   "fontFamily": "$font-primary",
                   "fontSize": "$font-size-sm",
                   "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "ToBPL",
+                  "name": "Related Work Link3",
+                  "fill": "$color-text-secondary",
+                  "content": "amicon",
+                  "fontFamily": "$font-primary",
+                  "fontSize": "$font-size-sm",
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -671,9 +681,9 @@
               "cornerRadius": "$radius-m",
               "stroke": "$border",
               "strokeWidth": 1,
-              "gap": "$space-3",
+              "gap": 12,
               "padding": [
-                14,
+                12,
                 16
               ],
               "alignItems": "center",
@@ -693,33 +703,31 @@
                   "id": "syvf6",
                   "name": "Command",
                   "fill": "$color-text-secondary",
-                  "textGrowth": "fixed-width",
-                  "width": 560,
-                  "content": "curl -fsSLO https://help.beacon.amuluze.com/release/latest/manager.sh",
+                  "content": "bash -c \"$(curl -fsSLk https://help.beacon.amuluze.com/release/latest/manager.sh)\"",
                   "fontFamily": "$font-mono",
-                  "fontSize": "$font-size-sm",
+                  "fontSize": 12,
                   "fontWeight": "normal"
                 },
                 {
                   "type": "frame",
-                  "id": "TZPRT",
+                  "id": "agI6T",
                   "name": "Copy",
                   "width": 28,
                   "height": 28,
-                  "fill": "$border",
-                  "cornerRadius": "$radius-sm",
+                  "fill": "#334155",
+                  "cornerRadius": 6,
                   "justifyContent": "center",
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "icon",
-                      "id": "SuJDR",
+                      "id": "TxoHl",
                       "name": "Copy Icon",
                       "width": 14,
                       "height": 14,
                       "icon": "copy",
                       "library": "lucide",
-                      "fill": "$color-text-secondary"
+                      "fill": "#94a3b8"
                     }
                   ]
                 }
@@ -733,39 +741,6 @@
               "alignItems": "center",
               "children": [
                 {
-                  "id": "vlP5m",
-                  "type": "ref",
-                  "ref": "SxThh",
-                  "name": "Btn Copy Cmd",
-                  "descendants": {
-                    "bsTsD": {
-                      "icon": "terminal"
-                    },
-                    "ZwJAI": {
-                      "content": "复制安装命令"
-                    }
-                  }
-                },
-                {
-                  "id": "H3nOX",
-                  "type": "ref",
-                  "ref": "SxThh",
-                  "name": "Btn Download",
-                  "fill": "$color-surface-muted",
-                  "stroke": "$border",
-                  "strokeWidth": 1,
-                  "descendants": {
-                    "bsTsD": {
-                      "icon": "download",
-                      "fill": "$foreground"
-                    },
-                    "ZwJAI": {
-                      "content": "下载安装脚本",
-                      "fill": "$foreground"
-                    }
-                  }
-                },
-                {
                   "id": "HktN4",
                   "type": "ref",
                   "ref": "SxThh",
@@ -775,71 +750,14 @@
                   "strokeWidth": 1,
                   "descendants": {
                     "bsTsD": {
-                      "icon": "github",
+                      "icon": "terminal",
                       "fill": "$foreground"
                     },
                     "ZwJAI": {
-                      "content": "GitHub 开源仓库",
+                      "content": "一键安装",
                       "fill": "$foreground"
                     }
                   }
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "Cf2uC",
-              "name": "Stats",
-              "fill": "$color-surface-muted",
-              "cornerRadius": "$radius-pill",
-              "stroke": "$border",
-              "strokeWidth": 1,
-              "gap": "$space-2",
-              "padding": [
-                10,
-                18
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "N4Z43",
-                  "name": "Stats Icon",
-                  "width": 16,
-                  "height": 16,
-                  "icon": "cloud-download",
-                  "library": "lucide",
-                  "fill": "$primary"
-                },
-                {
-                  "type": "text",
-                  "id": "u9KvK7",
-                  "name": "Stats Label",
-                  "fill": "$muted-foreground",
-                  "content": "累计获取",
-                  "fontFamily": "$font-primary",
-                  "fontSize": "$font-size-sm",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "aRtpQ",
-                  "name": "Stats Number",
-                  "fill": "$foreground",
-                  "content": "12,486",
-                  "fontFamily": "$font-primary",
-                  "fontSize": "$font-size-sm",
-                  "fontWeight": "700"
-                },
-                {
-                  "type": "text",
-                  "id": "H5TtD",
-                  "name": "Stats Unit",
-                  "fill": "$muted-foreground",
-                  "content": "次",
-                  "fontFamily": "$font-primary",
-                  "fontSize": "$font-size-sm",
-                  "fontWeight": "normal"
                 }
               ]
             }
@@ -3142,6 +3060,7 @@
                   "id": "f5FTjz",
                   "name": "Card 前端",
                   "width": "fill_container",
+                  "height": 199,
                   "fill": "$card",
                   "cornerRadius": "$radius-lg",
                   "stroke": "$border",
@@ -3192,6 +3111,7 @@
                       "id": "j0y4Y",
                       "name": "Tech List",
                       "width": "fill_container",
+                      "height": "fill_container",
                       "layout": "vertical",
                       "gap": 10,
                       "children": [
@@ -3244,6 +3164,7 @@
                   "id": "pdXkH",
                   "name": "Card 后端",
                   "width": "fill_container",
+                  "height": 199,
                   "fill": "$card",
                   "cornerRadius": "$radius-lg",
                   "stroke": "$border",
@@ -3294,6 +3215,7 @@
                       "id": "QuETI",
                       "name": "Tech List",
                       "width": "fill_container",
+                      "height": "fill_container",
                       "layout": "vertical",
                       "gap": 10,
                       "children": [
@@ -3336,6 +3258,7 @@
                   "id": "FHtEB",
                   "name": "Card 存储",
                   "width": "fill_container",
+                  "height": 199,
                   "fill": "$card",
                   "cornerRadius": "$radius-lg",
                   "stroke": "$border",
@@ -3386,6 +3309,7 @@
                       "id": "atM5H",
                       "name": "Tech List",
                       "width": "fill_container",
+                      "height": "fill_container",
                       "layout": "vertical",
                       "gap": 10,
                       "children": [
@@ -3418,6 +3342,7 @@
                   "id": "H9BvA",
                   "name": "Card 传输",
                   "width": "fill_container",
+                  "height": 199,
                   "fill": "$card",
                   "cornerRadius": "$radius-lg",
                   "stroke": "$border",
@@ -3468,6 +3393,7 @@
                       "id": "AEAA0",
                       "name": "Tech List",
                       "width": "fill_container",
+                      "height": "fill_container",
                       "layout": "vertical",
                       "gap": 10,
                       "children": [
@@ -4698,7 +4624,7 @@
     {
       "type": "frame",
       "id": "Ld0ux",
-      "x": 4920,
+      "x": 1628,
       "y": 719,
       "name": "Docs Page",
       "clip": true,
@@ -4782,7 +4708,7 @@
               "fill": "$muted-foreground",
               "textGrowth": "fixed-width",
               "width": 520,
-              "content": "基于 Docker Compose，几分钟完成部署，开箱即用",
+              "content": "支持一键安装、手动安装与离线安装，几分钟完成部署，开箱即用。",
               "lineHeight": 1.6,
               "textAlign": "center",
               "fontFamily": "$font-primary",
@@ -4959,13 +4885,46 @@
                       ]
                     },
                     {
+                      "type": "frame",
+                      "id": "M59vB6",
+                      "name": "Env Requirements",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$space-3",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "TbdRz",
+                          "name": "H3 Env",
+                          "fill": "$foreground",
+                          "content": "环境依赖",
+                          "fontFamily": "$font-primary",
+                          "fontSize": 17,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "yL6ii",
+                          "name": "Env Text",
+                          "fill": "$muted-foreground",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "安装 Beacon 前请确保你的系统环境符合以下要求：\n• 操作系统：Linux\n• CPU 指令架构：x86_64, arm64\n• 软件依赖：Docker 20.10.14 版本以上\n• 软件依赖：Docker Compose 2.0.0 版本以上\n• 最低资源需求：1 核 CPU / 2 GB 内存 / 5 GB 磁盘",
+                          "lineHeight": 1.7,
+                          "fontFamily": "$font-primary",
+                          "fontSize": "$font-size-sm",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
                       "type": "text",
                       "id": "exTS2",
                       "name": "Intro",
                       "fill": "$muted-foreground",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "通过官方安装脚本一键部署 Beacon，或手动使用 Docker Compose 启动。",
+                      "content": "Beacon 支持一键安装与手动安装。安装前请确认系统满足环境依赖要求。",
                       "lineHeight": 1.7,
                       "fontFamily": "$font-primary",
                       "fontSize": "$font-size-sm",
@@ -5071,7 +5030,7 @@
                               "fill": "$muted-foreground",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "content": "# 下载脚本与官方 SHA-256 清单",
+                              "content": "# 一键安装（推荐新手使用）",
                               "fontFamily": "$font-mono",
                               "fontSize": "$font-size-sm",
                               "fontWeight": "normal"
@@ -5083,7 +5042,7 @@
                               "fill": "$color-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "content": "curl -fsSLO https://help.beacon.amuluze.com/release/latest/manager.sh",
+                              "content": "bash -c \"$(curl -fsSLk https://help.beacon.amuluze.com/release/latest/manager.sh)\"",
                               "fontFamily": "$font-mono",
                               "fontSize": "$font-size-sm",
                               "fontWeight": "normal"
@@ -5095,7 +5054,7 @@
                               "fill": "$color-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "content": "curl -fsSLO https://help.beacon.amuluze.com/release/latest/SHA256SUMS",
+                              "content": "# 非交互安装示例",
                               "fontFamily": "$font-mono",
                               "fontSize": "$font-size-sm",
                               "fontWeight": "normal"
@@ -5107,7 +5066,7 @@
                               "fill": "$muted-foreground",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "content": "grep ' manager.sh$' SHA256SUMS | sha256sum -c -",
+                              "content": "bash -c \"$(curl -fsSLk https://help.beacon.amuluze.com/release/latest/manager.sh)\" -- install BEACON_HTTP_PORT=1443 BEACON_PUBLIC_BASE_URL=https://beacon.example.com",
                               "fontFamily": "$font-mono",
                               "fontSize": "$font-size-sm",
                               "fontWeight": "normal"
@@ -5119,7 +5078,7 @@
                               "fill": "$color-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "content": "sudo sh manager.sh",
+                              "content": "# 一键升级",
                               "fontFamily": "$font-mono",
                               "fontSize": "$font-size-sm",
                               "fontWeight": "normal"
@@ -5131,7 +5090,7 @@
                               "fill": "$muted-foreground",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "content": "# 非交互安装示例",
+                              "content": "bash -c \"$(curl -fsSLk https://help.beacon.amuluze.com/release/latest/manager.sh)\" -- upgrade",
                               "fontFamily": "$font-mono",
                               "fontSize": "$font-size-sm",
                               "fontWeight": "normal"
@@ -5143,7 +5102,7 @@
                               "fill": "$color-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "content": "sudo sh manager.sh BEACON_HTTP_PORT=1443 BEACON_PUBLIC_BASE_URL=https://beacon.example.com",
+                              "content": "# 一键卸载",
                               "fontFamily": "$font-mono",
                               "fontSize": "$font-size-sm",
                               "fontWeight": "normal"
@@ -5151,6 +5110,19 @@
                           ]
                         }
                       ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "SDmwu",
+                      "name": "Offline Intro",
+                      "fill": "$muted-foreground",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "离线环境安装：如果你的服务器无法连接互联网，可以下载离线安装包（镜像包 + compose.yaml + .env 模板）后手动加载并启动。",
+                      "lineHeight": 1.7,
+                      "fontFamily": "$font-primary",
+                      "fontSize": "$font-size-sm",
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "text",
@@ -5264,7 +5236,7 @@
                               "fill": "$color-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "content": "umask 077",
+                              "content": "curl -fsSLO https://help.beacon.amuluze.com/release/latest/compose.yaml",
                               "fontFamily": "$font-mono",
                               "fontSize": "$font-size-sm",
                               "fontWeight": "normal"
@@ -5276,7 +5248,7 @@
                               "fill": "$muted-foreground",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "content": "curl -fsSLO https://help.beacon.amuluze.com/release/latest/compose.yaml",
+                              "content": "curl -fsSLO https://help.beacon.amuluze.com/release/latest/SHA256SUMS",
                               "fontFamily": "$font-mono",
                               "fontSize": "$font-size-sm",
                               "fontWeight": "normal"
@@ -5288,7 +5260,7 @@
                               "fill": "$color-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "content": "# 使用 openssl rand -hex 32 为三个密钥生成独立随机值并写入 .env",
+                              "content": "# 使用 openssl rand -hex 32 生成三个独立随机密钥",
                               "fontFamily": "$font-mono",
                               "fontSize": "$font-size-sm",
                               "fontWeight": "normal"
@@ -5300,7 +5272,7 @@
                               "fill": "$color-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "content": "docker compose up -d",
+                              "content": "cat > .env <<EOF\nBEACON_IMAGE=registry.cn-hangzhou.aliyuncs.com/amuluze/beacon:v3.0.4\nBEACON_VERSION=v3.0.4\nBEACON_CONTAINER_NAME=beacon\nBEACON_HTTP_PORT=1443\nBEACON_CONTROL_PORT=17000\nBEACON_DATA_DIR=./data\nBEACON_LOG_DIR=./logs\nBEACON_DB_NAME=/app/data/beacon\nBEACON_PUBLIC_BASE_URL=http://127.0.0.1:1443\nBEACON_AGENT_INSTALL_TOKEN=<your-token>\nBEACON_AUTH_SIGNING_KEY=<your-key>\nBEACON_CONTROL_JOIN_TOKEN=<your-token>\nEOF",
                               "fontFamily": "$font-mono",
                               "fontSize": "$font-size-sm",
                               "fontWeight": "normal"
@@ -5498,7 +5470,7 @@
                           "fill": "$color-text-secondary",
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
-                          "content": "启动 Beacon 容器后，浏览器访问 http://服务器IP:1443 即可进入管理面板。初始管理员账号 admin / admin123；默认密码已公开，首次登录后请立即修改。",
+                          "content": "启动 Beacon 容器后，浏览器访问 http://服务器IP:1443 即可进入管理面板。初始管理员账号 admin / admin123；默认密码已公开，首次登录后请立即在「设置」中修改。",
                           "lineHeight": 1.6,
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
@@ -5630,7 +5602,7 @@
                                   "fill": "$foreground",
                                   "textGrowth": "fixed-width",
                                   "width": "fill_container",
-                                  "content": "如何备份和恢复配置？",
+                                  "content": "安装前需要准备什么环境？",
                                   "fontFamily": "$font-primary",
                                   "fontSize": "$font-size-md",
                                   "fontWeight": "600"
@@ -5676,7 +5648,7 @@
                                   "fill": "$color-text-secondary",
                                   "textGrowth": "fixed-width",
                                   "width": "fill_container",
-                                  "content": "备份 /data/beacon 目录（含 .env、compose.yaml 与数据），执行 tar -czf beacon-backup.tar.gz /data/beacon；恢复时解压到原目录并执行 docker compose up -d。",
+                                  "content": "操作系统需为 Linux（x86_64 或 arm64），Docker 版本 20.10.14 以上，Docker Compose 2.0.0 以上，最低 1 核 CPU / 2 GB 内存 / 5 GB 磁盘。",
                                   "lineHeight": 1.7,
                                   "fontFamily": "$font-primary",
                                   "fontSize": "$font-size-sm",
@@ -5783,7 +5755,7 @@
                                   "fill": "$color-text-secondary",
                                   "textGrowth": "fixed-width",
                                   "width": "fill_container",
-                                  "content": "进入安装目录，建议先备份配置与数据，再执行 docker compose pull && docker compose up -d，即可拉取并应用最新镜像。",
+                                  "content": "执行一键升级命令：bash -c \"$(curl -fsSLk https://help.beacon.amuluze.com/release/latest/manager.sh)\" -- upgrade。升级前会自动备份 .env 与 compose.yaml，健康检查失败会自动回滚。",
                                   "lineHeight": 1.7,
                                   "fontFamily": "$font-primary",
                                   "fontSize": "$font-size-sm",
@@ -5844,7 +5816,7 @@
                                   "fill": "$foreground",
                                   "textGrowth": "fixed-width",
                                   "width": "fill_container",
-                                  "content": "初始化用户有哪些？密码是什么？",
+                                  "content": "初始账号密码是什么？",
                                   "fontFamily": "$font-primary",
                                   "fontSize": "$font-size-md",
                                   "fontWeight": "600"
@@ -5890,7 +5862,7 @@
                                   "fill": "$color-text-secondary",
                                   "textGrowth": "fixed-width",
                                   "width": "fill_container",
-                                  "content": "初始管理员 admin / admin123，普通用户 beacon / 123456。默认密码已对外公开、极不安全，首次登录后请立即在「设置」中修改。",
+                                  "content": "初始管理员账号 admin / admin123。默认密码已对外公开、极不安全，首次登录后请立即在「设置」中修改。",
                                   "lineHeight": 1.7,
                                   "fontFamily": "$font-primary",
                                   "fontSize": "$font-size-sm",
@@ -6027,7 +5999,7 @@
     {
       "type": "frame",
       "id": "uZcpB",
-      "x": 6560,
+      "x": 4961,
       "y": 719,
       "name": "Landing Mobile",
       "clip": true,

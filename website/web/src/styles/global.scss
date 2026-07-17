@@ -184,6 +184,77 @@ select {
   white-space: pre;
 }
 
+// Button（设计稿 SxThh）：通用按钮组件，padding 0 20px / 40px 高 / cornerRadius $radius-sm。
+// 变体：primary（主色填充） / ghost（中性背景） / card（卡片背景）。
+.site-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: 0 20px;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+
+  &:disabled,
+  &[aria-disabled='true'] {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  :where(svg) {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+  }
+}
+
+.site-button--primary {
+  color: var(--color-text-inverse);
+  background: var(--primary);
+  border-color: var(--primary);
+
+  &:hover:not(:disabled):not([aria-disabled='true']) {
+    background: var(--color-brand-hover);
+    border-color: var(--color-brand-hover);
+  }
+}
+
+.site-button--ghost {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  border-color: var(--border);
+
+  &:hover:not(:disabled):not([aria-disabled='true']) {
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+}
+
+.site-button--card {
+  color: var(--color-text-secondary);
+  background: var(--card);
+  border-color: var(--border);
+
+  &:hover:not(:disabled):not([aria-disabled='true']) {
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+}
+
 @media (max-width: 640px) {
   .site-container {
     width: min(100% - 32px, 1200px);

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 const stacks = [
-    { title: '前端', icon: 'mdi:view-dashboard-outline', items: ['Vue 3', 'TypeScript', 'Element Plus', 'Pinia'] },
-    { title: '后端', icon: 'mdi:server-outline', items: ['Golang', 'Fiber', 'Wire DI'] },
-    { title: '存储', icon: 'mdi:database-outline', items: ['SQLite', 'GORM'] },
-    { title: '传输', icon: 'mdi:swap-horizontal', items: ['gRPC Tunnel', 'WebSocket', 'HTTP/2'] },
+    { title: '前端', icon: 'lucide:monitor', items: ['Vue 3', 'TypeScript', 'Element Plus', 'Pinia'] },
+    { title: '后端', icon: 'lucide:server', items: ['Golang', 'Fiber', 'Wire DI'] },
+    { title: '存储', icon: 'lucide:database', items: ['SQLite', 'GORM'] },
+    { title: '传输', icon: 'lucide:share-2', items: ['gRPC Tunnel', 'WebSocket', 'HTTP/2'] },
 ]
 </script>
 
@@ -11,18 +11,17 @@ const stacks = [
     <section class="tech-stack">
         <div class="site-container tech-stack__inner">
             <header class="tech-stack__header">
-                <p class="site-overline">
-                    <Icon name="mdi:toolbox-outline" />
-                    技术栈
-                </p>
                 <h2>现代化技术栈驱动</h2>
                 <p>Server-Agent 架构，前后端分离，简洁高效</p>
             </header>
             <div class="tech-stack__grid">
-                <article v-for="stack in stacks" :key="stack.title" class="site-card tech-stack__card">
-                    <span class="tech-stack__icon"><Icon :name="stack.icon" /></span>
-                    <h3>{{ stack.title }}</h3>
-                    <ul>
+                <article v-for="stack in stacks" :key="stack.title" class="tech-stack__card">
+                    <div class="tech-stack__head">
+                        <Icon :name="stack.icon" />
+                        <h3>{{ stack.title }}</h3>
+                    </div>
+                    <div class="tech-stack__divider" />
+                    <ul class="tech-stack__list">
                         <li v-for="item in stack.items" :key="item">
                             {{ item }}
                         </li>
@@ -36,7 +35,6 @@ const stacks = [
 <style scoped lang="scss">
 .tech-stack {
   padding: 96px 0;
-  text-align: center;
   background: var(--color-surface-muted);
   border-top: 1px solid var(--border);
 }
@@ -46,16 +44,22 @@ const stacks = [
   flex-direction: column;
   align-items: center;
   gap: var(--space-3);
+  text-align: center;
 }
 
 .tech-stack h2 {
   margin: 0;
-  font-size: clamp(26px, 4vw, 30px);
+  font-size: 30px;
   font-weight: 700;
+  line-height: 1.2;
 }
 
-.tech-stack__header p:last-child {
+.tech-stack__header p {
+  max-width: 480px;
+  margin: 0;
   color: var(--muted-foreground);
+  font-size: var(--font-size-md);
+  line-height: 1.6;
 }
 
 .tech-stack__grid {
@@ -63,43 +67,54 @@ const stacks = [
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-4);
   margin-top: var(--space-10);
-  text-align: left;
 }
 
 .tech-stack__card {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  height: 199px;
   padding: var(--space-6);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
 }
 
-.tech-stack__icon {
-  display: inline-grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  color: var(--primary);
-  background: var(--color-primary-soft);
-  border-radius: var(--radius-m);
-  font-size: 22px;
-}
-
-.tech-stack__card h3 {
-  margin: 0;
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--border);
-  font-size: var(--font-size-md);
-}
-
-.tech-stack__card ul {
+.tech-stack__head {
   display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--primary);
+}
+
+.tech-stack__head :deep(svg) {
+  width: 18px;
+  height: 18px;
+}
+
+.tech-stack__head h3 {
+  margin: 0;
+  color: var(--foreground);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+}
+
+.tech-stack__divider {
+  height: 1px;
+  background: var(--border);
+}
+
+.tech-stack__list {
+  display: flex;
+  flex: 1;
   flex-direction: column;
-  gap: var(--space-2);
+  justify-content: center;
+  gap: 10px;
   margin: 0;
   padding: 0;
   color: var(--color-text-secondary);
   font-family: var(--font-mono);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   list-style: none;
 }
 
