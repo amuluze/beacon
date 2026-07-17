@@ -1,6 +1,7 @@
 services:
-  official:
-    image: registry.cn-hangzhou.aliyuncs.com/amuluze/beacon-offical:v0.1.8
+  beacon:
+    image: registry.cn-hangzhou.aliyuncs.com/amuluze/beacon-help:latest
+    container_name: beacon
     restart: unless-stopped
     ports:
       - "3000:3000"
