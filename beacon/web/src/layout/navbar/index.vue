@@ -54,8 +54,8 @@ function goRoute(item: RouteRecordRaw): void {
 
 <template>
     <header class="am-navbar">
-        <button class="am-navbar__brand" type="button" @click="router.push('/monitor')">
-            <span class="am-navbar__brand-mark" />
+        <button class="am-navbar__brand" type="button" aria-label="Beacon 首页" @click="router.push('/monitor')">
+            <img class="am-navbar__brand-mark" src="/beacon.svg" alt="" aria-hidden="true" />
             <span class="am-navbar__brand-text">Beacon</span>
         </button>
 
@@ -110,11 +110,10 @@ function goRoute(item: RouteRecordRaw): void {
   }
 
   @include e(brand-mark) {
-    width: 24px;
-    height: 24px;
-    display: inline-block;
-    background: var(--am-accent-primary);
-    border-radius: 5px;
+    width: 28px;
+    height: 28px;
+    display: block;
+    object-fit: contain;
   }
 
   @include e(brand-text) {

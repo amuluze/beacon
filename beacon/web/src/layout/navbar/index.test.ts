@@ -42,7 +42,10 @@ describe('navbar', () => {
         const menuLabels = wrapper
             .findAll('.am-navbar__menu > .am-navbar__menu-item span')
             .map(item => item.text())
+        const logo = wrapper.get('.am-navbar__brand-mark')
 
+        expect(logo.element.tagName).toBe('IMG')
+        expect(logo.attributes('src')).toBe('/beacon.svg')
         expect(menuLabels).toEqual([
             'menu.monitor',
             'menu.container',
