@@ -13,7 +13,7 @@ import { useI18n } from 'vue-i18n'
 const { selectedAgentID: currentAgent, isAgentEmpty, agentParams, ensureSelectedAgent, loadAgents } = useAgentSelection({ immediate: false })
 const { t } = useI18n()
 watch(currentAgent, () => {
-  render()
+  void render()
 })
 
 // Time density
@@ -26,7 +26,7 @@ const options = [
   { value: 86400, label: '24小时' },
 ]
 watch(timeDensity, () => {
-  render()
+  void render()
 })
 
 // Charts
@@ -35,14 +35,31 @@ const memOption = reactive<EChartsOption>(JSON.parse(JSON.stringify(containerMem
 
 const containerNames = ref<string[]>([])
 const containerPalette = ['#409EFF', '#569A2E', '#C28014', '#DB5050']
+let latestRenderID = 0
+
+function clearCharts(): void {
+  containerNames.value = []
+  set(cpuOption, 'legend.data', [])
+  set(memOption, 'legend.data', [])
+  set(cpuOption, 'xAxis.data', [])
+  set(memOption, 'xAxis.data', [])
+  set(cpuOption, 'series', [])
+  set(memOption, 'series', [])
+}
 
 async function render() {
+  const renderID = ++latestRenderID
   if (!currentAgent.value)
     return
-  const param = { start_time: dayjs().unix() - timeDensity.value, end_time: dayjs().unix(), ...agentParams.value }
+  const endTime = dayjs().unix()
+  const param = { start_time: endTime - timeDensity.value, end_time: endTime, ...agentParams.value }
   const { data } = await queryContainersUsage(param as any)
-  if (!data.names || data.names.length === 0)
+  if (renderID !== latestRenderID)
     return
+  if (!data.names || data.names.length === 0) {
+    clearCharts()
+    return
+  }
 
   containerNames.value = data.names
 
@@ -66,7 +83,7 @@ async function render() {
     if (values) {
       cpuSeries.push({
         name,
-        data: values.map(item => item.value.toFixed(1)),
+        data: values.map(item => Number(item.value.toFixed(1))),
         type: 'line',
         smooth: true,
         showSymbol: false,
@@ -83,7 +100,7 @@ async function render() {
     if (values) {
       memSeries.push({
         name,
-        data: values.map(item => item.value.toFixed(1)),
+        data: values.map(item => Number(item.value.toFixed(1))),
         type: 'line',
         smooth: true,
         showSymbol: false,
@@ -103,8 +120,8 @@ async function refreshAgents() {
 const timer = ref()
 onMounted(async () => {
   await ensureSelectedAgent()
-  render()
-  timer.value = setInterval(render, 10000)
+  void render()
+  timer.value = setInterval(() => void render(), 10000)
 })
 onUnmounted(() => {
   clearInterval(timer.value)
