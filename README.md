@@ -113,7 +113,7 @@ Beacon 将三条路径明确分离：
 ### 在线安装（推荐）
 
 ```bash
-curl -fsSL https://help.beacon.amuluze.com/download/install.sh | sh
+bash -c "$(curl -fsSLk https://help.beacon.amuluze.com/release/latest/manager.sh)"
 ```
 
 安装脚本会引导配置 Web 端口、Agent 控制端口与安全凭据。

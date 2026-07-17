@@ -130,7 +130,8 @@
 ## 验证命令
 
 ```bash
-# 未检测到该模块来自 package scripts、CI、Taskfile 或 Makefile 的验证命令。
+cd beacon && go test ./...
+cd beacon && go build ./...
 ```
 
 ## Taskfile Commands

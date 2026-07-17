@@ -5,7 +5,7 @@
 
 ## 模块职责
 
-`website-web` 的主要角色是：frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互。
+`website-web` 的主要角色是：frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互。
 
 - 承载 Vue 页面、路由、API client、状态管理和用户可见交互。
 - 相关源码包：`website/server/cmd/server`, `website/server/pkg/database`, `website/server/pkg/errors`, `website/server/pkg/fiberx`, `website/server/pkg/utils`, `website/server/pkg/utils/hash`。
@@ -14,16 +14,18 @@
 
 | 职责 | 说明 | 是否负责 |
 |------|------|----------|
-| 模块内实现 | frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互 | yes |
+| 模块内实现 | frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互 | yes |
 | 跨模块协调 | 仅通过公开接口或项目约定完成 | conditional |
 | 其他模块内部状态 | 不直接读写其他模块私有实现 | no |
 
 ## 模块事实
 
-- 前端包：`website/web/.output/server/package.json`
-- package name：`beacon-offical-prod`
-- 前端源码文件：0
-- 推断角色：frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互
+- 前端包：`website/web/package.json`
+- package name：`beacon-offical`
+- 前端源码文件：33
+- scripts：`build`, `dev`, `generate`, `lint`, `lint:fix`, `postinstall`, `preview`, `start`, `test`, `test:watch`, `typecheck`
+- 前端信号：4 个
+- 推断角色：frontend experience module: Vue/Vite 页面、路由、API client、状态管理和用户交互
 
 ## 接口与符号信号
 
@@ -49,24 +51,21 @@
 
 ## 依赖关系
 
-- `@babel/parser` `7.29.7`
-- `@fastify/accept-negotiator` `1.1.0`
-- `@iconify/utils` `2.3.0`
-- `@vue/compiler-core` `3.5.39`
-- `@vue/compiler-dom` `3.5.39`
-- `@vue/compiler-ssr` `3.5.39`
-- `@vue/devtools-api` `7.7.10`
-- `@vue/devtools-kit` `7.7.10`
-- `@vue/devtools-shared` `7.7.10`
-- `@vue/reactivity` `3.5.39`
-- `@vue/runtime-core` `3.5.39`
-- `@vue/runtime-dom` `3.5.39`
-- `@vue/server-renderer` `3.5.39`
-- `@vue/shared` `3.5.39`
-- `birpc` `2.9.0`
-- `boolbase` `1.0.0`
-- `color` `4.2.3`
-- `color-convert` `2.0.1`
+- `@antfu/eslint-config` `^4.19.0`
+- `@iconify-json/mdi` `^1.2.3`
+- `@nuxt/icon` `^1.15.0`
+- `@nuxt/test-utils` `^4.0.3`
+- `@vue/test-utils` `^2.4.11`
+- `eslint` `^9.39.5`
+- `eslint-plugin-format` `^1.5.0`
+- `happy-dom` `^20.10.6`
+- `nuxt` `^4.4.8`
+- `sass` `^1.101.0`
+- `typescript` `^6.0.3`
+- `vitest` `^4.1.10`
+- `vue` `^3.5.39`
+- `vue-router` `^5.1.0`
+- `vue-tsc` `^3.3.7`
 
 ## 配置与入口信号
 
@@ -91,7 +90,8 @@
 ## 验证命令
 
 ```bash
-# 未检测到该模块来自 package scripts、CI、Taskfile 或 Makefile 的验证命令。
+cd website/web && npm run lint
+cd website/web && npm run build
 ```
 
 ## Taskfile Commands

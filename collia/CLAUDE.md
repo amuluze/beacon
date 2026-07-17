@@ -61,5 +61,6 @@
 ## 开发命令
 
 ```bash
-# 未检测到该模块来自 CI、Taskfile 或 Makefile 的开发/验证命令。
+cd collia && go test ./...
+cd collia && go build ./...
 ```

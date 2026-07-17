@@ -66,13 +66,6 @@ docs:
         - "## 职责边界"
         - "## 验证命令"
       description: common module responsibilities, implementation signals, exported-symbol hints, dependencies, state and validation
-    - path: modules/website-web-.output-server.md
-      min_lines: 30
-      must_contain:
-        - "## 模块职责"
-        - "## 职责边界"
-        - "## 验证命令"
-      description: website-web-.output-server module responsibilities, implementation signals, exported-symbol hints, dependencies, state and validation
     - path: modules/website-web.md
       min_lines: 30
       must_contain:
@@ -172,18 +165,6 @@ index:
       - "## 开发命令"
     description: module AI entry, SSOT for this directory
   - path: ../common/CLAUDE.md
-    min_lines: 20
-    must_contain:
-      - "## 模块路径"
-      - "## 开发命令"
-    description: synchronized copy of sibling AGENTS.md
-  - path: ../website/web/.output/server/AGENTS.md
-    min_lines: 20
-    must_contain:
-      - "## 模块路径"
-      - "## 开发命令"
-    description: module AI entry, SSOT for this directory
-  - path: ../website/web/.output/server/CLAUDE.md
     min_lines: 20
     must_contain:
       - "## 模块路径"
