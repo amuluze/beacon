@@ -2,9 +2,8 @@
 .vscode/
 .DS_Store
 
-*/amprobe
+# Build artifacts (Go binary name conflicts)
 */collia
-*/amvector
 
 .claude/
 .beaver/
@@ -23,5 +22,5 @@ LAYER_STATUS.md
 TDD_STAGES.md
 **/Taskfile.yml
 
-# Local deployment secrets
-deploy/.env
+.pen
+website
