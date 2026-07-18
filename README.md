@@ -46,11 +46,11 @@
 - **Collia Agent** 采集主机和 Docker 指标，通过 HTTP 上报监控批次，并主动建立反向 gRPC tunnel 接收 Server 控制调用。
 - 查询与控制请求必须显式指定 Agent，避免默认节点回退或跨节点读取。
 
-官网：[help.beacon.amuluze.com](https://help.beacon.amuluze.com) · 仓库：[github.com/amuluze/beacon](https://github.com/amuluze/beacon)
+官网：[beacon.amuluze.com](https://beacon.amuluze.com) · 仓库：[github.com/amuluze/beacon](https://github.com/amuluze/beacon)
 
 ## 🖼️ 产品截图
 
-详细界面截图请访问官网 [help.beacon.amuluze.com](https://help.beacon.amuluze.com)。
+详细界面截图请访问官网 [beacon.amuluze.com](https://beacon.amuluze.com)。
 
 ## ✨ 功能特性
 
@@ -104,7 +104,7 @@ Beacon 将三条路径明确分离：
 ### 在线安装（推荐）
 
 ```bash
-bash -c "$(curl -fsSLk https://help.beacon.amuluze.com/release/latest/manager.sh)"
+bash -c "$(curl -fsSLk https://beacon.amuluze.com/release/latest/manager.sh)"
 ```
 
 安装脚本会引导配置 Web 端口、Agent 控制端口与安全凭据。
@@ -171,7 +171,7 @@ beacon/
 └── go.work                 # Go workspace 定义
 ```
 
-> 注：官网、部署清单、SDD 文档等周边资产不在本开源仓库内，参见 [help.beacon.amuluze.com](https://help.beacon.amuluze.com)。
+> 注：官网、部署清单、SDD 文档等周边资产不在本开源仓库内，参见 [beacon.amuluze.com](https://beacon.amuluze.com)。
 
 ## 🧑‍💻 开发与贡献
 

@@ -46,11 +46,11 @@
 - **Collia Agent** collects host and Docker metrics, reports monitoring batches over HTTP, and opens a reverse gRPC tunnel for Server-initiated control calls.
 - Query and control requests must explicitly select an Agent, preventing implicit fallback or cross-node reads.
 
-Website: [help.beacon.amuluze.com](https://help.beacon.amuluze.com) · Repository: [github.com/amuluze/beacon](https://github.com/amuluze/beacon)
+Website: [beacon.amuluze.com](https://beacon.amuluze.com) · Repository: [github.com/amuluze/beacon](https://github.com/amuluze/beacon)
 
 ## 🖼️ Screenshot
 
-See the live product at [help.beacon.amuluze.com](https://help.beacon.amuluze.com) for screenshots.
+See the live product at [beacon.amuluze.com](https://beacon.amuluze.com) for screenshots.
 
 
 ## ✨ Features
@@ -105,7 +105,7 @@ See each module's `README.md` and source comments for the complete boundaries an
 ### Online installer (recommended)
 
 ```bash
-bash -c "$(curl -fsSLk https://help.beacon.amuluze.com/release/latest/manager.sh)"
+bash -c "$(curl -fsSLk https://beacon.amuluze.com/release/latest/manager.sh)"
 ```
 
 The installer guides you through Web port, Agent control port, and security credential configuration.
@@ -172,7 +172,7 @@ beacon/
 └── go.work                 # Go workspace definition
 ```
 
-> Note: the marketing site, deployment manifests, and SDD docs are not part of this open-source repository. See [help.beacon.amuluze.com](https://help.beacon.amuluze.com).
+> Note: the marketing site, deployment manifests, and SDD docs are not part of this open-source repository. See [beacon.amuluze.com](https://beacon.amuluze.com).
 
 ## 🧑‍💻 Development and Contributing
 
