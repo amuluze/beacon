@@ -21,7 +21,6 @@ type Config struct {
 	Casbin        Casbin
 	Task          Task
 	AgentInstall  AgentInstall
-	InstallReport InstallReport
 	CORS          CORS
 	RateLimit     RateLimit
 	App           App
@@ -163,14 +162,6 @@ type AgentInstall struct {
 	ControlPort   int
 	TLSEnable     bool
 	CertDir       string
-}
-
-type InstallReport struct {
-	Enable     bool
-	URL        string
-	InstallDir string
-	IDFile     string
-	Timeout    int
 }
 
 type Log struct {
