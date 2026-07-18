@@ -70,9 +70,3 @@ ControlPort = 17000
 TLSEnable = true
 CertDir = "/etc/collia/certs"
 
-[InstallReport]
-Enable = true
-URL = "https://help.beacon.amuluze.com/api/v1/install/report"
-InstallDir = "/data/beacon"
-IDFile = "/app/data/install.id"
-Timeout = 5
