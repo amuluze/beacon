@@ -87,8 +87,8 @@ const logoSrc = '/beacon.svg'
 
 .site-footer__brand-heading strong {
   color: var(--foreground);
-  font-size: 24px;
-  font-weight: 700;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
 }
 
 .site-footer__brand p {
@@ -96,7 +96,7 @@ const logoSrc = '/beacon.svg'
   margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
-  line-height: 1.6;
+  line-height: var(--line-height-relaxed);
 }
 
 .site-footer__column {
@@ -109,7 +109,7 @@ const logoSrc = '/beacon.svg'
 .site-footer__column strong {
   color: var(--foreground);
   font-size: var(--font-size-md);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .site-footer__column a {

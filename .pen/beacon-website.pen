@@ -123,7 +123,7 @@
           "textGrowth": "fixed-width",
           "width": "fill_container",
           "content": "查看 Docker 版本信息",
-          "lineHeight": 1.5,
+          "lineHeight": "$line-height-relaxed",
           "fontFamily": "$font-primary",
           "fontSize": "$font-size-sm",
           "fontWeight": "normal"
@@ -183,7 +183,7 @@
               "fill": "#f1f5f9",
               "content": "Beacon",
               "fontFamily": "$font-primary",
-              "fontSize": 18,
+              "fontSize": "$font-size-lg",
               "fontWeight": "700"
             }
           ]
@@ -302,7 +302,7 @@
                   "fill": "$foreground",
                   "content": "Beacon",
                   "fontFamily": "$font-primary",
-                  "fontSize": 24,
+                  "fontSize": "$font-size-xl",
                   "fontWeight": "700"
                 },
                 {
@@ -313,9 +313,9 @@
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
                   "content": "轻量级主机监控及 Docker 容器管理工具，实时掌控服务器与容器资源。",
-                  "lineHeight": 1.6,
+                  "lineHeight": "$line-height-relaxed",
                   "fontFamily": "$font-primary",
-                  "fontSize": 13,
+                  "fontSize": "$font-size-sm",
                   "fontWeight": "normal"
                 }
               ]
@@ -593,9 +593,9 @@
               "fill": "$foreground",
               "content": "Beacon",
               "fontFamily": "$font-primary",
-              "fontSize": 80,
+              "fontSize": "$font-display-xl",
               "fontWeight": "800",
-              "letterSpacing": -2
+              "letterSpacing": "$letter-spacing-tighter"
             },
             {
               "type": "text",
@@ -604,9 +604,9 @@
               "fill": "$color-text-secondary",
               "content": "开源 · 轻量 · 现代化",
               "fontFamily": "$font-primary",
-              "fontSize": 22,
+              "fontSize": "$font-size-xl",
               "fontWeight": "500",
-              "letterSpacing": 6
+              "letterSpacing": "$letter-spacing-wider"
             },
             {
               "type": "text",
@@ -616,10 +616,10 @@
               "textGrowth": "fixed-width",
               "width": 560,
               "content": "轻量级主机及容器监控管理工具，实时掌控服务器与 Docker 资源",
-              "lineHeight": 1.6,
+              "lineHeight": "$line-height-relaxed",
               "textAlign": "center",
               "fontFamily": "$font-primary",
-              "fontSize": 16,
+              "fontSize": "$font-size-base",
               "fontWeight": "normal"
             },
             {
@@ -705,7 +705,7 @@
                   "fill": "$color-text-secondary",
                   "content": "bash -c \"$(curl -fsSLk https://help.beacon.amuluze.com/release/latest/manager.sh)\"",
                   "fontFamily": "$font-mono",
-                  "fontSize": 12,
+                  "fontSize": "$font-size-2xs",
                   "fontWeight": "normal"
                 },
                 {
@@ -1606,7 +1606,7 @@
                       "fontFamily": "$font-primary",
                       "fontSize": "$font-size-sm",
                       "fontWeight": "600",
-                      "letterSpacing": 1
+                      "letterSpacing": "$letter-spacing-wide"
                     }
                   ]
                 },
@@ -1618,9 +1618,9 @@
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
                   "content": "全面的 Docker 容器管理",
-                  "lineHeight": 1.2,
+                  "lineHeight": "$line-height-snug",
                   "fontFamily": "$font-primary",
-                  "fontSize": 30,
+                  "fontSize": "$font-display-sm",
                   "fontWeight": "700"
                 },
                 {
@@ -1631,7 +1631,7 @@
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
                   "content": "覆盖容器全生命周期，运行状态与资源占用一目了然",
-                  "lineHeight": 1.6,
+                  "lineHeight": "$line-height-relaxed",
                   "fontFamily": "$font-primary",
                   "fontSize": "$font-size-md",
                   "fontWeight": "normal"
@@ -1762,7 +1762,7 @@
                       "fontFamily": "$font-primary",
                       "fontSize": "$font-size-sm",
                       "fontWeight": "600",
-                      "letterSpacing": 1
+                      "letterSpacing": "$letter-spacing-wide"
                     }
                   ]
                 },
@@ -1774,9 +1774,9 @@
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
                   "content": "实时监控主机系统资源",
-                  "lineHeight": 1.2,
+                  "lineHeight": "$line-height-snug",
                   "fontFamily": "$font-primary",
-                  "fontSize": 30,
+                  "fontSize": "$font-display-sm",
                   "fontWeight": "700"
                 },
                 {
@@ -1787,7 +1787,7 @@
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
                   "content": "采集主机核心指标，远程运维与管理触手可及",
-                  "lineHeight": 1.6,
+                  "lineHeight": "$line-height-relaxed",
                   "fontFamily": "$font-primary",
                   "fontSize": "$font-size-md",
                   "fontWeight": "normal"
@@ -1976,7 +1976,7 @@
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-xs",
                           "fontWeight": "500",
-                          "letterSpacing": 1
+                          "letterSpacing": "$letter-spacing-wide"
                         },
                         {
                           "type": "text",
@@ -1985,7 +1985,7 @@
                           "fill": "$foreground",
                           "content": "34%",
                           "fontFamily": "$font-mono",
-                          "fontSize": 26,
+                          "fontSize": "$font-metric-md",
                           "fontWeight": "700"
                         },
                         {
@@ -2042,7 +2042,7 @@
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-xs",
                           "fontWeight": "500",
-                          "letterSpacing": 1
+                          "letterSpacing": "$letter-spacing-wide"
                         },
                         {
                           "type": "text",
@@ -2051,7 +2051,7 @@
                           "fill": "$foreground",
                           "content": "62%",
                           "fontFamily": "$font-mono",
-                          "fontSize": 26,
+                          "fontSize": "$font-metric-md",
                           "fontWeight": "700"
                         },
                         {
@@ -2120,7 +2120,7 @@
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-xs",
                           "fontWeight": "500",
-                          "letterSpacing": 1
+                          "letterSpacing": "$letter-spacing-wide"
                         },
                         {
                           "type": "text",
@@ -2129,7 +2129,7 @@
                           "fill": "$foreground",
                           "content": "71%",
                           "fontFamily": "$font-mono",
-                          "fontSize": 26,
+                          "fontSize": "$font-metric-md",
                           "fontWeight": "700"
                         },
                         {
@@ -2186,7 +2186,7 @@
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-xs",
                           "fontWeight": "500",
-                          "letterSpacing": 1
+                          "letterSpacing": "$letter-spacing-wide"
                         },
                         {
                           "type": "text",
@@ -2195,7 +2195,7 @@
                           "fill": "$foreground",
                           "content": "↓ 1.2 MB/s",
                           "fontFamily": "$font-mono",
-                          "fontSize": 26,
+                          "fontSize": "$font-metric-md",
                           "fontWeight": "700"
                         },
                         {
@@ -2878,7 +2878,7 @@
                       "fontFamily": "$font-primary",
                       "fontSize": "$font-size-sm",
                       "fontWeight": "600",
-                      "letterSpacing": 1
+                      "letterSpacing": "$letter-spacing-wide"
                     }
                   ]
                 },
@@ -2890,9 +2890,9 @@
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
                   "content": "完善的权限与角色管理",
-                  "lineHeight": 1.2,
+                  "lineHeight": "$line-height-snug",
                   "fontFamily": "$font-primary",
-                  "fontSize": 30,
+                  "fontSize": "$font-display-sm",
                   "fontWeight": "700"
                 },
                 {
@@ -2903,7 +2903,7 @@
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
                   "content": "精细化权限控制，操作全程可审计、可追溯",
-                  "lineHeight": 1.6,
+                  "lineHeight": "$line-height-relaxed",
                   "fontFamily": "$font-primary",
                   "fontSize": "$font-size-md",
                   "fontWeight": "normal"
@@ -3018,7 +3018,7 @@
                       "fontFamily": "$font-primary",
                       "fontSize": "$font-size-sm",
                       "fontWeight": "600",
-                      "letterSpacing": 1
+                      "letterSpacing": "$letter-spacing-wide"
                     }
                   ]
                 },
@@ -3029,7 +3029,7 @@
                   "fill": "$foreground",
                   "content": "现代化技术栈驱动",
                   "fontFamily": "$font-primary",
-                  "fontSize": 30,
+                  "fontSize": "$font-display-sm",
                   "fontWeight": "700"
                 },
                 {
@@ -3040,7 +3040,7 @@
                   "textGrowth": "fixed-width",
                   "width": 480,
                   "content": "Server-Agent 架构，前后端分离，简洁高效",
-                  "lineHeight": 1.6,
+                  "lineHeight": "$line-height-relaxed",
                   "textAlign": "center",
                   "fontFamily": "$font-primary",
                   "fontSize": "$font-size-md",
@@ -3516,10 +3516,10 @@
               "textGrowth": "fixed-width",
               "width": 640,
               "content": "立即开始监控你的主机与容器",
-              "lineHeight": 1.2,
+              "lineHeight": "$line-height-snug",
               "textAlign": "center",
               "fontFamily": "$font-primary",
-              "fontSize": 36,
+              "fontSize": "$font-display-md",
               "fontWeight": "700"
             },
             {
@@ -3530,7 +3530,7 @@
               "textGrowth": "fixed-width",
               "width": 520,
               "content": "一行命令安装 Beacon Server，几分钟完成接入，开箱即用",
-              "lineHeight": 1.6,
+              "lineHeight": "$line-height-relaxed",
               "textAlign": "center",
               "fontFamily": "$font-primary",
               "fontSize": "$font-size-md",
@@ -3685,7 +3685,7 @@
                       "fontFamily": "$font-primary",
                       "fontSize": "$font-size-sm",
                       "fontWeight": "600",
-                      "letterSpacing": 1
+                      "letterSpacing": "$letter-spacing-wide"
                     }
                   ]
                 },
@@ -3696,9 +3696,9 @@
                   "fill": "$foreground",
                   "content": "Changelog",
                   "fontFamily": "$font-primary",
-                  "fontSize": 44,
+                  "fontSize": "$font-display-lg",
                   "fontWeight": "800",
-                  "letterSpacing": -1
+                  "letterSpacing": "$letter-spacing-tight"
                 },
                 {
                   "type": "text",
@@ -3708,7 +3708,7 @@
                   "textGrowth": "fixed-width",
                   "width": 480,
                   "content": "持续迭代,记录每一次进步",
-                  "lineHeight": 1.6,
+                  "lineHeight": "$line-height-relaxed",
                   "textAlign": "center",
                   "fontFamily": "$font-primary",
                   "fontSize": "$font-size-md",
@@ -3833,7 +3833,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "告警按 Agent 作用域评估，支持多节点独立阈值",
-                          "lineHeight": 1.5,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -3867,7 +3867,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "System Audit 页面支持按 Agent 过滤",
-                          "lineHeight": 1.5,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -3901,7 +3901,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "MailSender 接口与告警通知能力",
-                          "lineHeight": 1.5,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -3935,7 +3935,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "OpenAPI 类型自动生成（openapi-typescript）",
-                          "lineHeight": 1.5,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -3969,7 +3969,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "Health Probe 注入 DB / Tunnel 健康检查",
-                          "lineHeight": 1.5,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -4003,7 +4003,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "凭据强校验：空值、弱默认、长度不足拒绝启动",
-                          "lineHeight": 1.5,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -4037,7 +4037,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "并发安全与残留二进制清理",
-                          "lineHeight": 1.5,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -4165,7 +4165,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "重命名 amprobe → Beacon，品牌与命名统一",
-                          "lineHeight": 1.5,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -4199,7 +4199,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "统一 Agent 选择（X-Agent-ID / agent_id）",
-                          "lineHeight": 1.5,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -4233,7 +4233,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "Agent 版本上报、远程更新与自更新卸载",
-                          "lineHeight": 1.5,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -4267,7 +4267,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "反向 gRPC tunnel 控制通道重构",
-                          "lineHeight": 1.5,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -4301,7 +4301,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "CORS 白名单化、JWT 生产模式强密钥",
-                          "lineHeight": 1.5,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -4335,7 +4335,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "分层限流与 WS / report / tunnel 鉴权加固",
-                          "lineHeight": 1.5,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -4463,7 +4463,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "主机 CPU、内存、磁盘、网络实时监控",
-                          "lineHeight": 1.5,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -4497,7 +4497,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "Docker 容器全生命周期管理",
-                          "lineHeight": 1.5,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -4531,7 +4531,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "用户、角色与 API 接口权限管理",
-                          "lineHeight": 1.5,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -4565,7 +4565,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "操作审计与登录登出记录",
-                          "lineHeight": 1.5,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -4599,7 +4599,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "Vue 3 + TypeScript + Element Plus 前端架构",
-                          "lineHeight": 1.5,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -4686,7 +4686,7 @@
                   "fontFamily": "$font-primary",
                   "fontSize": "$font-size-sm",
                   "fontWeight": "600",
-                  "letterSpacing": 1
+                  "letterSpacing": "$letter-spacing-wide"
                 }
               ]
             },
@@ -4697,9 +4697,9 @@
               "fill": "$foreground",
               "content": "Beacon 使用手册",
               "fontFamily": "$font-primary",
-              "fontSize": 44,
+              "fontSize": "$font-display-lg",
               "fontWeight": "800",
-              "letterSpacing": -1
+              "letterSpacing": "$letter-spacing-tight"
             },
             {
               "type": "text",
@@ -4709,7 +4709,7 @@
               "textGrowth": "fixed-width",
               "width": 520,
               "content": "支持一键安装、手动安装与离线安装，几分钟完成部署，开箱即用。",
-              "lineHeight": 1.6,
+              "lineHeight": "$line-height-relaxed",
               "textAlign": "center",
               "fontFamily": "$font-primary",
               "fontSize": "$font-size-md",
@@ -4749,7 +4749,7 @@
                   "fontFamily": "$font-primary",
                   "fontSize": "$font-size-xs",
                   "fontWeight": "600",
-                  "letterSpacing": 1
+                  "letterSpacing": "$letter-spacing-wide"
                 },
                 {
                   "type": "frame",
@@ -4899,7 +4899,7 @@
                           "fill": "$foreground",
                           "content": "环境依赖",
                           "fontFamily": "$font-primary",
-                          "fontSize": 17,
+                          "fontSize": "$font-size-h3",
                           "fontWeight": "600"
                         },
                         {
@@ -4910,7 +4910,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "安装 Beacon 前请确保你的系统环境符合以下要求：\n• 操作系统：Linux\n• CPU 指令架构：x86_64, arm64\n• 软件依赖：Docker 20.10.14 版本以上\n• 软件依赖：Docker Compose 2.0.0 版本以上\n• 最低资源需求：1 核 CPU / 2 GB 内存 / 5 GB 磁盘",
-                          "lineHeight": 1.7,
+                          "lineHeight": "$line-height-loose",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -4925,7 +4925,7 @@
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
                       "content": "Beacon 支持一键安装与手动安装。安装前请确认系统满足环境依赖要求。",
-                      "lineHeight": 1.7,
+                      "lineHeight": "$line-height-loose",
                       "fontFamily": "$font-primary",
                       "fontSize": "$font-size-sm",
                       "fontWeight": "normal"
@@ -4937,7 +4937,7 @@
                       "fill": "$foreground",
                       "content": "一键安装",
                       "fontFamily": "$font-primary",
-                      "fontSize": 17,
+                      "fontSize": "$font-size-h3",
                       "fontWeight": "600"
                     },
                     {
@@ -5119,7 +5119,7 @@
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
                       "content": "离线环境安装：如果你的服务器无法连接互联网，可以下载离线安装包（镜像包 + compose.yaml + .env 模板）后手动加载并启动。",
-                      "lineHeight": 1.7,
+                      "lineHeight": "$line-height-loose",
                       "fontFamily": "$font-primary",
                       "fontSize": "$font-size-sm",
                       "fontWeight": "normal"
@@ -5131,7 +5131,7 @@
                       "fill": "$foreground",
                       "content": "手动安装",
                       "fontFamily": "$font-primary",
-                      "fontSize": 17,
+                      "fontSize": "$font-size-h3",
                       "fontWeight": "600"
                     },
                     {
@@ -5288,7 +5288,7 @@
                       "fill": "$foreground",
                       "content": "运维命令",
                       "fontFamily": "$font-primary",
-                      "fontSize": 17,
+                      "fontSize": "$font-size-h3",
                       "fontWeight": "600"
                     },
                     {
@@ -5471,7 +5471,7 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "启动 Beacon 容器后，浏览器访问 http://服务器IP:1443 即可进入管理面板。初始管理员账号 admin / admin123；默认密码已公开，首次登录后请立即在「设置」中修改。",
-                          "lineHeight": 1.6,
+                          "lineHeight": "$line-height-relaxed",
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-sm",
                           "fontWeight": "normal"
@@ -5538,7 +5538,7 @@
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
                       "content": "部署与使用中的高频问题解答。",
-                      "lineHeight": 1.7,
+                      "lineHeight": "$line-height-loose",
                       "fontFamily": "$font-primary",
                       "fontSize": "$font-size-sm",
                       "fontWeight": "normal"
@@ -5649,7 +5649,7 @@
                                   "textGrowth": "fixed-width",
                                   "width": "fill_container",
                                   "content": "操作系统需为 Linux（x86_64 或 arm64），Docker 版本 20.10.14 以上，Docker Compose 2.0.0 以上，最低 1 核 CPU / 2 GB 内存 / 5 GB 磁盘。",
-                                  "lineHeight": 1.7,
+                                  "lineHeight": "$line-height-loose",
                                   "fontFamily": "$font-primary",
                                   "fontSize": "$font-size-sm",
                                   "fontWeight": "normal"
@@ -5756,7 +5756,7 @@
                                   "textGrowth": "fixed-width",
                                   "width": "fill_container",
                                   "content": "执行一键升级命令：bash -c \"$(curl -fsSLk https://help.beacon.amuluze.com/release/latest/manager.sh)\" -- upgrade。升级前会自动备份 .env 与 compose.yaml，健康检查失败会自动回滚。",
-                                  "lineHeight": 1.7,
+                                  "lineHeight": "$line-height-loose",
                                   "fontFamily": "$font-primary",
                                   "fontSize": "$font-size-sm",
                                   "fontWeight": "normal"
@@ -5863,7 +5863,7 @@
                                   "textGrowth": "fixed-width",
                                   "width": "fill_container",
                                   "content": "初始管理员账号 admin / admin123。默认密码已对外公开、极不安全，首次登录后请立即在「设置」中修改。",
-                                  "lineHeight": 1.7,
+                                  "lineHeight": "$line-height-loose",
                                   "fontFamily": "$font-primary",
                                   "fontSize": "$font-size-sm",
                                   "fontWeight": "normal"
@@ -5970,7 +5970,7 @@
                                   "textGrowth": "fixed-width",
                                   "width": "fill_container",
                                   "content": "通过 GitHub Issues 反馈需求与问题，或邮件联系 314901758@qq.com，也可关注公众号获取更新动态。",
-                                  "lineHeight": 1.7,
+                                  "lineHeight": "$line-height-loose",
                                   "fontFamily": "$font-primary",
                                   "fontSize": "$font-size-sm",
                                   "fontWeight": "normal"
@@ -6149,9 +6149,9 @@
               "fill": "$foreground",
               "content": "Beacon",
               "fontFamily": "$font-primary",
-              "fontSize": 54,
+              "fontSize": "$font-display-xl",
               "fontWeight": "800",
-              "letterSpacing": -1
+              "letterSpacing": "$letter-spacing-tight"
             },
             {
               "type": "text",
@@ -6162,7 +6162,7 @@
               "fontFamily": "$font-primary",
               "fontSize": 15,
               "fontWeight": "500",
-              "letterSpacing": 4
+              "letterSpacing": "$letter-spacing-wider"
             },
             {
               "type": "text",
@@ -6172,9 +6172,9 @@
               "textGrowth": "fixed-width",
               "width": "fill_container",
               "content": "轻量级主机及容器监控管理工具，实时掌控服务器与 Docker 资源",
-              "lineHeight": 1.6,
+              "lineHeight": "$line-height-relaxed",
               "fontFamily": "$font-primary",
-              "fontSize": 14,
+              "fontSize": "$font-size-md",
               "fontWeight": "normal"
             },
             {
@@ -6734,7 +6734,7 @@
                   "fontFamily": "$font-primary",
                   "fontSize": "$font-size-xs",
                   "fontWeight": "600",
-                  "letterSpacing": 1
+                  "letterSpacing": "$letter-spacing-wide"
                 },
                 {
                   "type": "text",
@@ -6744,9 +6744,9 @@
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
                   "content": "全面的 Docker 容器管理",
-                  "lineHeight": 1.2,
+                  "lineHeight": "$line-height-snug",
                   "fontFamily": "$font-primary",
-                  "fontSize": 22,
+                  "fontSize": "$font-size-xl",
                   "fontWeight": "700"
                 },
                 {
@@ -6941,7 +6941,7 @@
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-xs",
                           "fontWeight": "500",
-                          "letterSpacing": 1
+                          "letterSpacing": "$letter-spacing-wide"
                         },
                         {
                           "type": "text",
@@ -6950,7 +6950,7 @@
                           "fill": "$foreground",
                           "content": "34%",
                           "fontFamily": "$font-mono",
-                          "fontSize": 22,
+                          "fontSize": "$font-metric-sm",
                           "fontWeight": "700"
                         },
                         {
@@ -7010,7 +7010,7 @@
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-xs",
                           "fontWeight": "500",
-                          "letterSpacing": 1
+                          "letterSpacing": "$letter-spacing-wide"
                         },
                         {
                           "type": "text",
@@ -7019,7 +7019,7 @@
                           "fill": "$foreground",
                           "content": "62%",
                           "fontFamily": "$font-mono",
-                          "fontSize": 22,
+                          "fontSize": "$font-metric-sm",
                           "fontWeight": "700"
                         },
                         {
@@ -7089,7 +7089,7 @@
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-xs",
                           "fontWeight": "500",
-                          "letterSpacing": 1
+                          "letterSpacing": "$letter-spacing-wide"
                         },
                         {
                           "type": "text",
@@ -7098,7 +7098,7 @@
                           "fill": "$foreground",
                           "content": "71%",
                           "fontFamily": "$font-mono",
-                          "fontSize": 22,
+                          "fontSize": "$font-metric-sm",
                           "fontWeight": "700"
                         },
                         {
@@ -7155,7 +7155,7 @@
                           "fontFamily": "$font-primary",
                           "fontSize": "$font-size-xs",
                           "fontWeight": "500",
-                          "letterSpacing": 1
+                          "letterSpacing": "$letter-spacing-wide"
                         },
                         {
                           "type": "text",
@@ -7164,7 +7164,7 @@
                           "fill": "$foreground",
                           "content": "↓ 1.2 MB/s",
                           "fontFamily": "$font-mono",
-                          "fontSize": 22,
+                          "fontSize": "$font-metric-sm",
                           "fontWeight": "700"
                         },
                         {
@@ -7223,7 +7223,7 @@
                   "fontFamily": "$font-primary",
                   "fontSize": "$font-size-xs",
                   "fontWeight": "600",
-                  "letterSpacing": 1
+                  "letterSpacing": "$letter-spacing-wide"
                 },
                 {
                   "type": "text",
@@ -7233,9 +7233,9 @@
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
                   "content": "实时监控主机系统资源",
-                  "lineHeight": 1.2,
+                  "lineHeight": "$line-height-snug",
                   "fontFamily": "$font-primary",
-                  "fontSize": 22,
+                  "fontSize": "$font-size-xl",
                   "fontWeight": "700"
                 },
                 {
@@ -7909,7 +7909,7 @@
                   "fontFamily": "$font-primary",
                   "fontSize": "$font-size-xs",
                   "fontWeight": "600",
-                  "letterSpacing": 1
+                  "letterSpacing": "$letter-spacing-wide"
                 },
                 {
                   "type": "text",
@@ -7919,9 +7919,9 @@
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
                   "content": "完善的权限与角色管理",
-                  "lineHeight": 1.2,
+                  "lineHeight": "$line-height-snug",
                   "fontFamily": "$font-primary",
-                  "fontSize": 22,
+                  "fontSize": "$font-size-xl",
                   "fontWeight": "700"
                 },
                 {
@@ -8021,7 +8021,7 @@
                       "fontFamily": "$font-primary",
                       "fontSize": "$font-size-sm",
                       "fontWeight": "600",
-                      "letterSpacing": 1
+                      "letterSpacing": "$letter-spacing-wide"
                     }
                   ]
                 },
@@ -8034,7 +8034,7 @@
                   "width": "fill_container",
                   "content": "现代化技术栈驱动",
                   "fontFamily": "$font-primary",
-                  "fontSize": 22,
+                  "fontSize": "$font-size-xl",
                   "fontWeight": "700"
                 },
                 {
@@ -8045,7 +8045,7 @@
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
                   "content": "Server-Agent 架构，前后端分离，简洁高效",
-                  "lineHeight": 1.6,
+                  "lineHeight": "$line-height-relaxed",
                   "fontFamily": "$font-primary",
                   "fontSize": "$font-size-md",
                   "fontWeight": "normal"
@@ -8512,9 +8512,9 @@
               "textGrowth": "fixed-width",
               "width": "fill_container",
               "content": "立即开始监控你的主机与容器",
-              "lineHeight": 1.2,
+              "lineHeight": "$line-height-snug",
               "fontFamily": "$font-primary",
-              "fontSize": 28,
+              "fontSize": "$font-display-md",
               "fontWeight": "700"
             },
             {
@@ -8525,7 +8525,7 @@
               "textGrowth": "fixed-width",
               "width": "fill_container",
               "content": "一行命令安装 Beacon Server，几分钟完成接入，开箱即用",
-              "lineHeight": 1.6,
+              "lineHeight": "$line-height-relaxed",
               "fontFamily": "$font-primary",
               "fontSize": "$font-size-md",
               "fontWeight": "normal"
@@ -8639,7 +8639,7 @@
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
                   "content": "轻量级主机监控及 Docker 容器管理工具，实时掌控服务器与容器资源。",
-                  "lineHeight": 1.6,
+                  "lineHeight": "$line-height-relaxed",
                   "fontFamily": "$font-primary",
                   "fontSize": "$font-size-sm",
                   "fontWeight": "normal"
@@ -8790,7 +8790,7 @@
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
                   "content": "Copyright © 2024-present 阿慕 | 京ICP备2023024485号 | 京公网安备11011402053925号",
-                  "lineHeight": 1.5,
+                  "lineHeight": "$line-height-relaxed",
                   "fontFamily": "$font-primary",
                   "fontSize": "$font-size-xs",
                   "fontWeight": "normal"
@@ -9288,6 +9288,110 @@
           }
         }
       ]
+    },
+    "font-display-sm": {
+      "type": "number",
+      "value": 26
+    },
+    "font-display-md": {
+      "type": "number",
+      "value": 32
+    },
+    "font-display-lg": {
+      "type": "number",
+      "value": 38
+    },
+    "font-display-xl": {
+      "type": "number",
+      "value": 64
+    },
+    "font-size-base": {
+      "type": "number",
+      "value": 16
+    },
+    "font-size-2xs": {
+      "type": "number",
+      "value": 12
+    },
+    "font-size-h3": {
+      "type": "number",
+      "value": 17
+    },
+    "font-metric-sm": {
+      "type": "number",
+      "value": 22
+    },
+    "font-metric-md": {
+      "type": "number",
+      "value": 26
+    },
+    "font-metric-lg": {
+      "type": "number",
+      "value": 30
+    },
+    "font-weight-normal": {
+      "type": "number",
+      "value": "400"
+    },
+    "font-weight-medium": {
+      "type": "number",
+      "value": "500"
+    },
+    "font-weight-semibold": {
+      "type": "number",
+      "value": "600"
+    },
+    "font-weight-bold": {
+      "type": "number",
+      "value": "700"
+    },
+    "font-weight-extrabold": {
+      "type": "number",
+      "value": "800"
+    },
+    "line-height-none": {
+      "type": "number",
+      "value": 1
+    },
+    "line-height-tight": {
+      "type": "number",
+      "value": 1.15
+    },
+    "line-height-snug": {
+      "type": "number",
+      "value": 1.2
+    },
+    "line-height-normal": {
+      "type": "number",
+      "value": 1.4
+    },
+    "line-height-relaxed": {
+      "type": "number",
+      "value": 1.6
+    },
+    "line-height-loose": {
+      "type": "number",
+      "value": 1.7
+    },
+    "letter-spacing-tighter": {
+      "type": "number",
+      "value": -0.04
+    },
+    "letter-spacing-tight": {
+      "type": "number",
+      "value": -0.025
+    },
+    "letter-spacing-normal": {
+      "type": "number",
+      "value": 0
+    },
+    "letter-spacing-wide": {
+      "type": "number",
+      "value": 0.07
+    },
+    "letter-spacing-wider": {
+      "type": "number",
+      "value": 0.24
     }
   },
   "fileToken": "be424cec-cd29-44c3-8a49-32d5b836fe37"

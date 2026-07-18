@@ -166,7 +166,8 @@ const hostMetrics = [
 
 .preview__tile strong {
   font-family: var(--font-mono);
-  font-size: var(--font-size-lg);
+  font-size: var(--font-metric-md);
+  font-weight: var(--font-weight-bold);
 }
 
 .preview__track {

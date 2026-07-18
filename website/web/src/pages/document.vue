@@ -238,8 +238,8 @@ usePageSeo({
   margin: 0;
   color: var(--primary);
   font-size: var(--font-size-sm);
-  font-weight: 600;
-  letter-spacing: 1px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-wide);
 }
 
 .docs-page__overline :deep(svg) {
@@ -250,10 +250,10 @@ usePageSeo({
 .docs-page__header h1 {
   margin: 0;
   color: var(--foreground);
-  font-size: 44px;
-  font-weight: 800;
-  letter-spacing: -1px;
-  line-height: 1.1;
+  font-size: var(--font-display-lg);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: var(--letter-spacing-tight);
+  line-height: var(--line-height-tight);
 }
 
 .docs-page__header p {
@@ -261,7 +261,7 @@ usePageSeo({
   margin: 0;
   color: var(--muted-foreground);
   font-size: var(--font-size-md);
-  line-height: 1.6;
+  line-height: var(--line-height-relaxed);
 }
 
 .docs-page__main {
@@ -285,8 +285,8 @@ usePageSeo({
   margin: 0 0 var(--space-2);
   color: var(--muted-foreground);
   font-size: var(--font-size-xs);
-  font-weight: 600;
-  letter-spacing: 1px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-wide);
 }
 
 .docs-page__toc a {
@@ -296,7 +296,7 @@ usePageSeo({
   color: var(--color-text-secondary);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   transition:
     color 0.2s ease,
     background 0.2s ease;
@@ -311,7 +311,7 @@ usePageSeo({
 .docs-page__toc a[aria-current='true'] {
   color: var(--primary);
   background: var(--color-surface-muted);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .docs-page__content {
@@ -346,15 +346,15 @@ usePageSeo({
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
   font-size: var(--font-size-sm);
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
 }
 
 .docs-page__sec-head h2 {
   margin: 0;
   color: var(--foreground);
   font-size: var(--font-size-xl);
-  font-weight: 700;
-  line-height: 1.2;
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-snug);
 }
 
 .docs-page__group {
@@ -366,8 +366,8 @@ usePageSeo({
 .docs-page__h3 {
   margin: var(--space-4) 0 0;
   color: var(--foreground);
-  font-size: 17px;
-  font-weight: 600;
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-semibold);
 }
 
 .docs-page__section > .docs-page__group:first-child .docs-page__h3,
@@ -379,7 +379,7 @@ usePageSeo({
   margin: 0;
   color: var(--muted-foreground);
   font-size: var(--font-size-sm);
-  line-height: 1.7;
+  line-height: var(--line-height-loose);
 }
 
 .docs-page__list {
@@ -390,7 +390,7 @@ usePageSeo({
   padding: 0;
   color: var(--muted-foreground);
   font-size: var(--font-size-sm);
-  line-height: 1.7;
+  line-height: var(--line-height-loose);
   list-style: none;
 }
 
@@ -439,7 +439,7 @@ usePageSeo({
   color: var(--color-text-secondary);
   font-family: var(--font-mono);
   font-size: var(--font-size-sm);
-  line-height: 1.7;
+  line-height: var(--line-height-loose);
   white-space: pre;
 }
 
@@ -465,7 +465,7 @@ usePageSeo({
   margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
-  line-height: 1.6;
+  line-height: var(--line-height-relaxed);
 }
 
 .docs-page__faq {
@@ -494,14 +494,14 @@ usePageSeo({
   margin: 0;
   color: var(--foreground);
   font-size: var(--font-size-md);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .docs-page__qa-row p {
   margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
-  line-height: 1.7;
+  line-height: var(--line-height-loose);
 }
 
 .docs-page__badge {
@@ -513,7 +513,7 @@ usePageSeo({
   border-radius: var(--radius-sm);
   font-family: var(--font-primary);
   font-size: var(--font-size-sm);
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
 }
 
 .docs-page__badge--q {
@@ -548,8 +548,8 @@ usePageSeo({
 .docs-page__support h2 {
   margin: 0;
   color: var(--foreground);
-  font-size: 18px;
-  font-weight: 600;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
 }
 
 .docs-page__support p {
@@ -566,7 +566,7 @@ usePageSeo({
   background: var(--primary);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   transition: background 0.2s ease;
 }
 
@@ -601,10 +601,6 @@ usePageSeo({
 @media (max-width: 640px) {
   .docs-page__header {
     padding: 56px 0 var(--space-8);
-  }
-
-  .docs-page__header h1 {
-    font-size: 32px;
   }
 
   .docs-page__main {

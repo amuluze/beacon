@@ -97,7 +97,7 @@ function toggleMenu() {
   align-items: center;
   gap: 10px;
   font-size: var(--font-size-lg);
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
 }
 
 .site-header__mark {
@@ -123,7 +123,7 @@ function toggleMenu() {
   padding: 8px 4px;
   color: var(--color-text-secondary);
   font-size: var(--font-size-md);
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   transition: color 0.2s ease;
 }
 
@@ -159,7 +159,7 @@ function toggleMenu() {
   display: none;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 640px) {
   .site-header__nav--desktop {
     display: none;
   }

@@ -48,7 +48,9 @@ usePageSeo({
 
 .wechat-card h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: var(--font-display-md);
+  font-weight: var(--font-weight-extrabold);
+  line-height: var(--line-height-tight);
 }
 
 .wechat-card div > p:last-child {

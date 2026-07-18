@@ -118,10 +118,10 @@ usePageSeo({
 .changelog__header h1 {
   margin: 0;
   color: var(--foreground);
-  font-size: 44px;
-  font-weight: 800;
-  letter-spacing: -1px;
-  line-height: 1.1;
+  font-size: var(--font-display-lg);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: var(--letter-spacing-tight);
+  line-height: var(--line-height-tight);
 }
 
 .changelog__header p {
@@ -129,7 +129,7 @@ usePageSeo({
   margin: 0;
   color: var(--muted-foreground);
   font-size: var(--font-size-md);
-  line-height: 1.6;
+  line-height: var(--line-height-relaxed);
 }
 
 .changelog__body {
@@ -165,8 +165,8 @@ usePageSeo({
 .changelog__version-info strong {
   color: var(--foreground);
   font-family: var(--font-mono);
-  font-size: 22px;
-  font-weight: 700;
+  font-size: var(--font-display-sm);
+  font-weight: var(--font-weight-bold);
 }
 
 .changelog__badge {
@@ -176,7 +176,7 @@ usePageSeo({
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .changelog__version time {
@@ -206,7 +206,7 @@ usePageSeo({
   gap: var(--space-3);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
-  line-height: 1.5;
+  line-height: var(--line-height-relaxed);
 }
 
 .release-change__type {
@@ -217,7 +217,7 @@ usePageSeo({
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   text-align: center;
 }
 
@@ -241,13 +241,9 @@ usePageSeo({
   padding-top: 2px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 640px) {
   .changelog__header {
     padding: 56px 0 var(--space-8);
-  }
-
-  .changelog__header h1 {
-    font-size: 32px;
   }
 
   .changelog__card {

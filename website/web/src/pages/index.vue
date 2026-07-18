@@ -180,7 +180,7 @@ usePageSeo({
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   font-size: var(--font-size-sm);
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 
 .hero__badge :deep(svg) {
@@ -190,18 +190,18 @@ usePageSeo({
 
 .hero h1 {
   margin: var(--space-6) 0 0;
-  font-size: clamp(56px, 10vw, 80px);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.04em;
+  font-size: var(--font-display-xl);
+  font-weight: var(--font-weight-extrabold);
+  line-height: var(--line-height-none);
+  letter-spacing: var(--letter-spacing-tighter);
 }
 
 .hero__subtitle {
   margin: var(--space-4) 0 0;
   color: var(--color-text-secondary);
-  font-size: clamp(18px, 3vw, 22px);
-  font-weight: 500;
-  letter-spacing: 0.24em;
+  font-size: var(--font-display-2xs);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-wider);
 }
 
 .hero__description {
@@ -209,7 +209,7 @@ usePageSeo({
   margin: var(--space-4) 0 0;
   color: var(--muted-foreground);
   font-size: var(--font-size-lg);
-  line-height: 1.6;
+  line-height: var(--line-height-relaxed);
 }
 
 .hero__tags {
@@ -230,7 +230,7 @@ usePageSeo({
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   font-size: var(--font-size-sm);
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 
 .hero__tag :deep(svg) {
@@ -251,7 +251,7 @@ usePageSeo({
 
 .hero__prompt {
   color: var(--color-success);
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
 }
 
 .hero__command code {
@@ -303,8 +303,9 @@ usePageSeo({
 
 .cta h2 {
   margin: var(--space-5) 0 0;
-  font-size: clamp(28px, 5vw, 36px);
-  line-height: 1.2;
+  font-size: var(--font-display-md);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-snug);
 }
 
 .cta p {
@@ -321,10 +322,6 @@ usePageSeo({
 
   .hero__inner {
     align-items: stretch;
-  }
-
-  .hero h1 {
-    font-size: 56px;
   }
 
   .hero__badge {
