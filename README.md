@@ -50,16 +50,7 @@
 
 ## 🖼️ 产品截图
 
-![Beacon overview](website/web/public/images/overview.png)
-
-<details>
-<summary>查看更多界面</summary>
-
-| 容器监控 | 主机监控 |
-|---|---|
-| ![Container monitoring](website/web/public/images/container_monitor.png) | ![Host monitoring](website/web/public/images/host_monitor.png) |
-
-</details>
+详细界面截图请访问官网 [help.beacon.amuluze.com](https://help.beacon.amuluze.com)。
 
 ## ✨ 功能特性
 
@@ -106,7 +97,7 @@ Beacon 将三条路径明确分离：
 2. **监控上报**：Collia 通过 HTTP report 接口按批次原子写入 Server。
 3. **控制调用**：Beacon 通过 Collia 主动建立的反向 gRPC tunnel 调用目标 Agent。
 
-更完整的边界、依赖方向和数据流见 [架构文档](./.docs/architecture.md) 与 [数据流文档](./.docs/concepts/data-flow.md)。
+更完整的边界、依赖方向和数据流见各模块内的 `README.md` 与代码注释。
 
 ## 🚀 快速开始
 
@@ -124,26 +115,27 @@ bash -c "$(curl -fsSLk https://help.beacon.amuluze.com/release/latest/manager.sh
 
 - Docker >= 20.10.9，并安装 Docker Compose。
 - Go 1.25（本地开发后端时需要）。
-- Node.js、pnpm 与 [Task](https://taskfile.dev/)（构建 Web 资源时需要）。
+- Node.js 与 pnpm（构建 beacon/web 管理端时需要）。
 
 ```bash
 # 克隆新仓库
 git clone https://github.com/amuluze/beacon.git
 cd beacon
 
-# 构建前端静态资源
-task beacon-web:install
-task beacon-web:build
+# 构建 beacon/web 管理端静态资源
+cd beacon/web
+pnpm install
+pnpm build
+cd ../..
 
-# 构建 Beacon 镜像并启动本地 Compose
+# 构建 Beacon 镜像
 docker build -f beacon/Dockerfile -t beacon:latest .
-docker compose -f deploy/docker-compose.yml up -d
 
-# 验证服务
+# 验证服务（按需自行编排 docker run 或本地 go run）
 curl http://127.0.0.1:8000/health
 ```
 
-本地 Compose 暴露 `8000`（HTTP）与 `17000`（Agent control）端口，仅用于开发/验证。生产部署前请生成独立的高强度密钥，并使用 `BEACON_AUTH_SIGNING_KEY`、`BEACON_AGENT_INSTALL_TOKEN`、`BEACON_CONTROL_JOIN_TOKEN` 注入。
+本地开发可仅运行 `cd beacon && go run ./cmd/beacon` 启动 Server；生产部署前请生成独立的高强度密钥，并使用 `BEACON_AUTH_SIGNING_KEY`、`BEACON_AGENT_INSTALL_TOKEN`、`BEACON_CONTROL_JOIN_TOKEN` 注入。
 
 Beacon 启动后，可从目标主机安装 Collia Agent（将地址、节点编号和 Token 替换为实际值）：
 
@@ -170,40 +162,33 @@ beacon/
 ├── beacon/                 # Server、Web UI、HTTP/WS API 与 tunnel client
 │   ├── cmd/beacon/         # Server 进程入口
 │   ├── service/            # 业务服务、路由、认证与数据访问
-│   └── web/                # Vue 3 管理端
+│   ├── web/                # Vue 3 管理端（嵌入 Server 模块）
+│   ├── Dockerfile          # Server 镜像构建入口
+│   └── nginx/              # 反向代理配置
 ├── collia/                 # Agent 采集、Docker/主机操作与 tunnel service
 ├── common/                 # 共享 schema、数据库与 reverse tunnel transport
-├── website/                # Beacon 官网与安装脚本服务
-├── deploy/                 # Docker Compose 与 Kubernetes 部署文件
-├── .docs/                  # 当前实现文档
-├── .specs/                 # SDD Domain / Task Specs
-└── Taskfile.yml            # 工作区开发命令入口
+├── LICENSE                 # MIT License
+└── go.work                 # Go workspace 定义
 ```
 
-## 📚 项目文档
-
-| 文档 | 内容 |
-|---|---|
-| [架构设计](./.docs/architecture.md) | 模块边界、核心运行链路与依赖方向 |
-| [数据流](./.docs/concepts/data-flow.md) | 请求生命周期、数据归属与跨模块流转 |
-| [部署指南](./.docs/deployment.md) | 环境、构建、配置与发布检查 |
-| [API 路由](./.docs/api/routes.md) | 当前 HTTP 路由与处理器索引 |
-| [OpenAPI](./.docs/api/openapi.yml) | Beacon HTTP API 契约 |
-| [领域约束](./.specs/domain/monitoring-platform.md) | 监控平台长期行为与不变量 |
+> 注：官网、部署清单、SDD 文档等周边资产不在本开源仓库内，参见 [help.beacon.amuluze.com](https://help.beacon.amuluze.com)。
 
 ## 🧑‍💻 开发与贡献
 
 常用命令：
 
 ```bash
-task beacon:dev
-task beacon-web:dev
-task collia:amd64
-
+# 后端测试
 cd beacon && go test ./...
 cd collia && go test ./...
 cd common && go test ./...
-cd beacon/web && pnpm test:run && pnpm ts && pnpm build
+
+# 管理端构建与校验
+cd beacon/web
+pnpm install
+pnpm test:run
+pnpm ts        # vue-tsc 类型检查
+pnpm build
 ```
 
 欢迎提交 Issue 和 Pull Request：
