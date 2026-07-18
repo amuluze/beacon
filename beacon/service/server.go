@@ -69,9 +69,6 @@ func Init(ctx context.Context, opts ...Option) (func(), error) {
 	// 初始化日志
 	slog.SetDefault(injector.Logger.Logger)
 
-	// 安装统计上报不参与启动成败判定。
-	go ReportInstallation(ctx, injector.Config)
-
 	// 初始化预设数据
 	injector.Prepare.Init(injector.App)
 
