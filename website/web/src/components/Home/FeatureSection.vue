@@ -70,8 +70,8 @@ const props = withDefaults(defineProps<Props>(), {
   margin: 0 0 var(--space-2);
   color: var(--primary);
   font-size: var(--font-size-sm);
-  font-weight: 600;
-  letter-spacing: 1px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-wide);
 }
 
 .feature__overline :deep(svg) {
@@ -81,16 +81,16 @@ const props = withDefaults(defineProps<Props>(), {
 
 .feature__content h2 {
   margin: 0;
-  font-size: 30px;
-  font-weight: 700;
-  line-height: 1.2;
+  font-size: var(--font-display-sm);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-snug);
 }
 
 .feature__description {
   margin: var(--space-4) 0 var(--space-5);
   color: var(--muted-foreground);
   font-size: var(--font-size-md);
-  line-height: 1.6;
+  line-height: var(--line-height-relaxed);
 }
 
 .feature__content ul {
@@ -108,7 +108,7 @@ const props = withDefaults(defineProps<Props>(), {
   gap: 10px;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
-  line-height: 1.5;
+  line-height: var(--line-height-relaxed);
 }
 
 .feature__check {
@@ -121,7 +121,7 @@ const props = withDefaults(defineProps<Props>(), {
   color: var(--color-text-inverse);
   background: var(--color-success);
   border-radius: var(--radius-pill);
-  font-size: 13px;
+  font-size: var(--font-size-sm);
 }
 
 @media (max-width: 800px) {

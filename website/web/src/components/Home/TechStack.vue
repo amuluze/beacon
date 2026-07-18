@@ -49,9 +49,9 @@ const stacks = [
 
 .tech-stack h2 {
   margin: 0;
-  font-size: 30px;
-  font-weight: 700;
-  line-height: 1.2;
+  font-size: var(--font-display-sm);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-snug);
 }
 
 .tech-stack__header p {
@@ -59,7 +59,7 @@ const stacks = [
   margin: 0;
   color: var(--muted-foreground);
   font-size: var(--font-size-md);
-  line-height: 1.6;
+  line-height: var(--line-height-relaxed);
 }
 
 .tech-stack__grid {
@@ -96,7 +96,7 @@ const stacks = [
   margin: 0;
   color: var(--foreground);
   font-size: var(--font-size-md);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .tech-stack__divider {

@@ -29,12 +29,48 @@
   --font-primary: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
   --font-mono: 'Geist Mono', 'SFMono-Regular', Consolas, monospace;
 
-  /* 字号 */
+  /* 字号（来源 .pen/beacon-website.pen variables） */
+  --font-size-2xs: 12px;
   --font-size-xs: 11px;
   --font-size-sm: 13px;
   --font-size-md: 14px;
+  --font-size-base: 16px;
   --font-size-lg: 18px;
   --font-size-xl: 24px;
+  --font-size-h3: 17px;
+
+  /* Display tier — fluid clamp，端点对应设计稿 desktop / mobile */
+  --font-display-2xs: clamp(18px, 3vw, 22px); /* hero subtitle */
+  --font-display-sm: clamp(22px, 3vw, 30px); /* section h2 */
+  --font-display-md: clamp(28px, 5vw, 36px); /* cta title */
+  --font-display-lg: clamp(32px, 5vw, 44px); /* page h1 */
+  --font-display-xl: clamp(48px, 8vw, 80px); /* hero h1 */
+
+  /* Metric mono */
+  --font-metric-sm: 22px;
+  --font-metric-md: 26px;
+
+  /* font-weight（来源 .pen/beacon-website.pen variables） */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  /* line-height */
+  --line-height-none: 1;
+  --line-height-tight: 1.15;
+  --line-height-snug: 1.2;
+  --line-height-normal: 1.4;
+  --line-height-relaxed: 1.6;
+  --line-height-loose: 1.7;
+
+  /* letter-spacing */
+  --letter-spacing-tighter: -0.04em;
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.07em;
+  --letter-spacing-wider: 0.24em;
 
   /* 间距 */
   --space-1: 4px;
@@ -85,7 +121,7 @@ body {
   background: var(--background);
   font-family: var(--font-primary);
   font-size: var(--font-size-md);
-  line-height: 1.6;
+  line-height: var(--line-height-relaxed);
   -webkit-font-smoothing: antialiased;
   transition:
     background 0.2s ease,
@@ -143,8 +179,8 @@ select {
   margin: 0 0 var(--space-2);
   color: var(--primary);
   font-size: var(--font-size-xs);
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-wide);
   text-transform: uppercase;
 }
 
@@ -154,10 +190,43 @@ select {
   border-bottom: 1px solid var(--border);
 }
 
+/* 语义化排版 utility class（设计稿对应：page h1 / section h2 / cta title / docs h3） */
+.site-h1 {
+  margin: 0;
+  font-size: var(--font-display-lg);
+  font-weight: var(--font-weight-extrabold);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+.site-h2-section {
+  margin: 0;
+  font-size: var(--font-display-sm);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-snug);
+}
+
+.site-h2-cta {
+  margin: 0;
+  font-size: var(--font-display-md);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-snug);
+}
+
+.site-h3-doc {
+  margin: 0;
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-normal);
+}
+
+/* 向后兼容：保留 .site-page-title 作为 .site-h1 的别名 */
 .site-page-title {
   margin: 0;
-  font-size: clamp(32px, 5vw, 48px);
-  line-height: 1.15;
+  font-size: var(--font-display-lg);
+  font-weight: var(--font-weight-extrabold);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
 }
 
 .site-page-description {
@@ -198,7 +267,7 @@ select {
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-md);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   text-align: center;
   text-decoration: none;
   white-space: nowrap;

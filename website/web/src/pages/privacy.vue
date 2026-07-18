@@ -77,7 +77,7 @@ usePageSeo({
   display: inline-flex;
   margin-top: var(--space-4);
   color: var(--primary);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 @media (max-width: 640px) {
