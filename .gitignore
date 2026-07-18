@@ -19,6 +19,9 @@
 .plans/
 **/AGENTS.md
 **/CLAUDE.md
+LAYER_STATUS.md
+TDD_STAGES.md
+**/Taskfile.yml
 
 # Local deployment secrets
 deploy/.env
