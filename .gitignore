@@ -13,5 +13,12 @@
 .agents/
 .github/
 
+# SDD framework — 由 `/doc update` 与 `/spec` slash commands 自动维护
+.docs/
+.specs/
+.plans/
+**/AGENTS.md
+**/CLAUDE.md
+
 # Local deployment secrets
 deploy/.env
