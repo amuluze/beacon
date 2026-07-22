@@ -22,7 +22,7 @@ func NewFiberApp(config *Config, r IRouter) *fiber.App {
 	fiberConfig := fiber.Config{
 		Prefork:      config.Fiber.Prefork,
 		AppName:      config.Fiber.AppName,
-		ServerHeader: config.Fiber.SeverHeader,
+		ServerHeader: config.Fiber.ServerHeader,
 		BodyLimit:    1000 * 1024 * 1024,
 	}
 

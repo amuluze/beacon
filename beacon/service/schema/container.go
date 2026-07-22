@@ -12,7 +12,6 @@ type Container struct {
 	Image         string            `json:"image"`
 	IP            string            `json:"ip"`
 	Ports         string            `json:"ports"`
-	ServerType    string            `json:"server_type"`
 	State         string            `json:"state"`
 	Uptime        string            `json:"uptime"`
 	CPUPercent    string            `json:"cpu_percent"`
@@ -27,17 +26,11 @@ type ContainerQueryArgs struct {
 	Size int `json:"size" validate:"gte=0,lte=100"`
 }
 
-type QueryCountArgs struct{}
-
-type QueryCountReply struct {
-	Count int `json:"count"`
-}
-
 type ContainerCreateArgs struct {
 	ContainerName string            `json:"container_name" validate:"required,gte=1,lte=128"`
 	ImageName     string            `json:"image_name" validate:"required,gte=1,lte=256"`
 	NetworkMode   string            `json:"network_mode" validate:"required,oneof=bridge host none"`
-	NetworkID     string            `json:"network_id" validate:"omitempty,len=36"`
+	NetworkID     string            `json:"network_id" validate:"omitempty,min=1,max=64"`
 	NetworkName   string            `json:"network_name" validate:"lte=128"`
 	RestartPolicy string            `json:"restart_policy" validate:"omitempty,oneof=no always unless-stopped on-failure"`
 	Ports         []string          `json:"ports" validate:"max=64"`
@@ -136,21 +129,6 @@ type ImageImportArgs struct {
 }
 
 type ImageImportReply struct{}
-
-type ImageExportArgs struct {
-	ImageName string `json:"image_names" validate:"required"`
-	ImageID   string `json:"image_ids" validate:"required"`
-}
-
-type ImageExportRPCArgs struct {
-	ImageIDs   []string `json:"image_ids"`
-	TargetFile string   `json:"target_file"`
-}
-
-type ImageExportReply struct {
-	FileName string `json:"file_name"`
-	Data     []byte `json:"-"`
-}
 
 type ImageDeleteArgs struct {
 	ImageID string `json:"image_id" validate:"required"`

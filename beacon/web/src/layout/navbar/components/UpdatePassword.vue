@@ -58,18 +58,23 @@ const router = useRouter()
 async function confirmPasswordUpdate(formEl: FormInstance | undefined) {
   if (!formEl)
     return
-  await formEl.validate(async (valid) => {
-    if (valid) {
-      passwordUpdateLoading.value = true
-      updatePassword(passwordUpdateMode.value).finally(() => {
-        passwordUpdateLoading.value = false
-        drawerVisible.value = false
-        success('更新成功')
-        store.user.setToken('', '')
-        router.replace('/login')
-      })
-    }
-  })
+  const valid = await formEl.validate().catch(() => false)
+  if (!valid)
+    return
+
+  passwordUpdateLoading.value = true
+  try {
+    await updatePassword(passwordUpdateMode.value)
+    drawerVisible.value = false
+    success('更新成功')
+    store.user.setToken('', '')
+    await router.replace('/login')
+  }
+  catch {
+  }
+  finally {
+    passwordUpdateLoading.value = false
+  }
 }
 const { t } = useI18n()
 </script>
@@ -84,7 +89,7 @@ const { t } = useI18n()
             label-position="left"
         >
             <el-form-item :label="t('account.userName')" prop="username">
-                <el-input v-model="passwordUpdateMode.username" :placeholder="t('account.inputUserName')" />
+                <el-input v-model="passwordUpdateMode.username" disabled :placeholder="t('account.inputUserName')" />
             </el-form-item>
             <el-form-item :label="t('account.oldPassword')" prop="old_password">
                 <el-input v-model="passwordUpdateMode.old_password" type="password" :placeholder="t('account.inputOldPassword')" />

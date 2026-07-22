@@ -63,22 +63,6 @@ func (m *MailAPI) MailUpdate(ctx *fiber.Ctx) error {
 	return fiberx.NoContent(ctx)
 }
 
-func (m *MailAPI) MailDelete(ctx *fiber.Ctx) error {
-	c := ctx.UserContext()
-	var args schema.MailDeleteArgs
-	if err := fiberx.ParseBody(ctx, &args); err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
-	}
-	if err := validatex.ValidateStruct(&args); err != nil {
-		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
-	}
-	err := m.MailService.MailDelete(c, args)
-	if err != nil {
-		return fiberx.Failure(ctx, fiberx.ServiceError(err))
-	}
-	return fiberx.NoContent(ctx)
-}
-
 func (m *MailAPI) MailTest(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	var args schema.MailTestArgs

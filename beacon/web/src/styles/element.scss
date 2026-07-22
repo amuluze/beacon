@@ -392,7 +392,7 @@ button {
 }
 
 .am-chart-row {
-  flex: 1;
+  flex: none;
   min-height: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -442,9 +442,13 @@ button {
   white-space: nowrap;
 }
 
+// 全局统一图表高度，避免单 row 视图被弹性拉伸填满父容器
 .am-chart-area {
-  flex: 1;
-  min-height: 180px;
+  flex: 0 0 clamp(240px, 28vh, 320px);
+  width: 100%;
+  height: clamp(240px, 28vh, 320px);
+  min-height: 240px;
+  max-height: 320px;
   overflow: hidden;
   background: var(--am-surface-primary);
   border: 1px solid var(--am-border-subtle);

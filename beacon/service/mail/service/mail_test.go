@@ -154,38 +154,6 @@ func TestMailService_MailUpdate(t *testing.T) {
 	}
 }
 
-func TestMailService_MailDelete(t *testing.T) {
-	tests := []struct {
-		name    string
-		fn      func(ctx context.Context, args schema.MailDeleteArgs) error
-		wantErr bool
-	}{
-		{
-			name:    "success",
-			fn:      func(ctx context.Context, args schema.MailDeleteArgs) error { return nil },
-			wantErr: false,
-		},
-		{
-			name:    "repo error",
-			fn:      func(ctx context.Context, args schema.MailDeleteArgs) error { return testutil.ErrTest },
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := testutil.NewFakeMailRepo()
-			r.MailDeleteFn = tt.fn
-			svc := NewMailService(r)
-
-			err := svc.MailDelete(context.Background(), schema.MailDeleteArgs{ID: 1})
-			if (err != nil) != tt.wantErr {
-				t.Errorf("error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
 func TestMailService_MailTest(t *testing.T) {
 	tests := []struct {
 		name    string

@@ -8,14 +8,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 
 	rpcSchema "common/rpc/schema"
 	tunnel "common/rpc/tunnel"
 
-	"collia/pkg/utils"
 	"collia/service/model"
 
 	"github.com/amuluze/docker"
@@ -111,17 +109,12 @@ func (s *Service) ContainerRestart(ctx context.Context, args rpcSchema.Container
 	return nil
 }
 
-func (s *Service) ContainerLogs(ctx context.Context, args rpcSchema.ContainerLogsArgs, reply *rpcSchema.ContainerLogsReply) error {
-	// Use streaming implementation for new pipeline; legacy stub kept for interface compliance
-	return nil
-}
-
 func (s *Service) ContainerLogsStream(ctx context.Context, args rpcSchema.ContainerLogsArgs, streamSender func(frame *tunnel.Frame)) error {
 	reader, err := s.Manager.ContainerLogs(ctx, args.ContainerID)
 	if err != nil {
 		return err
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
@@ -191,41 +184,11 @@ func (s *Service) ImageImport(ctx context.Context, args rpcSchema.ImageImportArg
 			_ = os.Remove(sourceFile)
 			return err
 		}
-		defer os.Remove(sourceFile)
+		defer func() { _ = os.Remove(sourceFile) }()
 	}
 	if err := s.Manager.ImportImage(ctx, sourceFile); err != nil {
 		return err
 	}
-	return nil
-}
-
-func (s *Service) ImageExport(ctx context.Context, args rpcSchema.ImageExportArgs, reply *rpcSchema.ImageExportReply) error {
-	targetFile := args.TargetFile
-	if targetFile == "" {
-		tmpFile, err := os.CreateTemp("", "collia-image-export-*.tar")
-		if err != nil {
-			return err
-		}
-		targetFile = tmpFile.Name()
-		if err := tmpFile.Close(); err != nil {
-			_ = os.Remove(targetFile)
-			return err
-		}
-		defer os.Remove(targetFile)
-	}
-	if err := s.Manager.ExportImage(ctx, args.ImageIDs, targetFile); err != nil {
-		return err
-	}
-	safeTarget, err := utils.SanitizePath(targetFile)
-	if err != nil {
-		return err
-	}
-	data, err := os.ReadFile(safeTarget) //#nosec G304 -- path sanitized by utils.SanitizePath
-	if err != nil && err != io.EOF {
-		return err
-	}
-	reply.FileName = filepath.Base(targetFile)
-	reply.Data = data
 	return nil
 }
 
@@ -274,7 +237,6 @@ func registerContainerHandlers(d *Dispatcher, svc *Service) {
 		return json.Marshal(struct{}{})
 	})
 	RegisterUnary[rpcSchema.ImageImportArgs, rpcSchema.ImageImportReply](d, "ImageImport", svc.ImageImport)
-	RegisterUnary[rpcSchema.ImageExportArgs, rpcSchema.ImageExportReply](d, "ImageExport", svc.ImageExport)
 
 	// Network operations
 	RegisterUnary[rpcSchema.NetworkCreateArgs, rpcSchema.NetworkCreateReply](d, "NetworkCreate", svc.NetworkCreate)

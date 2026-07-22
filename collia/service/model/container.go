@@ -10,8 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type Containers []Container
-
 type Container struct {
 	gorm.Model
 	Timestamp   time.Time
@@ -33,8 +31,6 @@ func (d *Container) TableName() string {
 	return "s_container"
 }
 
-type Images []Image
-
 type Image struct {
 	gorm.Model
 	Timestamp time.Time
@@ -47,8 +43,6 @@ type Image struct {
 }
 
 func (i *Image) TableName() string { return "s_image" }
-
-type Networks []Network
 
 type Network struct {
 	gorm.Model

@@ -86,6 +86,14 @@ func (a *Router) AgentInstallCerts(ctx *fiber.Ctx) error {
 		return fiber.NewError(http.StatusBadRequest, "invalid node")
 	}
 
+	if a.certManager != nil && a.config.AgentInstall.TLSEnable {
+		certsPath, err := a.certManager.GenerateAgentCertPackage(node)
+		if err != nil {
+			return fiber.NewError(http.StatusInternalServerError, err.Error())
+		}
+		return ctx.Status(http.StatusOK).Download(certsPath, node+"-certs.tar.gz")
+	}
+
 	certsPath, err := safeJoin(a.agentInstallPackageDir(), "certs", node+".tar.gz")
 	if err != nil {
 		return fiber.NewError(http.StatusBadRequest, err.Error())
@@ -155,19 +163,19 @@ log:
 task:
   interval: 30
   max_age: 1
+  # disk.devices 与 ethernet.names 留空，由 collia install 的 preflight
+  # 在目标主机上探测真实块设备/网卡后自动回写（取代硬编码 vda2/eth0）。
   disk:
-    devices:
-      - vda2
+    devices: []
   ethernet:
-    names:
-      - eth0
+    names: []
   report:
     url: "%s"
     token: "%s"
     agent_id: %s
 db:
   dbtype: sqlite
-  dbname: /data/beacon/resources/collia/storage/collia
+  dbname: /data/beacon/collia/storage/collia
 variables:
   image_tag: latest
   host_prefix: /data/beacon
@@ -241,7 +249,7 @@ download() {
   curl -kfsSL -H "X-Install-Token: $TOKEN" "$1" -o "$2"
 }
 
-mkdir -p /etc/collia /data/beacon/resources/collia/storage /data/beacon/logs/collia /usr/sbin
+mkdir -p /etc/collia /data/beacon/collia/storage /data/beacon/logs/collia /usr/sbin
 
 download "$BASE_URL/api/v1/host/install/package?arch=$ARCH" "$WORKDIR/collia"
 download "$BASE_URL/api/v1/host/install/config?node=$NODE" "$WORKDIR/config.yml"
@@ -251,7 +259,10 @@ install -m 0755 "$WORKDIR/collia" /usr/sbin/collia
 install -m 0644 "$WORKDIR/config.yml" /etc/collia/config.yml
 
 collia install || true
-collia stop || true
+# 升级场景：仅当旧实例在运行时才先停，避免首次安装时 stop 打印 [FAILED] 误报。
+if collia status >/dev/null 2>&1; then
+  collia stop
+fi
 collia start
 
 echo "collia installed and started, reverse tunnel -> $BASE_URL"

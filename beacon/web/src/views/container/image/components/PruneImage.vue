@@ -6,23 +6,26 @@ import { pruneImages } from '@/api/container'
 import { useConfirmCommand } from '@/hooks/useConfirmCommand'
 
 const props = defineProps<{
-    visible: boolean
-    id?: string
-    title?: string
-    update?: () => void
+  visible: boolean
+  id?: string
+  title?: string
+  update?: () => void
 }>()
 
 const trigger = useConfirmCommand({
-    title: props.title,
-    message: 'image.confirmPrune',
-    i18nPrefix: 'image',
-    action: () => pruneImages(),
-    onResolved: () => props.update?.(),
+  title: props.title,
+  message: 'image.confirmPrune',
+  i18nPrefix: 'image',
+  action: () => pruneImages(),
+  onResolved: () => props.update?.(),
 })
 
 watch(() => props.visible, (visible) => {
-    if (visible) trigger()
-})
+  if (visible)
+    trigger()
+}, { immediate: true })
 </script>
 
-<template></template>
+<template>
+    <span v-if="false" />
+</template>

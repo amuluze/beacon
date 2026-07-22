@@ -6,6 +6,7 @@ package service
 
 import (
 	"beacon/pkg/auth"
+	"beacon/pkg/contextx"
 	"beacon/pkg/errors"
 	"beacon/service/auth/repository"
 	"beacon/service/schema"
@@ -55,6 +56,9 @@ func (a *AuthService) Logout(ctx context.Context, token string) error {
 }
 
 func (a *AuthService) PassUpdate(ctx context.Context, args schema.PasswordUpdateArgs) error {
+	if username := contextx.FromUsername(ctx); username != "" {
+		args.Username = username
+	}
 	if args.OldPassword == args.NewPassword {
 		return errors.New("same password")
 	}

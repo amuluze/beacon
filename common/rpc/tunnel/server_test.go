@@ -632,3 +632,52 @@ func TestE2E_HeartbeatKeepsAgentAlive(t *testing.T) {
 		t.Fatalf("alive-agent should still be online after heartbeats")
 	}
 }
+
+// TestUnmarshalReplyNilReply 验证当 reply=nil 时（即 fire-and-forget RPC），
+// 即使 agent 返回了非空 payload，也不应触发 json.Unmarshal 错误。
+//
+// 背景：beacon 端 ContainerRepo.ImagesPrune 调用 RPCClient.Call(ctx, "ImagesPrune", nil, nil)
+// 把 reply 传为 nil；agent 端 d.Register("ImagesPrune", ...) 返回 json.Marshal(struct{}{}) = "{}"。
+// 修复前：unmarshalReply([]byte("{}"), nil) → json: Unmarshal(nil) 错误。
+// 修复后：reply == nil 时直接返回 nil，payload 被有意丢弃。
+func TestUnmarshalReplyNilReply(t *testing.T) {
+	cases := []struct {
+		name string
+		data []byte
+	}{
+		{"nil payload", nil},
+		{"empty payload", []byte{}},
+		{"empty object payload (ImagesPrune shape)", []byte("{}")},
+		{"non-empty payload", []byte(`{"foo":"bar"}`)},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := unmarshalReply(tc.data, nil); err != nil {
+				t.Fatalf("unmarshalReply(_, nil) returned %v, want nil (caller does not care about payload)", err)
+			}
+		})
+	}
+}
+
+// TestUnmarshalReplyNonNilReply 验证当 reply 非 nil 时，正常解析 JSON。
+func TestUnmarshalReplyNonNilReply(t *testing.T) {
+	type reply struct {
+		Foo string `json:"foo"`
+	}
+	var r reply
+	if err := unmarshalReply([]byte(`{"foo":"bar"}`), &r); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if r.Foo != "bar" {
+		t.Fatalf("got %q, want %q", r.Foo, "bar")
+	}
+
+	// 空 payload 写到非 nil reply 时，不报错也不修改字段（保持零值）
+	r = reply{}
+	if err := unmarshalReply(nil, &r); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if r.Foo != "" {
+		t.Fatalf("empty payload should leave reply at zero value, got %q", r.Foo)
+	}
+}

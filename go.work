@@ -4,4 +4,14 @@ use (
 	./beacon
 	./collia
 	./common
+	./common/docker
+	./common/timex
+	./common/logger
 )
+
+// 以下私有依赖已 vendored 到 common/ 下作为独立 module（use 引入），
+// import path 保持 github.com/amuluze/* 不变，由 workspace 自动解析到本地源码，
+// 不再从远程私有仓库拉取：
+//   - github.com/amuluze/docker         => ./common/docker
+//   - github.com/amuluze/amutool/timex  => ./common/timex
+//   - github.com/amuluze/amutool/logger => ./common/logger

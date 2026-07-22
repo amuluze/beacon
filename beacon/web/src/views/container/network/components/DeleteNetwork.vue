@@ -6,23 +6,26 @@ import { removeNetwork } from '@/api/container'
 import { useConfirmCommand } from '@/hooks/useConfirmCommand'
 
 const props = defineProps<{
-    visible: boolean
-    id: string
-    title?: string
-    update?: () => void
+  visible: boolean
+  id: string
+  title?: string
+  update?: () => void
 }>()
 
 const trigger = useConfirmCommand({
-    title: props.title,
-    message: 'network.confirmDelete',
-    i18nPrefix: 'network',
-    action: (id) => removeNetwork({ network_id: id as string }),
-    onResolved: () => props.update?.(),
+  title: props.title,
+  message: 'network.confirmDelete',
+  i18nPrefix: 'network',
+  action: id => removeNetwork({ network_id: id as string }),
+  onResolved: () => props.update?.(),
 })
 
 watch(() => props.visible, (visible) => {
-    if (visible) trigger(props.id)
-})
+  if (visible)
+    trigger(props.id)
+}, { immediate: true })
 </script>
 
-<template></template>
+<template>
+    <span v-if="false" />
+</template>

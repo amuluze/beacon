@@ -13,6 +13,12 @@ import EditDiskThreshold from '@/views/setting/alarm/components/EditDiskThreshol
 import { queryAlarmThreshold } from '@/api/alarm'
 import { useI18n } from 'vue-i18n'
 import useStore from '@/store'
+import IconBellRing from '~icons/lucide/bell-ring'
+import IconGauge from '~icons/lucide/gauge'
+import IconHardDrive from '~icons/lucide/hard-drive'
+import IconMailCheck from '~icons/lucide/mail-check'
+import IconMemoryStick from '~icons/lucide/memory-stick'
+import IconPencil from '~icons/lucide/pencil'
 
 const emailSetting = reactive<EmailSetting>({
   id: 0,
@@ -25,7 +31,7 @@ const emailSetting = reactive<EmailSetting>({
 
 const editEmailSetting = useCommandComponent(EditEmailSetting)
 
-const testReceiver = ref('')
+const testReceiver = shallowRef('')
 async function mailTest() {
   const Params: MailTestArgs = {
     receiver: testReceiver.value,
@@ -106,61 +112,128 @@ const editDiskThreshold = useCommandComponent(EditDiskThreshold)
 
 const { t } = useI18n()
 const store = useStore()
-const locale = store.app.language
+const locale = computed(() => store.app.language)
 </script>
 
 <template>
-    <el-row class="am-email" :gutter="8">
-        <el-col :span="12">
-            <el-card shadow="never">
-                <el-descriptions :title="t('setting.mailServerSetting')" :column="1">
-                    <el-descriptions-item :label="t('setting.alarmEmail')">
-                        {{ emailSetting.sender }}
-                        <svg-icon icon-class="edit" style="cursor: pointer" @click="editEmailSetting({ title: 'setting.mailServerSetting', setting: emailSetting, onSaved: applyEmailSetting })" />
-                    </el-descriptions-item>
-                    <div class="am-alarm-mail-test">
-                        <el-descriptions-item :label="t('setting.testSend')">
-                            <el-input v-model="testReceiver" style="width: 240px" size="small" :placeholder="t('setting.receiverPlaceholder')" />
-                            <el-button style="margin-left: 8px;" size="small" plain type="primary" @click="mailTest">
-                                {{ t('setting.test') }}
-                            </el-button>
-                        </el-descriptions-item>
+    <div class="settings-grid settings-grid--alarm">
+        <article class="settings-card">
+            <header class="settings-card__header">
+                <span class="settings-card__icon"><IconMailCheck /></span>
+                <div class="settings-card__heading">
+                    <h3 class="settings-card__title">
+                        {{ t('setting.mailServerSetting') }}
+                    </h3>
+                    <p class="settings-card__description">
+                        {{ t('setting.mailServerSettingTips') }}
+                    </p>
+                </div>
+            </header>
+
+            <div class="settings-card__value-row">
+                <div class="settings-card__meta">
+                    <span class="settings-card__label">{{ t('setting.alarmEmail') }}</span>
+                    <span class="settings-card__value settings-card__value--plain">{{ emailSetting.sender || '—' }}</span>
+                </div>
+                <el-button
+                    plain
+                    circle
+                    :aria-label="t('setting.edit')"
+                    :title="t('setting.edit')"
+                    @click="editEmailSetting({ title: 'setting.mailServerSetting', setting: emailSetting, onSaved: applyEmailSetting })"
+                >
+                    <IconPencil />
+                </el-button>
+            </div>
+
+            <div class="settings-card__form">
+                <label class="settings-card__label" for="alarm-test-receiver">{{ t('setting.testSend') }}</label>
+                <div class="settings-card__controls">
+                    <el-input
+                        id="alarm-test-receiver"
+                        v-model="testReceiver"
+                        :placeholder="t('setting.receiverPlaceholder')"
+                    />
+                    <el-button plain type="primary" @click="mailTest">
+                        {{ t('setting.test') }}
+                    </el-button>
+                </div>
+            </div>
+        </article>
+
+        <article class="settings-card">
+            <header class="settings-card__header">
+                <span class="settings-card__icon settings-card__icon--warning"><IconBellRing /></span>
+                <div class="settings-card__heading">
+                    <h3 class="settings-card__title">
+                        {{ t('setting.alarmThresholdSetting') }}
+                    </h3>
+                    <p class="settings-card__description">
+                        {{ t('setting.alarmThresholdSettingTips') }}
+                    </p>
+                </div>
+            </header>
+
+            <div class="settings-thresholds">
+                <div class="settings-threshold">
+                    <span class="settings-threshold__icon"><IconGauge /></span>
+                    <div class="settings-threshold__main">
+                        <strong class="settings-threshold__title">{{ t('setting.cpuAlarmThreshold') }}</strong>
+                        <span v-if="locale === 'zh'" class="settings-threshold__value">{{ t('setting.cpuUsage') }} {{ CPUThreshold.duration }} {{ t('setting.over') }} {{ CPUThreshold.threshold }}%</span>
+                        <span v-else class="settings-threshold__value">{{ t('setting.cpuUsage') }} {{ CPUThreshold.threshold }}% for {{ CPUThreshold.duration }} {{ t('setting.over') }}</span>
                     </div>
-                </el-descriptions>
-            </el-card>
-        </el-col>
-        <el-col :span="12">
-            <el-card shadow="never">
-                <el-descriptions :title="t('setting.alarmThresholdSetting')" :column="1">
-                    <el-descriptions-item :label="t('setting.cpuAlarmThreshold')">
-                        <span v-if="locale === 'zh'" style="margin-right: 8px">{{ t('setting.cpuUsage') }} {{ CPUThreshold.duration }} {{ t('setting.over') }} {{ CPUThreshold.threshold }}%</span>
-                        <span v-else style="margin-right: 8px">{{ t('setting.cpuUsage') }} {{ CPUThreshold.threshold }}% for {{ CPUThreshold.duration }} {{ t('setting.over') }}</span>
-                        <svg-icon icon-class="edit" style="cursor: pointer" @click="editCPUThreshold({ title: 'setting.cpuAlarmThreshold', threshold: CPUThreshold, update: loadAlarmThresholds })" />
-                    </el-descriptions-item>
-                    <el-descriptions-item :label="t('setting.memAlarmThreshold')">
-                        <span v-if="locale === 'zh'" style="margin-right: 8px">{{ t('setting.memUsage') }} {{ MemThreshold.duration }} {{ t('setting.over') }} {{ MemThreshold.threshold }}%</span>
-                        <span v-else style="margin-right: 8px">{{ t('setting.memUsage') }} {{ MemThreshold.threshold }}% for {{ MemThreshold.duration }} {{ t('setting.over') }}</span>
-                        <svg-icon icon-class="edit" style="cursor: pointer" @click="editMemThreshold({ title: 'setting.memAlarmThreshold', threshold: MemThreshold, update: loadAlarmThresholds })" />
-                    </el-descriptions-item>
-                    <el-descriptions-item :label="t('setting.diskAlarmThreshold')">
-                        <span style="margin-right: 8px">{{ t('setting.diskUsage') }} {{ DiskThreshold.threshold }}%</span>
-                        <svg-icon icon-class="edit" style="cursor: pointer" @click="editDiskThreshold({ title: 'setting.diskAlarmThreshold', threshold: DiskThreshold, update: loadAlarmThresholds })" />
-                    </el-descriptions-item>
-                </el-descriptions>
-            </el-card>
-        </el-col>
-    </el-row>
+                    <el-button
+                        circle
+                        text
+                        :aria-label="t('setting.edit')"
+                        :title="t('setting.edit')"
+                        @click="editCPUThreshold({ title: 'setting.cpuAlarmThreshold', threshold: CPUThreshold, update: loadAlarmThresholds })"
+                    >
+                        <IconPencil />
+                    </el-button>
+                </div>
+
+                <div class="settings-threshold">
+                    <span class="settings-threshold__icon settings-threshold__icon--success"><IconMemoryStick /></span>
+                    <div class="settings-threshold__main">
+                        <strong class="settings-threshold__title">{{ t('setting.memAlarmThreshold') }}</strong>
+                        <span v-if="locale === 'zh'" class="settings-threshold__value">{{ t('setting.memUsage') }} {{ MemThreshold.duration }} {{ t('setting.over') }} {{ MemThreshold.threshold }}%</span>
+                        <span v-else class="settings-threshold__value">{{ t('setting.memUsage') }} {{ MemThreshold.threshold }}% for {{ MemThreshold.duration }} {{ t('setting.over') }}</span>
+                    </div>
+                    <el-button
+                        circle
+                        text
+                        :aria-label="t('setting.edit')"
+                        :title="t('setting.edit')"
+                        @click="editMemThreshold({ title: 'setting.memAlarmThreshold', threshold: MemThreshold, update: loadAlarmThresholds })"
+                    >
+                        <IconPencil />
+                    </el-button>
+                </div>
+
+                <div class="settings-threshold">
+                    <span class="settings-threshold__icon settings-threshold__icon--danger"><IconHardDrive /></span>
+                    <div class="settings-threshold__main">
+                        <strong class="settings-threshold__title">{{ t('setting.diskAlarmThreshold') }}</strong>
+                        <span class="settings-threshold__value">{{ t('setting.diskUsage') }} {{ DiskThreshold.threshold }}%</span>
+                    </div>
+                    <el-button
+                        circle
+                        text
+                        :aria-label="t('setting.edit')"
+                        :title="t('setting.edit')"
+                        @click="editDiskThreshold({ title: 'setting.diskAlarmThreshold', threshold: DiskThreshold, update: loadAlarmThresholds })"
+                    >
+                        <IconPencil />
+                    </el-button>
+                </div>
+            </div>
+        </article>
+    </div>
 </template>
 
 <style scoped lang="scss">
-@include b(email) {
-  .el-descriptions {
-    :deep(.el-descriptions__title) {
-      font-size: 14px;
-    }
-    :deep(.el-descriptions__label) {
-      font-size: 14px;
-    }
-  }
+.settings-grid--alarm {
+  align-items: stretch;
 }
 </style>

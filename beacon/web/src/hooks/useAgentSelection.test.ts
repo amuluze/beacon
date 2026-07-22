@@ -1,6 +1,7 @@
 import type { AgentInfo } from '@/interface/agent'
 import { queryAgentList } from '@/api/agent'
 import { useAgentSelection } from '@/hooks/useAgentSelection'
+import useStore from '@/store'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/api/agent', () => ({
@@ -98,5 +99,40 @@ describe('useAgentSelection', () => {
         expect(queryAgentListMock).toHaveBeenCalledTimes(1)
         resolveQuery({ data: [agent('agent-a')] })
         await expect(Promise.all([firstLoad, secondLoad])).resolves.toEqual(['agent-a', 'agent-a'])
+    })
+
+    it('clears the shared load promise after a rejected request', async () => {
+        const requestError = new Error('session expired')
+        queryAgentListMock
+            .mockRejectedValueOnce(requestError)
+            .mockResolvedValueOnce({ data: [agent('agent-after-login')] })
+        const selection = useAgentSelection({ immediate: false })
+
+        await expect(selection.loadAgents()).rejects.toBe(requestError)
+        expect(selection.loading.value).toBe(false)
+
+        await expect(selection.loadAgents()).resolves.toBe('agent-after-login')
+        expect(queryAgentListMock).toHaveBeenCalledTimes(2)
+        expect(selection.loading.value).toBe(false)
+    })
+
+    it('starts a fresh load when the Agent store is cleared during an old request', async () => {
+        let rejectStale!: (reason: unknown) => void
+        queryAgentListMock
+            .mockReturnValueOnce(new Promise((_resolve, reject) => rejectStale = reject))
+            .mockResolvedValueOnce({ data: [agent('agent-after-login')] })
+        const selection = useAgentSelection({ immediate: false })
+        const staleRequest = selection.loadAgents()
+        expect(selection.loading.value).toBe(true)
+
+        useStore().agent.clear()
+        const freshRequest = selection.loadAgents()
+
+        await expect(freshRequest).resolves.toBe('agent-after-login')
+        expect(queryAgentListMock).toHaveBeenCalledTimes(2)
+        rejectStale(new Error('old session expired'))
+        await expect(staleRequest).rejects.toThrow('old session expired')
+        expect(selection.selectedAgentID.value).toBe('agent-after-login')
+        expect(selection.loading.value).toBe(false)
     })
 })

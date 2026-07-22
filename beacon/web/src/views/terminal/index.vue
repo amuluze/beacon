@@ -4,7 +4,7 @@ import Terminal, { type TerminalStatus } from '@/components/Terminal/index.vue'
 import { useAgentSelection } from '@/hooks/useAgentSelection'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, shallowRef, useTemplateRef } from 'vue'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -13,10 +13,10 @@ const { agentList, selectedAgentID, loading, isAgentEmpty, loadAgents, ensureSel
 const routeAgentID = computed(() => route.query.agent_id as string | undefined)
 const agentId = computed(() => selectedAgentID.value)
 
-const terminalRef = ref<InstanceType<typeof Terminal> | null>(null)
-const status = computed<TerminalStatus>(() => terminalRef.value?.status ?? 'idle')
-const cols = computed(() => terminalRef.value?.cols ?? 0)
-const rows = computed(() => terminalRef.value?.rows ?? 0)
+const terminalRef = useTemplateRef<InstanceType<typeof Terminal>>('terminal')
+const status = shallowRef<TerminalStatus>('idle')
+const cols = shallowRef(0)
+const rows = shallowRef(0)
 
 const selectedAgent = computed({
   get: () => selectedAgentID.value,
@@ -54,6 +54,15 @@ function handleClear() {
 
 function handleNewSession() {
   terminalRef.value?.newSession()
+}
+
+function handleStatusChange(nextStatus: TerminalStatus) {
+  status.value = nextStatus
+}
+
+function handleTerminalResize(size: { rows: number, cols: number }) {
+  rows.value = size.rows
+  cols.value = size.cols
 }
 
 onMounted(async () => {
@@ -137,7 +146,13 @@ onMounted(async () => {
                 <span class="am-terminal-page__panel-title">{{ termTitle }}</span>
             </div>
             <div class="am-terminal-page__panel-body">
-                <Terminal v-if="agentId && !isAgentEmpty" ref="terminalRef" :agent-id="agentId" />
+                <Terminal
+                    v-if="agentId && !isAgentEmpty"
+                    ref="terminal"
+                    :agent-id="agentId"
+                    @status-change="handleStatusChange"
+                    @resize="handleTerminalResize"
+                />
                 <AgentEmptyState v-else-if="isAgentEmpty" min-height="360px" @refresh="loadAgents" />
                 <div v-else class="am-terminal-page__empty">
                     {{ $t('agent.terminalSelectRequired') }}

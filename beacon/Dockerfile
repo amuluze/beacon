@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.25 AS beacon-builder
+FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/golang:1.25 AS beacon-builder
 ARG TARGETARCH
 ENV GOPROXY=https://goproxy.cn|https://goproxy.io|direct
 ENV GOSUMDB=sum.golang.google.cn
@@ -16,7 +16,7 @@ RUN for attempt in 1 2 3 4 5; do \
     done && \
     GOARCH=$TARGETARCH go build -o /out/beacon ./cmd/beacon
 
-FROM --platform=$BUILDPLATFORM golang:1.25 AS collia-builder
+FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/golang:1.25 AS collia-builder
 ENV GOPROXY=https://goproxy.cn|https://goproxy.io|direct
 ENV GOSUMDB=sum.golang.google.cn
 
@@ -33,10 +33,10 @@ RUN for attempt in 1 2 3 4 5; do \
         if [ "$attempt" = "5" ]; then exit 1; fi; \
         sleep 2; \
     done && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/collia-amd64 ./cmd/collia && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /out/collia-arm64 ./cmd/collia
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/collia-amd64 ./cmd && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /out/collia-arm64 ./cmd
 
-FROM public.ecr.aws/ubuntu/ubuntu:22.04
+FROM public.ecr.aws/docker/library/ubuntu:22.04
 WORKDIR /app
 
 RUN apt-get update && \
@@ -51,7 +51,6 @@ COPY --from=collia-builder /out/collia-arm64 /app/downloads/collia/arm64/collia
 COPY beacon/configs /app/configs
 COPY beacon/nginx /etc/nginx
 COPY beacon/supervisor /etc/supervisor/conf.d
-COPY deploy/downloads/collia/certs /app/downloads/collia/certs
 
 # 这里有点坑，不加 -n 服务启动不了
 CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]

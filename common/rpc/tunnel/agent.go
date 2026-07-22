@@ -281,7 +281,12 @@ func marshalArgs(args interface{}) ([]byte, error) {
 }
 
 // unmarshalReply decodes the JSON response into reply.
+// reply may be nil for fire-and-forget RPCs (e.g. ImagesPrune);
+// in that case the payload is intentionally discarded.
 func unmarshalReply(data []byte, reply interface{}) error {
+	if reply == nil {
+		return nil
+	}
 	if len(data) == 0 {
 		return nil
 	}

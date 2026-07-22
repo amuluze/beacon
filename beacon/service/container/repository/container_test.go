@@ -16,10 +16,14 @@ import (
 
 type fakeCaller struct {
 	method string
+	err    error
 }
 
 func (f *fakeCaller) Call(ctx context.Context, method string, args interface{}, reply interface{}) error {
 	f.method = method
+	if f.err != nil {
+		return f.err
+	}
 	if r, ok := reply.(*rpcSchema.ContainerUpdateReply); ok {
 		r.ContainerID = "updated"
 	}
@@ -76,7 +80,7 @@ func TestContainerListRequiresAgentID(t *testing.T) {
 	}
 }
 
-func TestContainerListReturnsLatestPerNameForSelectedAgent(t *testing.T) {
+func TestContainerListReturnsLatestBatchForSelectedAgent(t *testing.T) {
 	db, err := database.NewDB(database.WithDBName(filepath.Join(t.TempDir(), "probe")))
 	if err != nil {
 		t.Fatalf("new db: %v", err)
@@ -88,6 +92,7 @@ func TestContainerListReturnsLatestPerNameForSelectedAgent(t *testing.T) {
 	now := time.Now()
 	rows := []model.MonitorContainer{
 		{AgentID: "agent-a", Name: "app", ContainerID: "old", Timestamp: now.Add(-time.Minute), Ports: "80", State: "stopped"},
+		{AgentID: "agent-a", Name: "removed", ContainerID: "removed", Timestamp: now.Add(-time.Minute), Image: "unused:test", State: "stopped"},
 		{AgentID: "agent-a", Name: "app", ContainerID: "new", Timestamp: now, Ports: "80", State: "running"},
 		{AgentID: "agent-b", Name: "app", ContainerID: "other-agent", Timestamp: now.Add(time.Minute), Ports: "80", State: "paused"},
 	}
@@ -117,6 +122,125 @@ func TestContainerListReturnsLatestPerNameForSelectedAgent(t *testing.T) {
 	}
 	if count.Count != 1 {
 		t.Fatalf("container count = %d, want 1", count.Count)
+	}
+
+	byRemovedImage, err := repo.ContainersByImage(ctx, "unused:test")
+	if err != nil {
+		t.Fatalf("ContainersByImage returned error: %v", err)
+	}
+	if byRemovedImage != 0 {
+		t.Fatalf("containers by removed image = %d, want 0 outside latest report batch", byRemovedImage)
+	}
+}
+
+func TestContainerListIncludesContainersWithoutPublishedPorts(t *testing.T) {
+	db, err := database.NewDB(database.WithDBName(filepath.Join(t.TempDir(), "probe")))
+	if err != nil {
+		t.Fatalf("new db: %v", err)
+	}
+	t.Cleanup(db.Close)
+	if err := db.AutoMigrate(new(model.MonitorContainer)); err != nil {
+		t.Fatalf("auto migrate: %v", err)
+	}
+
+	now := time.Now()
+	rows := []model.MonitorContainer{
+		{AgentID: "agent-a", Name: "created-app", ContainerID: "created", Timestamp: now, State: "created", Ports: ""},
+		{AgentID: "agent-a", Name: "web-app", ContainerID: "running", Timestamp: now, State: "running", Ports: "8080"},
+	}
+	if err := db.Create(&rows).Error; err != nil {
+		t.Fatalf("create containers: %v", err)
+	}
+
+	repo := &ContainerRepo{DB: db}
+	ctx := contextx.NewAgentID(context.Background(), "agent-a")
+	reply, err := repo.ContainerList(ctx, rpcSchema.ContainerQueryArgs{Page: 1, Size: 10})
+	if err != nil {
+		t.Fatalf("ContainerList returned error: %v", err)
+	}
+	if len(reply.Data) != 2 {
+		t.Fatalf("len(reply.Data) = %d, want 2 including portless created container", len(reply.Data))
+	}
+	if reply.Data[0].ContainerID != "created" || reply.Data[0].Ports != "" {
+		t.Fatalf("first container = %+v, want portless created container", reply.Data[0])
+	}
+
+	count, err := repo.ContainerCount(ctx, rpcSchema.ContainerCountArgs{})
+	if err != nil {
+		t.Fatalf("ContainerCount returned error: %v", err)
+	}
+	if count.Count != 2 {
+		t.Fatalf("container count = %d, want 2 including portless created container", count.Count)
+	}
+}
+
+func TestImageDeleteInvalidatesSelectedAgentCacheAfterRPCSuccess(t *testing.T) {
+	db, err := database.NewDB(database.WithDBName(filepath.Join(t.TempDir(), "probe")))
+	if err != nil {
+		t.Fatalf("new db: %v", err)
+	}
+	t.Cleanup(db.Close)
+	if err := db.AutoMigrate(new(model.MonitorImage)); err != nil {
+		t.Fatalf("auto migrate: %v", err)
+	}
+
+	rows := []model.MonitorImage{
+		{AgentID: "agent-a", ImageID: "delete-me", Name: "test", Tag: "delete"},
+		{AgentID: "agent-a", ImageID: "keep-me", Name: "test", Tag: "keep"},
+		{AgentID: "agent-b", ImageID: "delete-me", Name: "test", Tag: "other-agent"},
+	}
+	if err := db.Create(&rows).Error; err != nil {
+		t.Fatalf("create images: %v", err)
+	}
+
+	caller := &fakeCaller{}
+	repo := &ContainerRepo{RPCClient: caller, DB: db}
+	ctx := contextx.NewAgentID(context.Background(), "agent-a")
+	if err := repo.ImageDelete(ctx, rpcSchema.ImageDeleteArgs{ImageID: "delete-me"}); err != nil {
+		t.Fatalf("ImageDelete returned error: %v", err)
+	}
+	if caller.method != "ImageDelete" {
+		t.Fatalf("called method %q, want ImageDelete", caller.method)
+	}
+
+	assertImageCacheCount(t, db, "agent-a", "delete-me", 0)
+	assertImageCacheCount(t, db, "agent-a", "keep-me", 1)
+	assertImageCacheCount(t, db, "agent-b", "delete-me", 1)
+}
+
+func TestImageDeleteKeepsCacheWhenAgentRPCFails(t *testing.T) {
+	db, err := database.NewDB(database.WithDBName(filepath.Join(t.TempDir(), "probe")))
+	if err != nil {
+		t.Fatalf("new db: %v", err)
+	}
+	t.Cleanup(db.Close)
+	if err := db.AutoMigrate(new(model.MonitorImage)); err != nil {
+		t.Fatalf("auto migrate: %v", err)
+	}
+	if err := db.Create(&model.MonitorImage{AgentID: "agent-a", ImageID: "keep-on-failure"}).Error; err != nil {
+		t.Fatalf("create image: %v", err)
+	}
+
+	rpcErr := errors.New("agent image delete failed")
+	repo := &ContainerRepo{RPCClient: &fakeCaller{err: rpcErr}, DB: db}
+	ctx := contextx.NewAgentID(context.Background(), "agent-a")
+	if err := repo.ImageDelete(ctx, rpcSchema.ImageDeleteArgs{ImageID: "keep-on-failure"}); !errors.Is(err, rpcErr) {
+		t.Fatalf("ImageDelete error = %v, want %v", err, rpcErr)
+	}
+
+	assertImageCacheCount(t, db, "agent-a", "keep-on-failure", 1)
+}
+
+func assertImageCacheCount(t *testing.T, db *database.DB, agentID, imageID string, want int64) {
+	t.Helper()
+	var got int64
+	if err := db.Model(&model.MonitorImage{}).
+		Where("agent_id = ? AND image_id = ?", agentID, imageID).
+		Count(&got).Error; err != nil {
+		t.Fatalf("count image cache: %v", err)
+	}
+	if got != want {
+		t.Fatalf("image cache count for %s/%s = %d, want %d", agentID, imageID, got, want)
 	}
 }
 

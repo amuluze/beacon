@@ -32,14 +32,12 @@ type IContainerRepo interface {
 	ContainerStart(ctx context.Context, args rpcSchema.ContainerStartArgs) error
 	ContainerStop(ctx context.Context, args rpcSchema.ContainerStopArgs) error
 	ContainerRestart(ctx context.Context, args rpcSchema.ContainerRestartArgs) error
-	ContainerLogs(ctx context.Context, args rpcSchema.ContainerLogsArgs) (rpcSchema.ContainerLogsReply, error)
 
 	ImageList(ctx context.Context, args rpcSchema.ImageQueryArgs) (rpcSchema.ImageQueryReply, error)
 	ImageCount(ctx context.Context, args rpcSchema.ImageCountArgs) (rpcSchema.ImageCountReply, error)
 	ImagePull(ctx context.Context, args rpcSchema.ImagePullArgs) error
 	ImageTag(ctx context.Context, args rpcSchema.ImageTagArgs) error
 	ImageImport(ctx context.Context, args rpcSchema.ImageImportArgs) error
-	ImageExport(ctx context.Context, args rpcSchema.ImageExportArgs) (rpcSchema.ImageExportReply, error)
 	ImageDelete(ctx context.Context, args rpcSchema.ImageDeleteArgs) error
 	ImagesPrune(ctx context.Context) error
 
@@ -66,7 +64,7 @@ func (c *ContainerRepo) agentDB(ctx context.Context) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return c.DB.DB.Where("agent_id = ?", agentID), nil
+	return c.DB.Where("agent_id = ?", agentID), nil
 }
 
 // ── Monitoring queries (local DB) ──
@@ -101,16 +99,11 @@ func (c *ContainerRepo) ContainerList(ctx context.Context, args rpcSchema.Contai
 	if err != nil {
 		return rpcSchema.ContainerQueryReply{}, err
 	}
-	latest := c.DB.DB.Model(&model.MonitorContainer{}).
-		Where("ports != ?", "").
-		Where("agent_id = ?", agentID).
-		Select("agent_id, name, MAX(timestamp) AS timestamp").
-		Group("agent_id, name")
-	query := c.DB.DB.Model(&model.MonitorContainer{}).
-		Where("m_container.ports != ?", "").
-		Where("m_container.agent_id = ?", agentID)
+	currentBatch := c.latestContainerTimestamp(agentID)
+	query := c.DB.Model(&model.MonitorContainer{}).
+		Where("m_container.agent_id = ?", agentID).
+		Where("m_container.timestamp = (?)", currentBatch)
 	if err := query.
-		Joins("JOIN (?) latest ON latest.agent_id = m_container.agent_id AND latest.name = m_container.name AND latest.timestamp = m_container.timestamp", latest).
 		Order("m_container.name asc").
 		Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&containers).Error; err != nil {
 		return rpcSchema.ContainerQueryReply{}, err
@@ -183,12 +176,11 @@ func (c *ContainerRepo) ContainersByImage(ctx context.Context, image string) (nu
 	if err != nil {
 		return 0, err
 	}
-	distinctContainers := c.DB.DB.Model(&model.MonitorContainer{}).
+	if err := c.DB.Model(&model.MonitorContainer{}).
 		Where("image = ?", image).
 		Where("agent_id = ?", agentID).
-		Select("agent_id, name").
-		Group("agent_id, name")
-	if err := c.DB.Table("(?) as containers", distinctContainers).Count(&count).Error; err != nil {
+		Where("timestamp = (?)", c.latestContainerTimestamp(agentID)).
+		Count(&count).Error; err != nil {
 		return 0, err
 	}
 	return int(count), nil
@@ -200,15 +192,19 @@ func (c *ContainerRepo) ContainerCount(ctx context.Context, args rpcSchema.Conta
 	if err != nil {
 		return rpcSchema.ContainerCountReply{}, err
 	}
-	distinctContainers := c.DB.DB.Model(&model.MonitorContainer{}).
-		Where("ports != ?", "").
+	if err := c.DB.Model(&model.MonitorContainer{}).
 		Where("agent_id = ?", agentID).
-		Select("agent_id, name").
-		Group("agent_id, name")
-	if err := c.DB.Table("(?) as containers", distinctContainers).Count(&count).Error; err != nil {
+		Where("timestamp = (?)", c.latestContainerTimestamp(agentID)).
+		Count(&count).Error; err != nil {
 		return rpcSchema.ContainerCountReply{}, err
 	}
 	return rpcSchema.ContainerCountReply{Count: int(count)}, nil
+}
+
+func (c *ContainerRepo) latestContainerTimestamp(agentID string) *gorm.DB {
+	return c.DB.Model(&model.MonitorContainer{}).
+		Where("agent_id = ?", agentID).
+		Select("MAX(timestamp)")
 }
 
 func (c *ContainerRepo) ImageList(ctx context.Context, args rpcSchema.ImageQueryArgs) (rpcSchema.ImageQueryReply, error) {
@@ -336,12 +332,6 @@ func (c *ContainerRepo) ContainerRestart(ctx context.Context, args rpcSchema.Con
 	return c.RPCClient.Call(ctx, "ContainerRestart", args, &reply)
 }
 
-func (c *ContainerRepo) ContainerLogs(ctx context.Context, args rpcSchema.ContainerLogsArgs) (rpcSchema.ContainerLogsReply, error) {
-	var reply rpcSchema.ContainerLogsReply
-	err := c.RPCClient.Call(ctx, "ContainerLogs", args, &reply)
-	return reply, err
-}
-
 func (c *ContainerRepo) ImagePull(ctx context.Context, args rpcSchema.ImagePullArgs) error {
 	var reply rpcSchema.ImagePullReply
 	return c.RPCClient.Call(ctx, "ImagePull", args, &reply)
@@ -357,15 +347,23 @@ func (c *ContainerRepo) ImageImport(ctx context.Context, args rpcSchema.ImageImp
 	return c.RPCClient.Call(ctx, "ImageImport", args, &reply)
 }
 
-func (c *ContainerRepo) ImageExport(ctx context.Context, args rpcSchema.ImageExportArgs) (rpcSchema.ImageExportReply, error) {
-	var reply rpcSchema.ImageExportReply
-	err := c.RPCClient.Call(ctx, "ImageExport", args, &reply)
-	return reply, err
-}
-
 func (c *ContainerRepo) ImageDelete(ctx context.Context, args rpcSchema.ImageDeleteArgs) error {
 	var reply rpcSchema.ImageDeleteReply
-	return c.RPCClient.Call(ctx, "ImageDelete", args, &reply)
+	if err := c.RPCClient.Call(ctx, "ImageDelete", args, &reply); err != nil {
+		return err
+	}
+
+	// Image management reads from the latest Agent report cached in m_image.
+	// The next periodic report may be several seconds away, so invalidate the
+	// successfully deleted image before returning to make the following list
+	// refresh reflect the authoritative Docker operation immediately.
+	agentID, err := contextx.RequireAgentID(ctx)
+	if err != nil {
+		return err
+	}
+	return c.DB.Unscoped().
+		Where("agent_id = ? AND image_id = ?", agentID, args.ImageID).
+		Delete(&model.MonitorImage{}).Error
 }
 
 func (c *ContainerRepo) ImagesPrune(ctx context.Context) error {

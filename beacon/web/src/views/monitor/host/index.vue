@@ -229,8 +229,8 @@ const { t } = useI18n()
         </div>
 
         <AgentEmptyState v-if="isAgentEmpty" @refresh="refreshAgents" />
-        <div v-else class="am-chart-grid host-monitor__chart-grid">
-            <div class="am-chart-row host-monitor__chart-row">
+        <div v-else class="am-chart-grid">
+            <div class="am-chart-row">
                 <div class="am-chart-card">
                     <div class="am-chart-card-header">
                         <div class="am-chart-card-title-row">
@@ -239,7 +239,7 @@ const { t } = useI18n()
                         </div>
                         <span class="am-chart-card-percent accent-primary">{{ cpuPercent }}</span>
                     </div>
-                    <div class="am-chart-area host-monitor__chart-area">
+                    <div class="am-chart-area">
                         <echarts :option="cpuOption" />
                     </div>
                 </div>
@@ -251,12 +251,12 @@ const { t } = useI18n()
                         </div>
                         <span class="am-chart-card-percent accent-warning">{{ memInfo.percent }}</span>
                     </div>
-                    <div class="am-chart-area host-monitor__chart-area">
+                    <div class="am-chart-area">
                         <echarts :option="memOption" />
                     </div>
                 </div>
             </div>
-            <div class="am-chart-row host-monitor__chart-row">
+            <div class="am-chart-row">
                 <div class="am-chart-card">
                     <div class="am-chart-card-header">
                         <div class="am-chart-card-title-row">
@@ -265,7 +265,7 @@ const { t } = useI18n()
                         </div>
                         <span v-if="diskInfo.length > 0" class="am-chart-card-percent accent-success">{{ diskInfo[0].percent }}</span>
                     </div>
-                    <div class="am-chart-area host-monitor__chart-area">
+                    <div class="am-chart-area">
                         <echarts :option="diskOption" />
                     </div>
                 </div>
@@ -274,7 +274,7 @@ const { t } = useI18n()
                         <span class="am-chart-card-title">网络流量</span>
                         <span v-if="netInfo.length > 0" class="am-chart-card-percent accent-primary">{{ netInfo[0].read }} / {{ netInfo[0].write }}</span>
                     </div>
-                    <div class="am-chart-area host-monitor__chart-area">
+                    <div class="am-chart-area">
                         <echarts :option="netOption" />
                     </div>
                 </div>
@@ -284,24 +284,8 @@ const { t } = useI18n()
 </template>
 
 <style scoped lang="scss">
-.host-monitor {
-  height: auto;
-  min-height: 100%;
-}
-
-.host-monitor__chart-grid {
-  flex: 0 0 auto;
-}
-
-.host-monitor__chart-row {
-  flex: none;
-}
-
-.host-monitor__chart-area {
-  flex: 0 0 clamp(240px, 28vh, 320px);
-  height: clamp(240px, 28vh, 320px);
-  min-height: 240px;
-}
+// 主机监控的高度约束已统一在全局 styles/element.scss 的 .am-chart-area 中，
+// 此处仅保留局部强调色样式，避免重复覆盖 row/area 高度。
 
 .accent-primary {
   color: var(--am-accent-primary);

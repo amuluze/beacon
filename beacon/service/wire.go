@@ -14,6 +14,7 @@ import (
 	"beacon/service/host"
 	"beacon/service/mail"
 	"beacon/service/model"
+	"beacon/service/terminal"
 
 	"github.com/google/wire"
 )
@@ -32,6 +33,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		NewConfig,
 		NewLogger,
 		NewDB,
+		NewCertManager,
 		NewRPCClient,
 		NewReportService,
 		InitAuthStore,
@@ -48,7 +50,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		alarm.Set,
 		mail.Set,
 		NewLoggerHandler,
-		NewTermHandler,
+		terminal.NewHandler,
 		NewTimedTask,
 		RouterSet,
 		NewFiberApp,

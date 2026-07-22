@@ -11,30 +11,34 @@ import { removeContainer } from '@/api/container'
 import { useConfirmCommand } from '@/hooks/useConfirmCommand'
 
 const props = defineProps<{
-    visible: boolean
-    id: string
-    title?: string
-    update?: () => void
+  visible: boolean
+  id: string
+  title?: string
+  update?: () => void
 }>()
 
 // The shared command hook renders ConfirmDialog imperatively. We expose a
 // function-style interface by binding visibility to the close lifecycle.
 const trigger = useConfirmCommand({
-    title: props.title,
-    message: 'container.confirmDelete',
-    i18nPrefix: 'container',
-    action: (id) => removeContainer({ container_id: id as string }),
-    onResolved: () => props.update?.(),
+  title: props.title,
+  message: 'container.confirmDelete',
+  i18nPrefix: 'container',
+  action: id => removeContainer({ container_id: id as string }),
+  onResolved: () => props.update?.(),
 })
 
 // The parent component calls `componentApi({ id, ... })` via
 // useCommandComponent — we trigger the dialog when `visible` flips to true.
 watch(
-    () => props.visible,
-    visible => {
-        if (visible) trigger(props.id)
-    },
+  () => props.visible,
+  (visible) => {
+    if (visible)
+      trigger(props.id)
+  },
+  { immediate: true },
 )
 </script>
 
-<template></template>
+<template>
+    <span v-if="false" />
+</template>

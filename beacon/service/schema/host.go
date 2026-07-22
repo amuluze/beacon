@@ -131,21 +131,8 @@ type FilesSearchReply struct {
 	Files []FileInfo `json:"files"`
 }
 
-type FileUploadArgs struct {
-	SourceFilePath string `json:"source_file_path"`
-	TargetFilePath string `json:"target_file_path"`
-	Data           []byte `json:"-"`
-}
-
-type FileUploadReply struct{}
-
 type FileDownloadArgs struct {
 	Filepath string `json:"filepath" validate:"required"`
-}
-
-type FileRemoteDownloadArgs struct {
-	SourceFilePath string `json:"source_file_path"`
-	TargetFilePath string `json:"target_file_path"`
 }
 
 type FileDownloadReply struct {

@@ -8,7 +8,7 @@ const props = defineProps<{
   visible: boolean
   title?: string
   systemTimezone: string
-  update?: () => void
+  update?: () => void | Promise<void>
 }>()
 
 const emits = defineEmits<{
@@ -60,6 +60,7 @@ async function confirmSystemTimezoneEdit() {
   await setSystemTimezone(args)
   success('修改系统时区成功')
   drawerVisible.value = false
+  await props.update?.()
 }
 
 const { t } = useI18n()

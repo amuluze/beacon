@@ -21,10 +21,12 @@ type Config struct {
 	Casbin        Casbin
 	Task          Task
 	AgentInstall  AgentInstall
+	InstallReport InstallReport
 	CORS          CORS
 	RateLimit     RateLimit
 	App           App
 	Retention     Retention
+	Update        Update
 }
 
 // NewConfig Load config file (toml/json/yaml)
@@ -44,7 +46,7 @@ func NewConfig(configFile string) (*Config, error) {
 		return nil, err
 	}
 
-	// 历史环境变量别名兼容（AMPROBE_* 等多命名），优先级高于 BindEnv。
+	// 部署期 env 覆盖，优先级高于 BindEnv。
 	overrideFromEnv(config)
 	warnInsecureDefaults(config)
 
@@ -62,6 +64,9 @@ func bindEnvs() {
 		"agentinstall.token":         "BEACON_AGENT_INSTALL_TOKEN",
 		"agentinstall.publicbaseurl": "BEACON_PUBLIC_BASE_URL",
 		"agentinstall.controlport":   "BEACON_CONTROL_PORT",
+		"update.enable":              "BEACON_UPDATE_ENABLE",
+		"update.url":                 "BEACON_UPDATE_URL",
+		"update.checkinterval":       "BEACON_UPDATE_CHECK_INTERVAL",
 	}
 	for key, env := range bindings {
 		if err := viper.BindEnv(key, env); err != nil {
@@ -73,13 +78,13 @@ func bindEnvs() {
 // overrideFromEnv overrides sensitive config values from environment variables
 // to prevent hard-coded secrets in production deployments.
 func overrideFromEnv(config *Config) {
-	if v := firstEnv("BEACON_AUTH_SIGNING_KEY", "BEACON_AUTH_SIGNINGKEY", "AMPROBE_AUTH_SIGNING_KEY", "AMPROBE_AUTH_SIGNINGKEY"); v != "" {
+	if v := firstEnv("BEACON_AUTH_SIGNING_KEY", "BEACON_AUTH_SIGNINGKEY"); v != "" {
 		config.Auth.SigningKey = v
 	}
-	if v := firstEnv("BEACON_AGENT_INSTALL_TOKEN", "BEACON_AGENT_INSTALLTOKEN", "AMPROBE_AGENT_INSTALL_TOKEN", "AMPROBE_AGENT_INSTALLTOKEN"); v != "" {
+	if v := firstEnv("BEACON_AGENT_INSTALL_TOKEN", "BEACON_AGENT_INSTALLTOKEN"); v != "" {
 		config.AgentInstall.Token = v
 	}
-	if v := firstEnv("BEACON_CONTROL_JOIN_TOKEN", "BEACON_CONTROL_JOINTOKEN", "AMPROBE_CONTROL_JOIN_TOKEN", "AMPROBE_CONTROL_JOINTOKEN"); v != "" {
+	if v := firstEnv("BEACON_CONTROL_JOIN_TOKEN", "BEACON_CONTROL_JOINTOKEN"); v != "" {
 		config.Control.JoinToken = v
 	}
 }
@@ -109,19 +114,16 @@ type Fiber struct {
 	Host            string
 	Port            int
 	ShutdownTimeout int
-	SeverHeader     string
+	ServerHeader    string
 	AppName         string
 	Prefork         bool
 }
 
 type Control struct {
-	Enable         bool
-	Address        string
-	// Deprecated: DefaultAgentID is no longer used. Agent selection must be explicit
-	// via X-Agent-ID header or agent_id query parameter in every request.
-	DefaultAgentID string
-	JoinToken      string
-	TLS            ControlTLS
+	Enable    bool
+	Address   string
+	JoinToken string
+	TLS       ControlTLS
 }
 
 type ControlTLS struct {
@@ -154,6 +156,14 @@ type Task struct {
 	Interval int
 }
 
+// Update 控制 beacon 对 beacon-help 的版本轮询。Enable=false 完全关闭；
+// CheckInterval 为秒，最低 minCheckInterval 以防风暴。
+type Update struct {
+	Enable        bool
+	URL           string
+	CheckInterval int
+}
+
 type AgentInstall struct {
 	Enable        bool
 	Token         string
@@ -162,6 +172,14 @@ type AgentInstall struct {
 	ControlPort   int
 	TLSEnable     bool
 	CertDir       string
+}
+
+type InstallReport struct {
+	Enable     bool
+	URL        string
+	InstallDir string
+	IDFile     string
+	Timeout    int
 }
 
 type Log struct {

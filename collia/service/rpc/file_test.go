@@ -77,24 +77,6 @@ func TestFileDelete_DeletesWithinSandbox(t *testing.T) {
 	}
 }
 
-// TestFileUpload_RejectsOutsideSandbox 验证上传到沙箱外被拒绝。
-func TestFileUpload_RejectsOutsideSandbox(t *testing.T) {
-	svc, _ := newFileService(t)
-	var reply rpcSchema.FileUploadReply
-	err := svc.FileUpload(context.Background(), rpcSchema.FileUploadArgs{
-		TargetFilePath: "/etc/evil.txt",
-		Data:           []byte("evil"),
-	}, &reply)
-	if err == nil {
-		t.Fatal("FileUpload outside sandbox should error")
-	}
-	// 确认未写入
-	if _, err := os.Stat("/etc/evil.txt"); !os.IsNotExist(err) {
-		_ = os.Remove("/etc/evil.txt")
-		t.Fatal("file was written outside sandbox")
-	}
-}
-
 // TestFileDownload_RejectsOutsideSandbox 验证读取沙箱外文件被拒绝（防读 /etc/shadow）。
 func TestFileDownload_RejectsOutsideSandbox(t *testing.T) {
 	svc, _ := newFileService(t)

@@ -1,11 +1,3 @@
-export function message(msg: string) {
-    ElMessage({
-        showClose: true,
-        dangerouslyUseHTMLString: true,
-        message: msg,
-    })
-}
-
 /**
  * 成功提示
  * @param msg 提示信息

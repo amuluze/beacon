@@ -2,19 +2,18 @@
 Host = "0.0.0.0"      # http监听地址
 Port = 8000           # http监听端口
 ShutdownTimeout = 30  # http优雅关闭等待超时时长(单位秒)
-SeverHeader = "beacon"
+ServerHeader = "beacon"
 AppName = "beacon"
 Prefork = false
 
 [Control]
 Enable = true          # 启用反向 gRPC tunnel，控制通道由 Agent 主动连接 Server
 Address = ":17000"     # gRPC 控制端口
-DefaultAgentID = "default"
 JoinToken = ""          # Agent 反向隧道注册令牌；为空时复用 AgentInstall.Token
 
 [Control.TLS]
 Enable = false
-CertDir = "/etc/beacon/control-certs"
+CertDir = "/etc/beacon/control-certs"  # beacon 启动时若目录缺少 ca.pem/tls.crt/tls.key 则自动生成自签 CA 与服务端证书
 ClientNames = []
 
 [Gorm]
@@ -70,3 +69,14 @@ ControlPort = 17000
 TLSEnable = true
 CertDir = "/etc/collia/certs"
 
+[InstallReport]
+Enable = true
+URL = "https://beacon.amuluze.com/api/v1/install/report"
+InstallDir = "/data/beacon"
+IDFile = "/app/data/install.id"
+Timeout = 5
+
+[Update]
+Enable = true                                    # 启用版本轮询；关闭则仅在启动时检查一次
+URL = "https://beacon.amuluze.com"               # beacon-help 版本清单基础 URL
+CheckInterval = 21600                            # 轮询间隔（秒），默认 6h，最低 1h（version_check.go 兜底）

@@ -2,7 +2,7 @@
 import { useAgentSelection } from '@/hooks/useAgentSelection'
 import { useI18n } from 'vue-i18n'
 
-const { agentList, selectedAgentID, loading, isAgentEmpty } = useAgentSelection()
+const { agentList, selectedAgentID, loading, isAgentEmpty } = useAgentSelection({ immediate: false })
 const { t } = useI18n()
 </script>
 

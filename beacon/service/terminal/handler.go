@@ -27,18 +27,34 @@ type Handler struct {
 	recordingEnabled bool
 }
 
+const (
+	terminalReadyTimeout       = 3 * time.Second
+	terminalReadyRetryInterval = 25 * time.Millisecond
+)
+
+// ClientConnection is the WebSocket contract used by the terminal handler.
+// Fiber copies request metadata and locals to websocket.Conn during upgrade.
+type ClientConnection interface {
+	Connection
+	Headers(key string, defaultValue ...string) string
+	Query(key string, defaultValue ...string) string
+	Locals(key string, value ...interface{}) interface{}
+}
+
 // NewHandler creates a new terminal WebSocket handler.
-func NewHandler(rpcClient rpc.Caller, db *database.DB, sessionDir string, recordingEnabled bool) *Handler {
+func NewHandler(rpcClient rpc.Caller, db *database.DB) *Handler {
 	return &Handler{
-		rpcClient:        rpcClient,
-		db:               db,
-		sessionDir:       sessionDir,
-		recordingEnabled: recordingEnabled,
+		rpcClient: rpcClient,
+		db:        db,
 	}
 }
 
 // Handle processes a WebSocket terminal connection.
 func (h *Handler) Handle(conn *websocket.Conn) {
+	h.handle(conn)
+}
+
+func (h *Handler) handle(conn ClientConnection) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -57,6 +73,7 @@ func (h *Handler) Handle(conn *websocket.Conn) {
 	session := &model.Session{
 		SessionID: sessionID,
 		AgentID:   agentID,
+		UserID:    resolveUserID(conn),
 		StartedAt: time.Now(),
 		Status:    "active",
 		Width:     cols,
@@ -103,6 +120,25 @@ func (h *Handler) Handle(conn *websocket.Conn) {
 		}
 		return
 	}
+	if err := h.awaitAgentReady(ctx, sessionID, rows, cols); err != nil {
+		slog.Error("terminal: agent session did not become ready", "session_id", sessionID, "agent_id", agentID, "err", err)
+		_ = sendError(conn, fmt.Sprintf("failed to prepare terminal: %v", err))
+		_ = h.closeAgentSession(agentID, sessionID)
+		_ = h.closeSession(sessionID, "failed")
+		if recorder != nil {
+			_ = recorder.Close()
+		}
+		return
+	}
+	if err := sendMessage(conn, NewReadyMessage()); err != nil {
+		slog.Debug("terminal: send ready message failed", "session_id", sessionID, "err", err)
+		_ = h.closeAgentSession(agentID, sessionID)
+		_ = h.closeSession(sessionID, "failed")
+		if recorder != nil {
+			_ = recorder.Close()
+		}
+		return
+	}
 
 	bridge := newBridge(h.rpcClient, conn, stream, recorder, sessionID, agentID)
 	if err := bridge.run(ctx, rows, cols); err != nil {
@@ -115,6 +151,38 @@ func (h *Handler) Handle(conn *websocket.Conn) {
 	}
 }
 
+func (h *Handler) awaitAgentReady(ctx context.Context, sessionID string, rows, cols int) error {
+	readyCtx, cancel := context.WithTimeout(ctx, terminalReadyTimeout)
+	defer cancel()
+
+	ticker := time.NewTicker(terminalReadyRetryInterval)
+	defer ticker.Stop()
+
+	var lastErr error
+	for {
+		lastErr = h.rpcClient.Call(readyCtx, "ResizeTerminal", rpcSchema.ResizeTerminalArgs{
+			SessionID: sessionID,
+			Rows:      rows,
+			Cols:      cols,
+		}, &rpcSchema.ResizeTerminalReply{})
+		if lastErr == nil {
+			return nil
+		}
+
+		select {
+		case <-readyCtx.Done():
+			return fmt.Errorf("agent PTY readiness timeout: %w", lastErr)
+		case <-ticker.C:
+		}
+	}
+}
+
+func (h *Handler) closeAgentSession(agentID, sessionID string) error {
+	ctx, cancel := context.WithTimeout(contextx.NewAgentID(context.Background(), agentID), 5*time.Second)
+	defer cancel()
+	return h.rpcClient.Call(ctx, "TerminalClose", rpcSchema.TerminalCloseArgs{SessionID: sessionID}, &rpcSchema.TerminalCloseReply{})
+}
+
 func (h *Handler) closeSession(sessionID, status string) error {
 	now := time.Now()
 	return h.db.Model(&model.Session{}).Where("session_id = ?", sessionID).Updates(map[string]interface{}{
@@ -123,7 +191,7 @@ func (h *Handler) closeSession(sessionID, status string) error {
 	}).Error
 }
 
-func resolveAgentID(conn *websocket.Conn) string {
+func resolveAgentID(conn ClientConnection) string {
 	agentID := conn.Headers("X-Agent-ID")
 	if agentID == "" {
 		agentID = conn.Query("agent_id")
@@ -131,7 +199,12 @@ func resolveAgentID(conn *websocket.Conn) string {
 	return agentID
 }
 
-func defaultTerminalSize(conn *websocket.Conn) (int, int) {
+func resolveUserID(conn ClientConnection) string {
+	userID, _ := conn.Locals("user_id").(string)
+	return userID
+}
+
+func defaultTerminalSize(conn ClientConnection) (int, int) {
 	rows := conn.Query("rows")
 	cols := conn.Query("cols")
 	r, _ := strconv.Atoi(rows)
@@ -146,7 +219,13 @@ func defaultTerminalSize(conn *websocket.Conn) (int, int) {
 }
 
 func sendError(conn Connection, msg string) error {
-	m := NewErrorMessage(msg)
-	data, _ := json.Marshal(m)
+	return sendMessage(conn, NewErrorMessage(msg))
+}
+
+func sendMessage(conn Connection, msg Message) error {
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
 	return conn.WriteMessage(websocket.TextMessage, data)
 }

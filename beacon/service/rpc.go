@@ -5,6 +5,7 @@
 package service
 
 import (
+	"fmt"
 	"log/slog"
 
 	"beacon/pkg/rpc"
@@ -19,12 +20,18 @@ var globalTunnel *tunnelpkg.ServerTunnel
 
 // NewRPCClient creates the tunnel-based RPC client.
 // Server listens for reverse connections from Agents.
-func NewRPCClient(config *Config, agentService *agent.Service) (rpc.Caller, error) {
+func NewRPCClient(config *Config, agentService *agent.Service, certManager *CertManager) (rpc.Caller, error) {
 	addr := config.Control.Address
 	if addr == "" {
 		addr = ":17000"
 	}
 	slog.Info("starting reverse tunnel server", "addr", addr)
+
+	if config.Control.TLS.Enable {
+		if err := certManager.EnsureControlCerts(); err != nil {
+			return nil, fmt.Errorf("ensure control certs: %w", err)
+		}
+	}
 
 	tun := tunnelpkg.NewServerTunnel()
 	tun.SetJoinToken(controlJoinToken(config))

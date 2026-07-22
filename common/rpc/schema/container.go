@@ -78,14 +78,6 @@ type ContainerQueryReply struct {
 	Freshness Freshness   `json:"freshness"`
 }
 
-type ContainersByImageArgs struct {
-	Image string `json:"image"`
-}
-
-type ContainersByImageReply struct {
-	Num int `json:"num"`
-}
-
 type ContainerCountArgs struct{}
 
 type ContainerCountReply struct {
@@ -216,15 +208,6 @@ type ImageImportArgs struct {
 
 type ImageImportReply struct{}
 
-type ImageExportArgs struct {
-	ImageIDs   []string `json:"image_ids"`
-	TargetFile string   `json:"target_file"`
-}
-
-type ImageExportReply struct {
-	FileName string `json:"file_name"`
-	Data     []byte `json:"data"`
-}
 
 type NetworkCreateArgs struct {
 	Name    string            `json:"name"`

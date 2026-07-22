@@ -22,7 +22,6 @@ type IMailRepository interface {
 	MailQuery(context.Context) (model.Mail, error)
 	MailCreate(context.Context, schema.MailCreateArgs) error
 	MailUpdate(context.Context, schema.MailUpdateArgs) error
-	MailDelete(context.Context, schema.MailDeleteArgs) error
 	MailTest(context.Context, schema.MailTestArgs) error
 }
 
@@ -69,10 +68,6 @@ func (m *MailRepository) MailUpdate(ctx context.Context, args schema.MailUpdateA
 		params["receiver"] = args.Receiver
 	}
 	return m.DB.Model(&model.Mail{}).Where("id = ?", args.ID).Updates(params).Error
-}
-
-func (m *MailRepository) MailDelete(ctx context.Context, args schema.MailDeleteArgs) error {
-	return m.DB.Model(&model.Mail{}).Where("id = ?", args.ID).Delete(&model.Mail{}).Error
 }
 
 func (m *MailRepository) MailTest(ctx context.Context, args schema.MailTestArgs) error {

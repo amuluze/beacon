@@ -17,7 +17,7 @@ func writeConfig(t *testing.T, content string) string {
 	return path
 }
 
-// TestNewConfig_EnvOverridesSigningKey 验证 AMPROBE_AUTH_SIGNINGKEY 能覆盖 toml 中的弱默认值。
+// TestNewConfig_EnvOverridesSigningKey 验证 BEACON_AUTH_SIGNINGKEY 能覆盖 toml 中的弱默认值。
 // viper 对 AutomaticEnv + Unmarshal 有已知坑，必须靠显式 BindEnv 才能让 Unmarshal 拾取。
 func TestNewConfig_EnvOverrideSigningKey(t *testing.T) {
 	const toml = `
@@ -29,7 +29,7 @@ Expired = 7200
 RefreshExpired = 86400
 Prefix = "auth_"
 `
-	t.Setenv("AMPROBE_AUTH_SIGNINGKEY", "overridden-strong-secret-from-env")
+	t.Setenv("BEACON_AUTH_SIGNINGKEY", "overridden-strong-secret-from-env")
 
 	cfg, err := NewConfig(writeConfig(t, toml))
 	if err != nil {
@@ -48,7 +48,7 @@ Enable = true
 Address = "0.0.0.0:8081"
 JoinToken = "from-file"
 `
-	t.Setenv("AMPROBE_CONTROL_JOINTOKEN", "from-env")
+	t.Setenv("BEACON_CONTROL_JOINTOKEN", "from-env")
 
 	cfg, err := NewConfig(writeConfig(t, toml))
 	if err != nil {

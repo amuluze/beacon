@@ -26,6 +26,6 @@ func ConvertBytesToReadable(bytes float64) string {
  */
 
 func Decimal(f float64) float64 {
-	power := math.Pow(10, 2)
-	return math.Round(f*power) / power
+	const precision = 100.0
+	return math.Round(f*precision) / precision
 }

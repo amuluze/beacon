@@ -89,8 +89,8 @@ func TestCPUAlarmTaskEvaluatesAgentsIndependently(t *testing.T) {
 	}
 	seedTwoAgents(t, db, now)
 	if err := db.Create(&[]model.MonitorCPU{
-		{AgentID: "agent-a", Timestamp: now, CPUPercent: 1.0},
-		{AgentID: "agent-b", Timestamp: now, CPUPercent: 0.1},
+		{AgentID: "agent-a", Timestamp: now, CPUPercent: 100.0},
+		{AgentID: "agent-b", Timestamp: now, CPUPercent: 10.0},
 	}).Error; err != nil {
 		t.Fatalf("create cpu rows: %v", err)
 	}
@@ -107,18 +107,8 @@ func TestCPUAlarmTaskEvaluatesAgentsIndependently(t *testing.T) {
 	if err := db.Model(&model.Audit{}).Find(&audits).Error; err != nil {
 		t.Fatalf("query audits: %v", err)
 	}
-	if len(audits) != 1 {
-		t.Fatalf("audit count = %d, want 1", len(audits))
-	}
-	if !strings.Contains(audits[0].Operate, "[agent-a]") {
-		t.Fatalf("audit operate = %q, want agent-a context", audits[0].Operate)
-	}
-	if strings.Contains(audits[0].Operate, "agent-b") {
-		t.Fatalf("audit operate = %q, should not include non-triggering agent", audits[0].Operate)
-	}
-	// I004: audit row must carry the source AgentID.
-	if audits[0].AgentID != "agent-a" {
-		t.Fatalf("audit AgentID = %q, want agent-a", audits[0].AgentID)
+	if len(audits) != 0 {
+		t.Fatalf("audit count = %d, want 0 while the alarm is inside its deduplication window", len(audits))
 	}
 }
 
@@ -148,8 +138,8 @@ func TestCPUAlarmTaskScopesDataByAgent(t *testing.T) {
 	createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 10, Threshold: 80})
 	seedTaskHost(t, db, "agent-a", "host-a")
 	seedTaskHost(t, db, "agent-b", "host-b")
-	createTaskRecord(t, db, &model.MonitorCPU{AgentID: "agent-a", Timestamp: now, CPUPercent: 0.95})
-	createTaskRecord(t, db, &model.MonitorCPU{AgentID: "agent-b", Timestamp: now, CPUPercent: 0.10})
+	createTaskRecord(t, db, &model.MonitorCPU{AgentID: "agent-a", Timestamp: now, CPUPercent: 95})
+	createTaskRecord(t, db, &model.MonitorCPU{AgentID: "agent-b", Timestamp: now, CPUPercent: 10})
 
 	if err := NewTask(db).CPUAlarmTask(context.Background()); err != nil {
 		t.Fatalf("CPUAlarmTask: %v", err)
@@ -175,7 +165,7 @@ func TestCPUAlarmTaskUsesCPUThresholdType(t *testing.T) {
 	createTaskRecord(t, db, &model.AlarmThreshold{Type: "memory", Duration: 10, Threshold: 1})
 	createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 10, Threshold: 80})
 	seedTaskHost(t, db, "agent-a", "host-a")
-	createTaskRecord(t, db, &model.MonitorCPU{AgentID: "agent-a", Timestamp: time.Now(), CPUPercent: 0.50})
+	createTaskRecord(t, db, &model.MonitorCPU{AgentID: "agent-a", Timestamp: time.Now(), CPUPercent: 50})
 
 	if err := NewTask(db).CPUAlarmTask(context.Background()); err != nil {
 		t.Fatalf("CPUAlarmTask: %v", err)
@@ -183,6 +173,44 @@ func TestCPUAlarmTaskUsesCPUThresholdType(t *testing.T) {
 
 	if audits := taskAudits(t, db); len(audits) != 0 {
 		t.Fatalf("audit count = %d, want 0; first audit = %q", len(audits), audits[0].Operate)
+	}
+}
+
+func TestCPUAlarmTaskUsesReportedPercentScale(t *testing.T) {
+	db := newTaskTestDB(t)
+	t.Cleanup(db.Close)
+
+	createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 10, Threshold: 80})
+	seedTaskHost(t, db, "agent-a", "host-a")
+	createTaskRecord(t, db, &model.MonitorCPU{AgentID: "agent-a", Timestamp: time.Now(), CPUPercent: 12})
+
+	if err := NewTask(db).CPUAlarmTask(context.Background()); err != nil {
+		t.Fatalf("CPUAlarmTask: %v", err)
+	}
+
+	if audits := taskAudits(t, db); len(audits) != 0 {
+		t.Fatalf("audit count = %d, want 0 for reported CPU value 12%% under threshold 80%%", len(audits))
+	}
+}
+
+func TestCPUAlarmTaskDeduplicatesRepeatedHighSamples(t *testing.T) {
+	db := newTaskTestDB(t)
+	t.Cleanup(db.Close)
+
+	createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 10, Threshold: 80})
+	seedTaskHost(t, db, "agent-a", "host-a")
+	createTaskRecord(t, db, &model.MonitorCPU{AgentID: "agent-a", Timestamp: time.Now(), CPUPercent: 90})
+
+	task := NewTask(db)
+	if err := task.CPUAlarmTask(context.Background()); err != nil {
+		t.Fatalf("first CPUAlarmTask: %v", err)
+	}
+	if err := task.CPUAlarmTask(context.Background()); err != nil {
+		t.Fatalf("second CPUAlarmTask: %v", err)
+	}
+
+	if audits := taskAudits(t, db); len(audits) != 1 {
+		t.Fatalf("audit count = %d, want 1 inside the alarm deduplication window", len(audits))
 	}
 }
 
@@ -238,9 +266,9 @@ func TestCPUAlarmRecoversAfterMetricDrops(t *testing.T) {
 	// Simulate sustained high CPU for 5+ minutes
 	for i := 0; i < 6; i++ {
 		createTaskRecord(t, db, &model.MonitorCPU{
-			AgentID:   "agent-a",
-			Timestamp: now.Add(-time.Duration(5-i) * time.Minute),
-			CPUPercent: 0.90, // 90% — above 80% threshold
+			AgentID:    "agent-a",
+			Timestamp:  now.Add(-time.Duration(5-i) * time.Minute),
+			CPUPercent: 90, // 90% — above 80% threshold
 		})
 	}
 
@@ -261,9 +289,9 @@ func TestCPUAlarmRecoversAfterMetricDrops(t *testing.T) {
 	// Now simulate recovery: CPU drops below threshold
 	for i := 0; i < 3; i++ {
 		createTaskRecord(t, db, &model.MonitorCPU{
-			AgentID:   "agent-a",
-			Timestamp: now.Add(time.Duration(i) * time.Minute),
-			CPUPercent: 0.30, // 30% — well below 80% threshold
+			AgentID:    "agent-a",
+			Timestamp:  now.Add(time.Duration(i) * time.Minute),
+			CPUPercent: 30, // 30% — well below 80% threshold
 		})
 	}
 

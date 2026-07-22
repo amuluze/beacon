@@ -31,6 +31,7 @@ import (
 	repository6 "beacon/service/mail/repository"
 	service6 "beacon/service/mail/service"
 	"beacon/service/model"
+	"beacon/service/terminal"
 )
 
 // Injectors from wire.go:
@@ -64,7 +65,8 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	}
 	agentRepository := agent.NewAgentRepo(db)
 	agentService := agent.NewAgentService(agentRepository)
-	caller, err := NewRPCClient(config, agentService)
+	certManager := NewCertManager(config)
+	caller, err := NewRPCClient(config, agentService, certManager)
 	if err != nil {
 		cleanup3()
 		cleanup2()
@@ -102,24 +104,25 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		return nil, nil, err
 	}
 	loggerHandler := NewLoggerHandler(caller)
-	termHandler := NewTermHandler()
+	handler := terminal.NewHandler(caller, db)
 	probe := NewHealthProbe()
 	router := &Router{
-		config:        config,
-		auth:          auther,
-		enforcer:      syncedEnforcer,
-		containerAPI:  containerAPI,
-		hostAPI:       hostAPI,
-		authAPI:       authAPI,
-		auditAPI:      auditAPI,
-		accountAPI:    accountAPI,
-		mailAPI:       mailAPI,
-		alarmAPI:      alarmAPI,
-		agentAPI:      agentAPI,
-		reportSvc:     reportService,
-		loggerHandler: loggerHandler,
-		termHandler:   termHandler,
-		healthProbe:   probe,
+		config:          config,
+		auth:            auther,
+		enforcer:        syncedEnforcer,
+		containerAPI:    containerAPI,
+		hostAPI:         hostAPI,
+		authAPI:         authAPI,
+		auditAPI:        auditAPI,
+		accountAPI:      accountAPI,
+		mailAPI:         mailAPI,
+		alarmAPI:        alarmAPI,
+		agentAPI:        agentAPI,
+		reportSvc:       reportService,
+		loggerHandler:   loggerHandler,
+		terminalHandler: handler,
+		healthProbe:     probe,
+		certManager:     certManager,
 	}
 	app := NewFiberApp(config, router)
 	prepare := &Prepare{

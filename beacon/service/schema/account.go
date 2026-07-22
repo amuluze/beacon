@@ -8,7 +8,7 @@ type User struct {
 	ID        string `json:"id"`
 	Username  string `json:"username"`
 	Remark    string `json:"remark"`
-	IsAdmin   int    `json:"isAdmin"`
+	IsAdmin   int    `json:"is_admin"`
 	Status    int    `json:"status"`
 	Roles     []Role `json:"roles"`
 	CreatedAt string `json:"created_at"`

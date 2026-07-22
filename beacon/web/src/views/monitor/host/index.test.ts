@@ -147,13 +147,16 @@ afterEach(() => {
 })
 
 describe('host monitor time density', () => {
-    it('uses a dedicated taller plot area for every host chart', () => {
+    it('renders the four host charts inside the unified workspace grid', () => {
         const wrapper = mountHostMonitor()
 
+        // 高度约束已统一到全局 .am-chart-area，host 视图复用全局 class，
+        // 不再保留 host-monitor__* 局部覆盖，确保与容器监控图表高度一致。
         expect(wrapper.find('.host-monitor').exists()).toBe(true)
-        expect(wrapper.find('.host-monitor__chart-grid').exists()).toBe(true)
-        expect(wrapper.findAll('.host-monitor__chart-row')).toHaveLength(2)
-        expect(wrapper.findAll('.host-monitor__chart-area')).toHaveLength(4)
+        expect(wrapper.findAll('.am-chart-grid')).toHaveLength(1)
+        expect(wrapper.findAll('.am-chart-row')).toHaveLength(2)
+        expect(wrapper.findAll('.am-chart-area')).toHaveLength(4)
+        expect(wrapper.findAll('.am-chart-card')).toHaveLength(4)
     })
 
     it('preserves runtime axis formatters and timestamped numeric series values', async () => {

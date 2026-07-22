@@ -19,19 +19,3 @@ type AgentQueryReply struct {
 	Data  []AgentItem `json:"data"`
 	Total int64       `json:"total"`
 }
-
-// ── Join Token management ──
-
-type JoinTokenCreateArgs struct {
-	Description string `json:"description" validate:"lte=256"`
-}
-
-type JoinTokenCreateReply struct {
-	Token       string    `json:"token"`
-	Description string    `json:"description"`
-	ExpiresAt   time.Time `json:"expires_at"`
-}
-
-type JoinTokenDeleteArgs struct {
-	Token string `json:"token" validate:"required,gte=1,lte=128"`
-}

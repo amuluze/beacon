@@ -6,10 +6,12 @@ import LoginView from './index.vue'
 const setToken = vi.fn()
 const setUserInfo = vi.fn()
 const setLanguage = vi.fn()
+const clearAgent = vi.fn()
 
 const stubStore = {
     user: { setToken, setUserInfo },
     app: { language: 'zh', setLanguage },
+    agent: { clear: clearAgent },
 }
 
 vi.mock('@/store', () => ({
@@ -42,7 +44,10 @@ function mountLogin() {
         global: {
             mocks: { $t: (key: string) => key },
             stubs: {
-                'el-form': { template: '<form class="form-stub"><slot /></form>' },
+                'el-form': {
+                    methods: { validate: async () => Promise.resolve(true) },
+                    template: '<form class="form-stub"><slot /></form>',
+                },
                 'el-form-item': { template: '<div class="form-item-stub"><slot /></div>' },
                 'el-input': { template: '<input class="input-stub" />' },
                 'el-button': {
@@ -88,13 +93,14 @@ describe('login view', () => {
 
     it('submits credentials and redirects to monitor on success', async () => {
         const wrapper = mountLogin()
-        await wrapper.find('.am-login__btn').trigger('click')
+        await wrapper.find('.form-stub').trigger('submit')
         await Promise.resolve()
         await Promise.resolve()
 
         expect(loginMock).toHaveBeenCalled()
         expect(setToken).toHaveBeenCalledWith('a', 'r')
         expect(setUserInfo).toHaveBeenCalledWith('admin', 1, true)
-        expect(replace).toHaveBeenCalledWith('/monitor/host')
+        expect(clearAgent).toHaveBeenCalledOnce()
+        expect(replace).toHaveBeenCalledWith('/monitor')
     })
 })

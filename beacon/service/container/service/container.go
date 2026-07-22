@@ -37,7 +37,6 @@ type IContainerService interface {
 	ImageList(ctx context.Context, args schema.ImageQueryArgs) (schema.ImageQueryReply, error)
 	ImagePull(ctx context.Context, args schema.ImagePullArgs) error
 	ImageImport(ctx context.Context, args schema.ImageImportArgs) error
-	ImageExport(ctx context.Context, args schema.ImageExportArgs) (schema.ImageExportReply, error)
 	ImageDelete(ctx context.Context, args schema.ImageDeleteArgs) error
 	ImagesPrune(ctx context.Context) error
 
@@ -307,24 +306,6 @@ func (a *ContainerService) ImageImport(ctx context.Context, args schema.ImageImp
 		Data:       args.Data,
 	}
 	return a.ContainerRepo.ImageImport(ctx, rpcArgs)
-}
-
-func (a *ContainerService) ImageExport(ctx context.Context, args schema.ImageExportArgs) (schema.ImageExportReply, error) {
-	rpcArgs := rpcSchema.ImageExportArgs{
-		ImageIDs: []string{args.ImageID},
-	}
-	rpcReply, err := a.ContainerRepo.ImageExport(ctx, rpcArgs)
-	if err != nil {
-		return schema.ImageExportReply{}, err
-	}
-	fileName := rpcReply.FileName
-	if args.ImageName != "" {
-		fileName = fmt.Sprintf("%s.tar", args.ImageName)
-	}
-	return schema.ImageExportReply{
-		FileName: fileName,
-		Data:     rpcReply.Data,
-	}, nil
 }
 
 func (a *ContainerService) ImagesPrune(ctx context.Context) error {

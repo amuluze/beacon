@@ -5,6 +5,7 @@ package terminal
 type MessageType string
 
 const (
+	MessageTypeReady  MessageType = "ready"
 	MessageTypeInput  MessageType = "input"
 	MessageTypeOutput MessageType = "output"
 	MessageTypeResize MessageType = "resize"
@@ -18,6 +19,11 @@ type Message struct {
 	Rows int    `json:"rows,omitempty"`
 	Cols int    `json:"cols,omitempty"`
 	Msg  string `json:"msg,omitempty"`
+}
+
+// NewReadyMessage signals that the Agent PTY exists and can accept input.
+func NewReadyMessage() Message {
+	return Message{Type: string(MessageTypeReady)}
 }
 
 // NewInputMessage creates an input message from base64 data.

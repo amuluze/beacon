@@ -33,7 +33,7 @@ func (dockerRestartPolicyUpdater) UpdateRestartPolicy(ctx context.Context, conta
 	if err != nil {
 		return err
 	}
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
 	_, err = client.ContainerUpdate(ctx, containerID, dockercontainer.UpdateConfig{
 		RestartPolicy: dockercontainer.RestartPolicy{Name: dockercontainer.RestartPolicyMode(normalizeRestartPolicy(policy))},

@@ -172,3 +172,44 @@ func TestCommonAuthSkipperAllowsAgentReport(t *testing.T) {
 		t.Fatal("agent report endpoint must bypass user JWT middleware and use its install-token authentication")
 	}
 }
+
+func TestAgentInstallCertsGeneratesWhenTLSEnabled(t *testing.T) {
+	certDir := t.TempDir()
+	packageDir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(packageDir, "amd64"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(packageDir, "amd64", colliaBinaryName), []byte("collia"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	router := &Router{config: &Config{
+		Control: Control{TLS: ControlTLS{Enable: true, CertDir: certDir}},
+		AgentInstall: AgentInstall{
+			Enable:     true,
+			Token:      "install-secret",
+			PackageDir: packageDir,
+			TLSEnable:  true,
+		},
+	}}
+	router.certManager = NewCertManager(router.config)
+
+	app := fiber.New()
+	app.Get("/api/v1/host/install/certs", router.AgentInstallCerts)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/host/install/certs?node=node-01", nil)
+	req.Header.Set("X-Install-Token", "install-secret")
+	resp, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+
+	pkgPath := filepath.Join(packageDir, "certs", "node-01.tar.gz")
+	if _, err := os.Stat(pkgPath); err != nil {
+		t.Fatalf("agent cert package not generated: %v", err)
+	}
+}

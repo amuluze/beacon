@@ -33,7 +33,6 @@ type IHostService interface {
 	FilesSearch(context.Context, schema.FilesSearchArgs) (schema.FilesSearchReply, error)
 	FileCreate(context.Context, schema.FileCreateArgs) error
 	FileDelete(context.Context, schema.FileDeleteArgs) error
-	FileUpload(context.Context, schema.FileUploadArgs) error
 	FileDownload(context.Context, schema.FileDownloadArgs) (schema.FileDownloadReply, error)
 	FolderCreate(context.Context, schema.FolderCreateArgs) error
 	Reboot(context.Context, schema.RebootArgs) error
@@ -276,15 +275,6 @@ func (h *HostService) FileDelete(ctx context.Context, args schema.FileDeleteArgs
 		Filepath: args.Filepath,
 	}
 	return h.HostRepo.FileDelete(ctx, rpcArgs)
-}
-
-func (h *HostService) FileUpload(ctx context.Context, args schema.FileUploadArgs) error {
-	rpcArgs := rpcSchema.FileUploadArgs{
-		SourceFilePath: args.SourceFilePath,
-		TargetFilePath: args.TargetFilePath,
-		Data:           args.Data,
-	}
-	return h.HostRepo.FileUpload(ctx, rpcArgs)
 }
 
 func (h *HostService) FileDownload(ctx context.Context, args schema.FileDownloadArgs) (schema.FileDownloadReply, error) {

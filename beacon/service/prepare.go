@@ -173,7 +173,8 @@ func (a *Prepare) InitAccount(app *fiber.App) {
 
 func (a *Prepare) InitAlarmThreshold() {
 	for _, threshold := range thresholds {
-		if err := a.db.Model(&model.AlarmThreshold{}).FirstOrCreate(&threshold).Error; err != nil {
+		var current model.AlarmThreshold
+		if err := a.db.Where("type = ?", threshold.Type).Attrs(threshold).FirstOrCreate(&current).Error; err != nil {
 			slog.Error("alarm threshold exist", "error", err)
 		}
 	}

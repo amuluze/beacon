@@ -9,7 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"beacon/pkg/contextx"
 	rpcSchema "common/rpc/schema"
+
+	"github.com/gofiber/contrib/websocket"
 )
 
 // fakeConn simulates a websocket.Conn for bridge testing.
@@ -17,6 +20,7 @@ type fakeConn struct {
 	mu       sync.Mutex
 	closed   bool
 	sent     [][]byte
+	controls []int
 	input    chan []byte // messages to be read by the bridge
 	writeErr error
 }
@@ -51,8 +55,20 @@ func (f *fakeConn) WriteMessage(messageType int, data []byte) error {
 func (f *fakeConn) WriteControl(messageType int, data []byte, deadline time.Time) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.closed = true
+	if f.writeErr != nil {
+		return f.writeErr
+	}
+	f.controls = append(f.controls, messageType)
+	if messageType == websocket.CloseMessage {
+		f.closed = true
+	}
 	return nil
+}
+
+func (f *fakeConn) controlMessages() []int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]int(nil), f.controls...)
 }
 
 func (f *fakeConn) sentMessages() []Message {
@@ -69,10 +85,11 @@ func (f *fakeConn) sentMessages() []Message {
 
 // fakeRPC implements rpc.Caller for bridge testing.
 type fakeRPC struct {
-	mu      sync.Mutex
-	inputs  [][]byte
-	resizes []rpcSchema.ResizeTerminalArgs
-	closed  []rpcSchema.TerminalCloseArgs
+	mu           sync.Mutex
+	inputs       [][]byte
+	resizes      []rpcSchema.ResizeTerminalArgs
+	closed       []rpcSchema.TerminalCloseArgs
+	closeAgentID string
 }
 
 func (f *fakeRPC) Call(ctx context.Context, method string, args interface{}, reply interface{}) error {
@@ -88,6 +105,7 @@ func (f *fakeRPC) Call(ctx context.Context, method string, args interface{}, rep
 	case "TerminalClose":
 		a := args.(rpcSchema.TerminalCloseArgs)
 		f.closed = append(f.closed, a)
+		f.closeAgentID = contextx.FromAgentID(ctx)
 	}
 	return nil
 }
@@ -151,6 +169,9 @@ func TestBridge_ForwardsOutputAndInput(t *testing.T) {
 	if closeSessionID != "sess-test" {
 		t.Fatalf("unexpected close session id: %v", closeSessionID)
 	}
+	if rpcClient.closeAgentID != "agent-1" {
+		t.Fatalf("close agent id = %q, want agent-1", rpcClient.closeAgentID)
+	}
 }
 
 func TestBridge_ForwardsInputAndResize(t *testing.T) {
@@ -200,6 +221,40 @@ func TestBridge_ForwardsInputAndResize(t *testing.T) {
 	}
 	if firstResize.Rows != 30 || firstResize.Cols != 120 {
 		t.Fatalf("unexpected resize: %+v", firstResize)
+	}
+
+	close(conn.input)
+	close(stream)
+	<-done
+}
+
+func TestBridge_PingsIdleWebSocket(t *testing.T) {
+	conn := newFakeConn()
+	stream := make(chan []byte)
+	rpcClient := &fakeRPC{}
+	b := newBridge(rpcClient, conn, stream, nil, "sess-idle", "agent-1")
+	b.pingEvery = 10 * time.Millisecond
+
+	done := make(chan struct{})
+	go func() {
+		_ = b.run(context.Background(), 24, 80)
+		close(done)
+	}()
+
+	deadline := time.After(2 * time.Second)
+	for {
+		select {
+		case <-deadline:
+			t.Fatal("timeout waiting for WebSocket ping")
+		default:
+		}
+		if controls := conn.controlMessages(); len(controls) > 0 {
+			if controls[0] != websocket.PingMessage {
+				t.Fatalf("control message = %d, want WebSocket ping", controls[0])
+			}
+			break
+		}
+		time.Sleep(time.Millisecond)
 	}
 
 	close(conn.input)

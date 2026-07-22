@@ -17,7 +17,6 @@ type IService interface {
 	ContainerStart(context.Context, schema.ContainerStartArgs, *schema.ContainerStartReply) error
 	ContainerStop(context.Context, schema.ContainerStopArgs, *schema.ContainerStopReply) error
 	ContainerRestart(context.Context, schema.ContainerRestartArgs, *schema.ContainerRestartReply) error
-	ContainerLogs(context.Context, schema.ContainerLogsArgs, *schema.ContainerLogsReply) error
 
 	// ── Image operations ──
 	ImagePull(context.Context, schema.ImagePullArgs, *schema.ImagePullReply) error
@@ -25,7 +24,6 @@ type IService interface {
 	ImageDelete(context.Context, schema.ImageDeleteArgs, *schema.ImageDeleteReply) error
 	ImagesPrune(ctx context.Context) error
 	ImageImport(context.Context, schema.ImageImportArgs, *schema.ImageImportReply) error
-	ImageExport(context.Context, schema.ImageExportArgs, *schema.ImageExportReply) error
 
 	// ── Network operations ──
 	NetworkCreate(context.Context, schema.NetworkCreateArgs, *schema.NetworkCreateReply) error
@@ -36,7 +34,6 @@ type IService interface {
 	DirSize(context.Context, schema.DirSizeArgs, *schema.DirSizeReply) error
 	FileCreate(context.Context, schema.FileCreateArgs, *schema.FileCreateReply) error
 	FileDelete(context.Context, schema.FileDeleteArgs, *schema.FileDeleteReply) error
-	FileUpload(context.Context, schema.FileUploadArgs, *schema.FileUploadReply) error
 	FileDownload(context.Context, schema.FileDownloadArgs, *schema.FileDownloadReply) error
 	FolderCreate(context.Context, schema.FolderCreateArgs, *schema.FolderCreateReply) error
 

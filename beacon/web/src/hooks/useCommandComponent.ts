@@ -4,7 +4,7 @@
  * @Description:
  */
 import type { AppContext } from 'vue'
-import { createVNode, render } from 'vue'
+import { createVNode, onBeforeUnmount, render } from 'vue'
 
 export interface Options {
     visible?: boolean
@@ -58,7 +58,15 @@ export function useCommandComponent<T extends Component>(Component: T): CommandC
         container.parentNode?.removeChild(container)
     }
 
+    // Element Plus overlays share the host app context. Tear them down before
+    // the host is fully unmounted so Teleport/transition cleanup can complete.
+    onBeforeUnmount(close)
+
     const CommandComponent = (options: Options): VNode => {
+        // A command invocation represents a fresh lifecycle. Reusing the
+        // previous vnode keeps `visible` at true, so watch-based command
+        // wrappers cannot react to a second invocation with the same props.
+        render(null, container)
         if (!Reflect.has(options, 'visible')) {
             options.visible = true
         }
