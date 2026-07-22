@@ -102,25 +102,6 @@ func (s *Service) FileDelete(ctx context.Context, args rpcSchema.FileDeleteArgs,
 	}
 }
 
-// FileUpload 上传或移动文件。source 与 target 路径都必须位于沙箱内，
-// 防止越界写入或覆盖系统文件。
-func (s *Service) FileUpload(ctx context.Context, args rpcSchema.FileUploadArgs, reply *rpcSchema.FileUploadReply) error {
-	if _, err := utils.SanitizePathWithin(args.TargetFilePath, s.rootDir); err != nil {
-		return err
-	}
-	if len(args.Data) > 0 {
-		if err := os.MkdirAll(filepath.Dir(args.TargetFilePath), 0750); err != nil {
-			return err
-		}
-		return os.WriteFile(args.TargetFilePath, args.Data, 0600) //#nosec G304 -- path sanitized
-	}
-	// Rename 分支：源路径同样必须位于沙箱内。
-	if _, err := utils.SanitizePathWithin(args.SourceFilePath, s.rootDir); err != nil {
-		return err
-	}
-	return os.Rename(args.SourceFilePath, args.TargetFilePath)
-}
-
 // FileDownload 下载文件。source 必须位于沙箱内，防止越界读取
 // /etc/shadow、私钥等敏感文件；target（服务端拷贝）同样校验。
 func (s *Service) FileDownload(ctx context.Context, args rpcSchema.FileDownloadArgs, reply *rpcSchema.FileDownloadReply) error {
@@ -154,7 +135,6 @@ func registerFileHandlers(d *Dispatcher, svc *Service) {
 	RegisterUnary[rpcSchema.DirSizeArgs, rpcSchema.DirSizeReply](d, "DirSize", svc.DirSize)
 	RegisterUnary[rpcSchema.FileCreateArgs, rpcSchema.FileCreateReply](d, "FileCreate", svc.FileCreate)
 	RegisterUnary[rpcSchema.FileDeleteArgs, rpcSchema.FileDeleteReply](d, "FileDelete", svc.FileDelete)
-	RegisterUnary[rpcSchema.FileUploadArgs, rpcSchema.FileUploadReply](d, "FileUpload", svc.FileUpload)
 	RegisterUnary[rpcSchema.FileDownloadArgs, rpcSchema.FileDownloadReply](d, "FileDownload", svc.FileDownload)
 	RegisterUnary[rpcSchema.FolderCreateArgs, rpcSchema.FolderCreateReply](d, "FolderCreate", svc.FolderCreate)
 }

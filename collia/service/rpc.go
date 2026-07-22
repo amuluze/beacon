@@ -20,6 +20,7 @@ import (
 // Server manages the reverse tunnel connection to the Server.
 type Server struct {
 	tunnel *rpctunnel.AgentTunnel
+	svc    *rpc.Service
 }
 
 // NewRPCServer creates the tunnel connection to the Server.
@@ -30,6 +31,9 @@ func NewRPCServer(config *Config, db *database.DB, version Version) (*Server, er
 	}
 	rootDir := config.Variables.HostPrefix
 	s := rpc.NewService(db, manager, rootDir)
+	// 接线自更新：二进制路径 + systemctl restart 回调；并清理上次更新残留的 .bak
+	s.SetSelfUpdateConfig("", rpc.DefaultRestartFn("collia"))
+	rpc.CleanupBackup("")
 
 	agentID := config.Control.AgentID
 	if agentID == "" {
@@ -57,6 +61,7 @@ func NewRPCServer(config *Config, db *database.DB, version Version) (*Server, er
 
 	return &Server{
 		tunnel: tunnel,
+		svc:    s,
 	}, nil
 }
 

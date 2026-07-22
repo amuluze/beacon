@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
@@ -13,11 +13,15 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-const terminalRef = ref<HTMLDivElement>()
+const emit = defineEmits<{
+  statusChange: [status: TerminalStatus]
+  resize: [size: { rows: number, cols: number }]
+}>()
+const terminalRef = useTemplateRef<HTMLDivElement>('terminal')
 
-const status = ref<TerminalStatus>('idle')
-const cols = ref(0)
-const rows = ref(0)
+const status = shallowRef<TerminalStatus>('idle')
+const cols = shallowRef(0)
+const rows = shallowRef(0)
 
 let term: Terminal | null = null
 let fitAddon: FitAddon | null = null
@@ -28,20 +32,33 @@ let wsGeneration = 0
 
 function buildURL(agentId: string): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const params = new URLSearchParams({
+    agent_id: agentId,
+    rows: String(term?.rows || rows.value || 24),
+    cols: String(term?.cols || cols.value || 80),
+  })
   // 浏览器 ws 握手无法携带 Authorization header，把 access token 写入 query 通过服务端鉴权。
   const token = useUserStore().token
-  const tokenQuery = token ? `&token=${encodeURIComponent(token)}` : ''
-  return `${protocol}//${window.location.host}/ws/terminal?agent_id=${encodeURIComponent(agentId)}${tokenQuery}`
+  if (token)
+    params.set('token', token)
+  return `${protocol}//${window.location.host}/ws/terminal?${params.toString()}`
 }
 
-function sendMessage(type: string, data?: unknown): void {
-  if (!ws || ws.readyState !== WebSocket.OPEN)
+function setStatus(nextStatus: TerminalStatus): void {
+  if (status.value === nextStatus)
     return
-  ws.send(JSON.stringify({ type, data }))
+  status.value = nextStatus
+  emit('statusChange', nextStatus)
+}
+
+function sendInput(data: string): void {
+  if (!ws || ws.readyState !== WebSocket.OPEN || status.value !== 'connected')
+    return
+  ws.send(JSON.stringify({ type: 'input', data }))
 }
 
 function sendResize(rows: number, cols: number): void {
-  if (!ws || ws.readyState !== WebSocket.OPEN)
+  if (!ws || ws.readyState !== WebSocket.OPEN || status.value !== 'connected')
     return
   ws.send(JSON.stringify({ type: 'resize', rows, cols }))
 }
@@ -51,6 +68,7 @@ function syncDims(): void {
     return
   cols.value = term.cols
   rows.value = term.rows
+  emit('resize', { rows: rows.value, cols: cols.value })
 }
 
 function initTerminal(): void {
@@ -73,7 +91,7 @@ function initTerminal(): void {
 
   term.onData((input: string) => {
     const encoded = btoa(unescape(encodeURIComponent(input)))
-    sendMessage('input', encoded)
+    sendInput(encoded)
   })
 
   fitAddon.fit()
@@ -94,14 +112,13 @@ function connect(): void {
     }) as T
   }
 
-  status.value = 'connecting'
+  setStatus('connecting')
   const url = buildURL(props.agentId)
   ws = new WebSocket(url)
 
-  ws.onopen = guard(() => {
-    status.value = 'connected'
-    term?.writeln('\r\n\x1B[32mConnected to agent terminal.\x1B[0m')
-  })
+  // HTTP upgrade only means the Server accepted the socket. The component
+  // remains connecting until the Server confirms the Agent PTY is ready.
+  ws.onopen = guard(() => {})
 
   ws.onmessage = guard((event: MessageEvent) => {
     let msg
@@ -113,7 +130,13 @@ function connect(): void {
       return
     }
 
-    if (msg.type === 'output' && msg.data) {
+    if (msg.type === 'ready') {
+      setStatus('connected')
+      term?.writeln('\r\n\x1B[32mConnected to agent terminal.\x1B[0m')
+      if (term)
+        sendResize(term.rows, term.cols)
+    }
+    else if (msg.type === 'output' && msg.data) {
       try {
         const decoded = decodeURIComponent(escape(atob(msg.data)))
         term?.write(decoded)
@@ -123,23 +146,28 @@ function connect(): void {
       }
     }
     else if (msg.type === 'error') {
+      setStatus('error')
       term?.writeln(`\r\n\x1B[31mError: ${msg.msg}\x1B[0m`)
     }
   })
 
   ws.onclose = guard(() => {
-    status.value = 'closed'
+    if (status.value !== 'error')
+      setStatus('closed')
     term?.writeln('\r\n\x1B[31mConnection closed.\x1B[0m')
   })
 
   ws.onerror = guard(() => {
-    status.value = 'error'
+    setStatus('error')
     term?.writeln('\r\n\x1B[31mWebSocket error.\x1B[0m')
   })
 }
 
 function clear(): void {
-  term?.clear()
+  if (!term)
+    return
+  term.clear()
+  term.write('\x1B[2J\x1B[H')
 }
 
 function newSession(): void {
@@ -168,6 +196,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', onResize)
   ws?.close()
   term?.dispose()
+  setStatus('closed')
 })
 
 watch(() => props.agentId, () => {
@@ -180,7 +209,7 @@ defineExpose({ status, cols, rows, clear, newSession })
 </script>
 
 <template>
-    <div ref="terminalRef" class="am-terminal" />
+    <div ref="terminal" class="am-terminal" />
 </template>
 
 <style scoped lang="scss">

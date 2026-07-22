@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"beacon/pkg/contextx"
 	"beacon/pkg/rpc"
 	rpcSchema "common/rpc/schema"
 
@@ -31,7 +32,10 @@ type bridge struct {
 	recorder  *Recorder
 	sessionID string
 	agentID   string
+	pingEvery time.Duration
 }
+
+const terminalPingInterval = 30 * time.Second
 
 func newBridge(rpcClient rpc.Caller, conn Connection, stream <-chan []byte, recorder *Recorder, sessionID, agentID string) *bridge {
 	return &bridge{
@@ -41,6 +45,7 @@ func newBridge(rpcClient rpc.Caller, conn Connection, stream <-chan []byte, reco
 		recorder:  recorder,
 		sessionID: sessionID,
 		agentID:   agentID,
+		pingEvery: terminalPingInterval,
 	}
 }
 
@@ -49,7 +54,8 @@ func (b *bridge) run(ctx context.Context, rows, cols int) error {
 	defer func() {
 		cancel()
 		// Notify Agent to release PTY resources.
-		closeCtx, closeCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		closeCtx := contextx.NewAgentID(context.Background(), b.agentID)
+		closeCtx, closeCancel := context.WithTimeout(closeCtx, 5*time.Second)
 		defer closeCancel()
 		_ = b.rpcClient.Call(closeCtx, "TerminalClose", rpcSchema.TerminalCloseArgs{
 			SessionID: b.sessionID,
@@ -133,11 +139,21 @@ func (b *bridge) readWebSocket(ctx context.Context, cancel context.CancelFunc) {
 // readTunnel reads output from Agent and forwards to browser.
 func (b *bridge) readTunnel(ctx context.Context, cancel context.CancelFunc) {
 	defer cancel()
+	pingTicker := time.NewTicker(b.pingEvery)
+	defer pingTicker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
+		case <-pingTicker.C:
+			// Keep idle terminal sessions alive through reverse proxies. Browsers
+			// answer WebSocket ping frames automatically, so this remains outside
+			// the application-level terminal message protocol.
+			if err := b.conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(time.Second)); err != nil {
+				slog.Debug("terminal: websocket ping failed", "session_id", b.sessionID, "err", err)
+				return
+			}
 		case frame, ok := <-b.stream:
 			if !ok {
 				_ = sendError(b.conn, "agent stream closed")

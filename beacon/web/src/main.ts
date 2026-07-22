@@ -15,14 +15,11 @@ import 'element-plus/theme-chalk/dark/css-vars.css'
 
 import router from './router'
 
-import registerDirective from '@/directive'
 import i18n from '@/languages/index'
 
 const app = createApp(App)
 // 注册状态管理
 setupStore(app)
-// 注册指令
-app.use(registerDirective)
 // 注册路由
 app.use(router)
 // 注册i18n

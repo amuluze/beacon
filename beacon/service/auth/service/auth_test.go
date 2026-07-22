@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"beacon/pkg/auth"
+	"beacon/pkg/contextx"
 	"beacon/service/model"
 	"beacon/service/schema"
 	"beacon/service/testutil"
@@ -137,15 +138,15 @@ func TestAuthService_PassUpdate(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "success",
-			args: schema.PasswordUpdateArgs{Username: "admin", OldPassword: "old", NewPassword: "new"},
-			setup: func(r *testutil.FakeAuthRepo) {},
+			name:    "success",
+			args:    schema.PasswordUpdateArgs{Username: "admin", OldPassword: "old", NewPassword: "new"},
+			setup:   func(r *testutil.FakeAuthRepo) {},
 			wantErr: false,
 		},
 		{
-			name: "same password rejected",
-			args: schema.PasswordUpdateArgs{Username: "admin", OldPassword: "same", NewPassword: "same"},
-			setup: func(r *testutil.FakeAuthRepo) {},
+			name:    "same password rejected",
+			args:    schema.PasswordUpdateArgs{Username: "admin", OldPassword: "same", NewPassword: "same"},
+			setup:   func(r *testutil.FakeAuthRepo) {},
 			wantErr: true,
 		},
 		{
@@ -174,6 +175,53 @@ func TestAuthService_PassUpdate(t *testing.T) {
 				t.Fatalf("unexpected error: %v", err)
 			}
 		})
+	}
+}
+
+func TestAuthService_PassUpdateUsesAuthenticatedUsername(t *testing.T) {
+	auther := testutil.NewFakeAuther()
+	repo := testutil.NewFakeAuthRepo()
+	var gotUsername string
+	repo.PassUpdateFn = func(ctx context.Context, args schema.PasswordUpdateArgs) error {
+		gotUsername = args.Username
+		return nil
+	}
+	svc := newTestAuthService(auther, repo)
+
+	ctx := contextx.NewUsername(context.Background(), "logged-in-user")
+	err := svc.PassUpdate(ctx, schema.PasswordUpdateArgs{
+		Username:    "other-user",
+		OldPassword: "old",
+		NewPassword: "new",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if gotUsername != "logged-in-user" {
+		t.Fatalf("repository username = %q, want %q", gotUsername, "logged-in-user")
+	}
+}
+
+func TestAuthService_PassUpdateKeepsBodyUsernameWithoutAuthContext(t *testing.T) {
+	auther := testutil.NewFakeAuther()
+	repo := testutil.NewFakeAuthRepo()
+	var gotUsername string
+	repo.PassUpdateFn = func(ctx context.Context, args schema.PasswordUpdateArgs) error {
+		gotUsername = args.Username
+		return nil
+	}
+	svc := newTestAuthService(auther, repo)
+
+	err := svc.PassUpdate(context.Background(), schema.PasswordUpdateArgs{
+		Username:    "body-user",
+		OldPassword: "old",
+		NewPassword: "new",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if gotUsername != "body-user" {
+		t.Fatalf("repository username = %q, want %q", gotUsername, "body-user")
 	}
 }
 

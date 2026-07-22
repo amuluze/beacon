@@ -12,6 +12,9 @@ import (
 
 type Prefix string
 
+// defaultPrefix 是未显式指定 prefix 时的默认值（与 config.yml 的 host_prefix 根语义一致）。
+const defaultPrefix Prefix = "/"
+
 type Config struct {
 	prefix    Prefix    `yaml:"-"`
 	Control   Control   `yaml:"control"`

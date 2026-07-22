@@ -6,6 +6,7 @@ package middleware
 
 import (
 	"encoding/json"
+	"log/slog"
 	"runtime"
 
 	"beacon/pkg/errors"
@@ -19,7 +20,8 @@ var defaultStackTraceBufLen = 1024
 
 func StackTraceHandler(c *fiber.Ctx, e interface{}) {
 	buf := make([]byte, defaultStackTraceBufLen)
-	buf = buf[:runtime.Stack(buf, false)]
+	n := runtime.Stack(buf, false)
+	slog.Error("recovered panic", "panic", e, "stack", string(buf[:n]))
 	data, _ := json.Marshal(errors.InternalServerError)
 	_, _ = c.Write(data)
 }

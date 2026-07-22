@@ -26,9 +26,9 @@ func TestPushAcceptsNilContext(t *testing.T) {
 			Header:     make(http.Header),
 		}, nil
 	})
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
-	err := client.Push(nil, rpcSchema.MonitorReportArgs{AgentID: "agent-a"})
+	err := client.Push(nil, rpcSchema.MonitorReportArgs{AgentID: "agent-a"}) //nolint:staticcheck // SA1012: intentionally verifying the nil-context fallback in Push
 	if err != nil {
 		t.Fatalf("Push returned error: %v", err)
 	}

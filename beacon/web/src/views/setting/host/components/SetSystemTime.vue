@@ -9,7 +9,7 @@ const props = defineProps<{
   visible: boolean
   title?: string
   systemTime: string
-  update?: () => void
+  update?: () => void | Promise<void>
 }>()
 
 const emits = defineEmits<{
@@ -49,6 +49,7 @@ async function confirmSystemTimeEdit() {
   await setSystemTime(args)
   success('修改系统时间成功')
   drawerVisible.value = false
+  await props.update?.()
 }
 const { t } = useI18n()
 </script>

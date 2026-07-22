@@ -28,6 +28,7 @@ func NewDispatcher(svc *Service) *Dispatcher {
 	registerFileHandlers(d, svc)
 	registerSystemHandlers(d, svc)
 	registerTerminalHandlers(d, svc)
+	registerLifecycleHandlers(d, svc)
 	return d
 }
 

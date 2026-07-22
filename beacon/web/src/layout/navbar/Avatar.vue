@@ -18,11 +18,19 @@ async function doLogout() {
   await logout()
   // 2.清除缓存
   store.user.setToken('', '')
+  store.agent.clear()
   // 3.重定向到登录页
   await router.replace('/login')
 }
 
 const updatePasswordDraw = useCommandComponent(UpdatePassword)
+
+function openPasswordDrawer() {
+  updatePasswordDraw({
+    title: '更新密码',
+    username: displayName.value,
+  })
+}
 </script>
 
 <template>
@@ -33,7 +41,7 @@ const updatePasswordDraw = useCommandComponent(UpdatePassword)
         </div>
         <template #dropdown>
             <el-dropdown-menu>
-                <el-dropdown-item @click="updatePasswordDraw({ title: '更新密码' })">
+                <el-dropdown-item @click="openPasswordDrawer">
                     <svg-icon icon-class="edit" style="margin-right: 4px" />
                     {{ t('avatar.updatePassword') }}
                 </el-dropdown-item>

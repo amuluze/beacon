@@ -23,6 +23,11 @@ var (
 
 func main() {
 	ctx := context.Background()
+	// 把编译期版本同步给 VersionChecker，使 /api/v1/system/update 上报真实版本。
+	if Version != "" {
+		service.BuildVersion = Version
+	}
+
 	app := cli.NewApp()
 	if Version != "" {
 		app.Version = Version

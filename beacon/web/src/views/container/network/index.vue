@@ -34,6 +34,10 @@ watch(selectedAgentID, async () => {
 const tableRef = ref<TableInstance>()
 const tableSelection = ref<Network[]>([])
 const selectable = (row: Network) => !['1', '2'].includes(row.id)
+const protectedNetworkNames = new Set(['bridge', 'host', 'none'])
+function isProtectedNetwork(networkName: string) {
+  return protectedNetworkNames.has(networkName)
+}
 function handleSelectionChange(val: Network[]) {
   tableSelection.value = val
 }
@@ -60,7 +64,7 @@ const locale = computed(() => {
 <template>
     <div class="am-container">
         <div class="am-table-operator">
-            <el-button type="primary" plain size="small" :disabled="isAgentEmpty" @click="addNetwork({ title: 'network.newNetwork', update: search })">
+            <el-button type="primary" plain size="small" :disabled="!selectedAgentID" @click="addNetwork({ title: 'network.newNetwork', update: search })">
                 <svg-icon icon-class="add" />
                 {{ t('network.newNetwork') }}
             </el-button>
@@ -84,7 +88,7 @@ const locale = computed(() => {
                 <el-table-column prop="created" :label="t('network.createTime')" align="center" min-width="200" />
                 <el-table-column :label="t('network.operator')" width="160" fixed="right" align="center">
                     <template #default="scope">
-                        <el-button type="danger" plain size="small" :disabled="isAgentEmpty" @click="deleteNetwork({ title: 'network.deleteNetwork', id: scope.row.id, update: search })">
+                        <el-button type="danger" plain size="small" :disabled="!selectedAgentID || isProtectedNetwork(scope.row.name)" @click="deleteNetwork({ title: 'network.deleteNetwork', id: scope.row.id, update: search })">
                             <svg-icon icon-class="delete" />
                             {{ t('network.delete') }}
                         </el-button>

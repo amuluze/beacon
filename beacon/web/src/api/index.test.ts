@@ -16,11 +16,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 // Stub-pinia store handle exposed via the shared store.
 interface StubStore {
     user: { token: string, refresh: string, setToken: ReturnType<typeof vi.fn> }
-    agent: { selectedAgentID: string }
+    agent: { selectedAgentID: string, clear: ReturnType<typeof vi.fn> }
 }
 const stubStore: StubStore = {
     user: { token: '', refresh: '', setToken: vi.fn() },
-    agent: { selectedAgentID: '' },
+    agent: { selectedAgentID: '', clear: vi.fn() },
 }
 
 vi.mock('@/store', () => ({
@@ -36,16 +36,15 @@ const responseErrHandlers: ResErrHandler[] = []
 // callbacks are tracked in module-level arrays.
 let latestFakeInstance: any = null
 function makeFakeAxiosInstance() {
-    const inst: any = {
-        interceptors: {
-            request: { use: (ok: ReqHandler) => { requestHandlers.push(ok) } },
-            response: {
-                use: (_ok: any, err: ResErrHandler) => { responseErrHandlers.push(err) },
-            },
+    const inst: any = vi.fn().mockResolvedValue({ data: {} })
+    inst.interceptors = {
+        request: { use: (ok: ReqHandler) => { requestHandlers.push(ok) } },
+        response: {
+            use: (_ok: any, err: ResErrHandler) => { responseErrHandlers.push(err) },
         },
-        get: vi.fn(),
-        post: vi.fn().mockResolvedValue({ data: { access_token: 'new', refresh_token: 'new-r' } }),
     }
+    inst.get = vi.fn()
+    inst.post = vi.fn().mockResolvedValue({ data: { access_token: 'new', refresh_token: 'new-r' } })
     latestFakeInstance = inst
     return inst
 }
@@ -79,6 +78,7 @@ beforeEach(() => {
     stubStore.user.refresh = ''
     stubStore.user.setToken = vi.fn()
     stubStore.agent.selectedAgentID = ''
+    stubStore.agent.clear = vi.fn()
     requestHandlers.length = 0
     responseErrHandlers.length = 0
     lastHref = null
@@ -128,6 +128,18 @@ describe('api/index — request interceptor', () => {
         expect(out.headers.Authorization).toBe('Bearer abc123')
     })
 
+    it('preserves the refresh token Authorization on token_update', async () => {
+        stubStore.user.token = 'expired-access'
+
+        await loadRequest()
+        const out = await requestHandlers[0]({
+            headers: { Authorization: 'Bearer valid-refresh' },
+            url: '/api/v1/auth/token_update',
+        })
+
+        expect(out.headers.Authorization).toBe('Bearer valid-refresh')
+    })
+
     it('rewrites Content-Type for the login endpoint', async () => {
         stubStore.user.token = 'should-stay'
         stubStore.agent.selectedAgentID = 'agent-x'
@@ -141,7 +153,7 @@ describe('api/index — request interceptor', () => {
 })
 
 describe('api/index — response error interceptor', () => {
-    it('400 on /api/v1/auth/token_update clears tokens and navigates to /', async () => {
+    it('token_update failures are rejected to the refresh owner without a warning', async () => {
         await loadRequest()
         expect(responseErrHandlers.length).toBe(1)
 
@@ -152,9 +164,36 @@ describe('api/index — response error interceptor', () => {
                 config: { url: '/api/v1/auth/token_update' },
             },
         }
-        void responseErrHandlers[0](error)
-        expect(lastHref).toBe('/')
-        expect(stubStore.user.setToken).toHaveBeenCalledWith('', '')
+        await expect(responseErrHandlers[0](error)).rejects.toEqual(error.response)
+        expect(warning).not.toHaveBeenCalled()
+        expect(stubStore.user.setToken).not.toHaveBeenCalled()
+        expect(stubStore.agent.clear).not.toHaveBeenCalled()
+        expect(lastHref).toBeNull()
+    })
+
+    it('network error without response warns and rejects without logout', async () => {
+        await loadRequest()
+        // 模拟无 HTTP 响应（断网/超时/CORS），error.response 为 undefined
+        await expect(responseErrHandlers[0](new Error('Network Error'))).rejects.toBeTruthy()
+        expect(warning).toHaveBeenCalledWith('网络异常，请检查连接后重试')
+        expect(stubStore.user.setToken).not.toHaveBeenCalled()
+        expect(lastHref).toBeNull()
+    })
+
+    it('unknown status code warns instead of silent redirect', async () => {
+        await loadRequest()
+        const error = {
+            response: {
+                status: 502,
+                data: { msg: 'bad gateway' },
+                config: { url: '/api/v1/host/info' },
+            },
+        }
+        await expect(responseErrHandlers[0](error)).rejects.toEqual(error.response)
+        expect(warning).toHaveBeenCalledWith('bad gateway')
+        // 未清 token、未跳转，避免不清状态卡在首页
+        expect(stubStore.user.setToken).not.toHaveBeenCalled()
+        expect(lastHref).toBeNull()
     })
 
     it('400 on a non-token_update URL forwards to warning()', async () => {
@@ -167,8 +206,22 @@ describe('api/index — response error interceptor', () => {
                 config: { url: '/api/v1/host/report' },
             },
         }
-        void responseErrHandlers[0](error)
+        await expect(responseErrHandlers[0](error)).rejects.toEqual(error.response)
         expect(warning).toHaveBeenCalledWith('invalid input')
+    })
+
+    it('400 prefers the service error detail for password failures', async () => {
+        await loadRequest()
+        const error = {
+            response: {
+                status: 400,
+                data: { err: 'invalid password', msg: 'bad request' },
+                config: { url: '/api/v1/auth/pass_update' },
+            },
+        }
+
+        await expect(responseErrHandlers[0](error)).rejects.toEqual(error.response)
+        expect(warning).toHaveBeenCalledWith('invalid password')
     })
 
     it('403 calls warning() with permission message', async () => {
@@ -176,7 +229,7 @@ describe('api/index — response error interceptor', () => {
         const error = {
             response: { status: 403, data: {}, config: { url: '/api/v1/host/info' } },
         }
-        void responseErrHandlers[0](error)
+        await expect(responseErrHandlers[0](error)).rejects.toEqual(error.response)
         expect(warning).toHaveBeenCalledWith('您目前没有权限执行该操作，请联系管理员')
     })
 
@@ -185,16 +238,17 @@ describe('api/index — response error interceptor', () => {
         const error = {
             response: { status: 500, data: {}, config: { url: '/api/v1/host/info' } },
         }
-        void responseErrHandlers[0](error)
+        await expect(responseErrHandlers[0](error)).rejects.toEqual(error.response)
         expect(warning).toHaveBeenCalledWith('服务器错误，请稍后再试')
     })
 
-    it('401 on non-token_update schedules a token refresh', async () => {
-        vi.useFakeTimers()
+    it('401 on non-token_update refreshes the token and resolves the retried request', async () => {
         stubStore.user.refresh = 'old-refresh'
         stubStore.user.token = 'old'
 
         await loadRequest()
+        const retriedResponse = { data: { hostname: 'node-01' } }
+        latestFakeInstance.mockResolvedValueOnce(retriedResponse)
         const error = {
             response: {
                 status: 401,
@@ -202,11 +256,9 @@ describe('api/index — response error interceptor', () => {
                 config: { url: '/api/v1/host/info' },
             },
         }
-        void responseErrHandlers[0](error)
+        const request = responseErrHandlers[0](error)
 
-        // The implementation uses setTimeout(..., 500); advance the fake timer.
-        vi.advanceTimersByTime(1000)
-
+        await expect(request).resolves.toBe(retriedResponse)
         expect(latestFakeInstance.post).toHaveBeenCalledWith(
             '/api/v1/auth/token_update',
             {},
@@ -214,5 +266,89 @@ describe('api/index — response error interceptor', () => {
                 headers: expect.objectContaining({ Authorization: 'Bearer old-refresh' }),
             }),
         )
+        expect(latestFakeInstance).toHaveBeenCalledWith(error.response.config)
+    })
+
+    it('rejects every queued request when refresh fails', async () => {
+        stubStore.user.refresh = 'expired-refresh'
+        stubStore.user.token = 'expired-access'
+
+        await loadRequest()
+        const refreshError = {
+            response: {
+                status: 500,
+                data: { err: 'key not found' },
+                config: { url: '/api/v1/auth/token_update' },
+            },
+        }
+        latestFakeInstance.post.mockImplementationOnce(async () => responseErrHandlers[0](refreshError))
+        const firstError = {
+            response: {
+                status: 401,
+                data: {},
+                config: { url: '/api/v1/agent/list' },
+            },
+        }
+        const secondError = {
+            response: {
+                status: 401,
+                data: {},
+                config: { url: '/api/v1/host/info' },
+            },
+        }
+
+        const firstRequest = responseErrHandlers[0](firstError)
+        const secondRequest = responseErrHandlers[0](secondError)
+
+        await expect(firstRequest).rejects.toBe(refreshError.response)
+        await expect(secondRequest).rejects.toBe(refreshError.response)
+        expect(latestFakeInstance.post).toHaveBeenCalledTimes(1)
+        expect(stubStore.user.setToken).toHaveBeenCalledWith('', '')
+        expect(stubStore.agent.clear).toHaveBeenCalledOnce()
+        expect(lastHref).toBe('/#/login')
+        expect(warning).not.toHaveBeenCalled()
+    })
+
+    it('allows a new Agent request to settle after refresh failure and re-login', async () => {
+        stubStore.user.refresh = 'expired-refresh'
+        stubStore.user.token = 'expired-access'
+
+        await loadRequest()
+        const refreshError = {
+            response: {
+                status: 500,
+                data: { err: 'key not found' },
+                config: { url: '/api/v1/auth/token_update' },
+            },
+        }
+        latestFakeInstance.post.mockImplementationOnce(async () => responseErrHandlers[0](refreshError))
+        const expiredRequest = responseErrHandlers[0]({
+            response: {
+                status: 401,
+                data: {},
+                config: { url: '/api/v1/agent/list' },
+            },
+        })
+        await expect(expiredRequest).rejects.toBe(refreshError.response)
+
+        stubStore.user.refresh = 'fresh-refresh'
+        stubStore.user.token = 'fresh-access'
+        latestFakeInstance.post.mockResolvedValueOnce({
+            data: { access_token: 'renewed-access', refresh_token: 'renewed-refresh' },
+        })
+        const agentResponse = { data: [{ agent_id: 'node-01' }] }
+        latestFakeInstance.mockResolvedValueOnce(agentResponse)
+
+        const newAgentRequest = responseErrHandlers[0]({
+            response: {
+                status: 401,
+                data: {},
+                config: { url: '/api/v1/agent/list' },
+            },
+        })
+
+        await expect(newAgentRequest).resolves.toBe(agentResponse)
+        expect(latestFakeInstance.post).toHaveBeenCalledTimes(2)
+        expect(stubStore.user.setToken).toHaveBeenLastCalledWith('renewed-access', 'renewed-refresh')
     })
 })

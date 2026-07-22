@@ -1,5 +1,3 @@
-import type { Image, Network } from './container'
-
 export interface UserInfo {
     name: string
     status: number
@@ -12,25 +10,9 @@ export interface UserState {
     userInfo: UserInfo
 }
 
-export interface AgentInfo {
-    agent_id: string
-    hostname: string
-    status: string
-    last_seen: string
-}
-
-export interface AgentState {
-    list: AgentInfo[]
-    selectedAgentID: string
-    loading: boolean
-    loaded: boolean
-}
-
 export interface AppState {
     isCollapse: boolean
     language: string
-    networks: Network[]
-    images: Image[]
 }
 
 export interface themeState {
@@ -39,8 +21,4 @@ export interface themeState {
 
 export interface echartsThemeState {
     currentColorArray: string[]
-}
-
-export interface PermissionsState {
-    permissions: string[]
 }

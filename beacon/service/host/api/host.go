@@ -5,9 +5,6 @@
 package api
 
 import (
-	"io"
-	"path"
-
 	"beacon/pkg/fiberx"
 	"beacon/pkg/validatex"
 	"beacon/service/host/service"
@@ -140,33 +137,6 @@ func (a *HostAPI) FilesSearch(ctx *fiber.Ctx) error {
 		return fiberx.Failure(ctx, errors.FromError(err))
 	}
 	return fiberx.Success(ctx, files)
-}
-
-func (a *HostAPI) FileUpload(ctx *fiber.Ctx) error {
-	c := ctx.UserContext()
-	file, err := ctx.FormFile("file")
-	if err != nil {
-		return fiberx.Failure(ctx, errors.FromError(err))
-	}
-	src, err := file.Open()
-	if err != nil {
-		return fiberx.Failure(ctx, errors.FromError(err))
-	}
-	defer src.Close()
-	data, err := io.ReadAll(src)
-	if err != nil {
-		return fiberx.Failure(ctx, errors.FromError(err))
-	}
-
-	prefix := ctx.FormValue("prefix", "")
-	args := schema.FileUploadArgs{
-		TargetFilePath: path.Join(prefix, file.Filename),
-		Data:           data,
-	}
-	if err := a.HostService.FileUpload(c, args); err != nil {
-		return fiberx.Failure(ctx, errors.FromError(err))
-	}
-	return fiberx.NoContent(ctx)
 }
 
 func (a *HostAPI) FileDownload(ctx *fiber.Ctx) error {

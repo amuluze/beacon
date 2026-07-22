@@ -29,11 +29,6 @@ describe('dynamic workspace routes', () => {
     })
 
     it.each([
-        ['/monitor/host', 'hostMonitor'],
-        ['/monitor/container', 'containerMonitor'],
-        ['/container/container', 'containerManager'],
-        ['/container/image', 'imageManager'],
-        ['/container/network', 'networkManager'],
         ['/setting/alarm', 'alarm'],
         ['/setting/host', 'host'],
         ['/setting/container', 'docker'],

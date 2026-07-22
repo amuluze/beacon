@@ -220,7 +220,7 @@ func (a *ContainerAPI) ImageImport(ctx *fiber.Ctx) error {
 	if err != nil {
 		return fiberx.Failure(ctx, errors.FromError(err))
 	}
-	defer src.Close()
+	defer func() { _ = src.Close() }()
 	data, err := io.ReadAll(src)
 	if err != nil {
 		return fiberx.Failure(ctx, errors.FromError(err))
@@ -234,25 +234,6 @@ func (a *ContainerAPI) ImageImport(ctx *fiber.Ctx) error {
 		return fiberx.Failure(ctx, errors.FromError(err))
 	}
 	return fiberx.NoContent(ctx)
-}
-
-// ImageExport 包含两步，将镜像导出为压缩文件，并提供下载
-func (a *ContainerAPI) ImageExport(ctx *fiber.Ctx) error {
-	c := ctx.UserContext()
-	var args schema.ImageExportArgs
-	if err := fiberx.ParseQuery(ctx, &args); err != nil {
-		return fiberx.Failure(ctx, errors.FromError(err))
-	}
-
-	if err := validatex.ValidateStruct(&args); err != nil {
-		return fiberx.Failure(ctx, errors.FromError(err))
-	}
-	reply, err := a.ContainerService.ImageExport(c, args)
-	if err != nil {
-		return fiberx.Failure(ctx, errors.FromError(err))
-	}
-	ctx.Attachment(reply.FileName)
-	return ctx.Send(reply.Data)
 }
 
 func (a *ContainerAPI) ImageRemove(ctx *fiber.Ctx) error {

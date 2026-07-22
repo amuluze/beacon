@@ -65,7 +65,10 @@ import HostMonitor from './host/index.vue'
 }
 
 .workspace__panel {
-  min-height: 640px;
+  // 高度由内容自适应：主机监控包含 2 个图表 row，容器监控包含 1 个 row，
+  // 二者图表高度在全局 .am-chart-area 已统一，无需再以 min-height 撑开容器面板，
+  // 否则容器监控会在单 row 时底部留下大面积空白。
+  min-height: 0;
   overflow: hidden;
   background: var(--am-surface-card);
   border: 1px solid var(--am-border-subtle);

@@ -13,6 +13,7 @@ import (
 	healthapi "beacon/service/health/api"
 	"beacon/service/middleware"
 	"beacon/service/report"
+	"beacon/service/terminal"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/gofiber/contrib/websocket"
@@ -53,10 +54,11 @@ type Router struct {
 	agentAPI     *agent.API
 	reportSvc    *report.Service
 
-	loggerHandler *LoggerHandler
-	termHandler   *TermHandler
+	loggerHandler   *LoggerHandler
+	terminalHandler *terminal.Handler
 
 	healthProbe *healthapi.Probe
+	certManager *CertManager
 }
 
 func (a *Router) RegisterAPI(app *fiber.App) {
@@ -119,15 +121,7 @@ func (a *Router) registerMiddlewares(app *fiber.App) {
 		return c.Next()
 	})
 
-	app.Use("ws", func(c *fiber.Ctx) error {
-		if websocket.IsWebSocketUpgrade(c) {
-			c.Locals("allowed", true)
-			return c.Next()
-		}
-		return fiber.ErrUpgradeRequired
-	})
-	app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))
-	app.Get("/ws", websocket.New(a.termHandler.Handler))
+	a.registerWebSocketRoutes(app)
 
 	if a.config.Auth.Enable {
 		app.Use(middleware.UserAuthMiddleware(
@@ -142,6 +136,26 @@ func (a *Router) registerMiddlewares(app *fiber.App) {
 			middleware.AllowPathPrefixSkipper(commonAuthSkipperPaths...),
 		))
 	}
+}
+
+func (a *Router) registerWebSocketRoutes(app *fiber.App) {
+	app.Use("/ws", func(c *fiber.Ctx) error {
+		if websocket.IsWebSocketUpgrade(c) {
+			c.Locals("allowed", true)
+			return c.Next()
+		}
+		return fiber.ErrUpgradeRequired
+	})
+
+	if a.config.Auth.Enable {
+		webSocketAuth := middleware.WebSocketUserAuthMiddleware(a.auth)
+		app.Get("/ws/terminal", webSocketAuth, websocket.New(a.terminalHandler.Handle))
+		app.Get("/ws/:id", webSocketAuth, websocket.New(a.loggerHandler.Handler))
+		return
+	}
+
+	app.Get("/ws/terminal", websocket.New(a.terminalHandler.Handle))
+	app.Get("/ws/:id", websocket.New(a.loggerHandler.Handler))
 }
 
 // registerAPIRoutes registers all v1 API route groups.
@@ -212,7 +226,6 @@ func (a *Router) registerContainerRoutes(v1 fiber.Router) {
 	g.Post("/images_prune", a.containerAPI.ImagesPrune).Name("清理虚悬镜像")
 	g.Post("/image_pull", a.containerAPI.ImagePull).Name("拉取镜像")
 	g.Post("/image_import", a.containerAPI.ImageImport).Name("导入镜像")
-	g.Post("/image_export", a.containerAPI.ImageExport).Name("导出镜像")
 	g.Post("/network_create", a.containerAPI.NetworkCreate).Name("创建网络")
 	g.Post("/network_delete", a.containerAPI.NetworkDelete).Name("删除网络")
 	g.Get("/networks", a.containerAPI.NetworkList).Name("获取网络列表")
@@ -237,7 +250,6 @@ func (a *Router) registerHostRoutes(v1 fiber.Router) {
 	g.Get("/disk_trending", a.hostAPI.DiskUsage).Name("获取磁盘使用率")
 	g.Get("/net_trending", a.hostAPI.NetUsage).Name("获取网络使用率")
 	g.Get("/file_search", a.hostAPI.FilesSearch).Name("文件搜索")
-	g.Post("/file_upload", a.hostAPI.FileUpload).Name("文件上传")
 	g.Post("/file_download", a.hostAPI.FileDownload).Name("文件下载")
 	g.Post("/file_delete", a.hostAPI.FileDelete).Name("删除文件")
 	g.Post("/file_create", a.hostAPI.FileCreate).Name("创建文件")
@@ -261,7 +273,6 @@ func (a *Router) registerAuditRoutes(v1 fiber.Router) {
 func (a *Router) registerMailRoutes(v1 fiber.Router) {
 	g := v1.Group("mail")
 	g.Post("/mail_create", a.mailAPI.MailCreate).Name("创建邮件告警配置")
-	g.Post("/mail_delete", a.mailAPI.MailDelete).Name("删除邮件告警配置")
 	g.Post("/mail_update", a.mailAPI.MailUpdate).Name("更新邮件告警配置")
 	g.Get("/mail_query", a.mailAPI.MailQuery).Name("查询邮件告警配置")
 	g.Post("/mail_test", a.mailAPI.MailTest).Name("测试邮件告警")

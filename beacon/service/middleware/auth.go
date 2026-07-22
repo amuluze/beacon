@@ -22,6 +22,24 @@ func wrapUserAuthContext(c *fiber.Ctx, userID string, username string) {
 	c.SetUserContext(ctx)
 }
 
+// WebSocketUserAuthMiddleware authenticates a WebSocket handshake before the
+// HTTP connection is upgraded. Identity is stored both in UserContext and in
+// Fiber locals because websocket.Conn carries locals across the upgrade.
+func WebSocketUserAuthMiddleware(a auth.Auther) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		userID, username, err := a.ParseToken(fiberx.GetWebSocketToken(c), "access_token")
+		if err != nil {
+			slog.Error("websocket token parse failed", "error", err)
+			return fiberx.Unauthorized(c)
+		}
+
+		wrapUserAuthContext(c, userID, username)
+		c.Locals("user_id", userID)
+		c.Locals("username", username)
+		return c.Next()
+	}
+}
+
 func UserAuthMiddleware(a auth.Auther, skippers ...SkipperFunc) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		if SkipHandler(c, skippers...) {

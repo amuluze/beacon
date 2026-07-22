@@ -52,9 +52,6 @@ func newFakeContainerRepoWithDefaults() *testutil.FakeContainerRepo {
 		ContainerRestartFn: func(_ context.Context, _ rpcSchema.ContainerRestartArgs) error {
 			return nil
 		},
-		ContainerLogsFn: func(_ context.Context, _ rpcSchema.ContainerLogsArgs) (rpcSchema.ContainerLogsReply, error) {
-			return rpcSchema.ContainerLogsReply{}, nil
-		},
 		ImageListFn: func(_ context.Context, _ rpcSchema.ImageQueryArgs) (rpcSchema.ImageQueryReply, error) {
 			return rpcSchema.ImageQueryReply{}, nil
 		},
@@ -69,9 +66,6 @@ func newFakeContainerRepoWithDefaults() *testutil.FakeContainerRepo {
 		},
 		ImageImportFn: func(_ context.Context, _ rpcSchema.ImageImportArgs) error {
 			return nil
-		},
-		ImageExportFn: func(_ context.Context, _ rpcSchema.ImageExportArgs) (rpcSchema.ImageExportReply, error) {
-			return rpcSchema.ImageExportReply{}, nil
 		},
 		ImageDeleteFn: func(_ context.Context, _ rpcSchema.ImageDeleteArgs) error {
 			return nil

@@ -30,7 +30,6 @@ type IHostRepo interface {
 	NetUsage(context.Context, rpcSchema.NetUsageArgs) (rpcSchema.NetUsageReply, error)
 
 	FilesSearch(context.Context, rpcSchema.FilesSearchArgs) (rpcSchema.FilesSearchReply, error)
-	FileUpload(context.Context, rpcSchema.FileUploadArgs) error
 	FileDownload(context.Context, rpcSchema.FileDownloadArgs) (rpcSchema.FileDownloadReply, error)
 	FileDelete(context.Context, rpcSchema.FileDeleteArgs) error
 	FileCreate(context.Context, rpcSchema.FileCreateArgs) error
@@ -64,7 +63,7 @@ func (h *HostRepo) agentDB(ctx context.Context) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return h.DB.DB.Where("agent_id = ?", agentID), nil
+	return h.DB.Where("agent_id = ?", agentID), nil
 }
 
 // ── Monitoring queries (local DB) ──
@@ -167,11 +166,11 @@ func (h *HostRepo) DiskInfo(ctx context.Context, args rpcSchema.DiskInfoArgs) (r
 	if err != nil {
 		return rpcSchema.DiskInfoReply{}, err
 	}
-	latest := h.DB.DB.Model(&model.MonitorDisk{}).
+	latest := h.DB.Model(&model.MonitorDisk{}).
 		Where("agent_id = ?", agentID).
 		Select("agent_id, device, MAX(timestamp) AS timestamp").
 		Group("agent_id, device")
-	query := h.DB.DB.Model(&model.MonitorDisk{}).Where("m_disk.agent_id = ?", agentID)
+	query := h.DB.Model(&model.MonitorDisk{}).Where("m_disk.agent_id = ?", agentID)
 	if err := query.
 		Joins("JOIN (?) latest ON latest.agent_id = m_disk.agent_id AND latest.device = m_disk.device AND latest.timestamp = m_disk.timestamp", latest).
 		Order("m_disk.device asc").
@@ -249,11 +248,6 @@ func (h *HostRepo) FilesSearch(ctx context.Context, args rpcSchema.FilesSearchAr
 	var reply rpcSchema.FilesSearchReply
 	err := h.RPCClient.Call(ctx, "FilesSearch", args, &reply)
 	return reply, err
-}
-
-func (h *HostRepo) FileUpload(ctx context.Context, args rpcSchema.FileUploadArgs) error {
-	var reply rpcSchema.FileUploadReply
-	return h.RPCClient.Call(ctx, "FileUpload", args, &reply)
 }
 
 func (h *HostRepo) FileDownload(ctx context.Context, args rpcSchema.FileDownloadArgs) (rpcSchema.FileDownloadReply, error) {

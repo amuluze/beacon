@@ -57,7 +57,7 @@ func (c *Client) Push(ctx context.Context, args rpcSchema.MonitorReportArgs) err
 		slog.Error("report push failed", "agent", args.AgentID, "url", c.url, "error", err)
 		return fmt.Errorf("http post: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("server returned %d", resp.StatusCode)

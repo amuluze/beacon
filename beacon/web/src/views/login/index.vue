@@ -3,9 +3,12 @@ import { getUserInfo, login } from '@/api/auth'
 import useStore from '@/store'
 
 import type { LoginForm } from '@/interface/auth'
+import type { FormInstance } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 
 const { t, locale } = useI18n()
+
+const loginFormRef = ref<FormInstance>()
 
 const loginForm = reactive<LoginForm>({
   username: '',
@@ -28,17 +31,31 @@ function passwordValidator(_: any, value: string, callback: any) {
 
 const store = useStore()
 const router = useRouter()
+const submitting = shallowRef(false)
 async function handleLogin() {
+  // 防重入：回车既触发 @keyup.enter 又触发 form @submit.prevent，避免重复提交
+  if (submitting.value)
+    return
+  if (!loginFormRef.value)
+    return
+  submitting.value = true
   try {
+    // 提交前先做表单校验（用户名必填、密码长度），校验不通过则不发起登录请求
+    await loginFormRef.value.validate()
     const { data } = await login({ ...loginForm })
     store.user.setToken(data.access_token, data.refresh_token)
     const userInfo = await getUserInfo()
     store.user.setUserInfo(userInfo.data.username, userInfo.data.status, userInfo.data.is_admin)
-    await router.replace('/monitor/host')
+    // 每次认证会话都重新确认可用 Agent，避免沿用上一个会话的目标节点。
+    store.agent.clear()
+    await router.replace('/monitor')
   }
   catch (error) {
     if (error instanceof Error)
       ElMessage.error(error.message)
+  }
+  finally {
+    submitting.value = false
   }
 }
 
@@ -97,20 +114,20 @@ function changeLanguage(lang: string) {
                     {{ $t('login.login') }}
                 </h1>
 
-                <el-form :model="loginForm" :rules="loginFormRules" class="am-login__form">
+                <el-form ref="loginFormRef" :model="loginForm" :rules="loginFormRules" class="am-login__form" @submit.prevent="handleLogin">
                     <el-form-item prop="username">
                         <div class="am-login__field">
                             <svg-icon class="am-login__field-icon" icon-class="user" size="16px" />
-                            <el-input v-model="loginForm.username" size="large" :placeholder="t('login.usernamePlaceholder')" />
+                            <el-input v-model="loginForm.username" size="large" :placeholder="t('login.usernamePlaceholder')" @keyup.enter="handleLogin" />
                         </div>
                     </el-form-item>
                     <el-form-item prop="password">
                         <div class="am-login__field">
                             <svg-icon class="am-login__field-icon" icon-class="lock" size="16px" />
-                            <el-input v-model="loginForm.password" size="large" type="password" :placeholder="t('login.passwordPlaceholder')" show-password />
+                            <el-input v-model="loginForm.password" size="large" type="password" :placeholder="t('login.passwordPlaceholder')" show-password @keyup.enter="handleLogin" />
                         </div>
                     </el-form-item>
-                    <el-button class="am-login__btn" size="large" type="primary" @click.prevent="handleLogin">
+                    <el-button class="am-login__btn" size="large" type="primary" native-type="submit" :loading="submitting">
                         {{ $t('login.login') }}
                     </el-button>
                 </el-form>

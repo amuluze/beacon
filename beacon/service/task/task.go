@@ -123,7 +123,9 @@ func (t *Task) CPUAlarmTask(ctx context.Context) error {
 		for _, item := range cpuData {
 			total += item.CPUPercent
 		}
-		if len(cpuData) > 0 && int(utils.Decimal(total/float64(len(cpuData)))*100) > threshold.Threshold {
+		// Collia/gopsutil 上报的 CPUPercent 已经是 0-100 的百分数，
+		// 这里直接与配置阈值比较，禁止再次乘以 100。
+		if len(cpuData) > 0 && utils.Decimal(total/float64(len(cpuData))) > float64(threshold.Threshold) {
 			msg := fmt.Sprintf("[%s] %s CPU 使用率连续 %d 分钟超过 %d%%", agentID, t.hostname(ctx, agentID), threshold.Duration, threshold.Threshold)
 			if err := t.triggerAlarm("cpu:"+agentID, msg, agentID); err != nil {
 				return err
@@ -240,6 +242,9 @@ func (t *Task) ServiceTask(ctx context.Context) error {
 // agentID), and sends an email notification once per cache window so the
 // same Agent does not flood the receiver with duplicate alerts.
 func (t *Task) triggerAlarm(key string, msg string, agentID string) error {
+	if _, ok := t.cache.Get(key); ok {
+		return nil
+	}
 	return t.db.RunInTransaction(func(tx *gorm.DB) error {
 		operateLog := model.Audit{
 			Username: "system",
@@ -248,9 +253,6 @@ func (t *Task) triggerAlarm(key string, msg string, agentID string) error {
 		}
 		if err := tx.Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
 			return err
-		}
-		if _, ok := t.cache.Get(key); ok {
-			return nil
 		}
 		if err := t.sendMail(msg); err != nil {
 			return err

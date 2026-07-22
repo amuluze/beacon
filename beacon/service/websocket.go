@@ -50,15 +50,3 @@ func (l *LoggerHandler) Handler(c *websocket.Conn) {
 		}
 	}
 }
-
-type TermHandler struct{}
-
-func NewTermHandler() *TermHandler {
-	return &TermHandler{}
-}
-
-func (th *TermHandler) Handler(conn *websocket.Conn) {
-	const msg = "terminal sessions must be executed by collia agent; server-side ssh execution is disabled"
-	_ = conn.WriteMessage(websocket.TextMessage, []byte(msg))
-	_ = conn.WriteControl(websocket.CloseMessage, []byte{}, time.Now().Add(time.Second))
-}

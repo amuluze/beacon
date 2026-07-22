@@ -29,10 +29,6 @@ export interface MailUpdateArgs {
     receiver: string
 }
 
-export interface MailDeleteArgs {
-    id: number
-}
-
 export interface MailTestArgs {
     receiver: string
 }

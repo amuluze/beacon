@@ -40,13 +40,18 @@ func (a *Task) ContainerTask() []*ContainerReport {
 	}
 	var containers []*ContainerReport
 	for _, info := range cs {
-		cpuPercent, err := a.manager.GetContainerCpu(ctx, info.ID[:6])
-		if err != nil {
-			slog.Error("get container cpu failed", "id", info.ID[:6], "error", err)
-		}
-		memPercent, used, limit, err := a.manager.GetContainerMem(ctx, info.ID[:6])
-		if err != nil {
-			slog.Error("get container mem failed", "id", info.ID[:6], "error", err)
+		var cpuPercent, memPercent, used, limit float64
+		if info.State == "running" {
+			statsCtx, statsCancel := context.WithTimeout(context.Background(), 15*time.Second)
+			cpuPercent, err = a.manager.GetContainerCpu(statsCtx, info.ID[:6])
+			if err != nil {
+				slog.Error("get container cpu failed", "id", info.ID[:6], "error", err)
+			}
+			memPercent, used, limit, err = a.manager.GetContainerMem(statsCtx, info.ID[:6])
+			if err != nil {
+				slog.Error("get container mem failed", "id", info.ID[:6], "error", err)
+			}
+			statsCancel()
 		}
 		labels, _ := json.Marshal(info.Labels)
 		containers = append(containers, &ContainerReport{

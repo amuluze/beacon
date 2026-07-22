@@ -18,7 +18,7 @@
  *   confirmDelete(row.id)
  */
 import ConfirmDialog from '@/components/ConfirmDialog/index.vue'
-import { createVNode, ref, render } from 'vue'
+import { createVNode, getCurrentInstance, render } from 'vue'
 
 export interface ConfirmCommandOptions {
     title?: string
@@ -32,7 +32,6 @@ export interface ConfirmCommandOptions {
 interface LastInstance {
     vnode: ReturnType<typeof createVNode>
     container: HTMLElement
-    dialogRef: any
 }
 
 let lastInstance: LastInstance | null = null
@@ -48,37 +47,37 @@ function ensureContainer(): HTMLElement {
 }
 
 export function useConfirmCommand(options: ConfirmCommandOptions) {
+    const appContext = getCurrentInstance()?.appContext ?? null
+
     return function open(id?: string) {
         const container = ensureContainer()
 
-        const dialogRef = ref<{ confirm: () => void; close: () => void } | null>(null)
-
         const vnode = createVNode(ConfirmDialog, {
-            visible: true,
-            title: options.title,
-            message: options.message,
-            i18nPrefix: options.i18nPrefix || 'common',
-            confirmation: true,
-            width: '500px',
+            'visible': true,
+            'title': options.title,
+            'message': options.message,
+            'i18nPrefix': options.i18nPrefix || 'common',
+            'confirmation': true,
+            'width': '500px',
             id,
             'onUpdate:visible': (visible: boolean) => {
-                if (!visible) cleanup()
+                if (!visible)
+                    cleanup()
             },
-            onConfirm: async () => {
+            'onConfirm': async () => {
                 try {
                     await options.action(id)
                 }
                 finally {
-                    dialogRef.value?.close()
                     options.onResolved?.()
                     cleanup()
                 }
             },
-            ref: dialogRef,
         })
+        vnode.appContext = appContext
 
         render(vnode, container)
-        lastInstance = { vnode, container, dialogRef }
+        lastInstance = { vnode, container }
     }
 }
 

@@ -193,7 +193,6 @@ type FakeMailRepo struct {
 	MailQueryFn  func(ctx context.Context) (model.Mail, error)
 	MailCreateFn func(ctx context.Context, args schema.MailCreateArgs) error
 	MailUpdateFn func(ctx context.Context, args schema.MailUpdateArgs) error
-	MailDeleteFn func(ctx context.Context, args schema.MailDeleteArgs) error
 	MailTestFn   func(ctx context.Context, args schema.MailTestArgs) error
 }
 
@@ -202,7 +201,6 @@ func NewFakeMailRepo() *FakeMailRepo {
 		MailQueryFn:  func(ctx context.Context) (model.Mail, error) { return model.Mail{}, nil },
 		MailCreateFn: func(ctx context.Context, args schema.MailCreateArgs) error { return nil },
 		MailUpdateFn: func(ctx context.Context, args schema.MailUpdateArgs) error { return nil },
-		MailDeleteFn: func(ctx context.Context, args schema.MailDeleteArgs) error { return nil },
 		MailTestFn:   func(ctx context.Context, args schema.MailTestArgs) error { return nil },
 	}
 }
@@ -213,9 +211,6 @@ func (f *FakeMailRepo) MailCreate(ctx context.Context, args schema.MailCreateArg
 }
 func (f *FakeMailRepo) MailUpdate(ctx context.Context, args schema.MailUpdateArgs) error {
 	return f.MailUpdateFn(ctx, args)
-}
-func (f *FakeMailRepo) MailDelete(ctx context.Context, args schema.MailDeleteArgs) error {
-	return f.MailDeleteFn(ctx, args)
 }
 func (f *FakeMailRepo) MailTest(ctx context.Context, args schema.MailTestArgs) error {
 	return f.MailTestFn(ctx, args)
@@ -264,7 +259,6 @@ type FakeHostRepo struct {
 	DiskUsageFn   func(context.Context, rpcSchema.DiskUsageArgs) (rpcSchema.DiskUsageReply, error)
 	NetUsageFn    func(context.Context, rpcSchema.NetUsageArgs) (rpcSchema.NetUsageReply, error)
 	FilesSearchFn func(context.Context, rpcSchema.FilesSearchArgs) (rpcSchema.FilesSearchReply, error)
-	FileUploadFn  func(context.Context, rpcSchema.FileUploadArgs) error
 	FileDownloadFn func(context.Context, rpcSchema.FileDownloadArgs) (rpcSchema.FileDownloadReply, error)
 	FileDeleteFn  func(context.Context, rpcSchema.FileDeleteArgs) error
 	FileCreateFn  func(context.Context, rpcSchema.FileCreateArgs) error
@@ -306,9 +300,6 @@ func (f *FakeHostRepo) NetUsage(ctx context.Context, args rpcSchema.NetUsageArgs
 }
 func (f *FakeHostRepo) FilesSearch(ctx context.Context, args rpcSchema.FilesSearchArgs) (rpcSchema.FilesSearchReply, error) {
 	return f.FilesSearchFn(ctx, args)
-}
-func (f *FakeHostRepo) FileUpload(ctx context.Context, args rpcSchema.FileUploadArgs) error {
-	return f.FileUploadFn(ctx, args)
 }
 func (f *FakeHostRepo) FileDownload(ctx context.Context, args rpcSchema.FileDownloadArgs) (rpcSchema.FileDownloadReply, error) {
 	return f.FileDownloadFn(ctx, args)
@@ -363,13 +354,11 @@ type FakeContainerRepo struct {
 	ContainerStartFn         func(ctx context.Context, args rpcSchema.ContainerStartArgs) error
 	ContainerStopFn          func(ctx context.Context, args rpcSchema.ContainerStopArgs) error
 	ContainerRestartFn       func(ctx context.Context, args rpcSchema.ContainerRestartArgs) error
-	ContainerLogsFn          func(ctx context.Context, args rpcSchema.ContainerLogsArgs) (rpcSchema.ContainerLogsReply, error)
 	ImageListFn              func(ctx context.Context, args rpcSchema.ImageQueryArgs) (rpcSchema.ImageQueryReply, error)
 	ImageCountFn             func(ctx context.Context, args rpcSchema.ImageCountArgs) (rpcSchema.ImageCountReply, error)
 	ImagePullFn              func(ctx context.Context, args rpcSchema.ImagePullArgs) error
 	ImageTagFn               func(ctx context.Context, args rpcSchema.ImageTagArgs) error
 	ImageImportFn            func(ctx context.Context, args rpcSchema.ImageImportArgs) error
-	ImageExportFn            func(ctx context.Context, args rpcSchema.ImageExportArgs) (rpcSchema.ImageExportReply, error)
 	ImageDeleteFn            func(ctx context.Context, args rpcSchema.ImageDeleteArgs) error
 	ImagesPruneFn            func(ctx context.Context) error
 	NetworkListFn            func(ctx context.Context, args rpcSchema.NetworkQueryArgs) (rpcSchema.NetworkQueryReply, error)
@@ -413,9 +402,6 @@ func (f *FakeContainerRepo) ContainerStop(ctx context.Context, args rpcSchema.Co
 func (f *FakeContainerRepo) ContainerRestart(ctx context.Context, args rpcSchema.ContainerRestartArgs) error {
 	return f.ContainerRestartFn(ctx, args)
 }
-func (f *FakeContainerRepo) ContainerLogs(ctx context.Context, args rpcSchema.ContainerLogsArgs) (rpcSchema.ContainerLogsReply, error) {
-	return f.ContainerLogsFn(ctx, args)
-}
 func (f *FakeContainerRepo) ImageList(ctx context.Context, args rpcSchema.ImageQueryArgs) (rpcSchema.ImageQueryReply, error) {
 	return f.ImageListFn(ctx, args)
 }
@@ -430,9 +416,6 @@ func (f *FakeContainerRepo) ImageTag(ctx context.Context, args rpcSchema.ImageTa
 }
 func (f *FakeContainerRepo) ImageImport(ctx context.Context, args rpcSchema.ImageImportArgs) error {
 	return f.ImageImportFn(ctx, args)
-}
-func (f *FakeContainerRepo) ImageExport(ctx context.Context, args rpcSchema.ImageExportArgs) (rpcSchema.ImageExportReply, error) {
-	return f.ImageExportFn(ctx, args)
 }
 func (f *FakeContainerRepo) ImageDelete(ctx context.Context, args rpcSchema.ImageDeleteArgs) error {
 	return f.ImageDeleteFn(ctx, args)

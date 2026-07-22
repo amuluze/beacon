@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"beacon/pkg/errors"
 	"beacon/pkg/utils/hash"
 	"beacon/pkg/utils/uuid"
 	"beacon/service/model"
@@ -122,11 +123,16 @@ func TestAuthRepoPassUpdate(t *testing.T) {
 	}
 
 	// Wrong old password should fail.
-	if err := repo.PassUpdate(ctx, schema.PasswordUpdateArgs{
+	err := repo.PassUpdate(ctx, schema.PasswordUpdateArgs{
 		Username:    "update-alice",
 		OldPassword: "wrong-pass",
 		NewPassword: "another-pass",
-	}); err == nil {
+	})
+	if err == nil {
 		t.Fatal("update with wrong old password should fail")
+	}
+	serviceErr, ok := err.(errors.Error)
+	if !ok || serviceErr.Status != 400 {
+		t.Fatalf("wrong old password error = %#v, want status 400", err)
 	}
 }

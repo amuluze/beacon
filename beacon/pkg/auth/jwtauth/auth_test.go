@@ -17,9 +17,8 @@ import (
 // ── fake Storer (project convention: manual fake, no mock framework) ──
 
 type fakeStore struct {
-	mu     sync.Mutex
-	data   map[string]bool
-	delete bool // if true, Set deletes the key (simulates DestroyToken)
+	mu   sync.Mutex
+	data map[string]bool
 }
 
 func newFakeStore() *fakeStore {

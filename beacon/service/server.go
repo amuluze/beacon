@@ -67,7 +67,11 @@ func Init(ctx context.Context, opts ...Option) (func(), error) {
 	}
 
 	// 初始化日志
-	slog.SetDefault(injector.Logger.Logger)
+	// 注：vendored 版 logger（common/logger）底层为 zap，不再桥接到标准库 slog；
+	// 业务日志统一走 injector.Logger，slog 包级调用保持默认输出。
+
+	// 安装统计上报不参与启动成败判定。
+	go ReportInstallation(ctx, injector.Config)
 
 	// 初始化预设数据
 	injector.Prepare.Init(injector.App)
@@ -76,10 +80,21 @@ func Init(ctx context.Context, opts ...Option) (func(), error) {
 	timedTask := injector.Task
 	go timedTask.Run()
 
+	// 版本检查（仅当配置启用时）。失败不影响启动。
+	var versionChecker *VersionChecker
+	if injector.Config.Update.Enable {
+		versionChecker = NewVersionChecker(injector.Config)
+		SetGlobalVersionChecker(versionChecker)
+		go versionChecker.Run()
+	}
+
 	httpServerCleanFunc := InitHttpServer(ctx, injector.Config, injector.App)
 
 	return func() {
 		timedTask.Stop()
+		if versionChecker != nil {
+			versionChecker.Stop()
+		}
 		httpServerCleanFunc()
 		cleanFunc()
 	}, nil

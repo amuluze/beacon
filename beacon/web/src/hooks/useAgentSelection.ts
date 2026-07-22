@@ -7,6 +7,7 @@ interface UseAgentSelectionOptions {
 }
 
 let agentLoadPromise: Promise<string> | null = null
+let agentLoadGeneration = 0
 
 export function useAgentSelection(options: UseAgentSelectionOptions = {}) {
     const store = useStore()
@@ -27,22 +28,31 @@ export function useAgentSelection(options: UseAgentSelectionOptions = {}) {
     })
 
     async function loadAgents(): Promise<string> {
-        if (agentLoadPromise)
+        if (agentLoadPromise && store.agent.loading)
             return agentLoadPromise
 
+        // clear() 会把 loading 复位；此时仍存在的 Promise 属于上一个认证会话，
+        // 不能阻止新会话重新请求 Agent 列表。
+        agentLoadPromise = null
         store.agent.setLoading(true)
-        agentLoadPromise = (async () => {
+        const loadGeneration = ++agentLoadGeneration
+        const currentLoad = (async () => {
             try {
                 const { data } = await queryAgentList()
+                if (loadGeneration !== agentLoadGeneration || !store.agent.loading)
+                    return store.agent.selectedAgentID
                 store.agent.setAgents(data || [])
                 return store.agent.selectedAgentID
             }
             finally {
-                store.agent.setLoading(false)
-                agentLoadPromise = null
+                if (loadGeneration === agentLoadGeneration) {
+                    store.agent.setLoading(false)
+                    agentLoadPromise = null
+                }
             }
         })()
-        return agentLoadPromise
+        agentLoadPromise = currentLoad
+        return currentLoad
     }
 
     async function ensureSelectedAgent() {

@@ -116,23 +116,6 @@ func SanitizePathWithin(path, root string) (string, error) {
 	return cleaned, nil
 }
 
-func FileExists(path string) (bool, error) {
-	stat, err := os.Stat(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		} else {
-			return false, err
-		}
-	} else {
-		if stat.IsDir() {
-			return false, fmt.Errorf("[%s] is a directory", path)
-		} else {
-			return true, nil
-		}
-	}
-}
-
 func CopyFile(src, dst string) (int64, error) {
 	src, err := SanitizePath(src)
 	if err != nil {
@@ -155,13 +138,13 @@ func CopyFile(src, dst string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer source.Close()
+	defer func() { _ = source.Close() }()
 
 	destination, err := os.Create(dst) //#nosec G304 -- path sanitized by SanitizePath
 	if err != nil {
 		return 0, err
 	}
-	defer destination.Close()
+	defer func() { _ = destination.Close() }()
 
 	nBytes, err := io.Copy(destination, source)
 	return nBytes, err

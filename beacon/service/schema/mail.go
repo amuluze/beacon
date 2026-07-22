@@ -29,10 +29,6 @@ type MailUpdateArgs struct {
 	Receiver string `json:"receiver" validate:"omitempty,email,lte=256"`
 }
 
-type MailDeleteArgs struct {
-	ID uint `json:"id" validate:"required"`
-}
-
 type MailTestArgs struct {
 	Receiver string `json:"receiver" validate:"required"`
 }

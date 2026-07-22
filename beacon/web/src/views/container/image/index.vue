@@ -65,15 +65,15 @@ const locale = computed(() => {
     <div class="am-container">
         <div class="am-table-operator">
             <div class="am-table-operator__left">
-                <el-button type="primary" plain size="small" :disabled="isAgentEmpty" @click="pullImage({ title: 'image.pullImage', imageName: '', update: search })">
+                <el-button type="primary" plain size="small" :disabled="!selectedAgentID" @click="pullImage({ title: 'image.pullImage', imageName: '', update: search })">
                     <svg-icon icon-class="download" />
                     {{ t('image.pullImage') }}
                 </el-button>
-                <el-button type="primary" plain size="small" :disabled="isAgentEmpty" @click="importImage({ title: 'image.importImage', update: importImage })">
+                <el-button type="primary" plain size="small" :disabled="!selectedAgentID" @click="importImage({ title: 'image.importImage', update: search })">
                     <svg-icon icon-class="upload" />
                     {{ t('image.importImage') }}
                 </el-button>
-                <el-button type="warning" plain size="small" :disabled="isAgentEmpty" @click="pruneImage({ title: 'image.pruneImage', update: pruneImage })">
+                <el-button type="warning" plain size="small" :disabled="!selectedAgentID" @click="pruneImage({ title: 'image.pruneImage', update: search })">
                     <svg-icon icon-class="delete" />
                     {{ t('image.pruneImage') }}
                 </el-button>
@@ -98,7 +98,7 @@ const locale = computed(() => {
                 <el-table-column prop="size" :label="t('image.imageSize')" align="center" min-width="120" />
                 <el-table-column :label="t('image.operator')" width="160" fixed="right" align="center">
                     <template #default="scope">
-                        <el-button type="danger" plain size="small" :disabled="isAgentEmpty" @click="deleteImage({ title: 'image.deleteImage', id: scope.row.id, update: search })">
+                        <el-button type="danger" plain size="small" :disabled="!selectedAgentID || scope.row.number > 0" @click="deleteImage({ title: 'image.deleteImage', id: scope.row.id, update: search })">
                             <svg-icon icon-class="delete" />
                             {{ t('image.delete') }}
                         </el-button>

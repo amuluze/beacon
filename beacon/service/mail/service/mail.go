@@ -22,7 +22,6 @@ type IMailService interface {
 	MailQuery(context.Context) (schema.Mail, error)
 	MailCreate(context.Context, schema.MailCreateArgs) error
 	MailUpdate(context.Context, schema.MailUpdateArgs) error
-	MailDelete(context.Context, schema.MailDeleteArgs) error
 	MailTest(context.Context, schema.MailTestArgs) error
 }
 
@@ -57,10 +56,6 @@ func (m *MailService) MailCreate(ctx context.Context, args schema.MailCreateArgs
 
 func (m *MailService) MailUpdate(ctx context.Context, args schema.MailUpdateArgs) error {
 	return m.MailRepository.MailUpdate(ctx, args)
-}
-
-func (m *MailService) MailDelete(ctx context.Context, args schema.MailDeleteArgs) error {
-	return m.MailRepository.MailDelete(ctx, args)
 }
 
 func (m *MailService) MailTest(ctx context.Context, args schema.MailTestArgs) error {

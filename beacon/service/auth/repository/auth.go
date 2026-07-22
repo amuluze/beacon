@@ -58,7 +58,7 @@ func (a *AuthRepo) PassUpdate(ctx context.Context, args schema.PasswordUpdateArg
 		}
 
 		if err := hash.BcryptVerify(args.OldPassword, user.Password); err != nil {
-			return errors.New401Error("invalid password")
+			return errors.New400Error("invalid password")
 		}
 
 		hashed, err := hash.BcryptHash(args.NewPassword)

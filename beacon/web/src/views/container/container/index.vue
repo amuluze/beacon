@@ -70,7 +70,7 @@ const locale = computed(() => {
 <template>
     <div class="am-container">
         <div class="am-table-operator">
-            <el-button type="primary" plain size="small" :disabled="isAgentEmpty" @click="addContainer({ title: 'container.addContainer', update: search })">
+            <el-button type="primary" plain size="small" :disabled="!selectedAgentID" @click="addContainer({ title: 'container.addContainer', update: search })">
                 <svg-icon icon-class="add" />
                 {{ t('container.addContainer') }}
             </el-button>
@@ -109,37 +109,37 @@ const locale = computed(() => {
                 <!--                <el-table-column prop="memory_limit" :label="t('container.memLimited')" align="center" min-width="160" show-overflow-tooltip /> -->
                 <el-table-column :label="t('container.operator')" width="190" fixed="right" align="center">
                     <template #default="scope">
-                        <el-button type="primary" size="small" text :disabled="isAgentEmpty || isProtectedContainerName(scope.row.name)" @click="startContainer({ title: 'container.startContainer', id: scope.row.id, update: search })">
+                        <el-button type="primary" size="small" text :disabled="!selectedAgentID || isProtectedContainerName(scope.row.name)" @click="startContainer({ title: 'container.startContainer', id: scope.row.id, update: search })">
                             <svg-icon icon-class="start" />
                             {{ t('container.start') }}
                         </el-button>
                         <el-dropdown>
-                            <el-button type="primary" size="small" text>
+                            <el-button type="primary" size="small" text :disabled="!selectedAgentID">
                                 <svg-icon icon-class="more" />
                                 {{ t('container.more') }}
                             </el-button>
                             <template #dropdown>
                                 <el-dropdown-menu>
                                     <el-dropdown-item>
-                                        <el-button type="primary" size="small" text :disabled="isAgentEmpty || isProtectedContainerName(scope.row.name)" @click="editContainer({ title: 'container.editContainer', container: scope.row, update: search })">
+                                        <el-button type="primary" size="small" text :disabled="!selectedAgentID || isProtectedContainerName(scope.row.name)" @click="editContainer({ title: 'container.editContainer', container: scope.row, update: search })">
                                             <svg-icon icon-class="edit" />
                                             {{ t('container.edit') }}
                                         </el-button>
                                     </el-dropdown-item>
                                     <el-dropdown-item>
-                                        <el-button type="warning" size="small" text :disabled="isAgentEmpty || isProtectedContainerName(scope.row.name)" @click="stopContainer({ title: 'container.stopContainer', id: scope.row.id, update: search })">
+                                        <el-button type="warning" size="small" text :disabled="!selectedAgentID || isProtectedContainerName(scope.row.name)" @click="stopContainer({ title: 'container.stopContainer', id: scope.row.id, update: search })">
                                             <svg-icon icon-class="stop" />
                                             {{ t('container.stop') }}
                                         </el-button>
                                     </el-dropdown-item>
                                     <el-dropdown-item>
-                                        <el-button type="warning" size="small" text :disabled="isAgentEmpty || isProtectedContainerName(scope.row.name)" @click="restartContainer({ title: 'container.restartContainer', id: scope.row.id, update: search })">
+                                        <el-button type="warning" size="small" text :disabled="!selectedAgentID || isProtectedContainerName(scope.row.name)" @click="restartContainer({ title: 'container.restartContainer', id: scope.row.id, update: search })">
                                             <svg-icon icon-class="update" />
                                             {{ t('container.restart') }}
                                         </el-button>
                                     </el-dropdown-item>
                                     <el-dropdown-item>
-                                        <el-button type="danger" size="small" text :disabled="isAgentEmpty || isProtectedContainerName(scope.row.name)" @click="deleteContainer({ title: 'container.deleteContainer', id: scope.row.id, update: search })">
+                                        <el-button type="danger" size="small" text :disabled="!selectedAgentID || isProtectedContainerName(scope.row.name)" @click="deleteContainer({ title: 'container.deleteContainer', id: scope.row.id, update: search })">
                                             <svg-icon icon-class="delete" />
                                             {{ t('container.delete') }}
                                         </el-button>
