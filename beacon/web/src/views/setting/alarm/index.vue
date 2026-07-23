@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { queryMail, testMail } from '@/api/mail'
+import { queryDingTalk, testDingTalk } from '@/api/dingtalk'
 import { info } from '@/components/Message/message.ts'
 
 import type { MailTestArgs } from '@/interface/mail.ts'
 import type { AlarmThreshold, EmailSetting } from '@/interface/alarm.ts'
+import type { DingTalkSetting } from '@/interface/dingtalk'
 
 import useCommandComponent from '@/hooks/useCommandComponent.ts'
 import EditEmailSetting from '@/views/setting/alarm/components/EditEmailSetting.vue'
+import EditDingTalkSetting from '@/views/setting/alarm/components/EditDingTalkSetting.vue'
 import EditCPUThreshold from '@/views/setting/alarm/components/EditCPUThreshold.vue'
 import EditMemThreshold from '@/views/setting/alarm/components/EditMemThreshold.vue'
 import EditDiskThreshold from '@/views/setting/alarm/components/EditDiskThreshold.vue'
@@ -19,6 +22,11 @@ import IconHardDrive from '~icons/lucide/hard-drive'
 import IconMailCheck from '~icons/lucide/mail-check'
 import IconMemoryStick from '~icons/lucide/memory-stick'
 import IconPencil from '~icons/lucide/pencil'
+import IconWebhook from '~icons/lucide/webhook'
+
+const { t } = useI18n()
+const store = useStore()
+const locale = computed(() => store.app.language)
 
 const emailSetting = reactive<EmailSetting>({
   id: 0,
@@ -30,6 +38,36 @@ const emailSetting = reactive<EmailSetting>({
 })
 
 const editEmailSetting = useCommandComponent(EditEmailSetting)
+
+const dingTalkSetting = reactive<DingTalkSetting>({
+  id: 0,
+  enabled: false,
+  webhook_masked: '',
+  webhook_configured: false,
+  secret_configured: false,
+  at_all: false,
+})
+const editDingTalkSetting = useCommandComponent(EditDingTalkSetting)
+const dingTalkTesting = shallowRef(false)
+
+async function loadDingTalkSetting() {
+  const response = await queryDingTalk()
+  Object.assign(dingTalkSetting, response.data)
+}
+
+async function dingTalkTest() {
+  dingTalkTesting.value = true
+  try {
+    await testDingTalk()
+    info(t('setting.dingTalkTestSuccess'))
+  }
+  catch {
+    // 请求拦截器负责展示服务端错误，失败时不显示成功提示。
+  }
+  finally {
+    dingTalkTesting.value = false
+  }
+}
 
 const testReceiver = shallowRef('')
 async function mailTest() {
@@ -103,16 +141,12 @@ async function loadAlarmThresholds() {
 }
 
 onMounted(async () => {
-  await Promise.all([loadMailSetting(), loadAlarmThresholds()])
+  await Promise.all([loadMailSetting(), loadDingTalkSetting(), loadAlarmThresholds()])
 })
 
 const editCPUThreshold = useCommandComponent(EditCPUThreshold)
 const editMemThreshold = useCommandComponent(EditMemThreshold)
 const editDiskThreshold = useCommandComponent(EditDiskThreshold)
-
-const { t } = useI18n()
-const store = useStore()
-const locale = computed(() => store.app.language)
 </script>
 
 <template>
@@ -162,6 +196,51 @@ const locale = computed(() => store.app.language)
         </article>
 
         <article class="settings-card">
+            <header class="settings-card__header">
+                <span class="settings-card__icon settings-card__icon--success"><IconWebhook /></span>
+                <div class="settings-card__heading">
+                    <h3 class="settings-card__title">
+                        {{ t('setting.dingTalkSetting') }}
+                    </h3>
+                    <p class="settings-card__description">
+                        {{ t('setting.dingTalkSettingTips') }}
+                    </p>
+                </div>
+            </header>
+
+            <div class="settings-card__value-row">
+                <div class="settings-card__meta">
+                    <span class="settings-card__label">{{ t('setting.dingTalkWebhook') }}</span>
+                    <span class="settings-card__value">{{ dingTalkSetting.webhook_masked || t('setting.notConfigured') }}</span>
+                </div>
+                <el-button
+                    plain
+                    circle
+                    :aria-label="t('setting.edit')"
+                    :title="t('setting.edit')"
+                    @click="editDingTalkSetting({ title: 'setting.dingTalkSetting', setting: dingTalkSetting, onSaved: loadDingTalkSetting })"
+                >
+                    <IconPencil />
+                </el-button>
+            </div>
+
+            <div class="settings-card__footer">
+                <el-tag :type="dingTalkSetting.enabled ? 'success' : 'info'">
+                    {{ dingTalkSetting.enabled ? t('setting.enabled') : t('setting.disabled') }}
+                </el-tag>
+                <el-button
+                    plain
+                    type="primary"
+                    :disabled="!dingTalkSetting.webhook_configured"
+                    :loading="dingTalkTesting"
+                    @click="dingTalkTest"
+                >
+                    {{ t('setting.testSend') }}
+                </el-button>
+            </div>
+        </article>
+
+        <article class="settings-card settings-card--wide">
             <header class="settings-card__header">
                 <span class="settings-card__icon settings-card__icon--warning"><IconBellRing /></span>
                 <div class="settings-card__heading">

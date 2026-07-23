@@ -1,14 +1,17 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { EmailSetting } from '@/interface/alarm'
+import type { DingTalkSetting } from '@/interface/dingtalk'
 
 import EditCPUThreshold from './EditCPUThreshold.vue'
 import EditEmailSetting from './EditEmailSetting.vue'
+import EditDingTalkSetting from './EditDingTalkSetting.vue'
 
 const mocks = vi.hoisted(() => ({
     updateAlarmThreshold: vi.fn(),
     updateMail: vi.fn(),
     createMail: vi.fn(),
+    updateDingTalk: vi.fn(),
     success: vi.fn(),
     info: vi.fn(),
 }))
@@ -19,6 +22,9 @@ vi.mock('@/api/alarm', () => ({
 vi.mock('@/api/mail', () => ({
     createMail: mocks.createMail,
     updateMail: mocks.updateMail,
+}))
+vi.mock('@/api/dingtalk', () => ({
+    updateDingTalk: mocks.updateDingTalk,
 }))
 vi.mock('@/components/Message/message.ts', () => ({
     success: mocks.success,
@@ -31,7 +37,11 @@ vi.mock('vue-i18n', () => ({
 const stubs = {
     'el-drawer': { template: '<div><slot /><slot name="footer" /></div>', props: ['modelValue', 'size', 'title'] },
     'el-dialog': { template: '<div><slot /><slot name="footer" /></div>', props: ['modelValue', 'width', 'title'] },
-    'el-form': { template: '<form><slot /></form>' },
+    'el-form': {
+        name: 'ElForm',
+        methods: { async validate() { return true } },
+        template: '<form><slot /></form>',
+    },
     'el-form-item': { template: '<label><slot /></label>' },
     'el-input': {
         props: ['modelValue'],
@@ -44,6 +54,16 @@ const stubs = {
     },
     'el-option': { template: '<span />' },
     'el-button': { template: '<button type="button" @click="$emit(\'click\')"><slot /></button>' },
+    'el-switch': {
+        props: ['modelValue'],
+        emits: ['update:modelValue'],
+        template: '<input type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', $event.target.checked)">',
+    },
+    'el-checkbox': {
+        props: ['modelValue'],
+        emits: ['update:modelValue'],
+        template: '<label><input type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', $event.target.checked)"><slot /></label>',
+    },
 }
 
 describe('setting dialogs', () => {
@@ -90,5 +110,32 @@ describe('setting dialogs', () => {
 
         expect(mocks.success).not.toHaveBeenCalled()
         expect(wrapper.emitted('update:visible')).toBeUndefined()
+    })
+
+    it('keeps stored DingTalk credentials when credential inputs are blank', async () => {
+        const setting: DingTalkSetting = {
+            id: 1,
+            enabled: true,
+            webhook_masked: 'https://oapi.dingtalk.com/robot/send?access_token=****oken',
+            webhook_configured: true,
+            secret_configured: true,
+            at_all: false,
+        }
+        const wrapper = mount(EditDingTalkSetting, {
+            props: { visible: true, setting },
+            global: { stubs },
+        })
+
+        await wrapper.findAll('button').at(-1)?.trigger('click')
+        await flushPromises()
+
+        expect(mocks.updateDingTalk).toHaveBeenCalledWith({
+            enabled: true,
+            webhook: '',
+            secret: '',
+            clear_secret: false,
+            at_all: false,
+        })
+        expect(mocks.info).toHaveBeenCalledWith('setting.dingTalkUpdated')
     })
 })

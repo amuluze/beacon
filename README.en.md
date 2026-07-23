@@ -66,6 +66,7 @@ See the live product at [beacon.amuluze.com](https://beacon.amuluze.com) for scr
 
 - Inspect host name, uptime, distribution, kernel, and operating system.
 - Track CPU, memory, disk IO, and network IO trends.
+- Configure CPU, memory, and disk usage thresholds with email or optionally signed DingTalk group robot Webhook notifications.
 - Perform host and container operations through an explicitly selected Agent.
 
 ### 🔐 Access control and auditing

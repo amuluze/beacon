@@ -5,7 +5,10 @@
 package service
 
 import (
+	"errors"
+	"fmt"
 	"log/slog"
+	"strings"
 
 	"beacon/pkg/utils/uuid"
 	"beacon/service/model"
@@ -25,6 +28,12 @@ var notAdminResourcesMap = map[string]struct{}{
 	"登出":       {},
 	"更新密码":     {},
 	"更新 token": {},
+}
+
+var adminOnlyResourcesMap = map[string]struct{}{
+	"查询钉钉告警配置": {},
+	"更新钉钉告警配置": {},
+	"测试钉钉告警":   {},
 }
 
 var thresholds = []model.AlarmThreshold{
@@ -133,6 +142,9 @@ func (a *Prepare) InitAccount(app *fiber.App) {
 				Status: 1,
 			}
 			adminResources = append(adminResources, resource)
+			if _, ok := adminOnlyResourcesMap[router.Name]; ok {
+				continue
+			}
 			if router.Method == "GET" {
 				notAdminResources = append(notAdminResources, resource)
 			}
@@ -142,33 +154,89 @@ func (a *Prepare) InitAccount(app *fiber.App) {
 		}
 	}
 
-	_ = a.db.RunInTransaction(func(tx *gorm.DB) error {
-		// 更新 resource
-		for _, resource := range adminResources {
-			if err := tx.Model(&model.Resource{}).FirstOrCreate(&resource).Error; err != nil {
-				slog.Error("search or create resource failed", "error", err)
-			}
+	if err := a.db.RunInTransaction(func(tx *gorm.DB) error {
+		// 更新 resource，并将数据库中的真实 ID 回填给角色关联。
+		if err := syncRouteResources(tx, adminResources); err != nil {
+			return err
 		}
 
 		// 更新 user role
 		for _, u := range users {
+			resources := notAdminResources
 			if u.Username == "admin" {
-				u.Roles[0].Resources = adminResources
-			} else {
-				u.Roles[0].Resources = notAdminResources
+				resources = adminResources
 			}
 			if legacyHash, ok := legacyDefaultPasswordHashes[u.Username]; ok {
 				if err := tx.Model(&model.User{}).Where("username = ? AND password = ?", u.Username, legacyHash).Update("password", u.Password).Error; err != nil {
-					slog.Error("upgrade default user password hash failed", "username", u.Username, "error", err)
+					return fmt.Errorf("upgrade default user %q password hash: %w", u.Username, err)
 				}
 			}
-			// 创建或更新
-			if err := tx.Model(&model.User{}).Where("username = ?", u.Username).FirstOrCreate(u).Error; err != nil {
-				slog.Error("search or create user failed", "error", err)
+
+			// 使用副本创建默认账号，避免查询已有账号时修改全局模板。
+			roleTemplate := *u.Roles[0]
+			roleTemplate.Resources = resources
+			userTemplate := *u
+			userTemplate.Roles = []*model.Role{&roleTemplate}
+			var existingUser model.User
+			err := tx.Where("username = ?", u.Username).First(&existingUser).Error
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				err = tx.Create(&userTemplate).Error
+			}
+			if err != nil {
+				return fmt.Errorf("search or create user %q: %w", u.Username, err)
+			}
+			if err := syncDefaultRoleResources(tx, roleTemplate.Name, resources); err != nil {
+				return err
 			}
 		}
 		return nil
-	})
+	}); err != nil {
+		slog.Error("initialize accounts and role resources failed", "error", err)
+	}
+}
+
+func syncRouteResources(tx *gorm.DB, resources []*model.Resource) error {
+	for _, resource := range resources {
+		var persisted model.Resource
+		err := tx.Where("name = ?", resource.Name).First(&persisted).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			if err := tx.Create(resource).Error; err != nil {
+				return fmt.Errorf("create resource %q: %w", resource.Name, err)
+			}
+			continue
+		}
+		if err != nil {
+			return fmt.Errorf("query resource %q: %w", resource.Name, err)
+		}
+
+		if err := tx.Model(&persisted).Updates(map[string]any{
+			"path":   resource.Path,
+			"method": resource.Method,
+			"status": resource.Status,
+		}).Error; err != nil {
+			return fmt.Errorf("update resource %q: %w", resource.Name, err)
+		}
+		persisted.Path = resource.Path
+		persisted.Method = resource.Method
+		persisted.Status = resource.Status
+		*resource = persisted
+	}
+	return nil
+}
+
+// syncDefaultRoleResources keeps built-in roles aligned with the current HTTP
+// route set. FirstOrCreate only writes associations for a newly-created role,
+// so an upgrade that adds routes would otherwise leave existing admins with
+// stale Casbin policies and return 403 for the new APIs.
+func syncDefaultRoleResources(tx *gorm.DB, roleName string, resources []*model.Resource) error {
+	var role model.Role
+	if err := tx.Where("name = ?", roleName).First(&role).Error; err != nil {
+		return fmt.Errorf("query default role %q: %w", roleName, err)
+	}
+	if err := tx.Model(&role).Association("Resources").Replace(resources); err != nil {
+		return fmt.Errorf("sync default role %q resources: %w", roleName, err)
+	}
+	return nil
 }
 
 func (a *Prepare) InitAlarmThreshold() {
@@ -186,21 +254,81 @@ func (a *Prepare) InitCasbinRules() {
 		slog.Error("get all users error", "error", err)
 		return
 	}
+	var roles []*model.Role
+	if err := a.db.Preload("Resources").Find(&roles).Error; err != nil {
+		slog.Error("get all role resources error", "error", err)
+		return
+	}
 
+	desiredGroupPolicies := make(map[string][]string)
+	desiredPolicies := make(map[string][]string)
 	for _, user := range users {
 		for _, role := range user.Roles {
-			if _, err := a.enforcer.AddNamedGroupingPolicy("g", user.ID.String(), role.ID.String()); err != nil {
-				slog.Error("add grouping policy error", "error", err)
-			}
-			var roleResources model.Role
-			if err := a.db.Where("id = ?", role.ID).Preload("Resources").Find(&roleResources).Error; err != nil {
-				slog.Error("get role resources error", "error", err)
-			}
-			for _, resource := range roleResources.Resources {
-				if _, err := a.enforcer.AddNamedPolicy("p", role.ID.String(), resource.Path, resource.Method); err != nil {
-					slog.Error("add policy error", "error", err)
-				}
-			}
+			groupPolicy := []string{user.ID.String(), role.ID.String()}
+			desiredGroupPolicies[casbinRuleKey(groupPolicy)] = groupPolicy
+		}
+	}
+	for _, role := range roles {
+		for _, resource := range role.Resources {
+			policy := []string{role.ID.String(), resource.Path, resource.Method}
+			desiredPolicies[casbinRuleKey(policy)] = policy
+		}
+	}
+
+	syncCasbinGroupingPolicies(a.enforcer, desiredGroupPolicies)
+	syncCasbinPolicies(a.enforcer, desiredPolicies)
+}
+
+func casbinRuleKey(rule []string) string {
+	return strings.Join(rule, "\x00")
+}
+
+func syncCasbinGroupingPolicies(enforcer *casbin.SyncedEnforcer, desired map[string][]string) {
+	existing, err := enforcer.GetNamedGroupingPolicy("g")
+	if err != nil {
+		slog.Error("get grouping policies error", "error", err)
+		return
+	}
+	for _, policy := range existing {
+		if _, ok := desired[casbinRuleKey(policy)]; ok {
+			continue
+		}
+		params := make([]interface{}, len(policy))
+		for i, value := range policy {
+			params[i] = value
+		}
+		if _, err := enforcer.RemoveNamedGroupingPolicy("g", params...); err != nil {
+			slog.Error("remove stale grouping policy error", "policy", policy, "error", err)
+		}
+	}
+	for _, policy := range desired {
+		if _, err := enforcer.AddNamedGroupingPolicy("g", policy[0], policy[1]); err != nil {
+			slog.Error("add grouping policy error", "policy", policy, "error", err)
+		}
+	}
+}
+
+func syncCasbinPolicies(enforcer *casbin.SyncedEnforcer, desired map[string][]string) {
+	existing, err := enforcer.GetNamedPolicy("p")
+	if err != nil {
+		slog.Error("get policies error", "error", err)
+		return
+	}
+	for _, policy := range existing {
+		if _, ok := desired[casbinRuleKey(policy)]; ok {
+			continue
+		}
+		params := make([]interface{}, len(policy))
+		for i, value := range policy {
+			params[i] = value
+		}
+		if _, err := enforcer.RemoveNamedPolicy("p", params...); err != nil {
+			slog.Error("remove stale policy error", "policy", policy, "error", err)
+		}
+	}
+	for _, policy := range desired {
+		if _, err := enforcer.AddNamedPolicy("p", policy[0], policy[1], policy[2]); err != nil {
+			slog.Error("add policy error", "policy", policy, "error", err)
 		}
 	}
 }

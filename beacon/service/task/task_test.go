@@ -2,11 +2,13 @@ package task
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	dingtalkclient "beacon/service/dingtalk/client"
 	"beacon/service/model"
 	"common/database"
 )
@@ -23,6 +25,7 @@ func newTaskTestDB(t *testing.T) *database.DB {
 		new(model.AlarmThreshold),
 		new(model.Audit),
 		new(model.Mail),
+		new(model.DingTalk),
 		new(model.MonitorHost),
 		new(model.MonitorCPU),
 		new(model.MonitorMemory),
@@ -72,11 +75,24 @@ func findAuditsByAgent(t *testing.T, db *database.DB, agentID string) []model.Au
 // stubMailSender captures sent messages without dialing a real SMTP server.
 type stubMailSender struct {
 	messages []string
+	err      error
 }
 
 func (s *stubMailSender) Send(msg string) error {
 	s.messages = append(s.messages, msg)
-	return nil
+	return s.err
+}
+
+type stubDingTalkSender struct {
+	configs  []dingtalkclient.Config
+	messages []string
+	err      error
+}
+
+func (s *stubDingTalkSender) Send(_ context.Context, config dingtalkclient.Config, msg string) error {
+	s.configs = append(s.configs, config)
+	s.messages = append(s.messages, msg)
+	return s.err
 }
 
 // Domain Spec I004 — alarm tasks must evaluate each Agent independently,
@@ -424,4 +440,130 @@ func TestServiceTaskScopesByAgent(t *testing.T) {
 	if audits := findAuditsByAgent(t, db, "agent-b"); len(audits) != 0 {
 		t.Fatalf("agent-b audit count = %d, want 0 (state unchanged)", len(audits))
 	}
+}
+
+func TestResourceAlarmTasksSendDingTalk(t *testing.T) {
+	tests := []struct {
+		name         string
+		alarmType    string
+		threshold    int
+		seed         func(*testing.T, *database.DB)
+		run          func(*Task) error
+		messageParts []string
+	}{
+		{
+			name:      "cpu",
+			alarmType: "cpu",
+			threshold: 80,
+			seed: func(t *testing.T, db *database.DB) {
+				createTaskRecord(t, db, &model.MonitorCPU{AgentID: "agent-a", Timestamp: time.Now(), CPUPercent: 95})
+			},
+			run:          func(task *Task) error { return task.CPUAlarmTask(context.Background()) },
+			messageParts: []string{"agent-a", "host-a", "CPU", "80%"},
+		},
+		{
+			name:      "memory",
+			alarmType: "memory",
+			threshold: 80,
+			seed: func(t *testing.T, db *database.DB) {
+				createTaskRecord(t, db, &model.MonitorMemory{AgentID: "agent-a", Timestamp: time.Now(), MemPercent: 0.95})
+			},
+			run:          func(task *Task) error { return task.MemoryAlarmTask(context.Background()) },
+			messageParts: []string{"agent-a", "host-a", "内存", "80%"},
+		},
+		{
+			name:      "disk",
+			alarmType: "disk",
+			threshold: 80,
+			seed: func(t *testing.T, db *database.DB) {
+				createTaskRecord(t, db, &model.MonitorDisk{AgentID: "agent-a", Timestamp: time.Now(), Device: "/dev/disk1", DiskPercent: 0.95})
+			},
+			run:          func(task *Task) error { return task.DiskAlarmTask(context.Background()) },
+			messageParts: []string{"agent-a", "host-a", "磁盘", "/dev/disk1", "80%"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := newTaskTestDB(t)
+			createTaskRecord(t, db, &model.AlarmThreshold{Type: tt.alarmType, Duration: 2, Threshold: tt.threshold})
+			seedTaskHost(t, db, "agent-a", "host-a")
+			createTaskRecord(t, db, &model.DingTalk{
+				Key:     model.DefaultDingTalkConfigKey,
+				Enabled: true,
+				Webhook: "https://oapi.dingtalk.com/robot/send?access_token=test-token",
+				Secret:  "SEC-test",
+				AtAll:   true,
+			})
+			tt.seed(t, db)
+
+			dingTalk := &stubDingTalkSender{}
+			task := NewTask(db)
+			task.SetMailSender(&stubMailSender{})
+			task.SetDingTalkSender(dingTalk)
+			if err := tt.run(task); err != nil {
+				t.Fatalf("alarm task error = %v", err)
+			}
+			if len(dingTalk.messages) != 1 {
+				t.Fatalf("DingTalk message count = %d, want 1", len(dingTalk.messages))
+			}
+			for _, part := range tt.messageParts {
+				if !strings.Contains(dingTalk.messages[0], part) {
+					t.Fatalf("DingTalk message %q missing %q", dingTalk.messages[0], part)
+				}
+			}
+			if len(dingTalk.configs) != 1 || !dingTalk.configs[0].AtAll || dingTalk.configs[0].Secret != "SEC-test" {
+				t.Fatalf("DingTalk config = %+v, want stored signed config", dingTalk.configs)
+			}
+		})
+	}
+}
+
+func TestNotificationChannelsDoNotBlockEachOther(t *testing.T) {
+	newConfiguredTask := func(t *testing.T) (*Task, *database.DB) {
+		db := newTaskTestDB(t)
+		createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 2, Threshold: 80})
+		seedTaskHost(t, db, "agent-a", "host-a")
+		createTaskRecord(t, db, &model.MonitorCPU{AgentID: "agent-a", Timestamp: time.Now(), CPUPercent: 95})
+		createTaskRecord(t, db, &model.DingTalk{
+			Key:     model.DefaultDingTalkConfigKey,
+			Enabled: true,
+			Webhook: "https://oapi.dingtalk.com/robot/send?access_token=test-token",
+		})
+		return NewTask(db), db
+	}
+
+	t.Run("mail failure does not block DingTalk", func(t *testing.T) {
+		task, db := newConfiguredTask(t)
+		mail := &stubMailSender{err: errors.New("smtp unavailable")}
+		dingTalk := &stubDingTalkSender{}
+		task.SetMailSender(mail)
+		task.SetDingTalkSender(dingTalk)
+		if err := task.CPUAlarmTask(context.Background()); err != nil {
+			t.Fatalf("CPUAlarmTask() error = %v", err)
+		}
+		if len(mail.messages) != 1 || len(dingTalk.messages) != 1 {
+			t.Fatalf("mail sends = %d, DingTalk sends = %d, want both attempted", len(mail.messages), len(dingTalk.messages))
+		}
+		if audits := taskAudits(t, db); len(audits) != 1 {
+			t.Fatalf("audit count = %d, want 1", len(audits))
+		}
+	})
+
+	t.Run("DingTalk failure does not roll back mail or audit", func(t *testing.T) {
+		task, db := newConfiguredTask(t)
+		mail := &stubMailSender{}
+		dingTalk := &stubDingTalkSender{err: errors.New("webhook unavailable")}
+		task.SetMailSender(mail)
+		task.SetDingTalkSender(dingTalk)
+		if err := task.CPUAlarmTask(context.Background()); err != nil {
+			t.Fatalf("CPUAlarmTask() error = %v", err)
+		}
+		if len(mail.messages) != 1 || len(dingTalk.messages) != 1 {
+			t.Fatalf("mail sends = %d, DingTalk sends = %d, want both attempted", len(mail.messages), len(dingTalk.messages))
+		}
+		if audits := taskAudits(t, db); len(audits) != 1 {
+			t.Fatalf("audit count = %d, want 1", len(audits))
+		}
+	})
 }

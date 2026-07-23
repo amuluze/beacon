@@ -3,12 +3,14 @@ package task
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
 	"time"
 
 	"beacon/pkg/utils"
+	dingtalkclient "beacon/service/dingtalk/client"
 	"beacon/service/model"
 	"common/database"
 
@@ -33,15 +35,17 @@ type MailSender interface {
 }
 
 type Task struct {
-	db         *database.DB
-	cache      *cache.Cache
-	mailSender MailSender
+	db             *database.DB
+	cache          *cache.Cache
+	mailSender     MailSender
+	dingTalkSender dingtalkclient.Sender
 }
 
 func NewTask(db *database.DB) *Task {
 	return &Task{
-		db:    db,
-		cache: cache.New(5*time.Minute, 10*time.Minute),
+		db:             db,
+		cache:          cache.New(5*time.Minute, 10*time.Minute),
+		dingTalkSender: dingtalkclient.NewSender(),
 	}
 }
 
@@ -49,6 +53,11 @@ func NewTask(db *database.DB) *Task {
 // tests; not expected to be called in production.
 func (t *Task) SetMailSender(s MailSender) {
 	t.mailSender = s
+}
+
+// SetDingTalkSender overrides the HTTP sender for focused notification tests.
+func (t *Task) SetDingTalkSender(sender dingtalkclient.Sender) {
+	t.dingTalkSender = sender
 }
 
 func (t *Task) threshold(alarmType string) (model.AlarmThreshold, error) {
@@ -127,7 +136,7 @@ func (t *Task) CPUAlarmTask(ctx context.Context) error {
 		// 这里直接与配置阈值比较，禁止再次乘以 100。
 		if len(cpuData) > 0 && utils.Decimal(total/float64(len(cpuData))) > float64(threshold.Threshold) {
 			msg := fmt.Sprintf("[%s] %s CPU 使用率连续 %d 分钟超过 %d%%", agentID, t.hostname(ctx, agentID), threshold.Duration, threshold.Threshold)
-			if err := t.triggerAlarm("cpu:"+agentID, msg, agentID); err != nil {
+			if err := t.triggerAlarm(ctx, "cpu:"+agentID, msg, agentID); err != nil {
 				return err
 			}
 		}
@@ -160,7 +169,7 @@ func (t *Task) MemoryAlarmTask(ctx context.Context) error {
 		}
 		if len(memData) > 0 && int(utils.Decimal(total/float64(len(memData)))*100) > threshold.Threshold {
 			msg := fmt.Sprintf("[%s] %s 内存使用率连续 %d 分钟超过 %d%%", agentID, t.hostname(ctx, agentID), threshold.Duration, threshold.Threshold)
-			if err := t.triggerAlarm("memory:"+agentID, msg, agentID); err != nil {
+			if err := t.triggerAlarm(ctx, "memory:"+agentID, msg, agentID); err != nil {
 				return err
 			}
 		}
@@ -194,7 +203,7 @@ func (t *Task) DiskAlarmTask(ctx context.Context) error {
 		for _, item := range diskData {
 			if int(utils.Decimal(item.DiskPercent)*100) > threshold.Threshold {
 				msg := fmt.Sprintf("[%s] %s 磁盘 %s 使用率超过 %d%%", agentID, t.hostname(ctx, agentID), item.Device, threshold.Threshold)
-				if err := t.triggerAlarm("disk:"+agentID+":"+item.Device, msg, agentID); err != nil {
+				if err := t.triggerAlarm(ctx, "disk:"+agentID+":"+item.Device, msg, agentID); err != nil {
 					return err
 				}
 			}
@@ -227,7 +236,7 @@ func (t *Task) ServiceTask(ctx context.Context) error {
 			if containerStateBytes, ok := t.cache.Get(cacheKey); ok {
 				if containerStateBytes.(string) != item.State {
 					msg := fmt.Sprintf("[%s] 容器 %s 的状态由 %s 变为 %s", agentID, item.Name, containerStateBytes.(string), item.State)
-					if err := t.sendAlarmAudit(msg, agentID); err != nil {
+					if err := t.sendAlarmAudit(ctx, msg, agentID); err != nil {
 						return err
 					}
 				}
@@ -238,45 +247,45 @@ func (t *Task) ServiceTask(ctx context.Context) error {
 	return nil
 }
 
-// triggerAlarm records the alarm message in the Audit log (tagged with
-// agentID), and sends an email notification once per cache window so the
-// same Agent does not flood the receiver with duplicate alerts.
-func (t *Task) triggerAlarm(key string, msg string, agentID string) error {
+// triggerAlarm persists the alarm before attempting each notification channel.
+// Delivery failures are isolated from each other and never roll back the audit.
+func (t *Task) triggerAlarm(ctx context.Context, key string, msg string, agentID string) error {
 	if _, ok := t.cache.Get(key); ok {
 		return nil
 	}
-	return t.db.RunInTransaction(func(tx *gorm.DB) error {
-		operateLog := model.Audit{
-			Username: "system",
-			AgentID:  agentID,
-			Operate:  msg,
-		}
-		if err := tx.Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
-			return err
-		}
-		if err := t.sendMail(msg); err != nil {
-			return err
-		}
-		t.cache.Set(key, "true", 10*time.Minute)
-		return nil
-	})
+	operateLog := model.Audit{
+		Username: "system",
+		AgentID:  agentID,
+		Operate:  msg,
+	}
+	if err := t.db.WithContext(ctx).Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
+		return err
+	}
+	t.cache.Set(key, "true", 10*time.Minute)
+	t.notify(ctx, msg)
+	return nil
 }
 
-func (t *Task) sendAlarmAudit(msg string, agentID string) error {
-	return t.db.RunInTransaction(func(tx *gorm.DB) error {
-		operateLog := model.Audit{
-			Username: "system",
-			AgentID:  agentID,
-			Operate:  msg,
-		}
-		if err := tx.Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
-			return err
-		}
-		if err := t.sendMail(msg); err != nil {
-			return err
-		}
-		return nil
-	})
+func (t *Task) sendAlarmAudit(ctx context.Context, msg string, agentID string) error {
+	operateLog := model.Audit{
+		Username: "system",
+		AgentID:  agentID,
+		Operate:  msg,
+	}
+	if err := t.db.WithContext(ctx).Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
+		return err
+	}
+	t.notify(ctx, msg)
+	return nil
+}
+
+func (t *Task) notify(ctx context.Context, msg string) {
+	if err := t.sendMail(msg); err != nil {
+		slog.Warn("send alarm notification failed", "channel", "mail", "err", err)
+	}
+	if err := t.sendDingTalk(ctx, msg); err != nil {
+		slog.Warn("send alarm notification failed", "channel", "dingtalk", "err", err)
+	}
 }
 
 func (t *Task) sendMail(msg string) error {
@@ -287,11 +296,18 @@ func (t *Task) sendMail(msg string) error {
 	}
 	var mail model.Mail
 	if err := t.db.Model(&model.Mail{}).First(&mail).Error; err != nil {
-		// No mail config configured — skip silently
-		return nil
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
 	}
 	dialer := gomail.NewDialer(mail.Server, mail.Port, mail.Sender, mail.Password)
+	var sendErrors []error
 	for _, recv := range strings.Split(mail.Receiver, ",") {
+		recv = strings.TrimSpace(recv)
+		if recv == "" {
+			continue
+		}
 		mailMessage := gomail.NewMessage()
 		mailMessage.SetHeader("From", mail.Sender)
 		mailMessage.SetHeader("To", recv)
@@ -299,8 +315,29 @@ func (t *Task) sendMail(msg string) error {
 		mailMessage.SetBody("text/plain", msg)
 
 		if err := dialer.DialAndSend(mailMessage); err != nil {
-			slog.Warn("send alarm mail failed", "err", err, "receiver", recv)
+			sendErrors = append(sendErrors, err)
 		}
 	}
-	return nil
+	return errors.Join(sendErrors...)
+}
+
+func (t *Task) sendDingTalk(ctx context.Context, msg string) error {
+	var setting model.DingTalk
+	err := t.db.WithContext(ctx).
+		Where("key = ?", model.DefaultDingTalkConfigKey).
+		First(&setting).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if !setting.Enabled || setting.Webhook == "" {
+		return nil
+	}
+	return t.dingTalkSender.Send(ctx, dingtalkclient.Config{
+		Webhook: setting.Webhook,
+		Secret:  setting.Secret,
+		AtAll:   setting.AtAll,
+	}, msg)
 }

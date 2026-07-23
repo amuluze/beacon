@@ -10,6 +10,7 @@ import (
 	"beacon/service/audit"
 	"beacon/service/auth"
 	"beacon/service/container"
+	"beacon/service/dingtalk"
 	healthapi "beacon/service/health/api"
 	"beacon/service/host"
 	"beacon/service/mail"
@@ -41,6 +42,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		InitAdapter,
 		InitCasbin,
 		container.Set,
+		dingtalk.Set,
 		host.Set,
 		agent.Set,
 		model.Set,
