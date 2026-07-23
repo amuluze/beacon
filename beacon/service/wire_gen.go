@@ -11,9 +11,9 @@ import (
 	repository5 "beacon/service/account/repository"
 	service5 "beacon/service/account/service"
 	"beacon/service/agent"
-	api7 "beacon/service/alarm/api"
-	repository7 "beacon/service/alarm/repository"
-	service7 "beacon/service/alarm/service"
+	api8 "beacon/service/alarm/api"
+	repository8 "beacon/service/alarm/repository"
+	service8 "beacon/service/alarm/service"
 	api4 "beacon/service/audit/api"
 	repository4 "beacon/service/audit/repository"
 	service4 "beacon/service/audit/service"
@@ -23,6 +23,10 @@ import (
 	"beacon/service/container/api"
 	"beacon/service/container/repository"
 	"beacon/service/container/service"
+	api7 "beacon/service/dingtalk/api"
+	"beacon/service/dingtalk/client"
+	repository7 "beacon/service/dingtalk/repository"
+	service7 "beacon/service/dingtalk/service"
 	"beacon/service/health/api"
 	api2 "beacon/service/host/api"
 	repository2 "beacon/service/host/repository"
@@ -92,9 +96,13 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	mailRepository := repository6.NewMailRepository(db)
 	mailService := service6.NewMailService(mailRepository)
 	mailAPI := api6.NewMailAPI(mailService)
-	alarmRepository := repository7.NewAlarmRepository(db)
-	alarmService := service7.NewAlarmService(alarmRepository)
-	alarmAPI := api7.NewAlarmAPI(alarmService)
+	dingTalkRepository := repository7.NewDingTalkRepository(db)
+	sender := client.NewSender()
+	dingTalkService := service7.NewDingTalkService(dingTalkRepository, sender)
+	dingTalkAPI := api7.NewDingTalkAPI(dingTalkService)
+	alarmRepository := repository8.NewAlarmRepository(db)
+	alarmService := service8.NewAlarmService(alarmRepository)
+	alarmAPI := api8.NewAlarmAPI(alarmService)
 	agentAPI := agent.NewAgentAPI(agentService)
 	reportService, err := NewReportService(config, db)
 	if err != nil {
@@ -116,6 +124,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		auditAPI:        auditAPI,
 		accountAPI:      accountAPI,
 		mailAPI:         mailAPI,
+		dingTalkAPI:     dingTalkAPI,
 		alarmAPI:        alarmAPI,
 		agentAPI:        agentAPI,
 		reportSvc:       reportService,

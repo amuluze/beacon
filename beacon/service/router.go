@@ -26,6 +26,7 @@ import (
 	auditAPI "beacon/service/audit/api"
 	authAPI "beacon/service/auth/api"
 	containerAPI "beacon/service/container/api"
+	dingTalkAPI "beacon/service/dingtalk/api"
 	hostAPI "beacon/service/host/api"
 	mailAPI "beacon/service/mail/api"
 )
@@ -50,6 +51,7 @@ type Router struct {
 	auditAPI     *auditAPI.AuditAPI
 	accountAPI   *accountAPI.AccountAPI
 	mailAPI      *mailAPI.MailAPI
+	dingTalkAPI  *dingTalkAPI.DingTalkAPI
 	alarmAPI     *alarmAPI.AlarmAPI
 	agentAPI     *agent.API
 	reportSvc    *report.Service
@@ -169,6 +171,7 @@ func (a *Router) registerAPIRoutes(api fiber.Router) {
 	a.registerHostRoutes(v1)
 	a.registerAuditRoutes(v1)
 	a.registerMailRoutes(v1)
+	a.registerDingTalkRoutes(v1)
 	a.registerAlarmRoutes(v1)
 }
 
@@ -276,6 +279,13 @@ func (a *Router) registerMailRoutes(v1 fiber.Router) {
 	g.Post("/mail_update", a.mailAPI.MailUpdate).Name("更新邮件告警配置")
 	g.Get("/mail_query", a.mailAPI.MailQuery).Name("查询邮件告警配置")
 	g.Post("/mail_test", a.mailAPI.MailTest).Name("测试邮件告警")
+}
+
+func (a *Router) registerDingTalkRoutes(v1 fiber.Router) {
+	g := v1.Group("dingtalk")
+	g.Get("/query", a.dingTalkAPI.Query).Name("查询钉钉告警配置")
+	g.Post("/update", a.dingTalkAPI.Update).Name("更新钉钉告警配置")
+	g.Post("/test", a.dingTalkAPI.Test).Name("测试钉钉告警")
 }
 
 func (a *Router) registerAlarmRoutes(v1 fiber.Router) {
