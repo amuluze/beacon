@@ -5,6 +5,7 @@ package report
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,14 +27,19 @@ type Client struct {
 	httpClient *http.Client
 }
 
-// NewClient creates an HTTP push client.
-func NewClient(url, token string) *Client {
+// NewClient creates an HTTP push client. When tlsConfig is non-nil it is
+// applied to the underlying transport (e.g. a custom RootCAs loaded from the
+// local CA plus a ServerName matching the control-plane certificate), so the
+// report target can use HTTPS against a self-signed internal CA.
+func NewClient(url, token string, tlsConfig *tls.Config) *Client {
+	httpClient := &http.Client{Timeout: 30 * time.Second}
+	if tlsConfig != nil {
+		httpClient.Transport = &http.Transport{TLSClientConfig: tlsConfig}
+	}
 	return &Client{
-		url:   url,
-		token: token,
-		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
-		},
+		url:        url,
+		token:      token,
+		httpClient: httpClient,
 	}
 }
 

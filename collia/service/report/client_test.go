@@ -18,7 +18,7 @@ func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 func TestPushAcceptsNilContext(t *testing.T) {
 	var gotToken string
 
-	client := NewClient("https://example.test/report", "secret")
+	client := NewClient("https://example.test/report", "secret", nil)
 	client.httpClient.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
 		gotToken = r.Header.Get("X-Install-Token")
 		return &http.Response{
@@ -40,7 +40,7 @@ func TestPushAcceptsNilContext(t *testing.T) {
 
 func TestPushRejectsTokenOverHTTPBeforeNetwork(t *testing.T) {
 	called := false
-	client := NewClient("http://example.test/report", "secret")
+	client := NewClient("http://example.test/report", "secret", nil)
 	client.httpClient.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
 		called = true
 		return nil, errors.New("must not be called")

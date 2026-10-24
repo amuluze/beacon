@@ -3,6 +3,7 @@ package service
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log/slog"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"collia/service/report"
 	"collia/service/task"
 	rpcSchema "common/rpc/schema"
+	transporttls "common/transport/tlsconfig"
 
 	"github.com/amuluze/amutool/timex"
 	"github.com/amuluze/docker"
@@ -46,7 +48,7 @@ func NewTimedTask(conf *Config) *TimedTask {
 
 	var rptClient *report.Client
 	if conf.Task.Report.URL != "" {
-		rptClient = report.NewClient(conf.Task.Report.URL, conf.Task.Report.Token)
+		rptClient = report.NewClient(conf.Task.Report.URL, conf.Task.Report.Token, buildReportTLSConfig(conf))
 	}
 
 	return &TimedTask{
@@ -56,6 +58,26 @@ func NewTimedTask(conf *Config) *TimedTask {
 		stopCh:       make(chan struct{}),
 		reportClient: rptClient,
 	}
+}
+
+// buildReportTLSConfig builds the TLS config for the HTTPS report client from
+// the control-plane TLS settings (same CA as the reverse tunnel). It returns
+// nil when TLS is disabled, leaving the report client on the system trust
+// store for plain-HTTP deployments.
+func buildReportTLSConfig(conf *Config) *tls.Config {
+	if !conf.Control.TLS.Enable {
+		return nil
+	}
+	serverName := conf.Control.TLS.ServerName
+	if serverName == "" {
+		serverName = "beacon/collia"
+	}
+	cfg, err := transporttls.ClientConfig(conf.Control.TLS.CertDir, serverName)
+	if err != nil {
+		slog.Error("build report tls config failed, falling back to system trust", "error", err)
+		return nil
+	}
+	return cfg
 }
 
 func (a *TimedTask) Execute() {
