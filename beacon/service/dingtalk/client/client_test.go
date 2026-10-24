@@ -81,7 +81,12 @@ func TestWebhookSenderBuildsSignedRequest(t *testing.T) {
 			return url.Parse(rawURL)
 		},
 	}
-	if err := sender.Send(context.Background(), Config{Webhook: testURL, Secret: secret, AtAll: true}, "CPU 告警"); err != nil {
+	if err := sender.Send(context.Background(), Config{
+		Webhook:      testURL,
+		Secret:       secret,
+		AtAll:        true,
+		MessageTitle: "生产环境主机告警",
+	}, "CPU 告警"); err != nil {
 		t.Fatalf("Send() error = %v", err)
 	}
 
@@ -98,11 +103,41 @@ func TestWebhookSenderBuildsSignedRequest(t *testing.T) {
 	if got := receivedQuery.Get("access_token"); got != "test-token" {
 		t.Fatalf("access_token = %q, want test-token", got)
 	}
-	if receivedPayload.MsgType != "text" || receivedPayload.Text.Content != "Beacon 主机告警\nCPU 告警" {
+	if receivedPayload.MsgType != "text" || receivedPayload.Text.Content != "生产环境主机告警\nCPU 告警" {
 		t.Fatalf("unexpected payload: %+v", receivedPayload)
 	}
 	if !receivedPayload.At.IsAtAll {
 		t.Fatal("isAtAll = false, want true")
+	}
+}
+
+func TestWebhookSenderFallsBackToDefaultTitle(t *testing.T) {
+	t.Parallel()
+
+	var content string
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var payload struct {
+			Text struct {
+				Content string `json:"content"`
+			} `json:"text"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			t.Errorf("decode payload: %v", err)
+		}
+		content = payload.Text.Content
+		_, _ = w.Write([]byte(`{"errcode":0,"errmsg":"ok"}`))
+	}))
+	defer server.Close()
+
+	sender := testSender(server, time.Second)
+	if err := sender.Send(context.Background(), Config{
+		Webhook:      server.URL + "?access_token=test-token",
+		MessageTitle: "invalid\nheader",
+	}, "CPU 告警"); err != nil {
+		t.Fatalf("Send() error = %v", err)
+	}
+	if content != "Beacon 主机告警\nCPU 告警" {
+		t.Fatalf("content = %q, want default title", content)
 	}
 }
 

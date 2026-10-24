@@ -3,7 +3,7 @@ module github.com/amuluze/docker
 go 1.25.0
 
 require (
-	github.com/docker/docker v27.0.3+incompatible
+	github.com/docker/docker v27.2.1+incompatible
 	github.com/docker/go-connections v0.5.0
 	github.com/docker/libcompose v0.4.0
 	github.com/tidwall/gjson v1.17.1

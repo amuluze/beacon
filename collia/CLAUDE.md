@@ -30,7 +30,6 @@
 | `collia/config.yml` | Agent 配置文件（Server 地址、Agent ID、采集间隔、磁盘/网卡列表、上报 URL） |
 | `collia/pkg/` | 可复用公共包集合 |
 | `collia/pkg/psutil/` | gopsutil 指标采集辅助 |
-| `collia/pkg/timectl/` | 时间控制辅助 |
 | `collia/pkg/utils/` | 通用辅助函数（文件、字符串等） |
 | `collia/script/` | 安装/卸载脚本 |
 | `collia/service/` | 业务核心层：RPC 服务、采集任务、预检、报告客户端 |

@@ -38,12 +38,6 @@ export const dynamicRoutes: RouteRecordRaw[] = [
         meta: { title: 'menu.alarmSetting', show: false },
     },
     {
-        path: '/setting/host',
-        name: 'host',
-        component: async () => import('@/views/setting/host/index.vue'),
-        meta: { title: 'menu.systemSetting', show: false },
-    },
-    {
         path: '/setting/container',
         name: 'docker',
         component: async () => import('@/views/setting/docker/index.vue'),
@@ -84,15 +78,5 @@ export const dynamicRoutes: RouteRecordRaw[] = [
                 },
             },
         ],
-    },
-    {
-        path: '/terminal',
-        name: 'terminal',
-        component: async () => import('@/views/terminal/index.vue'),
-        meta: {
-            title: 'menu.terminal',
-            icon: 'terminal',
-            show: true,
-        },
     },
 ]

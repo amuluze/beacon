@@ -45,3 +45,25 @@ func (a *AlarmAPI) AlarmUpdate(ctx *fiber.Ctx) error {
 	}
 	return fiberx.NoContent(ctx)
 }
+
+func (a *AlarmAPI) AlarmMessageSettingQuery(ctx *fiber.Ctx) error {
+	setting, err := a.AlarmService.AlarmMessageSettingQuery(ctx.UserContext())
+	if err != nil {
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
+	}
+	return fiberx.Success(ctx, setting)
+}
+
+func (a *AlarmAPI) AlarmMessageSettingUpdate(ctx *fiber.Ctx) error {
+	var args schema.AlarmMessageSettingUpdateArgs
+	if err := fiberx.ParseBody(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+	}
+	if err := validatex.ValidateStruct(&args); err != nil {
+		return fiberx.Failure(ctx, errors.New400Error(err.Error()))
+	}
+	if err := a.AlarmService.AlarmMessageSettingUpdate(ctx.UserContext(), args); err != nil {
+		return fiberx.Failure(ctx, fiberx.ServiceError(err))
+	}
+	return fiberx.NoContent(ctx)
+}

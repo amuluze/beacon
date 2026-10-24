@@ -174,14 +174,18 @@ var _ accountRepo.IAccountRepository = (*FakeAccountRepo)(nil)
 // ── FakeAlarmRepo ──
 
 type FakeAlarmRepo struct {
-	AlarmQueryFn  func(ctx context.Context) ([]model.AlarmThreshold, error)
-	AlarmUpdateFn func(ctx context.Context, args schema.AlarmThresholdUpdateArgs) error
+	AlarmQueryFn                func(ctx context.Context) ([]model.AlarmThreshold, error)
+	AlarmUpdateFn               func(ctx context.Context, args schema.AlarmThresholdUpdateArgs) error
+	AlarmMessageSettingQueryFn  func(ctx context.Context) (model.AlarmMessageSetting, error)
+	AlarmMessageSettingUpdateFn func(ctx context.Context, args schema.AlarmMessageSettingUpdateArgs) error
 }
 
 func NewFakeAlarmRepo() *FakeAlarmRepo {
 	return &FakeAlarmRepo{
-		AlarmQueryFn:  func(ctx context.Context) ([]model.AlarmThreshold, error) { return nil, nil },
-		AlarmUpdateFn: func(ctx context.Context, args schema.AlarmThresholdUpdateArgs) error { return nil },
+		AlarmQueryFn:                func(ctx context.Context) ([]model.AlarmThreshold, error) { return nil, nil },
+		AlarmUpdateFn:               func(ctx context.Context, args schema.AlarmThresholdUpdateArgs) error { return nil },
+		AlarmMessageSettingQueryFn:  func(ctx context.Context) (model.AlarmMessageSetting, error) { return model.AlarmMessageSetting{}, nil },
+		AlarmMessageSettingUpdateFn: func(ctx context.Context, args schema.AlarmMessageSettingUpdateArgs) error { return nil },
 	}
 }
 
@@ -190,6 +194,12 @@ func (f *FakeAlarmRepo) AlarmQuery(ctx context.Context) ([]model.AlarmThreshold,
 }
 func (f *FakeAlarmRepo) AlarmUpdate(ctx context.Context, args schema.AlarmThresholdUpdateArgs) error {
 	return f.AlarmUpdateFn(ctx, args)
+}
+func (f *FakeAlarmRepo) AlarmMessageSettingQuery(ctx context.Context) (model.AlarmMessageSetting, error) {
+	return f.AlarmMessageSettingQueryFn(ctx)
+}
+func (f *FakeAlarmRepo) AlarmMessageSettingUpdate(ctx context.Context, args schema.AlarmMessageSettingUpdateArgs) error {
+	return f.AlarmMessageSettingUpdateFn(ctx, args)
 }
 
 var _ alarmRepo.IAlarmRepository = (*FakeAlarmRepo)(nil)
@@ -270,15 +280,6 @@ type FakeHostRepo struct {
 	FileDeleteFn   func(context.Context, rpcSchema.FileDeleteArgs) error
 	FileCreateFn   func(context.Context, rpcSchema.FileCreateArgs) error
 	FolderCreateFn func(context.Context, rpcSchema.FolderCreateArgs) error
-	GetDNSFn       func(context.Context, rpcSchema.GetDNSArgs) (rpcSchema.GetDNSReply, error)
-	SetDNSFn       func(context.Context, rpcSchema.SetDNSArgs) error
-	GetTimeFn      func(context.Context, rpcSchema.GetSystemTimeArgs) (rpcSchema.GetSystemTimeReply, error)
-	SetTimeFn      func(context.Context, rpcSchema.SetSystemTimeArgs) error
-	GetTZListFn    func(context.Context, rpcSchema.GetSystemTimeZoneListArgs) (rpcSchema.GetSystemTimeZoneListReply, error)
-	GetTZFn        func(context.Context, rpcSchema.GetSystemTimeZoneArgs) (rpcSchema.GetSystemTimeZoneReply, error)
-	SetTZFn        func(context.Context, rpcSchema.SetSystemTimeZoneArgs) error
-	RebootFn       func(context.Context, rpcSchema.RebootArgs) error
-	ShutdownFn     func(context.Context, rpcSchema.ShutdownArgs) error
 }
 
 func (f *FakeHostRepo) HostInfo(ctx context.Context, args rpcSchema.HostInfoArgs) (rpcSchema.HostInfoReply, error) {
@@ -319,33 +320,6 @@ func (f *FakeHostRepo) FileCreate(ctx context.Context, args rpcSchema.FileCreate
 }
 func (f *FakeHostRepo) FolderCreate(ctx context.Context, args rpcSchema.FolderCreateArgs) error {
 	return f.FolderCreateFn(ctx, args)
-}
-func (f *FakeHostRepo) GetDNSSettings(ctx context.Context, args rpcSchema.GetDNSArgs) (rpcSchema.GetDNSReply, error) {
-	return f.GetDNSFn(ctx, args)
-}
-func (f *FakeHostRepo) SetDNSSettings(ctx context.Context, args rpcSchema.SetDNSArgs) error {
-	return f.SetDNSFn(ctx, args)
-}
-func (f *FakeHostRepo) GetSystemTime(ctx context.Context, args rpcSchema.GetSystemTimeArgs) (rpcSchema.GetSystemTimeReply, error) {
-	return f.GetTimeFn(ctx, args)
-}
-func (f *FakeHostRepo) SetSystemTime(ctx context.Context, args rpcSchema.SetSystemTimeArgs) error {
-	return f.SetTimeFn(ctx, args)
-}
-func (f *FakeHostRepo) GetSystemTimeZoneList(ctx context.Context, args rpcSchema.GetSystemTimeZoneListArgs) (rpcSchema.GetSystemTimeZoneListReply, error) {
-	return f.GetTZListFn(ctx, args)
-}
-func (f *FakeHostRepo) GetSystemTimeZone(ctx context.Context, args rpcSchema.GetSystemTimeZoneArgs) (rpcSchema.GetSystemTimeZoneReply, error) {
-	return f.GetTZFn(ctx, args)
-}
-func (f *FakeHostRepo) SetSystemTimeZone(ctx context.Context, args rpcSchema.SetSystemTimeZoneArgs) error {
-	return f.SetTZFn(ctx, args)
-}
-func (f *FakeHostRepo) Reboot(ctx context.Context, args rpcSchema.RebootArgs) error {
-	return f.RebootFn(ctx, args)
-}
-func (f *FakeHostRepo) Shutdown(ctx context.Context, args rpcSchema.ShutdownArgs) error {
-	return f.ShutdownFn(ctx, args)
 }
 
 // FakeContainerRepo implements container/repository.IContainerRepo

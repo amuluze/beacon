@@ -3,7 +3,6 @@ import AlarmSettings from './alarm/index.vue'
 import AuditLog from './components/AuditLog.vue'
 import UserSettings from './components/UserSettings.vue'
 import DockerSettings from './docker/index.vue'
-import HostSettings from './host/index.vue'
 
 import useStore from '@/store'
 
@@ -23,15 +22,9 @@ const isAdmin = computed(() => store.user.userInfo.name === 'admin')
                 </h1>
             </div>
             <span class="workspace__hint">
-                System · Alerts · Docker<span v-if="isAdmin"> · Users</span> · Audit
+                Alerts · Docker<span v-if="isAdmin"> · Users</span> · Audit
             </span>
         </header>
-        <section class="workspace__panel workspace__panel--flush">
-            <h2 class="workspace__section-title">
-                {{ $t('menu.systemSetting') }}
-            </h2>
-            <HostSettings />
-        </section>
         <section class="workspace__panel workspace__panel--flush">
             <h2 class="workspace__section-title">
                 {{ $t('menu.alarmSetting') }}

@@ -16,6 +16,8 @@ import (
 	"strings"
 	"time"
 
+	alarmtitle "beacon/service/alarm/title"
+
 	"github.com/google/wire"
 )
 
@@ -28,9 +30,10 @@ const (
 var Set = wire.NewSet(NewSender)
 
 type Config struct {
-	Webhook string
-	Secret  string
-	AtAll   bool
+	Webhook      string
+	Secret       string
+	AtAll        bool
+	MessageTitle string
 }
 
 type Sender interface {
@@ -118,7 +121,7 @@ func (s *webhookSender) Send(ctx context.Context, config Config, message string)
 			IsAtAll bool `json:"isAtAll"`
 		} `json:"at"`
 	}{MsgType: "text"}
-	payload.Text.Content = "Beacon 主机告警\n" + message
+	payload.Text.Content = alarmtitle.OrDefault(config.MessageTitle) + "\n" + message
 	payload.At.IsAtAll = config.AtAll
 
 	body, err := json.Marshal(payload)

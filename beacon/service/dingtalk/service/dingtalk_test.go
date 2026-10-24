@@ -9,6 +9,7 @@ import (
 	"beacon/service/dingtalk/client"
 	"beacon/service/model"
 	"beacon/service/schema"
+	"beacon/service/testutil"
 
 	"gorm.io/gorm"
 )
@@ -49,7 +50,7 @@ func TestDingTalkServiceQueryMasksCredentials(t *testing.T) {
 		Secret:  "SEC-secret",
 		Enabled: true,
 	}}
-	service := NewDingTalkService(repository, &fakeSender{})
+	service := NewDingTalkService(repository, testutil.NewFakeAlarmRepo(), &fakeSender{})
 
 	got, err := service.Query(context.Background())
 	if err != nil {
@@ -64,7 +65,7 @@ func TestDingTalkServiceQueryMasksCredentials(t *testing.T) {
 }
 
 func TestDingTalkServiceQueryEmptyConfigDoesNotLookConfigured(t *testing.T) {
-	service := NewDingTalkService(&fakeRepository{setting: model.DingTalk{Key: model.DefaultDingTalkConfigKey}}, &fakeSender{})
+	service := NewDingTalkService(&fakeRepository{setting: model.DingTalk{Key: model.DefaultDingTalkConfigKey}}, testutil.NewFakeAlarmRepo(), &fakeSender{})
 
 	got, err := service.Query(context.Background())
 	if err != nil {
@@ -78,7 +79,7 @@ func TestDingTalkServiceQueryEmptyConfigDoesNotLookConfigured(t *testing.T) {
 func TestDingTalkServiceUpdatePreservesBlankCredentials(t *testing.T) {
 	const webhook = "https://oapi.dingtalk.com/robot/send?access_token=existing-token"
 	repository := &fakeRepository{setting: model.DingTalk{Webhook: webhook, Secret: "SEC-existing", Key: model.DefaultDingTalkConfigKey}}
-	service := NewDingTalkService(repository, &fakeSender{})
+	service := NewDingTalkService(repository, testutil.NewFakeAlarmRepo(), &fakeSender{})
 
 	if err := service.Update(context.Background(), schema.DingTalkUpdateArgs{Enabled: true, AtAll: true}); err != nil {
 		t.Fatalf("Update() error = %v", err)
@@ -97,7 +98,7 @@ func TestDingTalkServiceUpdateCanClearSecret(t *testing.T) {
 		Secret:  "SEC-existing",
 		Key:     model.DefaultDingTalkConfigKey,
 	}}
-	service := NewDingTalkService(repository, &fakeSender{})
+	service := NewDingTalkService(repository, testutil.NewFakeAlarmRepo(), &fakeSender{})
 	if err := service.Update(context.Background(), schema.DingTalkUpdateArgs{ClearSecret: true}); err != nil {
 		t.Fatalf("Update() error = %v", err)
 	}
@@ -108,7 +109,7 @@ func TestDingTalkServiceUpdateCanClearSecret(t *testing.T) {
 
 func TestDingTalkServiceRejectsSSRFWebhook(t *testing.T) {
 	repository := &fakeRepository{err: gorm.ErrRecordNotFound}
-	service := NewDingTalkService(repository, &fakeSender{})
+	service := NewDingTalkService(repository, testutil.NewFakeAlarmRepo(), &fakeSender{})
 	err := service.Update(context.Background(), schema.DingTalkUpdateArgs{
 		Enabled: true,
 		Webhook: "http://127.0.0.1/internal",
@@ -129,12 +130,19 @@ func TestDingTalkServiceTestUsesStoredCredentialsWhenDisabled(t *testing.T) {
 		Enabled: false,
 	}}
 	sender := &fakeSender{}
-	service := NewDingTalkService(repository, sender)
+	alarmRepository := testutil.NewFakeAlarmRepo()
+	alarmRepository.AlarmMessageSettingQueryFn = func(context.Context) (model.AlarmMessageSetting, error) {
+		return model.AlarmMessageSetting{MessageTitle: "  生产环境主机告警  "}, nil
+	}
+	service := NewDingTalkService(repository, alarmRepository, sender)
 	if err := service.Test(context.Background()); err != nil {
 		t.Fatalf("Test() error = %v", err)
 	}
 	if len(sender.configs) != 1 || sender.configs[0].Secret != "SEC-existing" || !sender.configs[0].AtAll {
 		t.Fatalf("sender configs = %+v, want stored config", sender.configs)
+	}
+	if sender.configs[0].MessageTitle != "生产环境主机告警" {
+		t.Fatalf("message title = %q, want shared custom title", sender.configs[0].MessageTitle)
 	}
 }
 
@@ -143,8 +151,27 @@ func TestDingTalkServiceTestPropagatesSenderError(t *testing.T) {
 		Webhook: "https://oapi.dingtalk.com/robot/send?access_token=existing-token",
 	}}
 	sender := &fakeSender{err: errors.New("send failed")}
-	service := NewDingTalkService(repository, sender)
+	service := NewDingTalkService(repository, testutil.NewFakeAlarmRepo(), sender)
 	if err := service.Test(context.Background()); !errors.Is(err, sender.err) {
 		t.Fatalf("Test() error = %v, want sender error", err)
+	}
+}
+
+func TestDingTalkServiceTestFallsBackToDefaultTitle(t *testing.T) {
+	repository := &fakeRepository{setting: model.DingTalk{
+		Webhook: "https://oapi.dingtalk.com/robot/send?access_token=existing-token",
+	}}
+	alarmRepository := testutil.NewFakeAlarmRepo()
+	alarmRepository.AlarmMessageSettingQueryFn = func(context.Context) (model.AlarmMessageSetting, error) {
+		return model.AlarmMessageSetting{}, errors.New("database unavailable")
+	}
+	sender := &fakeSender{}
+	service := NewDingTalkService(repository, alarmRepository, sender)
+
+	if err := service.Test(context.Background()); err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	if len(sender.configs) != 1 || sender.configs[0].MessageTitle != model.DefaultAlarmMessageTitle {
+		t.Fatalf("sender configs = %+v, want default title", sender.configs)
 	}
 }

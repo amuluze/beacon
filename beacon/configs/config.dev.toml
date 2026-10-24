@@ -36,11 +36,11 @@ Host = ""                                 # 连接地址
 Port = ""                                 # 连接端口
 User = ""                                 # 用户名
 Password = ""                             # 密码
-DBName = "/tmp/beacon-dev" # 本地开发数据库（实际文件为 /tmp/beacon-dev.db）
+DBName = "/Users/amu/Desktop/beacon-pro/beacon" # 数据库
 SSLMode = ""                              # SSL模式
 
 [Log]
-Output = "/tmp/beacon-dev.log" # 本地开发日志
+Output = "/Users/amu/Desktop/beacon-pro/beacon/beacon.log" # 日志存放路径
 Level = "debug"                               # 日志等级
 Rotation = 1                                  # 每天切分一个日志文件
 MaxAge = 7                                    # 最多保留 7 天的日志
@@ -74,6 +74,13 @@ PackageDir = "/app/downloads/collia"
 ControlPort = 18080
 TLSEnable = true
 CertDir = "/etc/collia/certs"
+
+[AgentUpdate]
+Enable = false         # 本地开发默认关闭自动升级
+TargetVersion = "dev"
+Timeout = 300
+MaxConcurrent = 2
+RetryInterval = 1800
 
 [InstallReport]
 Enable = false

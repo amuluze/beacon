@@ -5,8 +5,8 @@ use (
 	./collia
 	./common
 	./common/docker
-	./common/timex
 	./common/logger
+	./common/timex
 )
 
 // 以下私有依赖已 vendored 到 common/ 下作为独立 module（use 引入），

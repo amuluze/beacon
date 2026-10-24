@@ -1,7 +1,10 @@
 package agent
 
 import (
+	"bytes"
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"path/filepath"
 	"testing"
 	"time"
@@ -9,6 +12,8 @@ import (
 	"beacon/service/model"
 	"common/database"
 	tunnelpkg "common/rpc/tunnel"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func newAgentTestDB(t *testing.T) *database.DB {
@@ -137,5 +142,53 @@ func TestSetNilTunnelProjectsAgentsOffline(t *testing.T) {
 	}
 	if len(agents) != 1 || agents[0].Status != "offline" {
 		t.Fatalf("agents = %#v, want one offline agent", agents)
+	}
+}
+
+func TestUpgradeAPIValidatesAgentID(t *testing.T) {
+	app := fiber.New()
+	api := NewAgentAPI(NewAgentService(nil))
+	app.Post("/upgrade", api.Upgrade)
+
+	request := httptest.NewRequest(http.MethodPost, "/upgrade", bytes.NewBufferString(`{"agent_id":"bad/id"}`))
+	request.Header.Set("Content-Type", "application/json")
+	response, err := app.Test(request)
+	if err != nil {
+		t.Fatalf("app.Test: %v", err)
+	}
+	if response.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", response.StatusCode)
+	}
+}
+
+func TestUpgradeAPITriggersConfiguredUpdater(t *testing.T) {
+	db := newUpdaterTestDB(t)
+	createAgent(t, db, model.Agent{
+		AgentID: "agent-api",
+		Version: "v3.0.5",
+		OS:      "linux",
+		Arch:    "amd64",
+	})
+	caller := &fakeUpdateCaller{}
+	updater, err := NewUpdater(newUpdaterTestConfig(t, "api-"), caller, db)
+	if err != nil {
+		t.Fatalf("NewUpdater: %v", err)
+	}
+	service := NewAgentService(NewAgentRepo(db))
+	service.SetUpdater(updater)
+	app := fiber.New()
+	app.Post("/upgrade", NewAgentAPI(service).Upgrade)
+
+	request := httptest.NewRequest(http.MethodPost, "/upgrade", bytes.NewBufferString(`{"agent_id":"agent-api"}`))
+	request.Header.Set("Content-Type", "application/json")
+	response, err := app.Test(request)
+	if err != nil {
+		t.Fatalf("app.Test: %v", err)
+	}
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", response.StatusCode)
+	}
+	if calls := caller.snapshot(); len(calls) != 1 || calls[0].agentID != "agent-api" {
+		t.Fatalf("calls = %#v", calls)
 	}
 }

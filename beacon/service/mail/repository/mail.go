@@ -5,6 +5,7 @@
 package repository
 
 import (
+	alarmtitle "beacon/service/alarm/title"
 	"beacon/pkg/secret"
 	"beacon/service/model"
 	"beacon/service/schema"
@@ -112,9 +113,9 @@ func buildMailTestMessage(mail model.Mail, args schema.MailTestArgs, title strin
 	content := `邮件告警测试消息`
 	message := gomail.NewMessage()
 	// 增加发件人别名
-	message.SetHeader("From", mail.Sender) // 发件人
-	message.SetHeader("To", args.Receiver) // 收件人
-	message.SetHeader("Subject", title)    // 定义的主题
-	message.SetBody("text/plain", content) //发送的文本消息
+	message.SetHeader("From", mail.Sender)                    // 发件人
+	message.SetHeader("To", args.Receiver)                    // 收件人
+	message.SetHeader("Subject", alarmtitle.OrDefault(title)) // 定义的主题
+	message.SetBody("text/plain", content)                    //发送的文本消息
 	return message
 }

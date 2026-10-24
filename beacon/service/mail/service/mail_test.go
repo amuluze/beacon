@@ -26,7 +26,7 @@ func TestMailService_MailQuery_Success(t *testing.T) {
 			Receiver: "admin@example.com",
 		}, nil
 	}
-	svc := NewMailService(r)
+	svc := NewMailService(r, testutil.NewFakeAlarmRepo())
 
 	result, err := svc.MailQuery(context.Background())
 	if err != nil {
@@ -54,7 +54,7 @@ func TestMailService_MailQuery_NotFound(t *testing.T) {
 	r.MailQueryFn = func(ctx context.Context) (model.Mail, error) {
 		return model.Mail{}, gorm.ErrRecordNotFound
 	}
-	svc := NewMailService(r)
+	svc := NewMailService(r, testutil.NewFakeAlarmRepo())
 
 	result, err := svc.MailQuery(context.Background())
 	if err != nil {
@@ -73,7 +73,7 @@ func TestMailService_MailQuery_Error(t *testing.T) {
 	r.MailQueryFn = func(ctx context.Context) (model.Mail, error) {
 		return model.Mail{}, testutil.ErrTest
 	}
-	svc := NewMailService(r)
+	svc := NewMailService(r, testutil.NewFakeAlarmRepo())
 
 	_, err := svc.MailQuery(context.Background())
 	if !errors.Is(err, testutil.ErrTest) {
@@ -103,7 +103,7 @@ func TestMailService_MailCreate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := testutil.NewFakeMailRepo()
 			r.MailCreateFn = tt.fn
-			svc := NewMailService(r)
+			svc := NewMailService(r, testutil.NewFakeAlarmRepo())
 
 			err := svc.MailCreate(context.Background(), schema.MailCreateArgs{
 				Server:   "smtp.example.com",
@@ -141,7 +141,7 @@ func TestMailService_MailUpdate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := testutil.NewFakeMailRepo()
 			r.MailUpdateFn = tt.fn
-			svc := NewMailService(r)
+			svc := NewMailService(r, testutil.NewFakeAlarmRepo())
 
 			err := svc.MailUpdate(context.Background(), schema.MailUpdateArgs{
 				ID:     1,
@@ -176,12 +176,45 @@ func TestMailService_MailTest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := testutil.NewFakeMailRepo()
 			r.MailTestFn = tt.fn
-			svc := NewMailService(r)
+			alarmRepo := testutil.NewFakeAlarmRepo()
+			alarmRepo.AlarmMessageSettingQueryFn = func(context.Context) (model.AlarmMessageSetting, error) {
+				return model.AlarmMessageSetting{MessageTitle: "  生产环境主机告警  "}, nil
+			}
+			var gotTitle string
+			originalFn := r.MailTestFn
+			r.MailTestFn = func(ctx context.Context, args schema.MailTestArgs, title string) error {
+				gotTitle = title
+				return originalFn(ctx, args, title)
+			}
+			svc := NewMailService(r, alarmRepo)
 
 			err := svc.MailTest(context.Background(), schema.MailTestArgs{Receiver: "admin@example.com"})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %v, wantErr %v", err, tt.wantErr)
 			}
+			if gotTitle != "生产环境主机告警" {
+				t.Errorf("title = %q, want normalized shared title", gotTitle)
+			}
 		})
+	}
+}
+
+func TestMailService_MailTestFallsBackToDefaultTitle(t *testing.T) {
+	mailRepo := testutil.NewFakeMailRepo()
+	alarmRepo := testutil.NewFakeAlarmRepo()
+	alarmRepo.AlarmMessageSettingQueryFn = func(context.Context) (model.AlarmMessageSetting, error) {
+		return model.AlarmMessageSetting{}, testutil.ErrTest
+	}
+	var gotTitle string
+	mailRepo.MailTestFn = func(_ context.Context, _ schema.MailTestArgs, title string) error {
+		gotTitle = title
+		return nil
+	}
+
+	if err := NewMailService(mailRepo, alarmRepo).MailTest(context.Background(), schema.MailTestArgs{Receiver: "admin@example.com"}); err != nil {
+		t.Fatalf("MailTest() error = %v", err)
+	}
+	if gotTitle != model.DefaultAlarmMessageTitle {
+		t.Fatalf("title = %q, want %q", gotTitle, model.DefaultAlarmMessageTitle)
 	}
 }

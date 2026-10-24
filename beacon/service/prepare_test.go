@@ -363,3 +363,48 @@ func TestInitAlarmThresholdNormalizesRecordsAndPreservesOverrides(t *testing.T) 
 		t.Fatal("legacy mem threshold should not remain active")
 	}
 }
+
+func TestInitAlarmMessageSettingCreatesDefaultAndPreservesOverride(t *testing.T) {
+	db, err := database.NewDB(
+		database.WithType("sqlite"),
+		database.WithDBName(filepath.Join(t.TempDir(), "beacon")),
+	)
+	if err != nil {
+		t.Fatalf("create test database: %v", err)
+	}
+	t.Cleanup(db.Close)
+	if err := db.AutoMigrate(&model.AlarmMessageSetting{}); err != nil {
+		t.Fatalf("migrate alarm message setting: %v", err)
+	}
+
+	prepare := &Prepare{db: db}
+	if err := prepare.InitAlarmMessageSetting(); err != nil {
+		t.Fatalf("initialize alarm message setting: %v", err)
+	}
+
+	var setting model.AlarmMessageSetting
+	if err := db.Where("key = ?", model.DefaultAlarmMessageSettingKey).First(&setting).Error; err != nil {
+		t.Fatalf("query initialized setting: %v", err)
+	}
+	if setting.MessageTitle != model.DefaultAlarmMessageTitle {
+		t.Fatalf("initial title = %q, want %q", setting.MessageTitle, model.DefaultAlarmMessageTitle)
+	}
+
+	if err := db.Model(&setting).Update("message_title", "生产环境主机告警").Error; err != nil {
+		t.Fatalf("customize title: %v", err)
+	}
+	if err := prepare.InitAlarmMessageSetting(); err != nil {
+		t.Fatalf("first reinitialize alarm message setting: %v", err)
+	}
+	if err := prepare.InitAlarmMessageSetting(); err != nil {
+		t.Fatalf("second reinitialize alarm message setting: %v", err)
+	}
+
+	var settings []model.AlarmMessageSetting
+	if err := db.Where("key = ?", model.DefaultAlarmMessageSettingKey).Find(&settings).Error; err != nil {
+		t.Fatalf("query settings: %v", err)
+	}
+	if len(settings) != 1 || settings[0].MessageTitle != "生产环境主机告警" {
+		t.Fatalf("settings = %+v, want one preserved custom setting", settings)
+	}
+}

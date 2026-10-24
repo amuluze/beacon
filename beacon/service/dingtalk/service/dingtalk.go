@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	apperrors "beacon/pkg/errors"
+	alarmrepository "beacon/service/alarm/repository"
+	alarmtitle "beacon/service/alarm/title"
 	"beacon/service/dingtalk/client"
 	"beacon/service/dingtalk/repository"
 	"beacon/service/model"
@@ -24,12 +26,13 @@ type IDingTalkService interface {
 }
 
 type DingTalkService struct {
-	repository repository.IDingTalkRepository
-	sender     client.Sender
+	repository      repository.IDingTalkRepository
+	alarmRepository alarmrepository.IAlarmRepository
+	sender          client.Sender
 }
 
-func NewDingTalkService(repository repository.IDingTalkRepository, sender client.Sender) *DingTalkService {
-	return &DingTalkService{repository: repository, sender: sender}
+func NewDingTalkService(repository repository.IDingTalkRepository, alarmRepository alarmrepository.IAlarmRepository, sender client.Sender) *DingTalkService {
+	return &DingTalkService{repository: repository, alarmRepository: alarmRepository, sender: sender}
 }
 
 func (s *DingTalkService) Query(ctx context.Context) (schema.DingTalkSetting, error) {
@@ -98,9 +101,15 @@ func (s *DingTalkService) Test(ctx context.Context) error {
 	if setting.Webhook == "" {
 		return apperrors.New400Error("请先配置钉钉 Webhook")
 	}
+	messageSetting, messageSettingErr := s.alarmRepository.AlarmMessageSettingQuery(ctx)
+	messageTitle := ""
+	if messageSettingErr == nil {
+		messageTitle = messageSetting.MessageTitle
+	}
 	return s.sender.Send(ctx, client.Config{
-		Webhook: setting.Webhook,
-		Secret:  setting.Secret,
-		AtAll:   setting.AtAll,
+		Webhook:      setting.Webhook,
+		Secret:       setting.Secret,
+		AtAll:        setting.AtAll,
+		MessageTitle: alarmtitle.OrDefault(messageTitle),
 	}, "这是一条 Beacon 钉钉告警测试消息")
 }

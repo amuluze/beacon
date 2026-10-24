@@ -13,9 +13,11 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
 )
 
 // AgentInfo carries metadata about a connected agent.
@@ -57,16 +59,16 @@ type pendingStream struct {
 // It accepts Agent connections and provides a Call interface for dispatching RPCs.
 type ServerTunnel struct {
 	UnimplementedReverseTunnelServer
-	grpcServer     *grpc.Server
-	listener       net.Listener
-	agents         sync.Map // map[string]*agentStream
-	pending        sync.Map // map[string]*pendingCall   (call_id -> pendingCall)
-	streams        sync.Map // map[string]*pendingStream (stream_id -> pendingStream)
-	callID         atomic.Uint64
-	lifecycle      AgentLifecycle
-	joinToken      string
-	allowAnonymous bool
-	tlsConfig      *tls.Config
+	grpcServer *grpc.Server
+	listener   net.Listener
+	agents     sync.Map // map[string]*agentStream
+	pending    sync.Map // map[string]*pendingCall   (call_id -> pendingCall)
+	streams    sync.Map // map[string]*pendingStream (stream_id -> pendingStream)
+	callID     atomic.Uint64
+	lifecycle       AgentLifecycle
+	joinToken       string
+	allowAnonymous  bool
+	tlsConfig       *tls.Config
 }
 
 type agentStream struct {
@@ -134,6 +136,15 @@ func (s *ServerTunnel) Start(addr string) error {
 	if s.tlsConfig != nil {
 		opts = append(opts, grpc.Creds(credentials.NewTLS(s.tlsConfig)))
 	}
+	// keepalive：MaxConnectionIdle/MaxConnectionAge 兜底回收僵尸与超龄 agent 连接，
+	// 避免半开 TCP 长期占用 server 侧读写缓冲。agent 端已有重连循环，周期性重连无副作用。
+	opts = append(opts, grpc.KeepaliveParams(keepalive.ServerParameters{
+		MaxConnectionIdle:     5 * time.Minute,
+		MaxConnectionAge:      30 * time.Minute,
+		MaxConnectionAgeGrace: time.Minute,
+		Time:                  30 * time.Second,
+		Timeout:               10 * time.Second,
+	}))
 	s.grpcServer = grpc.NewServer(opts...)
 	RegisterReverseTunnelServer(s.grpcServer, s)
 	slog.Info("server tunnel: listening", "addr", addr)
@@ -259,6 +270,7 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 				select {
 				case ps.chunkChan <- frame:
 				default:
+					// chunkChan 满（64 帧未消费）：调用方停止读取或 agent 突发洪流。
 					// 丢弃避免阻塞 agent 接收循环，并计数以便在流结束时透传给消费方。
 					ps.dropped.Add(1)
 					slog.Warn("server tunnel: stream chunk dropped (consumer too slow)", "stream_id", frame.Id)

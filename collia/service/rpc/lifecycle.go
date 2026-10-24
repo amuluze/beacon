@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -34,6 +35,7 @@ const (
 	defaultDataDir          = "/data/beacon/collia"
 	defaultLogDir           = "/data/beacon/logs/collia"
 	backupSuffix            = ".bak"
+	defaultDownloadTimeout  = 5 * time.Minute
 )
 
 // upgradeMu 保证同一 Agent 串行更新（RU006）。TryLock 失败即拒绝并发请求。
@@ -171,7 +173,8 @@ func (s *Service) downloadBinary(ctx context.Context, args rpcSchema.UpgradeAgen
 	if args.InstallToken != "" {
 		req.Header.Set("X-Install-Token", args.InstallToken)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	client := &http.Client{Timeout: defaultDownloadTimeout}
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("http get: %w", err)
 	}
@@ -216,7 +219,8 @@ func verifySHA256(file, expected string) error {
 	return nil
 }
 
-// replaceBinary 原子替换：写 .new → 备份当前为 .bak → rename .new → 目标 → chmod。
+// replaceBinary 原子替换：先为当前 inode 创建 .bak 硬链接，再以 rename
+// 原子覆盖目标。整个过程中当前路径始终存在；任一步失败都保留旧版本。
 func replaceBinary(tmpFile, target string) error {
 	if target == "" {
 		return errors.New("empty target binary path")
@@ -225,18 +229,62 @@ func replaceBinary(tmpFile, target string) error {
 	if err := os.Chmod(tmpFile, 0o700); err != nil {
 		return fmt.Errorf("chmod temp: %w", err)
 	}
-	// 备份当前二进制（若存在）
+	// 备份当前二进制（若存在）。硬链接不移动 target，因此后续 rename
+	// 失败时旧二进制仍位于原路径。
 	if _, err := os.Stat(target); err == nil {
 		backup := target + backupSuffix
-		// 移除旧备份
 		_ = os.Remove(backup)
-		if err := os.Rename(target, backup); err != nil {
+		if err := os.Link(target, backup); err != nil {
 			return fmt.Errorf("backup current binary: %w", err)
 		}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("inspect current binary: %w", err)
 	}
-	// 原子 rename
+	// POSIX rename 在同一文件系统内原子覆盖现有目标。
 	if err := os.Rename(tmpFile, target); err != nil {
-		return fmt.Errorf("rename into place: %w", err)
+		// 跨文件系统（EXDEV）rename 会失败；回退为复制到 target 同目录的临时文件后
+		// 再 rename，仍保证原子替换，不依赖 tmp 与 target 位于同一文件系统。
+		if fallbackErr := renameFallback(tmpFile, target); fallbackErr != nil {
+			return fmt.Errorf("rename into place: %v (fallback: %w)", err, fallbackErr)
+		}
+	}
+	return nil
+}
+
+// renameFallback 将 src 内容复制到 target 同目录的临时文件，chmod 后原子 rename 到 target。
+// 用于 tmp 与 target 位于不同文件系统、os.Rename 返回 EXDEV 的场景。
+func renameFallback(src, target string) error {
+	dir := filepath.Dir(target)
+	tmp, err := os.CreateTemp(dir, filepath.Base(target)+".tmp-*")
+	if err != nil {
+		return fmt.Errorf("create temp in target dir: %w", err)
+	}
+	tmpName := tmp.Name()
+	defer func() { _ = os.Remove(tmpName) }()
+
+	in, err := os.Open(src)
+	if err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("open source: %w", err)
+	}
+	defer func() { _ = in.Close() }()
+
+	if _, err := io.Copy(tmp, in); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("copy: %w", err)
+	}
+	if err := tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("sync: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("close temp: %w", err)
+	}
+	if err := os.Chmod(tmpName, 0o700); err != nil {
+		return fmt.Errorf("chmod: %w", err)
+	}
+	if err := os.Rename(tmpName, target); err != nil {
+		return fmt.Errorf("rename fallback: %w", err)
 	}
 	return nil
 }
@@ -245,15 +293,17 @@ func replaceBinary(tmpFile, target string) error {
 func (s *Service) scheduleRestart() {
 	fn := s.restartFn
 	go func() {
-		// 给 Server 读取 reply 留出窗口
-		// restartFn 为空时退化为 os.Exit，交由 systemd 拉起新版本
+		// handler 返回后 tunnel 仍需序列化并发送最终 reply；留出明确窗口，
+		// 避免 systemctl 先终止进程而让 Server 把已完成替换误记为失败。
+		time.Sleep(time.Second)
 		if fn != nil {
 			if err := fn(); err != nil {
-				slog.Error("restart callback failed, exiting to let supervisor recover", "err", err)
+				slog.Error("restart callback failed, exiting for supervisor recovery", "err", err)
+				os.Exit(1)
 			}
 		}
-		// 无论回调是否成功，都请求进程退出；systemd 会拉起新二进制
-		// 不在此直接 os.Exit，避免回调已自行处理（如 systemctl restart）导致重复
+		// 回调成功（systemctl restart 已接管重启，或已自行 os.Exit）时不在此额外退出，
+		// 避免重复；回调失败时上方已 os.Exit(1) 交由 supervisor 拉起新二进制。
 	}()
 }
 
@@ -298,13 +348,11 @@ func DefaultRestartFn(serviceName string) func() error {
 	}
 }
 
-// handleUninstall 执行自卸载（spec T3）。返回残留项供 Server 审计。
-func (s *Service) handleUninstall(ctx context.Context, args rpcSchema.UninstallAgentArgs, reply *rpcSchema.UninstallAgentReply) error {
-	binary, configDir, dataDir, logDir := s.lifecyclePaths()
-	slog.Info("uninstall triggered", "force", args.Force)
-
+// CleanupUninstallPaths 删除 Agent 的二进制/备份/配置/数据/日志，返回失败残留项。
+// 供本地卸载（cmd remove）与远程卸载（UninstallAgent RPC）复用，避免两处重复实现。
+func CleanupUninstallPaths(binary string) []string {
 	var residuals []string
-	for _, p := range []string{binary, binary + backupSuffix, configDir, dataDir, logDir} {
+	for _, p := range []string{binary, binary + backupSuffix, defaultConfigDir, defaultDataDir, defaultLogDir} {
 		if p == "" {
 			continue
 		}
@@ -316,6 +364,15 @@ func (s *Service) handleUninstall(ctx context.Context, args rpcSchema.UninstallA
 			slog.Warn("uninstall remove failed", "path", p, "err", err)
 		}
 	}
+	return residuals
+}
+
+// handleUninstall 执行自卸载（spec T3）。返回残留项供 Server 审计。
+func (s *Service) handleUninstall(ctx context.Context, args rpcSchema.UninstallAgentArgs, reply *rpcSchema.UninstallAgentReply) error {
+	binary, _, _, _ := s.lifecyclePaths()
+	slog.Info("uninstall triggered", "force", args.Force)
+
+	residuals := CleanupUninstallPaths(binary)
 
 	reply.Residuals = residuals
 	if len(residuals) > 0 {

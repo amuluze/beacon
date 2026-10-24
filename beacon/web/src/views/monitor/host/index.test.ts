@@ -70,10 +70,6 @@ vi.mock('vue-i18n', () => ({
     useI18n: () => ({ t: (key: string) => key }),
 }))
 
-vi.mock('vue-router', () => ({
-    useRouter: () => ({ push: vi.fn() }),
-}))
-
 const ElSelectStub = defineComponent({
     name: 'ElSelect',
     props: {
@@ -108,7 +104,6 @@ function mountHostMonitor() {
                 DataStaleTag: { template: '<span />' },
                 Echarts: EchartsStub,
                 echarts: EchartsStub,
-                ElButton: { template: '<button><slot /></button>' },
                 ElOption: { template: '<span />' },
                 ElSelect: ElSelectStub,
             },
@@ -157,6 +152,7 @@ describe('host monitor time density', () => {
         expect(wrapper.findAll('.am-chart-row')).toHaveLength(2)
         expect(wrapper.findAll('.am-chart-area')).toHaveLength(4)
         expect(wrapper.findAll('.am-chart-card')).toHaveLength(4)
+        expect(wrapper.text()).not.toContain('agent.openTerminal')
     })
 
     it('preserves runtime axis formatters and timestamped numeric series values', async () => {

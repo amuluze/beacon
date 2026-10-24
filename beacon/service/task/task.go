@@ -12,6 +12,7 @@ import (
 
 	"beacon/pkg/secret"
 	"beacon/pkg/utils"
+	alarmtitle "beacon/service/alarm/title"
 	dingtalkclient "beacon/service/dingtalk/client"
 	"beacon/service/model"
 	"common/database"
@@ -435,13 +436,24 @@ func (t *Task) sendAlarmAudit(ctx context.Context, msg string, agentID string) e
 }
 
 func (t *Task) notify(ctx context.Context, msg string) {
-	title := "服务器告警"
+	title := t.alarmMessageTitle(ctx)
 	if err := t.sendMail(ctx, title, msg); err != nil {
 		slog.Warn("send alarm notification failed", "channel", "mail", "err", err)
 	}
 	if err := t.sendDingTalk(ctx, title, msg); err != nil {
 		slog.Warn("send alarm notification failed", "channel", "dingtalk", "err", err)
 	}
+}
+
+func (t *Task) alarmMessageTitle(ctx context.Context) string {
+	var setting model.AlarmMessageSetting
+	err := t.db.WithContext(ctx).
+		Where("key = ?", model.DefaultAlarmMessageSettingKey).
+		First(&setting).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		slog.Warn("query alarm message title failed; using default", "err", err)
+	}
+	return alarmtitle.OrDefault(setting.MessageTitle)
 }
 
 func (t *Task) sendMail(ctx context.Context, title string, msg string) error {
@@ -472,7 +484,7 @@ func (t *Task) sendMail(ctx context.Context, title string, msg string) error {
 		mailMessage := gomail.NewMessage()
 		mailMessage.SetHeader("From", mail.Sender)
 		mailMessage.SetHeader("To", recv)
-		mailMessage.SetHeader("Subject", title)
+		mailMessage.SetHeader("Subject", alarmtitle.OrDefault(title))
 		mailMessage.SetBody("text/plain", msg)
 
 		if err := dialer.DialAndSend(mailMessage); err != nil {
@@ -510,6 +522,7 @@ func (t *Task) sendDingTalk(ctx context.Context, title string, msg string) error
 		Webhook:      setting.Webhook,
 		Secret:       setting.Secret,
 		AtAll:        setting.AtAll,
+		MessageTitle: title,
 	}, msg)
 }
 

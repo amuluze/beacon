@@ -1,0 +1,18 @@
+version: '3'
+
+includes:
+  beacon:
+    taskfile: ./beacon/Taskfile.yml
+    dir: ./beacon
+  beacon-web:
+    taskfile: ./beacon/web/Taskfile.yml
+    dir: ./beacon/web
+  collia:
+    taskfile: ./collia/Taskfile.yml
+    dir: ./collia
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list

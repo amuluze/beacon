@@ -4,11 +4,15 @@ import type { EmailSetting } from '@/interface/alarm'
 import type { DingTalkSetting } from '@/interface/dingtalk'
 
 import EditCPUThreshold from './EditCPUThreshold.vue'
+import EditDiskThreshold from './EditDiskThreshold.vue'
+import EditAlarmMessageTitle from './EditAlarmMessageTitle.vue'
 import EditEmailSetting from './EditEmailSetting.vue'
 import EditDingTalkSetting from './EditDingTalkSetting.vue'
+import EditMemThreshold from './EditMemThreshold.vue'
 
 const mocks = vi.hoisted(() => ({
     updateAlarmThreshold: vi.fn(),
+    updateAlarmMessageSetting: vi.fn(),
     updateMail: vi.fn(),
     createMail: vi.fn(),
     updateDingTalk: vi.fn(),
@@ -19,6 +23,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/api/alarm', () => ({
     updateAlarmThreshold: mocks.updateAlarmThreshold,
+    updateAlarmMessageSetting: mocks.updateAlarmMessageSetting,
 }))
 vi.mock('@/api/mail', () => ({
     createMail: mocks.createMail,
@@ -46,6 +51,7 @@ const stubs = {
     },
     'el-form-item': { template: '<label><slot /></label>' },
     'el-input': {
+        name: 'ElInput',
         props: ['modelValue'],
         emits: ['update:modelValue'],
         template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">',
@@ -55,7 +61,7 @@ const stubs = {
         template: '<div><slot /></div>',
     },
     'el-option': { template: '<span />' },
-    'el-button': { template: '<button type="button" @click="$emit(\'click\')"><slot /></button>' },
+    'el-button': { template: '<button type="button" @click="$emit(\'click\')"><slot /></button>', emits: ['click'] },
     'el-switch': {
         props: ['modelValue'],
         emits: ['update:modelValue'],
@@ -112,6 +118,117 @@ describe('setting dialogs', () => {
 
         expect(mocks.success).not.toHaveBeenCalled()
         expect(wrapper.emitted('update:visible')).toBeUndefined()
+    })
+
+    it('trims and persists the shared alarm message title before refreshing', async () => {
+        const saved = vi.fn()
+        mocks.updateAlarmMessageSetting.mockResolvedValue(undefined)
+        const wrapper = mount(EditAlarmMessageTitle, {
+            props: {
+                visible: true,
+                setting: { message_title: 'Beacon 主机告警' },
+                onSaved: saved,
+            },
+            global: { stubs },
+        })
+
+        await wrapper.find('input').setValue('  生产环境主机告警  ')
+        await wrapper.findAll('button')[1].trigger('click')
+        await flushPromises()
+
+        expect(mocks.updateAlarmMessageSetting).toHaveBeenCalledWith({
+            message_title: '生产环境主机告警',
+        })
+        expect(mocks.success).toHaveBeenCalledWith('setting.alarmMessageTitleUpdated')
+        expect(saved).toHaveBeenCalledOnce()
+        expect(wrapper.emitted('update:visible')).toEqual([[false]])
+    })
+
+    it('keeps the alarm message title dialog open when updating fails', async () => {
+        mocks.updateAlarmMessageSetting.mockRejectedValue(new Error('network down'))
+        const wrapper = mount(EditAlarmMessageTitle, {
+            props: {
+                visible: true,
+                setting: { message_title: 'Beacon 主机告警' },
+            },
+            global: { stubs },
+        })
+
+        await wrapper.find('input').setValue('生产环境主机告警')
+        await wrapper.findAll('button')[1].trigger('click')
+        await flushPromises()
+
+        expect(mocks.success).not.toHaveBeenCalled()
+        expect(wrapper.emitted('update:visible')).toBeUndefined()
+    })
+
+    it('rejects an alarm message title containing a line break before the request', async () => {
+        const wrapper = mount(EditAlarmMessageTitle, {
+            props: {
+                visible: true,
+                setting: { message_title: 'Beacon 主机告警' },
+            },
+            global: { stubs },
+        })
+
+        wrapper.findComponent({ name: 'ElInput' }).vm.$emit('update:modelValue', '生产告警\n伪造标题')
+        await wrapper.vm.$nextTick()
+        await wrapper.findAll('button')[1].trigger('click')
+        await flushPromises()
+
+        expect(mocks.updateAlarmMessageSetting).not.toHaveBeenCalled()
+        expect(wrapper.emitted('update:visible')).toBeUndefined()
+    })
+
+    it('persists the canonical memory threshold and refreshes after success', async () => {
+        const update = vi.fn()
+        mocks.updateAlarmThreshold.mockResolvedValue(undefined)
+        const wrapper = mount(EditMemThreshold, {
+            props: {
+                visible: true,
+                threshold: { id: 2, type: 'mem', duration: 2, threshold: 80 },
+                update,
+            },
+            global: { stubs },
+        })
+
+        await wrapper.findAll('button')[1].trigger('click')
+        await flushPromises()
+
+        expect(mocks.updateAlarmThreshold).toHaveBeenCalledWith({
+            id: 2,
+            type: 'memory',
+            duration: 2,
+            threshold: 80,
+        })
+        expect(wrapper.emitted('update:visible')).toEqual([[false]])
+        expect(update).toHaveBeenCalledOnce()
+    })
+
+    it('persists the disk threshold and refreshes after success', async () => {
+        const update = vi.fn()
+        mocks.updateAlarmThreshold.mockResolvedValue(undefined)
+        const wrapper = mount(EditDiskThreshold, {
+            props: {
+                visible: true,
+                threshold: { id: 3, type: 'disk', duration: 2, threshold: 85 },
+                update,
+            },
+            global: { stubs },
+        })
+
+        await wrapper.find('input').setValue('91')
+        await wrapper.findAll('button')[1].trigger('click')
+        await flushPromises()
+
+        expect(mocks.updateAlarmThreshold).toHaveBeenCalledWith({
+            id: 3,
+            type: 'disk',
+            duration: 2,
+            threshold: 91,
+        })
+        expect(wrapper.emitted('update:visible')).toEqual([[false]])
+        expect(update).toHaveBeenCalledOnce()
     })
 
     it('keeps stored DingTalk credentials when credential inputs are blank', async () => {

@@ -30,3 +30,11 @@ export interface AlarmThresholdUpdateArgs {
     duration: number
     threshold: number
 }
+
+export interface AlarmMessageSetting {
+    message_title: string
+}
+
+export interface AlarmMessageSettingUpdateArgs {
+    message_title: string
+}

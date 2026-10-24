@@ -24,7 +24,7 @@ const dialogVisible = computed({
       emit('close')
   },
 })
-const form = reactive<AlarmThreshold>({ ...props.threshold })
+const form = reactive<AlarmThreshold>({ ...props.threshold, type: 'memory' })
 const loading = shallowRef(false)
 const durationOptions = Array.from({ length: 9 }, (_, index) => index + 2)
 const { t } = useI18n()

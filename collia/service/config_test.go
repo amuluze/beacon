@@ -103,3 +103,43 @@ db:
 		t.Fatalf("expected empty agent_id, got %q", cfg.Control.AgentID)
 	}
 }
+
+func TestNormalizeAgentIDReportInheritsControl(t *testing.T) {
+	const yaml = `
+control:
+  agent_id: node-7
+task:
+  report:
+    agent_id: ""
+`
+	cfg, err := NewConfig(writeTempYAML(t, yaml), Prefix(""))
+	if err != nil {
+		t.Fatalf("NewConfig: %v", err)
+	}
+	if cfg.Control.AgentID != "node-7" {
+		t.Fatalf("control.agent_id = %q, want node-7", cfg.Control.AgentID)
+	}
+	if cfg.Task.Report.AgentID != "node-7" {
+		t.Fatalf("report.agent_id = %q, want node-7 (inherited)", cfg.Task.Report.AgentID)
+	}
+}
+
+func TestNormalizeAgentIDMismatchUsesControl(t *testing.T) {
+	const yaml = `
+control:
+  agent_id: node-a
+task:
+  report:
+    agent_id: node-b
+`
+	cfg, err := NewConfig(writeTempYAML(t, yaml), Prefix(""))
+	if err != nil {
+		t.Fatalf("NewConfig: %v", err)
+	}
+	if cfg.Control.AgentID != "node-a" {
+		t.Fatalf("control.agent_id = %q, want node-a", cfg.Control.AgentID)
+	}
+	if cfg.Task.Report.AgentID != "node-a" {
+		t.Fatalf("report.agent_id = %q, want node-a (aligned to control)", cfg.Task.Report.AgentID)
+	}
+}

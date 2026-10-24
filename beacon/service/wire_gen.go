@@ -12,7 +12,7 @@ import (
 	service5 "beacon/service/account/service"
 	"beacon/service/agent"
 	api8 "beacon/service/alarm/api"
-	repository8 "beacon/service/alarm/repository"
+	repository7 "beacon/service/alarm/repository"
 	service8 "beacon/service/alarm/service"
 	api4 "beacon/service/audit/api"
 	repository4 "beacon/service/audit/repository"
@@ -25,7 +25,7 @@ import (
 	"beacon/service/container/service"
 	api7 "beacon/service/dingtalk/api"
 	"beacon/service/dingtalk/client"
-	repository7 "beacon/service/dingtalk/repository"
+	repository8 "beacon/service/dingtalk/repository"
 	service7 "beacon/service/dingtalk/service"
 	"beacon/service/health/api"
 	api2 "beacon/service/host/api"
@@ -71,7 +71,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	agentRepository := agent.NewAgentRepo(db)
 	agentService := agent.NewAgentService(agentRepository)
 	certManager := NewCertManager(config)
-	caller, err := NewRPCClient(config, agentService, certManager)
+	caller, err := NewRPCClient(config, agentService, certManager, db)
 	if err != nil {
 		cleanup3()
 		cleanup2()
@@ -102,13 +102,13 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		return nil, nil, err
 	}
 	mailRepository := repository6.NewMailRepository(db, cipher)
-	mailService := service6.NewMailService(mailRepository)
+	alarmRepository := repository7.NewAlarmRepository(db)
+	mailService := service6.NewMailService(mailRepository, alarmRepository)
 	mailAPI := api6.NewMailAPI(mailService)
-	dingTalkRepository := repository7.NewDingTalkRepository(db, cipher)
+	dingTalkRepository := repository8.NewDingTalkRepository(db, cipher)
 	sender := client.NewSender()
-	dingTalkService := service7.NewDingTalkService(dingTalkRepository, sender)
+	dingTalkService := service7.NewDingTalkService(dingTalkRepository, alarmRepository, sender)
 	dingTalkAPI := api7.NewDingTalkAPI(dingTalkService)
-	alarmRepository := repository8.NewAlarmRepository(db)
 	alarmService := service8.NewAlarmService(alarmRepository)
 	alarmAPI := api8.NewAlarmAPI(alarmService)
 	agentAPI := agent.NewAgentAPI(agentService)

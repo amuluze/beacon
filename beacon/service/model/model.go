@@ -21,6 +21,7 @@ func (a *Models) GetAllModels() []interface{} {
 		new(Resource),
 		new(Audit),
 		new(AlarmThreshold),
+		new(AlarmMessageSetting),
 		new(Mail),
 		new(DingTalk),
 		new(Agent),

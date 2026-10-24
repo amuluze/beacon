@@ -26,6 +26,7 @@ func newTaskTestDB(t *testing.T) *database.DB {
 	if err := db.AutoMigrate(
 		new(model.Agent),
 		new(model.AlarmThreshold),
+		new(model.AlarmMessageSetting),
 		new(model.Audit),
 		new(model.Mail),
 		new(model.DingTalk),
@@ -78,10 +79,12 @@ func findAuditsByAgent(t *testing.T, db *database.DB, agentID string) []model.Au
 // stubMailSender captures sent messages without dialing a real SMTP server.
 type stubMailSender struct {
 	messages []string
+	titles   []string
 	err      error
 }
 
 func (s *stubMailSender) Send(title string, msg string) error {
+	s.titles = append(s.titles, title)
 	s.messages = append(s.messages, msg)
 	return s.err
 }
@@ -742,11 +745,16 @@ func TestResourceAlarmTasksSendDingTalk(t *testing.T) {
 				Secret:  "SEC-test",
 				AtAll:   true,
 			})
+			createTaskRecord(t, db, &model.AlarmMessageSetting{
+				Key:          model.DefaultAlarmMessageSettingKey,
+				MessageTitle: "生产环境主机告警",
+			})
 			tt.seed(t, db)
 
 			dingTalk := &stubDingTalkSender{}
+			mail := &stubMailSender{}
 			task := NewTask(db)
-			task.SetMailSender(&stubMailSender{})
+			task.SetMailSender(mail)
 			task.SetDingTalkSender(dingTalk)
 			if err := tt.run(task); err != nil {
 				t.Fatalf("alarm task error = %v", err)
@@ -762,7 +770,44 @@ func TestResourceAlarmTasksSendDingTalk(t *testing.T) {
 			if len(dingTalk.configs) != 1 || !dingTalk.configs[0].AtAll || dingTalk.configs[0].Secret != "SEC-test" {
 				t.Fatalf("DingTalk config = %+v, want stored signed config", dingTalk.configs)
 			}
+			if dingTalk.configs[0].MessageTitle != "生产环境主机告警" {
+				t.Fatalf("DingTalk title = %q, want configured title", dingTalk.configs[0].MessageTitle)
+			}
+			if len(mail.titles) != 1 || mail.titles[0] != "生产环境主机告警" {
+				t.Fatalf("mail titles = %v, want configured title", mail.titles)
+			}
+			audits := taskAudits(t, db)
+			if len(audits) != 1 || strings.Contains(audits[0].Operate, "生产环境主机告警") {
+				t.Fatalf("audit messages must not be prefixed with the notification title: %+v", audits)
+			}
 		})
+	}
+}
+
+func TestNotificationFallsBackToDefaultAlarmMessageTitle(t *testing.T) {
+	db := newTaskTestDB(t)
+	createTaskRecord(t, db, &model.AlarmMessageSetting{
+		Key:          model.DefaultAlarmMessageSettingKey,
+		MessageTitle: "invalid\nheader",
+	})
+	createTaskRecord(t, db, &model.DingTalk{
+		Key:     model.DefaultDingTalkConfigKey,
+		Enabled: true,
+		Webhook: "https://oapi.dingtalk.com/robot/send?access_token=test-token",
+	})
+	mail := &stubMailSender{}
+	dingTalk := &stubDingTalkSender{}
+	task := NewTask(db)
+	task.SetMailSender(mail)
+	task.SetDingTalkSender(dingTalk)
+
+	task.notify(context.Background(), "CPU 告警")
+
+	if len(mail.titles) != 1 || mail.titles[0] != model.DefaultAlarmMessageTitle {
+		t.Fatalf("mail titles = %v, want default title", mail.titles)
+	}
+	if len(dingTalk.configs) != 1 || dingTalk.configs[0].MessageTitle != model.DefaultAlarmMessageTitle {
+		t.Fatalf("DingTalk configs = %+v, want default title", dingTalk.configs)
 	}
 }
 

@@ -7,6 +7,7 @@ package service
 import (
 	"context"
 	"log/slog"
+	"runtime"
 
 	"common/database"
 	rpctunnel "common/rpc/tunnel"
@@ -44,6 +45,7 @@ func NewRPCServer(config *Config, db *database.DB, version Version) (*Server, er
 
 	tunnel := rpctunnel.NewAgentTunnel(config.Control.Server, agentID)
 	tunnel.SetJoinToken(config.Control.JoinToken)
+	tunnel.SetMetadata(version.String(), runtime.GOOS, runtime.GOARCH)
 	if config.Control.TLS.Enable {
 		serverName := config.Control.TLS.ServerName
 		if serverName == "" {

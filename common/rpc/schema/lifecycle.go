@@ -6,9 +6,9 @@ package schema
 // UpgradeAgentArgs 由 Server 经反向 tunnel 下发给 Agent，触发自更新。
 // DownloadURL 复用现有 /api/v1/host/install/package 端点；InstallToken 为 agent 安装令牌。
 type UpgradeAgentArgs struct {
-	DownloadURL  string `json:"download_url"`
-	SHA256       string `json:"sha256"`
-	Version      string `json:"version"`
+	DownloadURL string `json:"download_url"`
+	SHA256      string `json:"sha256"`
+	Version     string `json:"version"`
 	InstallToken string `json:"install_token"`
 }
 

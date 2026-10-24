@@ -50,7 +50,6 @@ describe('navbar', () => {
             'menu.monitor',
             'menu.container',
             'menu.setting',
-            'menu.terminal',
         ])
         expect(wrapper.find('.dropdown-stub').exists()).toBe(false)
         expect(wrapper.text()).not.toContain('container.more')

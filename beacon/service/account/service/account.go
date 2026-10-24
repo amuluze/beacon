@@ -14,6 +14,7 @@ import (
 
 	"github.com/casbin/casbin/v2"
 	"github.com/google/wire"
+	"gorm.io/gorm"
 )
 
 var AccountServiceSet = wire.NewSet(NewAccountService, wire.Bind(new(IAccountService), new(*AccountService)))
@@ -123,6 +124,9 @@ func (a *AccountService) UserDelete(ctx context.Context, args schema.UserDeleteA
 	users, err := a.AccountRepository.UserQuery(ctx, queryArgs)
 	if err != nil {
 		return err
+	}
+	if len(users) != len(args.IDs) {
+		return gorm.ErrRecordNotFound
 	}
 
 	err = a.AccountRepository.UserDelete(ctx, args)

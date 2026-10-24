@@ -75,6 +75,13 @@ ControlPort = 17000
 TLSEnable = true
 CertDir = "/etc/collia/certs"
 
+[AgentUpdate]
+Enable = true          # Agent 注册后自动比较并升级到镜像内置 Collia 版本
+TargetVersion = ""     # 生产镜像通过 BEACON_COLLIA_VERSION 注入
+Timeout = 300          # 单次升级超时（秒）
+MaxConcurrent = 2      # Server 全局最大并发升级数
+RetryInterval = 1800   # 自动升级失败冷却（秒）；管理员手动重试可绕过
+
 [InstallReport]
 Enable = false  # 默认关闭；仅在知情并同意发送下列安装信息时显式设为 true
 URL = "https://beacon.amuluze.com/api/v1/install/report" # 启用后接收安装统计的目标地址

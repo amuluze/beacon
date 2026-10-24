@@ -2,14 +2,13 @@
 // Description: collia Agent CLI 入口。
 //
 // 子命令：
-//
-//	run         前台运行（调试用）
-//	daemon      由 systemd 拉起时执行（通常无需手动调用）
-//	install     注册系统服务；执行 preflight（探测磁盘/网卡、回写 config、目录/端口预检）
-//	uninstall / remove  注销系统服务并清理二进制/配置/数据/日志
-//	start/stop/status  通过 daemon 控制 systemd 单元
-//	probe       仅执行 preflight 并打印结果（不注册服务）
-//	version     输出编译期版本
+//   run         前台运行（调试用）
+//   daemon      由 systemd 拉起时执行（通常无需手动调用）
+//   install     注册系统服务；执行 preflight（探测磁盘/网卡、回写 config、目录/端口预检）
+//   uninstall / remove  注销系统服务并清理二进制/配置/数据/日志
+//   start/stop/status  通过 daemon 控制 systemd 单元
+//   probe       仅执行 preflight 并打印结果（不注册服务）
+//   version     输出编译期版本
 //
 // 设计对齐：spec agent-lifecycle-update.md（RU004 卸载清理）、agent_install.go 的调用契约。
 package main
@@ -22,6 +21,7 @@ import (
 	"syscall"
 
 	"collia/service"
+	"collia/service/rpc"
 
 	"github.com/takama/daemon"
 )
@@ -34,9 +34,6 @@ const (
 	serviceDesc   = "Beacon Probe Agent"
 	defaultCfg    = "/etc/collia/config.yml"
 	binaryPath    = "/usr/sbin/collia"
-	configDir     = "/etc/collia"
-	dataDir       = "/data/beacon/collia"
-	logDir        = "/data/beacon/logs/collia"
 	defaultPrefix = "/"
 )
 
@@ -288,14 +285,6 @@ func runPreflight(cfg string, verbose bool) error {
 
 // cleanupPaths 删除二进制/配置/数据/日志，返回失败的残留项（spec RU004）。
 func cleanupPaths() []string {
-	var residuals []string
-	for _, p := range []string{binaryPath, binaryPath + ".bak", configDir, dataDir, logDir} {
-		if _, err := os.Stat(p); err != nil {
-			continue
-		}
-		if err := os.RemoveAll(p); err != nil {
-			residuals = append(residuals, fmt.Sprintf("%s: %v", p, err))
-		}
-	}
-	return residuals
+	// 与远程卸载（UninstallAgent RPC）复用同一清理实现，避免路径清单漂移。
+	return rpc.CleanupUninstallPaths(binaryPath)
 }

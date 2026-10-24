@@ -3,9 +3,11 @@ package agent
 
 import (
 	"context"
+	stderrors "errors"
 	"log/slog"
 	"time"
 
+	"beacon/pkg/contextx"
 	"beacon/pkg/errors"
 	"beacon/pkg/fiberx"
 	"beacon/service/model"
@@ -37,6 +39,12 @@ func (r *Repository) List(ctx context.Context) ([]model.Agent, error) {
 	var agents []model.Agent
 	err := r.DB.Model(&model.Agent{}).Order("last_seen desc").Find(&agents).Error
 	return agents, err
+}
+
+func (r *Repository) Get(ctx context.Context, agentID string) (model.Agent, error) {
+	var agent model.Agent
+	err := r.DB.WithContext(ctx).Where("agent_id = ?", agentID).First(&agent).Error
+	return agent, err
 }
 
 func (r *Repository) Upsert(agent *model.Agent) error {
@@ -71,8 +79,15 @@ func (r *Repository) Count(ctx context.Context) (int64, error) {
 // ── Service ──
 
 type Service struct {
-	repo   *Repository
-	tunnel onlineChecker
+	repo    *Repository
+	tunnel  onlineChecker
+	updater *Updater
+}
+
+// SetUpdater wires the Server-side Collia update coordinator. It is set before
+// the reverse tunnel starts accepting Agent registrations.
+func (s *Service) SetUpdater(updater *Updater) {
+	s.updater = updater
 }
 
 type onlineChecker interface {
@@ -108,6 +123,10 @@ func (s *Service) OnAgentConnect(info tunnelpkg.AgentInfo) {
 	}
 	if err := s.repo.Upsert(agent); err != nil {
 		slog.Error("agent upsert failed", "agent_id", info.AgentID, "err", err)
+		return
+	}
+	if s.updater != nil {
+		s.updater.Schedule(info)
 	}
 }
 
@@ -143,6 +162,28 @@ func (s *Service) Count(ctx context.Context) (int64, error) {
 	return s.repo.Count(ctx)
 }
 
+func (s *Service) Upgrade(ctx context.Context, agentID string) (UpdateResult, error) {
+	if agentID == "" {
+		return UpdateResult{}, contextx.ErrAgentIDRequired
+	}
+	if !contextx.IsValidAgentID(agentID) {
+		return UpdateResult{}, contextx.ErrInvalidAgentID
+	}
+	if s.updater == nil {
+		return UpdateResult{}, ErrUpdaterUnavailable
+	}
+	agent, err := s.repo.Get(ctx, agentID)
+	if err != nil {
+		return UpdateResult{}, err
+	}
+	return s.updater.Trigger(ctx, tunnelpkg.AgentInfo{
+		AgentID: agent.AgentID,
+		Version: agent.Version,
+		OS:      agent.OS,
+		Arch:    agent.Arch,
+	})
+}
+
 // ── API ──
 
 type API struct {
@@ -159,4 +200,31 @@ func (a *API) List(c *fiber.Ctx) error {
 		return fiberx.Failure(c, errors.New400Error(err.Error()))
 	}
 	return fiberx.Success(c, agents)
+}
+
+type upgradeArgs struct {
+	AgentID string `json:"agent_id"`
+}
+
+func (a *API) Upgrade(c *fiber.Ctx) error {
+	var args upgradeArgs
+	if err := fiberx.ParseBody(c, &args); err != nil {
+		return fiberx.Failure(c, errors.New400Error(err.Error()))
+	}
+	result, err := a.svc.Upgrade(c.UserContext(), args.AgentID)
+	if err != nil {
+		switch {
+		case stderrors.Is(err, ErrUpgradeInProgress):
+			return fiberx.Failure(c, errors.New409Error(err.Error()))
+		case stderrors.Is(err, ErrUnsupportedArch),
+			stderrors.Is(err, ErrDowngradeBlocked),
+			stderrors.Is(err, ErrInvalidAgentVersion),
+			stderrors.Is(err, ErrInvalidTargetVersion):
+			return fiberx.Failure(c, errors.New400Error(err.Error()))
+		case stderrors.Is(err, ErrUpdaterUnavailable):
+			return fiberx.Failure(c, errors.New503Error(err.Error()))
+		}
+		return fiberx.Failure(c, fiberx.ServiceError(err))
+	}
+	return fiberx.Success(c, result)
 }

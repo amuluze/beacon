@@ -88,6 +88,12 @@ func New500Error(error string) Error {
 	return err
 }
 
+func New503Error(error string) Error {
+	err := newError(http.StatusServiceUnavailable, "service unavailable")
+	err.Err = error
+	return err
+}
+
 func FromError(err error) Error {
 	if err == nil {
 		return Error{}

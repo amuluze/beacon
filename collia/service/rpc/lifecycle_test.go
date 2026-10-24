@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	rpcSchema "common/rpc/schema"
 	tunnel "common/rpc/tunnel"
@@ -108,6 +109,55 @@ func TestReplaceBinaryChmods0700(t *testing.T) {
 	}
 	if info.Mode().Perm() != 0o700 {
 		t.Fatalf("perm = %o, want 700", info.Mode().Perm())
+	}
+}
+
+func TestReplaceBinaryFailureKeepsCurrentPath(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "collia")
+	if err := os.WriteFile(target, []byte("old"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// A directory cannot atomically replace an existing regular file, forcing
+	// the final rename to fail after the backup has been created.
+	tmpDir := filepath.Join(dir, "collia.new")
+	if err := os.Mkdir(tmpDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := replaceBinary(tmpDir, target); err == nil {
+		t.Fatal("expected rename failure")
+	}
+	got, err := os.ReadFile(target)
+	if err != nil {
+		t.Fatalf("current path disappeared: %v", err)
+	}
+	if !bytes.Equal(got, []byte("old")) {
+		t.Fatalf("current binary = %q, want old", got)
+	}
+	backup, err := os.ReadFile(target + backupSuffix)
+	if err != nil || !bytes.Equal(backup, []byte("old")) {
+		t.Fatalf("backup = %q err=%v", backup, err)
+	}
+}
+
+func TestScheduleRestartLeavesReplyWindow(t *testing.T) {
+	s, _ := newTestService(t)
+	restarted := make(chan struct{}, 1)
+	s.restartFn = func() error {
+		restarted <- struct{}{}
+		return nil
+	}
+	s.scheduleRestart()
+
+	select {
+	case <-restarted:
+		t.Fatal("restart ran before reply window elapsed")
+	case <-time.After(100 * time.Millisecond):
+	}
+	select {
+	case <-restarted:
+	case <-time.After(2 * time.Second):
+		t.Fatal("restart callback was not invoked")
 	}
 }
 

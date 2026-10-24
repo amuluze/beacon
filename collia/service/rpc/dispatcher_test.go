@@ -144,7 +144,7 @@ func TestRegister_Override(t *testing.T) {
 	}
 }
 
-// TestNewDispatcher_RegistersStandardMethods 验证四类标准控制方法均已注册，
+// TestNewDispatcher_RegistersStandardMethods 验证标准控制方法均已注册，
 // 避免回归导致控制通道方法丢失（Agent 控制能力契约）。
 // 直接检查 handlers map，避免在空 Service 上触发真实 handler。
 func TestNewDispatcher_RegistersStandardMethods(t *testing.T) {
@@ -155,14 +155,22 @@ func TestNewDispatcher_RegistersStandardMethods(t *testing.T) {
 		"ImagePull", "NetworkCreate",
 		// file
 		"FilesSearch", "FileDownload", "FolderCreate",
-		// system
-		"Reboot", "GetSystemTime", "SetDNS",
+		// Docker settings
+		"GetDockerRegistryMirrors", "SetDockerRegistryMirrors",
 		// terminal
 		"TerminalSession", "ResizeTerminal", "TerminalClose",
 	}
 	for _, method := range cases {
 		if _, ok := d.handlers[method]; !ok {
 			t.Errorf("expected method %q to be registered", method)
+		}
+	}
+	for _, method := range []string{
+		"Reboot", "Shutdown", "GetDNS", "SetDNS", "GetSystemTime", "SetSystemTime",
+		"GetSystemTimeZone", "SetSystemTimeZone", "GetSystemTimeZoneList",
+	} {
+		if _, ok := d.handlers[method]; ok {
+			t.Errorf("removed system settings method %q is still registered", method)
 		}
 	}
 }

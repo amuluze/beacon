@@ -11,7 +11,6 @@ import type { Component } from 'vue'
 import IconActivity from '~icons/lucide/activity'
 import IconPackage from '~icons/lucide/package'
 import IconSettings from '~icons/lucide/settings'
-import IconTerminal from '~icons/lucide/terminal'
 import IconUsers from '~icons/lucide/users'
 import IconMenu from '~icons/lucide/menu'
 
@@ -23,7 +22,6 @@ const iconMap: Record<string, Component> = {
   activity: IconActivity,
   package: IconPackage,
   settings: IconSettings,
-  terminal: IconTerminal,
   users: IconUsers,
   menu: IconMenu,
 }

@@ -45,8 +45,28 @@ func NewConfig(configFile string, prefix Prefix) (*Config, error) {
 	if err := validateTransportSecurity(config); err != nil {
 		return nil, err
 	}
+	normalizeAgentID(config)
 	config.prefix = prefix
 	return config, nil
+}
+
+// normalizeAgentID 保证上报（Task.Report.AgentID）与隧道（Control.AgentID）使用同一
+// Agent 身份：空值回退到另一侧；两侧都非空但不一致时告警并以 Control.AgentID 为准，
+// 避免配置漂移导致「在线状态」与「监控数据」无法关联。
+func normalizeAgentID(config *Config) {
+	if config.Control.AgentID == "" {
+		config.Control.AgentID = config.Task.Report.AgentID
+	}
+	if config.Task.Report.AgentID == "" {
+		config.Task.Report.AgentID = config.Control.AgentID
+	}
+	if config.Control.AgentID != "" && config.Task.Report.AgentID != "" &&
+		config.Control.AgentID != config.Task.Report.AgentID {
+		slog.Warn("collia: control.agent_id and task.report.agent_id differ; using control.agent_id",
+			"control_agent_id", config.Control.AgentID,
+			"report_agent_id", config.Task.Report.AgentID)
+		config.Task.Report.AgentID = config.Control.AgentID
+	}
 }
 
 type Task struct {

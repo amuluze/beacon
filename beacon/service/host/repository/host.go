@@ -34,15 +34,6 @@ type IHostRepo interface {
 	FileDelete(context.Context, rpcSchema.FileDeleteArgs) error
 	FileCreate(context.Context, rpcSchema.FileCreateArgs) error
 	FolderCreate(context.Context, rpcSchema.FolderCreateArgs) error
-	GetDNSSettings(context.Context, rpcSchema.GetDNSArgs) (rpcSchema.GetDNSReply, error)
-	SetDNSSettings(context.Context, rpcSchema.SetDNSArgs) error
-	GetSystemTime(context.Context, rpcSchema.GetSystemTimeArgs) (rpcSchema.GetSystemTimeReply, error)
-	SetSystemTime(context.Context, rpcSchema.SetSystemTimeArgs) error
-	GetSystemTimeZoneList(context.Context, rpcSchema.GetSystemTimeZoneListArgs) (rpcSchema.GetSystemTimeZoneListReply, error)
-	GetSystemTimeZone(context.Context, rpcSchema.GetSystemTimeZoneArgs) (rpcSchema.GetSystemTimeZoneReply, error)
-	SetSystemTimeZone(context.Context, rpcSchema.SetSystemTimeZoneArgs) error
-	Reboot(context.Context, rpcSchema.RebootArgs) error
-	Shutdown(context.Context, rpcSchema.ShutdownArgs) error
 }
 
 type HostRepo struct {
@@ -269,53 +260,4 @@ func (h *HostRepo) FileCreate(ctx context.Context, args rpcSchema.FileCreateArgs
 func (h *HostRepo) FolderCreate(ctx context.Context, args rpcSchema.FolderCreateArgs) error {
 	var reply rpcSchema.FolderCreateReply
 	return h.RPCClient.Call(ctx, "FolderCreate", args, &reply)
-}
-
-func (h *HostRepo) GetDNSSettings(ctx context.Context, args rpcSchema.GetDNSArgs) (rpcSchema.GetDNSReply, error) {
-	var reply rpcSchema.GetDNSReply
-	err := h.RPCClient.Call(ctx, "GetDNS", args, &reply)
-	return reply, err
-}
-
-func (h *HostRepo) SetDNSSettings(ctx context.Context, args rpcSchema.SetDNSArgs) error {
-	var reply rpcSchema.SetDNSReply
-	return h.RPCClient.Call(ctx, "SetDNS", args, &reply)
-}
-
-func (h *HostRepo) GetSystemTime(ctx context.Context, args rpcSchema.GetSystemTimeArgs) (rpcSchema.GetSystemTimeReply, error) {
-	var reply rpcSchema.GetSystemTimeReply
-	err := h.RPCClient.Call(ctx, "GetSystemTime", args, &reply)
-	return reply, err
-}
-
-func (h *HostRepo) SetSystemTime(ctx context.Context, args rpcSchema.SetSystemTimeArgs) error {
-	var reply rpcSchema.SetSystemTimeReply
-	return h.RPCClient.Call(ctx, "SetSystemTime", args, &reply)
-}
-
-func (h *HostRepo) GetSystemTimeZoneList(ctx context.Context, args rpcSchema.GetSystemTimeZoneListArgs) (rpcSchema.GetSystemTimeZoneListReply, error) {
-	var reply rpcSchema.GetSystemTimeZoneListReply
-	err := h.RPCClient.Call(ctx, "GetSystemTimeZoneList", args, &reply)
-	return reply, err
-}
-
-func (h *HostRepo) GetSystemTimeZone(ctx context.Context, args rpcSchema.GetSystemTimeZoneArgs) (rpcSchema.GetSystemTimeZoneReply, error) {
-	var reply rpcSchema.GetSystemTimeZoneReply
-	err := h.RPCClient.Call(ctx, "GetSystemTimeZone", args, &reply)
-	return reply, err
-}
-
-func (h *HostRepo) SetSystemTimeZone(ctx context.Context, args rpcSchema.SetSystemTimeZoneArgs) error {
-	var reply rpcSchema.SetSystemTimeZoneReply
-	return h.RPCClient.Call(ctx, "SetSystemTimeZone", args, &reply)
-}
-
-func (h *HostRepo) Reboot(ctx context.Context, args rpcSchema.RebootArgs) error {
-	var reply rpcSchema.RebootReply
-	return h.RPCClient.Call(ctx, "Reboot", args, &reply)
-}
-
-func (h *HostRepo) Shutdown(ctx context.Context, args rpcSchema.ShutdownArgs) error {
-	var reply rpcSchema.ShutdownReply
-	return h.RPCClient.Call(ctx, "Shutdown", args, &reply)
 }

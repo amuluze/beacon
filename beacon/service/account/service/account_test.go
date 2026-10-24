@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 )
 
 // newTestEnforcer creates an in-memory Casbin enforcer with a basic RBAC model
@@ -395,7 +397,7 @@ func TestAccountService_UserDelete(t *testing.T) {
 			name: "user_delete_error",
 			setup: func(repo *testutil.FakeAccountRepo, _ *casbin.SyncedEnforcer) {
 				repo.UserQueryFn = func(_ context.Context, _ schema.UserQueryArgs) (model.Users, error) {
-					return model.Users{}, nil
+					return model.Users{&model.User{ID: userID}}, nil
 				}
 				repo.UserDeleteFn = func(_ context.Context, _ schema.UserDeleteArgs) error {
 					return testutil.ErrTest
@@ -429,6 +431,29 @@ func TestAccountService_UserDelete(t *testing.T) {
 			require.NoError(t, err)
 			assert.False(t, has, "grouping policy for role2 should be removed")
 		})
+	}
+}
+
+func TestAccountService_UserDeleteRejectsMissingTarget(t *testing.T) {
+	repo := testutil.NewFakeAccountRepo()
+	repo.UserQueryFn = func(_ context.Context, _ schema.UserQueryArgs) (model.Users, error) {
+		return model.Users{}, nil
+	}
+	deleteCalled := false
+	repo.UserDeleteFn = func(_ context.Context, _ schema.UserDeleteArgs) error {
+		deleteCalled = true
+		return nil
+	}
+	svc := NewAccountService(repo, newTestEnforcer(t))
+
+	err := svc.UserDelete(context.Background(), schema.UserDeleteArgs{
+		IDs: []string{"019f8dbc-8781-7af3-bf49-e7fafa912e87"},
+	})
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		t.Fatalf("UserDelete() error = %v, want record not found", err)
+	}
+	if deleteCalled {
+		t.Fatal("repository delete should not run for a missing target")
 	}
 }
 

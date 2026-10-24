@@ -36,9 +36,10 @@ var notAdminResourcesMap = map[string]struct{}{
 }
 
 var adminOnlyResourcesMap = map[string]struct{}{
-	"查询钉钉告警配置": {},
-	"更新钉钉告警配置": {},
-	"测试钉钉告警":   {},
+	"查询钉钉告警配置":  {},
+	"更新钉钉告警配置":  {},
+	"测试钉钉告警":    {},
+	"升级 Collia": {},
 }
 
 var thresholds = []model.AlarmThreshold{
@@ -102,6 +103,9 @@ func (a *Prepare) Init(app *fiber.App) error {
 
 	// init alarm threshold
 	if err := a.InitAlarmThreshold(); err != nil {
+		return err
+	}
+	if err := a.InitAlarmMessageSetting(); err != nil {
 		return err
 	}
 
@@ -324,6 +328,17 @@ func syncAlarmThresholds(tx *gorm.DB) error {
 				return fmt.Errorf("delete duplicate %q alarm thresholds: %w", defaultThreshold.Type, err)
 			}
 		}
+	}
+	return nil
+}
+
+func (a *Prepare) InitAlarmMessageSetting() error {
+	var setting model.AlarmMessageSetting
+	if err := a.db.
+		Where("key = ?", model.DefaultAlarmMessageSettingKey).
+		Attrs(model.AlarmMessageSetting{MessageTitle: model.DefaultAlarmMessageTitle}).
+		FirstOrCreate(&setting, model.AlarmMessageSetting{Key: model.DefaultAlarmMessageSettingKey}).Error; err != nil {
+		return fmt.Errorf("initialize alarm message setting: %w", err)
 	}
 	return nil
 }

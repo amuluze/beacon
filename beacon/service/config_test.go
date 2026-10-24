@@ -123,11 +123,23 @@ PackageDir = "/app/downloads/collia"
 ControlPort = 18080
 TLSEnable = true
 CertDir = "/etc/collia/certs"
+
+[AgentUpdate]
+Enable = false
+TargetVersion = "dev"
+Timeout = 10
+MaxConcurrent = 1
+RetryInterval = 60
 `
 	t.Setenv("BEACON_DB_NAME", "/data/beacon-prod")
 	t.Setenv("BEACON_CONTROL_ADDRESS", ":17000")
 	t.Setenv("BEACON_PUBLIC_BASE_URL", "https://beacon.example.com")
 	t.Setenv("BEACON_CONTROL_PORT", "17000")
+	t.Setenv("BEACON_AGENT_UPDATE_ENABLE", "true")
+	t.Setenv("BEACON_COLLIA_VERSION", "v3.0.6")
+	t.Setenv("BEACON_AGENT_UPDATE_TIMEOUT", "300")
+	t.Setenv("BEACON_AGENT_UPDATE_MAX_CONCURRENT", "2")
+	t.Setenv("BEACON_AGENT_UPDATE_RETRY_INTERVAL", "1800")
 
 	cfg, err := NewConfig(writeConfig(t, toml))
 	if err != nil {
@@ -144,6 +156,32 @@ CertDir = "/etc/collia/certs"
 	}
 	if cfg.AgentInstall.ControlPort != 17000 {
 		t.Fatalf("expected AgentInstall.ControlPort overridden by env, got %d", cfg.AgentInstall.ControlPort)
+	}
+	if !cfg.AgentUpdate.Enable || cfg.AgentUpdate.TargetVersion != "v3.0.6" {
+		t.Fatalf("expected AgentUpdate target enabled at v3.0.6, got %#v", cfg.AgentUpdate)
+	}
+	if cfg.AgentUpdate.Timeout != 300 || cfg.AgentUpdate.MaxConcurrent != 2 || cfg.AgentUpdate.RetryInterval != 1800 {
+		t.Fatalf("expected AgentUpdate limits overridden by env, got %#v", cfg.AgentUpdate)
+	}
+}
+
+func TestNewConfig_AgentUpdateCanBeDisabledByEnv(t *testing.T) {
+	const toml = `
+[AgentUpdate]
+Enable = true
+TargetVersion = "v3.0.6"
+Timeout = 300
+MaxConcurrent = 2
+RetryInterval = 1800
+`
+	t.Setenv("BEACON_AGENT_UPDATE_ENABLE", "false")
+
+	cfg, err := NewConfig(writeConfig(t, toml))
+	if err != nil {
+		t.Fatalf("NewConfig: %v", err)
+	}
+	if cfg.AgentUpdate.Enable {
+		t.Fatal("BEACON_AGENT_UPDATE_ENABLE=false must disable automatic updates")
 	}
 }
 

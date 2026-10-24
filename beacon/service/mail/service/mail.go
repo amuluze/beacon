@@ -5,6 +5,8 @@
 package service
 
 import (
+	alarmrepository "beacon/service/alarm/repository"
+	alarmtitle "beacon/service/alarm/title"
 	"beacon/service/mail/repository"
 	"beacon/service/schema"
 	"context"
@@ -26,11 +28,12 @@ type IMailService interface {
 }
 
 type MailService struct {
-	MailRepository repository.IMailRepository
+	MailRepository  repository.IMailRepository
+	AlarmRepository alarmrepository.IAlarmRepository
 }
 
-func NewMailService(mailRepository repository.IMailRepository) *MailService {
-	return &MailService{MailRepository: mailRepository}
+func NewMailService(mailRepository repository.IMailRepository, alarmRepository alarmrepository.IAlarmRepository) *MailService {
+	return &MailService{MailRepository: mailRepository, AlarmRepository: alarmRepository}
 }
 
 func (m *MailService) MailQuery(ctx context.Context) (schema.Mail, error) {
@@ -59,5 +62,10 @@ func (m *MailService) MailUpdate(ctx context.Context, args schema.MailUpdateArgs
 }
 
 func (m *MailService) MailTest(ctx context.Context, args schema.MailTestArgs) error {
-	return m.MailRepository.MailTest(ctx, args, "服务器告警")
+	setting, err := m.AlarmRepository.AlarmMessageSettingQuery(ctx)
+	title := ""
+	if err == nil {
+		title = setting.MessageTitle
+	}
+	return m.MailRepository.MailTest(ctx, args, alarmtitle.OrDefault(title))
 }

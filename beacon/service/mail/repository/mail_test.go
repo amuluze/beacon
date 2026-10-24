@@ -82,7 +82,7 @@ func TestBuildMailTestMessageUsesSharedAlarmTitle(t *testing.T) {
 		want  string
 	}{
 		{name: "custom", title: "生产环境主机告警", want: "生产环境主机告警"},
-		{name: "plain passthrough", title: "服务器告警", want: "服务器告警"},
+		{name: "invalid fallback", title: "invalid\nheader", want: model.DefaultAlarmMessageTitle},
 	}
 
 	for _, tt := range tests {

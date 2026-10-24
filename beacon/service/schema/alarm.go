@@ -17,7 +17,15 @@ type AlarmThresholdQueryReply struct {
 
 type AlarmThresholdUpdateArgs struct {
 	ID        uint   `json:"id" validate:"required"`
-	Type      string `json:"type" validate:"lte=64"`
+	Type      string `json:"type" validate:"required,oneof=cpu memory disk"`
 	Duration  int    `json:"duration" validate:"gte=0"`
-	Threshold int    `json:"threshold" validate:"gte=0"`
+	Threshold int    `json:"threshold" validate:"gte=0,lte=100"`
+}
+
+type AlarmMessageSetting struct {
+	MessageTitle string `json:"message_title"`
+}
+
+type AlarmMessageSettingUpdateArgs struct {
+	MessageTitle string `json:"message_title" validate:"required,lte=128"`
 }

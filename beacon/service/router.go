@@ -211,6 +211,7 @@ func (a *Router) registerAccountRoutes(v1 fiber.Router) {
 func (a *Router) registerAgentListRoute(v1 fiber.Router) {
 	g := v1.Group("agent")
 	g.Get("/list", a.agentAPI.List).Name("查询 Agent 列表")
+	g.Post("/upgrade", a.agentAPI.Upgrade).Name("升级 Collia")
 }
 
 func (a *Router) registerAuthRoutes(v1 fiber.Router) {
@@ -267,15 +268,6 @@ func (a *Router) registerHostRoutes(v1 fiber.Router) {
 	g.Post("/file_delete", a.hostAPI.FileDelete).Name("删除文件")
 	g.Post("/file_create", a.hostAPI.FileCreate).Name("创建文件")
 	g.Post("/folder_create", a.hostAPI.FolderCreate).Name("创建文件夹")
-	g.Get("/get_dns_settings", a.hostAPI.GetDNSSettings).Name("获取 DNS 设置")
-	g.Post("/set_dns_settings", a.hostAPI.SetDNSSettings).Name("更新 DNS 设置")
-	g.Get("/get_system_time", a.hostAPI.GetSystemTime).Name("获取系统时间")
-	g.Post("/set_system_time", a.hostAPI.SetSystemTime).Name("更新系统时间")
-	g.Get("/get_system_timezone_list", a.hostAPI.GetSystemTimeZoneList).Name("获取系统时区列表")
-	g.Get("/get_system_timezone", a.hostAPI.GetSystemTimeZone).Name("获取系统时区")
-	g.Post("/set_system_timezone", a.hostAPI.SetSystemTimeZone).Name("更新系统时区")
-	g.Post("/reboot", a.hostAPI.Reboot).Name("重启系统")
-	g.Post("/shutdown", a.hostAPI.Shutdown).Name("关闭系统")
 }
 
 func (a *Router) registerAuditRoutes(v1 fiber.Router) {
@@ -302,6 +294,8 @@ func (a *Router) registerAlarmRoutes(v1 fiber.Router) {
 	g := v1.Group("alarm")
 	g.Post("/alarm_update", a.alarmAPI.AlarmUpdate).Name("更新告警阈值")
 	g.Get("/alarm_query", a.alarmAPI.AlarmQuery).Name("查询告警阈值")
+	g.Get("/message_setting", a.alarmAPI.AlarmMessageSettingQuery).Name("查询告警消息标题")
+	g.Post("/message_setting_update", a.alarmAPI.AlarmMessageSettingUpdate).Name("更新告警消息标题")
 }
 
 func (a *Router) Register(app *fiber.App) error {

@@ -23,7 +23,6 @@ function mountWorkspace() {
                 AlarmSettings: { template: '<div data-testid="alarm-settings" />' },
                 AuditLog: { template: '<div data-testid="audit-log" />' },
                 DockerSettings: { template: '<div data-testid="docker-settings" />' },
-                HostSettings: { template: '<div data-testid="host-settings" />' },
                 UserSettings: { template: '<div data-testid="user-settings" />' },
             },
         },
@@ -35,14 +34,13 @@ describe('setting workspace', () => {
         stubStore.user.userInfo.name = 'admin'
     })
 
-    it('places administrator user settings next to the audit log', () => {
+    it('renders the remaining setting cards without system settings', () => {
         const wrapper = mountWorkspace()
         const panelContent = wrapper
             .findAll('.workspace__panel [data-testid]')
             .map(item => item.attributes('data-testid'))
 
         expect(panelContent).toEqual([
-            'host-settings',
             'alarm-settings',
             'docker-settings',
             'user-settings',

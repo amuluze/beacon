@@ -11,19 +11,11 @@ import { dayjs } from 'element-plus'
 import { cloneDeep, set } from 'lodash-es'
 import { useAgentSelection } from '@/hooks/useAgentSelection'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 import { applyMonitorTimeRange, toMonitorSeriesPoint } from '@/utils/monitorChart'
 import type { MonitorTimeRange } from '@/utils/monitorChart'
 
-const router = useRouter()
-
 // Agent switcher
 const { selectedAgentID: currentAgent, isAgentEmpty, agentParams, ensureSelectedAgent, loadAgents } = useAgentSelection({ immediate: false })
-function openTerminal(): void {
-  if (!currentAgent.value)
-    return
-  router.push({ path: '/terminal', query: { agent_id: currentAgent.value } })
-}
 watch(currentAgent, () => {
   void refreshAll()
 })
@@ -216,9 +208,6 @@ const { t } = useI18n()
         <div class="am-section-header">
             <div class="am-section-title-group">
                 <span class="am-section-title">{{ t('menu.hostMonitor') }}</span>
-                <el-button size="small" type="primary" plain :disabled="!currentAgent" @click="openTerminal">
-                    {{ t('agent.openTerminal') }}
-                </el-button>
             </div>
             <div class="am-density-group">
                 <span class="am-density-label">{{ t('monitor.timeDensity') }}：</span>

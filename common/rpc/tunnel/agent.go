@@ -29,6 +29,9 @@ type AgentTunnel struct {
 	serverAddr string
 	agentID    string
 	joinToken  string
+	version    string
+	os         string
+	arch       string
 	conn       *grpc.ClientConn
 	client     ReverseTunnelClient
 	stream     grpc.BidiStreamingClient[Frame, Frame]
@@ -56,6 +59,24 @@ func NewAgentTunnel(serverAddr string, agentID string) *AgentTunnel {
 // SetJoinToken sets the join token for agent registration.
 func (a *AgentTunnel) SetJoinToken(token string) {
 	a.joinToken = token
+}
+
+// SetMetadata configures the immutable build/runtime metadata sent in every
+// registration frame. Reconnects reuse the same values for the process.
+func (a *AgentTunnel) SetMetadata(version, osName, arch string) {
+	a.version = version
+	a.os = osName
+	a.arch = arch
+}
+
+func (a *AgentTunnel) registrationPayload() RegistrationPayload {
+	return RegistrationPayload{
+		AgentID:   a.agentID,
+		Version:   a.version,
+		OS:        a.os,
+		Arch:      a.arch,
+		JoinToken: a.joinToken,
+	}
 }
 
 // SetTLSConfig configures optional TLS credentials for the gRPC client.
@@ -128,10 +149,7 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 		slog.Info("agent tunnel: connected to server")
 
 		// Send registration frame with JSON payload carrying agent metadata.
-		regPayload, _ := json.Marshal(RegistrationPayload{
-			AgentID:   a.agentID,
-			JoinToken: a.joinToken,
-		})
+		regPayload, _ := json.Marshal(a.registrationPayload())
 		regFrame := &Frame{
 			FrameType: FrameType_FRAME_REGISTER,
 			Method:    a.agentID,

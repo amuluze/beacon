@@ -26,7 +26,7 @@ func NewDispatcher(svc *Service) *Dispatcher {
 	d := &Dispatcher{handlers: make(map[string]HandlerFunc)}
 	registerContainerHandlers(d, svc)
 	registerFileHandlers(d, svc)
-	registerSystemHandlers(d, svc)
+	registerDockerHandlers(d, svc)
 	registerTerminalHandlers(d, svc)
 	registerLifecycleHandlers(d, svc)
 	return d

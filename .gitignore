@@ -2,28 +2,6 @@
 .vscode/
 .DS_Store
 
-# Build artifacts (Go binary name conflicts)
-*/collia
-
-.claude/
-.beaver/
-.codegraph/
-.pnpm-store/
-.agents/
-.github/
-
-# SDD framework — 由 `/doc update` 与 `/spec` slash commands 自动维护
-.docs/
-.specs/
-.plans/
-**/AGENTS.md
-**/CLAUDE.md
-LAYER_STATUS.md
-TDD_STAGES.md
-**/Taskfile.yml
-
-.pen
-website
 # Local secrets and runtime state
 .env
 .env.*
@@ -43,3 +21,16 @@ website
 *.sqlite-wal
 *.sqlite-shm
 **/certs/*.tar.gz
+
+# Build artifacts (Go binary names)
+*/amprobe
+*/collia
+*/amvector
+
+.claude/
+.zcode/
+.beaver/
+.codegraph/
+.pnpm-store/
+.agents/
+.omo/

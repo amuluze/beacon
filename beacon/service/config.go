@@ -21,6 +21,7 @@ type Config struct {
 	Casbin        Casbin
 	Task          Task
 	AgentInstall  AgentInstall
+	AgentUpdate   AgentUpdate
 	InstallReport InstallReport
 	CORS          CORS
 	RateLimit     RateLimit
@@ -68,6 +69,11 @@ func bindEnvs() {
 		"agentinstall.token":         "BEACON_AGENT_INSTALL_TOKEN",
 		"agentinstall.publicbaseurl": "BEACON_PUBLIC_BASE_URL",
 		"agentinstall.controlport":   "BEACON_CONTROL_PORT",
+		"agentupdate.enable":         "BEACON_AGENT_UPDATE_ENABLE",
+		"agentupdate.targetversion":  "BEACON_COLLIA_VERSION",
+		"agentupdate.timeout":        "BEACON_AGENT_UPDATE_TIMEOUT",
+		"agentupdate.maxconcurrent":  "BEACON_AGENT_UPDATE_MAX_CONCURRENT",
+		"agentupdate.retryinterval":  "BEACON_AGENT_UPDATE_RETRY_INTERVAL",
 		"update.enable":              "BEACON_UPDATE_ENABLE",
 		"update.url":                 "BEACON_UPDATE_URL",
 		"update.checkinterval":       "BEACON_UPDATE_CHECK_INTERVAL",
@@ -184,6 +190,17 @@ type AgentInstall struct {
 	ControlPort   int
 	TLSEnable     bool
 	CertDir       string
+}
+
+// AgentUpdate controls Server-coordinated Collia updates. Durations are in
+// seconds; Enable only controls automatic scheduling, while manual retries use
+// the same target package and safety limits.
+type AgentUpdate struct {
+	Enable        bool
+	TargetVersion string
+	Timeout       int
+	MaxConcurrent int
+	RetryInterval int
 }
 
 type InstallReport struct {

@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
 
 	"beacon/pkg/rpc"
 	"beacon/service/agent"
+	"common/database"
 	tunnelpkg "common/rpc/tunnel"
 	transporttls "common/transport/tlsconfig"
 )
@@ -21,9 +23,13 @@ var globalTunnel *tunnelpkg.ServerTunnel
 
 // NewRPCClient creates the tunnel-based RPC client.
 // Server listens for reverse connections from Agents.
-func NewRPCClient(config *Config, agentService *agent.Service, certManager *CertManager) (rpc.Caller, error) {
+func NewRPCClient(config *Config, agentService *agent.Service, certManager *CertManager, db *database.DB) (rpc.Caller, error) {
 	if !config.Control.Enable {
 		globalTunnel = nil
+		if agentService != nil {
+			agentService.SetUpdater(nil)
+			agentService.SetTunnel(nil)
+		}
 		slog.Info("reverse tunnel server disabled")
 		return rpc.NewDisabledClient(), nil
 	}
@@ -50,7 +56,11 @@ func NewRPCClient(config *Config, agentService *agent.Service, certManager *Cert
 
 	tun := tunnelpkg.NewServerTunnel()
 	tun.SetJoinToken(joinToken)
-	agentService.SetTunnel(tun)
+	if joinToken == "" {
+		// 非生产且未配置 join token 时显式允许匿名注册以保留本地开发便利；
+		// 生产模式 resolveControlToken 已拒绝空 token，不会走到这里。
+		tun.SetAllowAnonymous(true)
+	}
 	if config.Control.TLS.Enable {
 		tlsCfg, err := transporttls.ServerConfig(config.Control.TLS.CertDir, config.Control.TLS.ClientNames)
 		if err != nil {
@@ -59,6 +69,22 @@ func NewRPCClient(config *Config, agentService *agent.Service, certManager *Cert
 		tun.SetTLSConfig(tlsCfg)
 		slog.Info("reverse tunnel tls enabled", "cert_dir", config.Control.TLS.CertDir)
 	}
+	client := rpc.NewTunnelClient(tun)
+	updater, err := agent.NewUpdater(agent.UpdateConfig{
+		Enable:        config.AgentUpdate.Enable,
+		TargetVersion: config.AgentUpdate.TargetVersion,
+		Timeout:       time.Duration(config.AgentUpdate.Timeout) * time.Second,
+		MaxConcurrent: config.AgentUpdate.MaxConcurrent,
+		RetryInterval: time.Duration(config.AgentUpdate.RetryInterval) * time.Second,
+		PublicBaseURL: config.AgentInstall.PublicBaseURL,
+		InstallToken:  config.AgentInstall.Token,
+		PackageDir:    config.AgentInstall.PackageDir,
+	}, client, db)
+	if err != nil {
+		return nil, fmt.Errorf("configure collia updater: %w", err)
+	}
+	agentService.SetUpdater(updater)
+	agentService.SetTunnel(tun)
 	globalTunnel = tun
 
 	go func() {
@@ -67,7 +93,7 @@ func NewRPCClient(config *Config, agentService *agent.Service, certManager *Cert
 		}
 	}()
 
-	return rpc.NewTunnelClient(tun), nil
+	return client, nil
 }
 
 func controlJoinToken(config *Config) string {

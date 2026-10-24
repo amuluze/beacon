@@ -35,15 +35,6 @@ type IHostService interface {
 	FileDelete(context.Context, schema.FileDeleteArgs) error
 	FileDownload(context.Context, schema.FileDownloadArgs) (schema.FileDownloadReply, error)
 	FolderCreate(context.Context, schema.FolderCreateArgs) error
-	Reboot(context.Context, schema.RebootArgs) error
-	Shutdown(context.Context, schema.ShutdownArgs) error
-	GetDNSSettings(context.Context, schema.GetDNSSettingsArgs) (schema.GetDNSSettingsReply, error)
-	SetDNSSettings(context.Context, schema.SetDNSSettingsArgs) error
-	GetSystemTime(context.Context, schema.GetSystemTimeArgs) (schema.GetSystemTimeReply, error)
-	SetSystemTime(context.Context, schema.SetSystemTimeArgs) error
-	GetSystemTimeZone(context.Context, schema.GetSystemTimeZoneArgs) (schema.GetSystemTimeZoneReply, error)
-	SetSystemTimeZone(context.Context, schema.SetSystemTimeZoneArgs) error
-	GetSystemTimeZoneList(context.Context, schema.GetSystemTimeZoneListArgs) (schema.GetSystemTimeZoneListReply, error)
 }
 
 type HostService struct {
@@ -298,75 +289,6 @@ func (h *HostService) FolderCreate(ctx context.Context, args schema.FolderCreate
 		FolderName: args.FolderName,
 	}
 	return h.HostRepo.FolderCreate(ctx, rpcArgs)
-}
-
-func (h *HostService) Reboot(ctx context.Context, args schema.RebootArgs) error {
-	return h.HostRepo.Reboot(ctx, rpcSchema.RebootArgs{})
-}
-
-func (h *HostService) Shutdown(ctx context.Context, args schema.ShutdownArgs) error {
-	return h.HostRepo.Shutdown(ctx, rpcSchema.ShutdownArgs{})
-}
-
-func (h *HostService) GetDNSSettings(ctx context.Context, args schema.GetDNSSettingsArgs) (schema.GetDNSSettingsReply, error) {
-	var reply schema.GetDNSSettingsReply
-	rpcReply, err := h.HostRepo.GetDNSSettings(ctx, rpcSchema.GetDNSArgs{})
-	if err != nil {
-		return reply, err
-	}
-	reply.DNS = rpcReply.DNS
-	return reply, nil
-}
-
-func (h *HostService) SetDNSSettings(ctx context.Context, args schema.SetDNSSettingsArgs) error {
-	rpcArgs := rpcSchema.SetDNSArgs{
-		DNS: args.DNS,
-	}
-	return h.HostRepo.SetDNSSettings(ctx, rpcArgs)
-}
-
-func (h *HostService) GetSystemTime(ctx context.Context, args schema.GetSystemTimeArgs) (schema.GetSystemTimeReply, error) {
-	var reply schema.GetSystemTimeReply
-	rpcReply, err := h.HostRepo.GetSystemTime(ctx, rpcSchema.GetSystemTimeArgs{})
-	if err != nil {
-		return reply, err
-	}
-	reply.SystemTime = rpcReply.SystemTime
-	return reply, nil
-}
-
-func (h *HostService) SetSystemTime(ctx context.Context, args schema.SetSystemTimeArgs) error {
-	rpcArgs := rpcSchema.SetSystemTimeArgs{
-		SystemTime: args.SystemTime,
-	}
-	return h.HostRepo.SetSystemTime(ctx, rpcArgs)
-}
-
-func (h *HostService) GetSystemTimeZone(ctx context.Context, args schema.GetSystemTimeZoneArgs) (schema.GetSystemTimeZoneReply, error) {
-	var reply schema.GetSystemTimeZoneReply
-	rpcReply, err := h.HostRepo.GetSystemTimeZone(ctx, rpcSchema.GetSystemTimeZoneArgs{})
-	if err != nil {
-		return reply, err
-	}
-	reply.SystemTimeZone = rpcReply.SystemTimeZone
-	return reply, nil
-}
-
-func (h *HostService) SetSystemTimeZone(ctx context.Context, args schema.SetSystemTimeZoneArgs) error {
-	rpcArgs := rpcSchema.SetSystemTimeZoneArgs{
-		SystemTimeZone: args.SystemTimeZone,
-	}
-	return h.HostRepo.SetSystemTimeZone(ctx, rpcArgs)
-}
-
-func (h *HostService) GetSystemTimeZoneList(ctx context.Context, args schema.GetSystemTimeZoneListArgs) (schema.GetSystemTimeZoneListReply, error) {
-	var reply schema.GetSystemTimeZoneListReply
-	rpcReply, err := h.HostRepo.GetSystemTimeZoneList(ctx, rpcSchema.GetSystemTimeZoneListArgs{})
-	if err != nil {
-		return reply, err
-	}
-	reply.SystemTimeZoneList = rpcReply.SystemTimeZoneList
-	return reply, nil
 }
 
 // isStale checks if a timestamp is older than the given staleness threshold.

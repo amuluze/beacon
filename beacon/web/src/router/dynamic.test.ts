@@ -30,7 +30,6 @@ describe('dynamic workspace routes', () => {
 
     it.each([
         ['/setting/alarm', 'alarm'],
-        ['/setting/host', 'host'],
         ['/setting/container', 'docker'],
     ])('keeps the legacy deep link %s resolvable', (path, name) => {
         const route = allRoutes.find(item => item.path === path)
@@ -39,9 +38,19 @@ describe('dynamic workspace routes', () => {
         expect(route?.component).toBeTypeOf('function')
     })
 
+    it('does not expose the removed system settings page', () => {
+        expect(allRoutes.find(route => route.path === '/setting/host')).toBeUndefined()
+        expect(allRoutes.find(route => route.name === 'host')).toBeUndefined()
+    })
+
     it('does not expose the removed profile page', () => {
         expect(allRoutes.find(route => route.path === '/profile')).toBeUndefined()
         expect(allRoutes.find(route => route.name === 'profile')).toBeUndefined()
+    })
+
+    it('does not expose the removed terminal page', () => {
+        expect(allRoutes.find(route => route.path === '/terminal')).toBeUndefined()
+        expect(allRoutes.find(route => route.name === 'terminal')).toBeUndefined()
     })
 
     it('keeps account deep links without exposing account as primary navigation', () => {

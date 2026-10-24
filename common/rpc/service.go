@@ -37,16 +37,7 @@ type IService interface {
 	FileDownload(context.Context, schema.FileDownloadArgs, *schema.FileDownloadReply) error
 	FolderCreate(context.Context, schema.FolderCreateArgs, *schema.FolderCreateReply) error
 
-	// ── System operations ──
-	Reboot(context.Context, schema.RebootArgs, *schema.RebootReply) error
-	Shutdown(context.Context, schema.ShutdownArgs, *schema.ShutdownReply) error
-	GetDNS(context.Context, schema.GetDNSArgs, *schema.GetDNSReply) error
-	SetDNS(context.Context, schema.SetDNSArgs, *schema.SetDNSReply) error
-	GetSystemTime(context.Context, schema.GetSystemTimeArgs, *schema.GetSystemTimeReply) error
-	SetSystemTime(context.Context, schema.SetSystemTimeArgs, *schema.SetSystemTimeReply) error
-	GetSystemTimeZone(context.Context, schema.GetSystemTimeZoneArgs, *schema.GetSystemTimeZoneReply) error
-	SetSystemTimeZone(context.Context, schema.SetSystemTimeZoneArgs, *schema.SetSystemTimeZoneReply) error
-	GetSystemTimeZoneList(context.Context, schema.GetSystemTimeZoneListArgs, *schema.GetSystemTimeZoneListReply) error
+	// ── Docker settings ──
 	GetDockerRegistryMirrors(context.Context, schema.GetDockerRegistryMirrorsArgs, *schema.GetDockerRegistryMirrorsReply) error
 	SetDockerRegistryMirrors(context.Context, schema.SetDockerRegistryMirrorsArgs, *schema.SetDockerRegistryMirrorsReply) error
 }

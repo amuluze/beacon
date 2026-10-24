@@ -1,5 +1,5 @@
 .idea/
 .DS_Store
 
-amprobe
-beacon
+/amprobe
+/beacon

@@ -4,7 +4,7 @@ import { queryDingTalk, testDingTalk } from '@/api/dingtalk'
 import { info } from '@/components/Message/message.ts'
 
 import type { MailTestArgs } from '@/interface/mail.ts'
-import type { AlarmThreshold, EmailSetting } from '@/interface/alarm.ts'
+import type { AlarmMessageSetting, AlarmThreshold, EmailSetting } from '@/interface/alarm.ts'
 import type { DingTalkSetting } from '@/interface/dingtalk'
 
 import useCommandComponent from '@/hooks/useCommandComponent.ts'
@@ -13,7 +13,8 @@ import EditDingTalkSetting from '@/views/setting/alarm/components/EditDingTalkSe
 import EditCPUThreshold from '@/views/setting/alarm/components/EditCPUThreshold.vue'
 import EditMemThreshold from '@/views/setting/alarm/components/EditMemThreshold.vue'
 import EditDiskThreshold from '@/views/setting/alarm/components/EditDiskThreshold.vue'
-import { queryAlarmThreshold } from '@/api/alarm'
+import EditAlarmMessageTitle from '@/views/setting/alarm/components/EditAlarmMessageTitle.vue'
+import { queryAlarmMessageSetting, queryAlarmThreshold } from '@/api/alarm'
 import { useI18n } from 'vue-i18n'
 import useStore from '@/store'
 import IconBellRing from '~icons/lucide/bell-ring'
@@ -49,6 +50,16 @@ const dingTalkSetting = reactive<DingTalkSetting>({
 })
 const editDingTalkSetting = useCommandComponent(EditDingTalkSetting)
 const dingTalkTesting = shallowRef(false)
+
+const alarmMessageSetting = reactive<AlarmMessageSetting>({
+  message_title: 'Beacon 主机告警',
+})
+const editAlarmMessageTitle = useCommandComponent(EditAlarmMessageTitle)
+
+async function loadAlarmMessageSetting() {
+  const response = await queryAlarmMessageSetting()
+  Object.assign(alarmMessageSetting, response.data)
+}
 
 async function loadDingTalkSetting() {
   const response = await queryDingTalk()
@@ -102,7 +113,7 @@ const CPUThreshold = ref<AlarmThreshold>({
 })
 const MemThreshold = ref<AlarmThreshold>({
   id: 2,
-  type: 'mem',
+  type: 'memory',
   duration: 2,
   threshold: 80,
 })
@@ -147,7 +158,12 @@ async function loadAlarmThresholds() {
 }
 
 onMounted(async () => {
-  await Promise.all([loadMailSetting(), loadDingTalkSetting(), loadAlarmThresholds()])
+  await Promise.all([
+    loadMailSetting(),
+    loadDingTalkSetting(),
+    loadAlarmMessageSetting(),
+    loadAlarmThresholds(),
+  ])
 })
 
 const editCPUThreshold = useCommandComponent(EditCPUThreshold)
@@ -264,6 +280,22 @@ const editDiskThreshold = useCommandComponent(EditDiskThreshold)
                     </p>
                 </div>
             </header>
+
+            <div class="settings-card__value-row">
+                <div class="settings-card__meta">
+                    <span class="settings-card__label">{{ t('setting.alarmMessageTitle') }}</span>
+                    <span class="settings-card__value settings-card__value--plain">{{ alarmMessageSetting.message_title }}</span>
+                </div>
+                <el-button
+                    plain
+                    circle
+                    :aria-label="t('setting.editAlarmMessageTitle')"
+                    :title="t('setting.editAlarmMessageTitle')"
+                    @click="editAlarmMessageTitle({ title: 'setting.editAlarmMessageTitle', setting: alarmMessageSetting, onSaved: loadAlarmMessageSetting })"
+                >
+                    <IconPencil />
+                </el-button>
+            </div>
 
             <div class="settings-thresholds">
                 <div class="settings-threshold">

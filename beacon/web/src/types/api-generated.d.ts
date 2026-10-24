@@ -215,7 +215,9 @@ export interface paths {
         };
         /**
          * List known Agents
-         * @description Returns the list of Agents known to the Server with their lifecycle state.
+         * @description Returns the list of Agents known to the Server. The lifecycle status is
+         *     projected from the current Server process's live reverse-tunnel registry;
+         *     a persisted status left by an earlier process is not treated as current.
          */
         get: operations["listAgents"];
         put?: never;
@@ -1060,159 +1062,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/host/get_dns_settings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 获取 DNS 设置 */
-        get: operations["getDnsSettings"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/host/set_dns_settings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 更新 DNS 设置 */
-        post: operations["setDnsSettings"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/host/get_system_time": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 获取系统时间 */
-        get: operations["getSystemTime"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/host/set_system_time": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 更新系统时间 */
-        post: operations["setSystemTime"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/host/get_system_timezone_list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 获取系统时区列表 */
-        get: operations["getSystemTimeZoneList"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/host/get_system_timezone": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 获取系统时区 */
-        get: operations["getSystemTimeZone"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/host/set_system_timezone": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 更新系统时区 */
-        post: operations["setSystemTimeZone"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/host/reboot": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 重启系统 */
-        post: operations["reboot"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/host/shutdown": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 关闭系统 */
-        post: operations["shutdown"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/audit/query": {
         parameters: {
             query?: never;
@@ -1343,6 +1192,40 @@ export interface paths {
         get: operations["alarmQuery"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alarm/message_setting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询告警消息标题 */
+        get: operations["alarmMessageSettingQuery"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alarm/message_setting_update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 更新告警消息标题 */
+        post: operations["alarmMessageSettingUpdate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1548,7 +1431,11 @@ export interface components {
             /** @description Formatted timestamp */
             created?: string;
         };
-        /** @description Agent observed by the Server; mirrors `schema.AgentItem`. */
+        /**
+         * @description Agent observed by the Server; mirrors `schema.AgentItem`. `status`
+         *     describes current reverse-control-tunnel reachability, while `last_seen`
+         *     is the latest recorded tunnel lifecycle heartbeat.
+         */
         AgentItem: {
             agent_id?: string;
             hostname?: string;
@@ -1557,7 +1444,10 @@ export interface components {
             version?: string;
             /** Format: date-time */
             last_seen?: string;
-            /** @enum {string} */
+            /**
+             * @description Current Server process reverse-tunnel reachability snapshot.
+             * @enum {string}
+             */
             status?: "online" | "offline" | "connecting";
         };
         /**
@@ -1579,9 +1469,22 @@ export interface components {
             /** Format: int64 */
             id: number;
             /** @enum {string} */
-            type?: "cpu" | "memory" | "disk";
-            duration?: number;
-            threshold?: number;
+            type: "cpu" | "memory" | "disk";
+            duration: number;
+            threshold: number;
+        };
+        /** @description Global singleton title shared by email and DingTalk alarm notifications. */
+        AlarmMessageSetting: {
+            /** @example Beacon 主机告警 */
+            message_title: string;
+        };
+        /** @description Request body for `POST /api/v1/alarm/message_setting_update`. */
+        AlarmMessageSettingUpdateArgs: {
+            message_title: string;
+        };
+        /** @description Explicit user targets for `POST /api/v1/user/user_delete`. */
+        UserDeleteArgs: {
+            ids: string[];
         };
     };
     responses: never;
@@ -1986,10 +1889,28 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserDeleteArgs"];
+            };
+        };
         responses: {
             /** @description Deleted */
-            200: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid or empty user targets */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description User target not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3245,232 +3166,6 @@ export interface operations {
             };
         };
     };
-    getDnsSettings: {
-        parameters: {
-            query?: never;
-            header?: {
-                /**
-                 * @description Identifies the target Agent for control-plane endpoints. Required for
-                 *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
-                 *     HTTP 400 when missing.
-                 */
-                "X-Agent-ID"?: components["parameters"]["XAgentID"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description DNS config */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    setDnsSettings: {
-        parameters: {
-            query?: never;
-            header?: {
-                /**
-                 * @description Identifies the target Agent for control-plane endpoints. Required for
-                 *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
-                 *     HTTP 400 when missing.
-                 */
-                "X-Agent-ID"?: components["parameters"]["XAgentID"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    getSystemTime: {
-        parameters: {
-            query?: never;
-            header?: {
-                /**
-                 * @description Identifies the target Agent for control-plane endpoints. Required for
-                 *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
-                 *     HTTP 400 when missing.
-                 */
-                "X-Agent-ID"?: components["parameters"]["XAgentID"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description System time payload */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    setSystemTime: {
-        parameters: {
-            query?: never;
-            header?: {
-                /**
-                 * @description Identifies the target Agent for control-plane endpoints. Required for
-                 *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
-                 *     HTTP 400 when missing.
-                 */
-                "X-Agent-ID"?: components["parameters"]["XAgentID"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    getSystemTimeZoneList: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Timezone list */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    getSystemTimeZone: {
-        parameters: {
-            query?: never;
-            header?: {
-                /**
-                 * @description Identifies the target Agent for control-plane endpoints. Required for
-                 *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
-                 *     HTTP 400 when missing.
-                 */
-                "X-Agent-ID"?: components["parameters"]["XAgentID"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Current timezone */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    setSystemTimeZone: {
-        parameters: {
-            query?: never;
-            header?: {
-                /**
-                 * @description Identifies the target Agent for control-plane endpoints. Required for
-                 *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
-                 *     HTTP 400 when missing.
-                 */
-                "X-Agent-ID"?: components["parameters"]["XAgentID"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    reboot: {
-        parameters: {
-            query?: never;
-            header?: {
-                /**
-                 * @description Identifies the target Agent for control-plane endpoints. Required for
-                 *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
-                 *     HTTP 400 when missing.
-                 */
-                "X-Agent-ID"?: components["parameters"]["XAgentID"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Reboot initiated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    shutdown: {
-        parameters: {
-            query?: never;
-            header?: {
-                /**
-                 * @description Identifies the target Agent for control-plane endpoints. Required for
-                 *     any host.* or container.* path; the repository layer (see
-                 *     RequireAgentID in beacon/pkg/contextx) rejects the request with
-                 *     HTTP 400 when missing.
-                 */
-                "X-Agent-ID"?: components["parameters"]["XAgentID"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Shutdown initiated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     auditQuery: {
         parameters: {
             query?: {
@@ -3607,7 +3302,7 @@ export interface operations {
         };
         responses: {
             /** @description Updated */
-            200: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3615,6 +3310,13 @@ export interface operations {
             };
             /** @description Invalid threshold spec */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Threshold id and type do not match an active record */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3641,6 +3343,62 @@ export interface operations {
                         data?: components["schemas"]["AlarmThreshold"][];
                     };
                 };
+            };
+        };
+    };
+    alarmMessageSettingQuery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Global alarm message title */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlarmMessageSetting"];
+                };
+            };
+        };
+    };
+    alarmMessageSettingUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlarmMessageSettingUpdateArgs"];
+            };
+        };
+        responses: {
+            /** @description Updated */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Title is empty */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Alarm message setting singleton not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

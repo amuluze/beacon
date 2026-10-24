@@ -61,7 +61,7 @@ type UserUpdateArgs struct {
 }
 
 type UserDeleteArgs struct {
-	IDs []string `json:"ids,omitempty" validate:"max=32"`
+	IDs []string `json:"ids,omitempty" validate:"required,min=1,max=32,dive,required,uuid"`
 }
 
 type RoleQueryArgs struct {
