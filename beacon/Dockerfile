@@ -24,12 +24,16 @@ COPY beacon ./beacon
 COPY collia ./collia
 COPY --from=beacon-web-builder /src/beacon/web/dist ./beacon/web/dist
 WORKDIR /src/beacon
+# 依赖下载单独成层，使 amd64/arm64 Beacon 构建复用同一模块缓存。
+# 代理回退到 VCS 后可能留下无法继续 fetch 的半成品缓存；失败重试前清理，
+# 让下一轮重新从 GOPROXY 开始，而不是永久卡在 origin。
 RUN for attempt in 1 2 3 4 5; do \
-        go mod download && break; \
+        if go mod download; then break; fi; \
         if [ "$attempt" = "5" ]; then exit 1; fi; \
+        go clean -modcache; \
         sleep 2; \
-    done && \
-    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    done
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -trimpath -ldflags="-s -w -X main.Version=$BEACON_VERSION" -o /out/beacon ./cmd/beacon
 
 FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/golang:1.25 AS collia-builder
@@ -46,11 +50,12 @@ COPY beacon ./beacon
 COPY collia ./collia
 WORKDIR /src/collia
 RUN for attempt in 1 2 3 4 5; do \
-        go mod download && break; \
+        if go mod download; then break; fi; \
         if [ "$attempt" = "5" ]; then exit 1; fi; \
+        go clean -modcache; \
         sleep 2; \
-    done && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    done
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -trimpath -ldflags="-s -w -X main.version=$COLLIA_VERSION" -o /out/collia-amd64 ./cmd && \
     CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
     go build -trimpath -ldflags="-s -w -X main.version=$COLLIA_VERSION" -o /out/collia-arm64 ./cmd
