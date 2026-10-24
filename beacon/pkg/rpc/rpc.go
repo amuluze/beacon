@@ -6,6 +6,8 @@ package rpc
 
 import (
 	"context"
+	"errors"
+	"log/slog"
 	"sync"
 
 	"beacon/pkg/contextx"
@@ -21,12 +23,30 @@ const (
 // 避免破坏已有的包外引用（如 repository、terminal 等）。
 var ErrMissingAgentID = contextx.ErrMissingAgentID
 
+// ErrControlDisabled 表示部署显式关闭了 Agent 控制通道。
+var ErrControlDisabled = errors.New("agent control channel is disabled")
+
 // Caller is the interface for making RPC calls to agents.
 type Caller interface {
 	Call(ctx context.Context, method string, args interface{}, reply interface{}) error
 	StreamCall(ctx context.Context, method string, args interface{}) (<-chan []byte, error)
 	Close() error
 }
+
+// DisabledClient 在 Control.Enable=false 时提供稳定、可诊断的 Caller。
+type DisabledClient struct{}
+
+func NewDisabledClient() *DisabledClient { return &DisabledClient{} }
+
+func (*DisabledClient) Call(context.Context, string, interface{}, interface{}) error {
+	return ErrControlDisabled
+}
+
+func (*DisabledClient) StreamCall(context.Context, string, interface{}) (<-chan []byte, error) {
+	return nil, ErrControlDisabled
+}
+
+func (*DisabledClient) Close() error { return nil }
 
 // TunnelClient wraps ServerTunnel to implement the Caller interface.
 type TunnelClient struct {
@@ -70,6 +90,9 @@ func (tc *TunnelClient) StreamCall(ctx context.Context, method string, args inte
 				}
 				out <- frame.Payload
 				if frame.Eos || frame.FrameType == tunnelpkg.FrameType_FRAME_STREAM_END {
+					if frame.Error != "" {
+						slog.Warn("tunnel stream ended incomplete", "error", frame.Error)
+					}
 					return
 				}
 			case <-ctx.Done():

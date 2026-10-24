@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"strconv"
 	"sync"
 	"sync/atomic"
 
@@ -27,10 +28,10 @@ type AgentInfo struct {
 
 // RegistrationPayload is the JSON payload sent by an agent during registration.
 type RegistrationPayload struct {
-	AgentID  string `json:"agent_id"`
-	Version  string `json:"version"`
-	OS       string `json:"os"`
-	Arch     string `json:"arch"`
+	AgentID   string `json:"agent_id"`
+	Version   string `json:"version"`
+	OS        string `json:"os"`
+	Arch      string `json:"arch"`
 	JoinToken string `json:"join_token"`
 }
 
@@ -49,21 +50,23 @@ type pendingCall struct {
 // pendingStream represents an in-flight streaming RPC.
 type pendingStream struct {
 	chunkChan chan *Frame
+	dropped   atomic.Int64
 }
 
 // ServerTunnel is the Server-side tunnel manager.
 // It accepts Agent connections and provides a Call interface for dispatching RPCs.
 type ServerTunnel struct {
 	UnimplementedReverseTunnelServer
-	grpcServer *grpc.Server
-	listener   net.Listener
-	agents     sync.Map // map[string]*agentStream
-	pending    sync.Map // map[string]*pendingCall   (call_id -> pendingCall)
-	streams    sync.Map // map[string]*pendingStream (stream_id -> pendingStream)
-	callID     atomic.Uint64
-	lifecycle  AgentLifecycle
-	joinToken  string
-	tlsConfig  *tls.Config
+	grpcServer     *grpc.Server
+	listener       net.Listener
+	agents         sync.Map // map[string]*agentStream
+	pending        sync.Map // map[string]*pendingCall   (call_id -> pendingCall)
+	streams        sync.Map // map[string]*pendingStream (stream_id -> pendingStream)
+	callID         atomic.Uint64
+	lifecycle      AgentLifecycle
+	joinToken      string
+	allowAnonymous bool
+	tlsConfig      *tls.Config
 }
 
 type agentStream struct {
@@ -100,6 +103,13 @@ func NewServerTunnel(opts ...ServerOption) *ServerTunnel {
 // SetJoinToken configures the optional registration token required from Agents.
 func (s *ServerTunnel) SetJoinToken(token string) {
 	s.joinToken = token
+}
+
+// SetAllowAnonymous explicitly permits Agent registration without a join token.
+// By default an empty join token rejects all registrations; callers that
+// intentionally run without authentication (e.g. local development) must opt in.
+func (s *ServerTunnel) SetAllowAnonymous(allow bool) {
+	s.allowAnonymous = allow
 }
 
 // SetTLSConfig configures optional TLS credentials for the gRPC server.
@@ -231,6 +241,11 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 			// Route stream end to the waiting stream consumer
 			if v, ok := s.streams.LoadAndDelete(frame.Id); ok {
 				ps := v.(*pendingStream)
+				if n := ps.dropped.Load(); n > 0 {
+					// 流结束前透传丢帧计数，让消费方感知输出不完整。
+					frame.Error = fmt.Sprintf("dropped %d chunks (consumer too slow)", n)
+					slog.Warn("server tunnel: stream ended with dropped chunks", "stream_id", frame.Id, "dropped", n)
+				}
 				select {
 				case ps.chunkChan <- frame:
 				default:
@@ -244,6 +259,9 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 				select {
 				case ps.chunkChan <- frame:
 				default:
+					// 丢弃避免阻塞 agent 接收循环，并计数以便在流结束时透传给消费方。
+					ps.dropped.Add(1)
+					slog.Warn("server tunnel: stream chunk dropped (consumer too slow)", "stream_id", frame.Id)
 				}
 				if frame.Eos {
 					s.streams.Delete(frame.Id)
@@ -262,7 +280,7 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 
 func (s *ServerTunnel) validJoinToken(token string) bool {
 	if s.joinToken == "" {
-		return true
+		return s.allowAnonymous
 	}
 	if len(token) != len(s.joinToken) {
 		return false
@@ -372,7 +390,7 @@ func (s *ServerTunnel) AgentCount() int {
 }
 
 func (s *ServerTunnel) nextID() string {
-	return "rpc-" + itoa(int(s.callID.Add(1)))
+	return "rpc-" + strconv.FormatUint(s.callID.Add(1), 10)
 }
 
 // AgentOfflineError is returned when the target agent is not connected.
@@ -417,18 +435,4 @@ type RPCError struct {
 
 func (e *RPCError) Error() string {
 	return "rpc " + e.Method + " failed: " + e.Err
-}
-
-func itoa(n int) string {
-	if n == 0 {
-		return "0"
-	}
-	var buf [20]byte
-	i := len(buf)
-	for n > 0 {
-		i--
-		buf[i] = byte('0' + n%10)
-		n /= 10
-	}
-	return string(buf[i:])
 }

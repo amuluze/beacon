@@ -19,6 +19,14 @@ import (
 
 const bufSize = 1024 * 1024
 
+func TestServerTunnelNextIDPreservesUint64Range(t *testing.T) {
+	server := NewServerTunnel()
+	server.callID.Store(9223372036854775807)
+	if got, want := server.nextID(), "rpc-9223372036854775808"; got != want {
+		t.Fatalf("nextID() = %q, want %q", got, want)
+	}
+}
+
 // fakeLifecycle 记录生命周期回调，供测试断言。
 type fakeLifecycle struct {
 	mu          sync.Mutex
@@ -201,13 +209,32 @@ func TestServerTunnel_Register_RejectedBadToken(t *testing.T) {
 	}
 }
 
-func TestServerTunnel_Register_BackwardCompatibleNoToken(t *testing.T) {
-	// 服务端未配置 joinToken 时，跳过校验（向后兼容）。
+func TestServerTunnel_Register_EmptyTokenRejectedByDefault(t *testing.T) {
+	// 服务端未配置 joinToken 且未显式允许匿名时，拒绝注册（与 report 接口语义对齐）。
 	s, conn := startTestServer(t)
+	stream := openAgentStream(t, conn)
+	_ = stream.Send(registerFrame("agent-2", RegistrationPayload{AgentID: "agent-2"}))
+
+	frame, err := stream.Recv()
+	if err != nil {
+		t.Fatalf("recv: %v", err)
+	}
+	if frame.FrameType != FrameType_FRAME_REGISTER_REJECTED {
+		t.Fatalf("frame type = %v, want REGISTER_REJECTED", frame.FrameType)
+	}
+	if s.IsOnline("agent-2") {
+		t.Fatalf("agent should not be online without token")
+	}
+}
+
+func TestServerTunnel_Register_AnonymousAllowedWhenExplicit(t *testing.T) {
+	// 服务端显式 SetAllowAnonymous(true) 后，未配置 joinToken 时允许注册（本地开发）。
+	s, conn := startTestServer(t)
+	s.SetAllowAnonymous(true)
 	stream := openAgentStream(t, conn)
 	serveAgent(stream, registerFrame("agent-2", RegistrationPayload{AgentID: "agent-2"}), nil)
 
-	eventually(t, func() bool { return s.IsOnline("agent-2") }, time.Second, "agent should be online without token")
+	eventually(t, func() bool { return s.IsOnline("agent-2") }, time.Second, "agent should be online when anonymous explicitly allowed")
 }
 
 func TestServerTunnel_Register_InvalidPayload(t *testing.T) {
@@ -244,6 +271,7 @@ func TestServerTunnel_Register_InvalidPayload(t *testing.T) {
 func TestServerTunnel_Disconnect_Lifecycle(t *testing.T) {
 	lc := &fakeLifecycle{}
 	s, conn := startTestServer(t)
+	s.SetAllowAnonymous(true)
 	s.SetAgentLifecycle(lc)
 
 	stream := openAgentStream(t, conn)
@@ -263,6 +291,7 @@ func TestServerTunnel_Disconnect_Lifecycle(t *testing.T) {
 func TestServerTunnel_Heartbeat_Lifecycle(t *testing.T) {
 	lc := &fakeLifecycle{}
 	s, conn := startTestServer(t)
+	s.SetAllowAnonymous(true)
 	s.SetAgentLifecycle(lc)
 
 	stream := openAgentStream(t, conn)
@@ -277,6 +306,7 @@ func TestServerTunnel_Heartbeat_Lifecycle(t *testing.T) {
 
 func TestServerTunnel_Call_Success(t *testing.T) {
 	s, conn := startTestServer(t)
+	s.SetAllowAnonymous(true)
 	stream := openAgentStream(t, conn)
 	serveAgent(stream, registerFrame("agent-5", RegistrationPayload{AgentID: "agent-5"}),
 		func(method string, payload []byte) ([]byte, error) {
@@ -311,6 +341,7 @@ func TestServerTunnel_Call_AgentOffline(t *testing.T) {
 
 func TestServerTunnel_Call_RPCError(t *testing.T) {
 	s, conn := startTestServer(t)
+	s.SetAllowAnonymous(true)
 	stream := openAgentStream(t, conn)
 	boom := errors.New("container not found")
 	serveAgent(stream, registerFrame("agent-6", RegistrationPayload{AgentID: "agent-6"}),
@@ -332,6 +363,7 @@ func TestServerTunnel_Call_RPCError(t *testing.T) {
 
 func TestServerTunnel_Call_Timeout(t *testing.T) {
 	s, conn := startTestServer(t)
+	s.SetAllowAnonymous(true)
 	stream := openAgentStream(t, conn)
 	// 注册后进入空循环：收到请求但不回复，触发调用方 ctx 超时。
 	_ = stream.Send(registerFrame("agent-7", RegistrationPayload{AgentID: "agent-7"}))
@@ -358,6 +390,7 @@ func TestServerTunnel_Call_Timeout(t *testing.T) {
 
 func TestServerTunnel_StreamCall(t *testing.T) {
 	s, conn := startTestServer(t)
+	s.SetAllowAnonymous(true)
 	st := openAgentStream(t, conn)
 	_ = st.Send(registerFrame("agent-8", RegistrationPayload{AgentID: "agent-8"}))
 	eventually(t, func() bool { return s.IsOnline("agent-8") }, time.Second, "online")
@@ -411,6 +444,7 @@ func TestServerTunnel_StreamCall(t *testing.T) {
 // 调用方必须能收到 STREAM_END 并据此结束读取。
 func TestServerTunnel_StreamCall_StreamEndDelivered(t *testing.T) {
 	s, conn := startTestServer(t)
+	s.SetAllowAnonymous(true)
 	st := openAgentStream(t, conn)
 	_ = st.Send(registerFrame("agent-9", RegistrationPayload{AgentID: "agent-9"}))
 	eventually(t, func() bool { return s.IsOnline("agent-9") }, time.Second, "online")
@@ -453,6 +487,7 @@ func TestServerTunnel_StreamCall_StreamEndDelivered(t *testing.T) {
 // streams 条目被清理（防泄漏）：制造"流不结束"场景，取消 ctx 后 streams 必须清空。
 func TestServerTunnel_StreamCall_CtxCancelReleasesStream(t *testing.T) {
 	s, conn := startTestServer(t)
+	s.SetAllowAnonymous(true)
 	st := openAgentStream(t, conn)
 	_ = st.Send(registerFrame("agent-10", RegistrationPayload{AgentID: "agent-10"}))
 	eventually(t, func() bool { return s.IsOnline("agent-10") }, time.Second, "online")
@@ -539,6 +574,7 @@ func TestE2E_RegisterCallDisconnect(t *testing.T) {
 func TestE2E_MultiAgentIsolation(t *testing.T) {
 	lc := &fakeLifecycle{}
 	s, conn := startTestServer(t)
+	s.SetAllowAnonymous(true)
 	s.SetAgentLifecycle(lc)
 
 	// Register agent-a on first stream
@@ -612,6 +648,7 @@ func TestE2E_RegistrationRejectsUnauthorized(t *testing.T) {
 func TestE2E_HeartbeatKeepsAgentAlive(t *testing.T) {
 	lc := &fakeLifecycle{}
 	s, conn := startTestServer(t)
+	s.SetAllowAnonymous(true)
 	s.SetAgentLifecycle(lc)
 
 	stream := openAgentStream(t, conn)

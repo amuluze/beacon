@@ -7,6 +7,7 @@ package service
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"beacon/pkg/rpc"
 	"beacon/service/agent"
@@ -21,6 +22,20 @@ var globalTunnel *tunnelpkg.ServerTunnel
 // NewRPCClient creates the tunnel-based RPC client.
 // Server listens for reverse connections from Agents.
 func NewRPCClient(config *Config, agentService *agent.Service, certManager *CertManager) (rpc.Caller, error) {
+	if !config.Control.Enable {
+		globalTunnel = nil
+		slog.Info("reverse tunnel server disabled")
+		return rpc.NewDisabledClient(), nil
+	}
+	if strings.EqualFold(config.App.Env, productionEnv) && !config.Control.TLS.Enable {
+		return nil, ErrControlTLSRequired
+	}
+
+	joinToken, err := resolveControlToken(controlJoinToken(config), config.App.Env)
+	if err != nil {
+		return nil, err
+	}
+
 	addr := config.Control.Address
 	if addr == "" {
 		addr = ":17000"
@@ -34,7 +49,12 @@ func NewRPCClient(config *Config, agentService *agent.Service, certManager *Cert
 	}
 
 	tun := tunnelpkg.NewServerTunnel()
-	tun.SetJoinToken(controlJoinToken(config))
+	tun.SetJoinToken(joinToken)
+	if joinToken == "" {
+		// 非生产且未配置 join token 时显式允许匿名注册以保留本地开发便利；
+		// 生产模式 resolveControlToken 已拒绝空 token，不会走到这里。
+		tun.SetAllowAnonymous(true)
+	}
 	agentService.SetTunnel(tun)
 	if config.Control.TLS.Enable {
 		tlsCfg, err := transporttls.ServerConfig(config.Control.TLS.CertDir, config.Control.TLS.ClientNames)
