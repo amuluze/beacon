@@ -13,6 +13,13 @@ vars:
       else
         cat "{{.TASKFILE_DIR}}/VERSION"
       fi
+  COLLIA_VERSION:
+    sh: |
+      if [ -f "{{.ROOT_DIR}}/collia/VERSION" ]; then
+        cat "{{.ROOT_DIR}}/collia/VERSION"
+      else
+        cat "{{.TASKFILE_DIR}}/../collia/VERSION"
+      fi
   REGISTRY: registry.cn-hangzhou.aliyuncs.com
   # amd64 与 arm64 走不同的镜像仓库，对齐 manager.sh 中 BEACON_ARCH 分支：
   #   amd64 -> amuluze/beacon
@@ -53,20 +60,16 @@ tasks:
 
   amd64:
     desc: Build linux/amd64 Docker image into local Docker
-    deps:
-      - bin
     cmds:
-      - docker buildx build --platform linux/amd64 -f Dockerfile -t {{.IMAGE}}:{{.TAG}} -o type=docker ..
+      - docker buildx build --platform linux/amd64 -f Dockerfile --build-arg APK_REPOSITORY={{default "" .APK_REPOSITORY}} --build-arg BEACON_VERSION={{.BEACON_VERSION}} --build-arg COLLIA_VERSION={{.COLLIA_VERSION}} -t {{.IMAGE}}:{{.TAG}} -o type=docker ..
 
   arm64:
     desc: Build linux/arm64 Docker image into local Docker
-    deps:
-      - bin
     cmds:
-      - docker buildx build --platform linux/arm64 -f Dockerfile -t {{.IMAGE_ARM}}:{{.TAG}} -o type=docker ..
+      - docker buildx build --platform linux/arm64 -f Dockerfile --build-arg APK_REPOSITORY={{default "" .APK_REPOSITORY}} --build-arg BEACON_VERSION={{.BEACON_VERSION}} --build-arg COLLIA_VERSION={{.COLLIA_VERSION}} -t {{.IMAGE_ARM}}:{{.TAG}} -o type=docker ..
 
   build:
     desc: Build and push amd64/arm64 Docker images to their respective repos
     cmds:
-      - docker buildx build --platform linux/amd64 -f Dockerfile -t {{.IMAGE}}:{{.TAG}} .. --push
-      - docker buildx build --platform linux/arm64 -f Dockerfile -t {{.IMAGE_ARM}}:{{.TAG}} .. --push
+      - docker buildx build --platform linux/amd64 -f Dockerfile --build-arg APK_REPOSITORY={{default "" .APK_REPOSITORY}} --build-arg BEACON_VERSION={{.BEACON_VERSION}} --build-arg COLLIA_VERSION={{.COLLIA_VERSION}} -t {{.IMAGE}}:{{.TAG}} .. --push
+      - docker buildx build --platform linux/arm64 -f Dockerfile --build-arg APK_REPOSITORY={{default "" .APK_REPOSITORY}} --build-arg BEACON_VERSION={{.BEACON_VERSION}} --build-arg COLLIA_VERSION={{.COLLIA_VERSION}} -t {{.IMAGE_ARM}}:{{.TAG}} .. --push

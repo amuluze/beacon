@@ -16,6 +16,7 @@
 website
 beacon/Dockerfile
 **/node_modules
+beacon/web/dist
 **/.nuxt
 **/.output
 **/coverage

@@ -24,7 +24,7 @@ tasks:
       GOOS: linux
       GOARCH: amd64
     cmds:
-      - go build -ldflags "-X main.version={{.VERSION}}" -o {{.TARGET}} {{.SERVER}}
+      - go build -trimpath -ldflags "-s -w -X main.version={{.VERSION}}" -o {{.TARGET}} {{.SERVER}}
 
   arm64:
     desc: Generate Wire code and build linux/arm64 collia binary
@@ -35,4 +35,4 @@ tasks:
       GOOS: linux
       GOARCH: arm64
     cmds:
-      - go build -ldflags "-X main.version={{.VERSION}}" -o {{.TARGET}} {{.SERVER}}
+      - go build -trimpath -ldflags "-s -w -X main.version={{.VERSION}}" -o {{.TARGET}} {{.SERVER}}

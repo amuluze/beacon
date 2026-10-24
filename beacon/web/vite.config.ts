@@ -88,7 +88,8 @@ export default defineConfig({
     },
     // 构建配置
     build: {
-        emptyOutDir: false,
+        // dist 会被 go:embed 写入 Beacon；每次构建必须清理历史哈希资源。
+        emptyOutDir: true,
         chunkSizeWarningLimit: 2000, // 消除打包大小超过500kb警告
         minify: 'terser', // Vite 2.6.x 以上需要配置 minify: "terser", terserOptions 才能生效
         terserOptions: {
