@@ -8,6 +8,9 @@ ShutdownTimeout = 30  # http优雅关闭等待超时时长(单位秒)
 ServerHeader = "beacon"
 AppName = "beacon"
 Prefork = false
+ReadTimeout = 30      # 读请求超时(秒)，0 或缺省兜底为 30s；防止慢速请求耗尽内存
+WriteTimeout = 30     # 写响应超时(秒)，0 或缺省兜底为 30s
+IdleTimeout = 120     # keepalive 空闲超时(秒)，0 或缺省兜底为 120s；回收半开连接
 
 [Control]
 Enable = true          # 启用反向 gRPC tunnel，控制通道由 Agent 主动连接 Server

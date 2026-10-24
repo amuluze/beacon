@@ -65,6 +65,11 @@ func (f *fakeConn) WriteControl(messageType int, data []byte, deadline time.Time
 	return nil
 }
 
+// SetReadDeadline / SetWriteDeadline 满足 Connection 接口；测试场景使用受控输入，
+// 不依赖真实超时语义，返回 nil 即可。
+func (f *fakeConn) SetReadDeadline(time.Time) error  { return nil }
+func (f *fakeConn) SetWriteDeadline(time.Time) error { return nil }
+
 func (f *fakeConn) controlMessages() []int {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -260,4 +265,28 @@ func TestBridge_PingsIdleWebSocket(t *testing.T) {
 	close(conn.input)
 	close(stream)
 	<-done
+}
+
+// TestBridgeWriteTimeoutDefaultsToGuard 验证 bridge 默认配置写超时为有限正值，
+// 用于兜底回收半开 TCP 上的阻塞写 goroutine。
+func TestBridgeWriteTimeoutDefaultsToGuard(t *testing.T) {
+	b := newBridge(&fakeRPC{}, newFakeConn(), make(chan []byte), nil, "sess", "agent")
+	if b.writeTimeout != terminalWriteDeadline {
+		t.Fatalf("writeTimeout = %v, want %v", b.writeTimeout, terminalWriteDeadline)
+	}
+	if terminalWriteDeadline <= 0 {
+		t.Fatalf("terminalWriteDeadline = %v, must be positive", terminalWriteDeadline)
+	}
+}
+
+// TestBridgeWriteMessageSurfacesWriteError 验证 writeMessage 在底层写失败时返回错误，
+// 让 readTunnel 能及时退出，避免半开连接写永久阻塞。
+func TestBridgeWriteMessageSurfacesWriteError(t *testing.T) {
+	conn := newFakeConn()
+	conn.writeErr = errors.New("broken pipe")
+	b := newBridge(&fakeRPC{}, conn, make(chan []byte), nil, "sess", "agent")
+
+	if err := b.writeMessage(NewOutputMessage("data")); err == nil {
+		t.Fatal("writeMessage with broken conn: expected error, got nil")
+	}
 }

@@ -124,6 +124,11 @@ type Fiber struct {
 	ServerHeader    string
 	AppName         string
 	Prefork         bool
+	// ReadTimeout / WriteTimeout / IdleTimeout 控制 fasthttp 连接的读、写、空闲超时（秒）。
+	// 缺失或 <=0 时 NewFiberApp 兜底为下方默认值，避免慢速/半开连接无限占用内存。
+	ReadTimeout  int
+	WriteTimeout int
+	IdleTimeout  int
 }
 
 type Control struct {

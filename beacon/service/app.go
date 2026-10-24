@@ -10,6 +10,7 @@ import (
 	"beacon/web"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
@@ -19,12 +20,24 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/pprof"
 )
 
+// fiber 默认超时常量。配置缺值时兜底，确保慢速/半开连接不会无限占用内存。
+// 单批监控上报远小于 32MB，1GB 的历史默认值会让单个异常请求耗尽容器内存。
+const (
+	defaultReadTimeout  = 30 * time.Second
+	defaultWriteTimeout = 30 * time.Second
+	defaultIdleTimeout  = 120 * time.Second
+	defaultBodyLimit    = 32 * 1024 * 1024 // 32MB
+)
+
 func NewFiberApp(config *Config, r IRouter) *fiber.App {
 	fiberConfig := fiber.Config{
 		Prefork:      config.Fiber.Prefork,
 		AppName:      config.Fiber.AppName,
 		ServerHeader: config.Fiber.ServerHeader,
-		BodyLimit:    1000 * 1024 * 1024,
+		ReadTimeout:  durationSeconds(config.Fiber.ReadTimeout, defaultReadTimeout),
+		WriteTimeout: durationSeconds(config.Fiber.WriteTimeout, defaultWriteTimeout),
+		IdleTimeout:  durationSeconds(config.Fiber.IdleTimeout, defaultIdleTimeout),
+		BodyLimit:    defaultBodyLimit,
 	}
 
 	app := fiber.New(fiberConfig)
@@ -124,4 +137,12 @@ func joinComma(items []string) string {
 		out += s
 	}
 	return out
+}
+
+// durationSeconds 把秒数转成 time.Duration；非正值回落到 fallback。
+func durationSeconds(seconds int, fallback time.Duration) time.Duration {
+	if seconds <= 0 {
+		return fallback
+	}
+	return time.Duration(seconds) * time.Second
 }

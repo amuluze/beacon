@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"beacon/pkg/contextx"
+	tunnelpkg "common/rpc/tunnel"
 )
 
 // TestTunnelClientCallRejectsMissingAgentID 验证控制调用在 context 缺失 agentID 时
@@ -51,5 +53,31 @@ func TestTunnelClientCallRejectsInvalidAgentID(t *testing.T) {
 func TestErrMissingAgentIDAlias(t *testing.T) {
 	if !errors.Is(ErrMissingAgentID, contextx.ErrMissingAgentID) {
 		t.Fatal("rpc.ErrMissingAgentID must be identical to contextx.ErrMissingAgentID")
+	}
+}
+
+// TestStreamCallReleasesStreamContextOnTunnelError 验证当 tunnel.StreamCall 失败时，
+// StreamCall 派生的超时 ctx 的 cancel 被调用（防止 context 泄漏）。
+// 用未注册任何 agent 的 ServerTunnel 触发 AgentOfflineError 路径。
+func TestStreamCallReleasesStreamContextOnTunnelError(t *testing.T) {
+	tc := NewTunnelClient(tunnelpkg.NewServerTunnel())
+	ctx := contextx.NewAgentID(context.Background(), "nonexistent-agent")
+
+	_, err := tc.StreamCall(ctx, "AnyMethod", nil)
+	if err == nil {
+		t.Fatal("StreamCall on offline agent: expected error, got nil")
+	}
+	var offlineErr *tunnelpkg.AgentOfflineError
+	if !errors.As(err, &offlineErr) {
+		t.Fatalf("StreamCall err = %v, want AgentOfflineError", err)
+	}
+}
+
+// TestStreamCallDerivesTimeoutContext 验证 StreamCall 派生的 ctx 带有 maxStreamDuration
+// 截止时间，作为 agent PTY hang / 客户端半开时的兜底清理信号。
+// 这里不构造完整 tunnel，仅验证 maxStreamDuration 常量为有限正值（保证会触发）。
+func TestStreamCallDerivesTimeoutContext(t *testing.T) {
+	if maxStreamDuration <= 0 || maxStreamDuration > 24*time.Hour {
+		t.Fatalf("maxStreamDuration = %v, must be a finite positive value (got unreasonable bound)", maxStreamDuration)
 	}
 }

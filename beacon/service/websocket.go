@@ -20,6 +20,9 @@ type LoggerHandler struct {
 	rpcClient rpc.Caller
 }
 
+// loggerWriteDeadline 防止半开 TCP 客户端导致 WriteMessage 永久阻塞，回收 goroutine。
+const loggerWriteDeadline = 10 * time.Second
+
 func NewLoggerHandler(client rpc.Caller) *LoggerHandler {
 	return &LoggerHandler{rpcClient: client}
 }
@@ -44,6 +47,9 @@ func (l *LoggerHandler) Handler(c *websocket.Conn) {
 	}
 
 	for chunk := range chunkChan {
+		// 每次写都设 deadline：半开 TCP 下 WriteMessage 会永久阻塞，
+		// 导致 handler goroutine 与 server 端 stream 资源无法释放。
+		_ = c.SetWriteDeadline(time.Now().Add(loggerWriteDeadline))
 		if err := c.WriteMessage(websocket.TextMessage, chunk); err != nil {
 			slog.Debug("write container logs websocket message failed", "container_id", containerID, "err", err)
 			return

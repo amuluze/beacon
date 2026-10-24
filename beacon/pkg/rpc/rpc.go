@@ -9,6 +9,7 @@ import (
 	"errors"
 	"log/slog"
 	"sync"
+	"time"
 
 	"beacon/pkg/contextx"
 	tunnelpkg "common/rpc/tunnel"
@@ -16,6 +17,11 @@ import (
 
 const (
 	DefaultNetwork = "tcp"
+	// maxStreamDuration 是所有流式 RPC 的最长生命周期兜底。
+	// 业务侧 ctx（如 WebSocket）取消会立刻释放资源；这里防止 agent PTY hang
+	// 且客户端半开时 ctx 永不取消，导致 server streams map + 缓冲 + goroutine 永驻。
+	// 超过后强制关闭流，触发 server.StreamCall 的清理路径。
+	maxStreamDuration = 2 * time.Hour
 )
 
 // ErrMissingAgentID 在控制调用无法解析出目标 Agent 时返回。
@@ -74,14 +80,19 @@ func (tc *TunnelClient) StreamCall(ctx context.Context, method string, args inte
 	if err != nil {
 		return nil, err
 	}
-	chunkChan, err := tc.tunnel.StreamCall(ctx, agentID, method, args)
+	// 兜底超时：即便调用方 ctx 永不取消（agent hang / 客户端半开），
+	// maxStreamDuration 后也会取消，触发 server 侧 streams map 与缓冲的回收。
+	streamCtx, cancel := context.WithTimeout(ctx, maxStreamDuration)
+	chunkChan, err := tc.tunnel.StreamCall(streamCtx, agentID, method, args)
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 	// Convert tunnel Frame channel to []byte channel
 	out := make(chan []byte, 64)
 	go func() {
 		defer close(out)
+		defer cancel()
 		for {
 			select {
 			case frame, ok := <-chunkChan:
@@ -95,7 +106,7 @@ func (tc *TunnelClient) StreamCall(ctx context.Context, method string, args inte
 					}
 					return
 				}
-			case <-ctx.Done():
+			case <-streamCtx.Done():
 				return
 			}
 		}

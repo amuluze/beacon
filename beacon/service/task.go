@@ -33,7 +33,7 @@ func NewTimedTask(conf *Config, cli rpc.Caller, db *database.DB, cipher *secret.
 	cleanupTk := timex.NewTicker(3600 * time.Second)
 
 	newTask := task.NewTask(db, cipher)
-	cleanupTask := task.NewCleanupTask(db, conf.Retention.Days)
+	cleanupTask := task.NewCleanupTask(db, conf.Retention.Days, conf.Gorm.DBType)
 
 	return &TimedTask{
 		task:          newTask,

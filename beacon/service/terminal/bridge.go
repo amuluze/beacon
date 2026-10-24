@@ -22,30 +22,45 @@ type Connection interface {
 	ReadMessage() (messageType int, p []byte, err error)
 	WriteMessage(messageType int, data []byte) error
 	WriteControl(messageType int, data []byte, deadline time.Time) error
+	// SetReadDeadline 设置底层读超时；用于兜底回收半开 TCP 上的阻塞读 goroutine。
+	SetReadDeadline(t time.Time) error
+	// SetWriteDeadline 设置底层写超时；用于兜底回收半开 TCP 上的阻塞写 goroutine。
+	SetWriteDeadline(t time.Time) error
 }
 
 // bridge forwards data between a WebSocket connection and an Agent PTY stream.
 type bridge struct {
-	rpcClient rpc.Caller
-	conn      Connection
-	stream    <-chan []byte
-	recorder  *Recorder
-	sessionID string
-	agentID   string
-	pingEvery time.Duration
+	rpcClient   rpc.Caller
+	conn        Connection
+	stream      <-chan []byte
+	recorder    *Recorder
+	sessionID   string
+	agentID     string
+	pingEvery   time.Duration
+	writeTimeout time.Duration
 }
 
-const terminalPingInterval = 30 * time.Second
+const (
+	terminalPingInterval = 30 * time.Second
+	// terminalReadDeadline 是 WebSocket 读超时兜底。半开 TCP（连接还在但客户端不读不写）
+	// 会让 ReadMessage 永久阻塞；这里设一个足够长、覆盖正常 idle 终端的阈值，
+	// 超时即视为连接死亡并 cancel 整个 bridge，释放 goroutine 与 server 端 stream 资源。
+	// 正常交互中每次读到消息都会重置该 deadline，不会误杀活跃会话。
+	terminalReadDeadline = 10 * time.Minute
+	// terminalWriteDeadline 是单次 WebSocket 写超时，防止半开 TCP 写永久阻塞。
+	terminalWriteDeadline = 10 * time.Second
+)
 
 func newBridge(rpcClient rpc.Caller, conn Connection, stream <-chan []byte, recorder *Recorder, sessionID, agentID string) *bridge {
 	return &bridge{
-		rpcClient: rpcClient,
-		conn:      conn,
-		stream:    stream,
-		recorder:  recorder,
-		sessionID: sessionID,
-		agentID:   agentID,
-		pingEvery: terminalPingInterval,
+		rpcClient:    rpcClient,
+		conn:         conn,
+		stream:       stream,
+		recorder:     recorder,
+		sessionID:    sessionID,
+		agentID:      agentID,
+		pingEvery:    terminalPingInterval,
+		writeTimeout: terminalWriteDeadline,
 	}
 }
 
@@ -64,6 +79,12 @@ func (b *bridge) run(ctx context.Context, rows, cols int) error {
 
 	var wg sync.WaitGroup
 	wg.Add(2)
+
+	// 兜底读超时：防止半开 TCP 导致 readWebSocket 永久阻塞。
+	// readWebSocket 每次成功读取会重置该 deadline。
+	if err := b.conn.SetReadDeadline(time.Now().Add(terminalReadDeadline)); err != nil {
+		slog.Debug("terminal: set initial read deadline failed", "session_id", b.sessionID, "err", err)
+	}
 
 	go func() {
 		defer wg.Done()
@@ -94,6 +115,10 @@ func (b *bridge) readWebSocket(ctx context.Context, cancel context.CancelFunc) {
 		if err != nil {
 			slog.Debug("terminal: websocket read failed", "session_id", b.sessionID, "err", err)
 			return
+		}
+		// 收到任意消息即重置读超时，活跃会话不会被误杀。
+		if err := b.conn.SetReadDeadline(time.Now().Add(terminalReadDeadline)); err != nil {
+			slog.Debug("terminal: reset read deadline failed", "session_id", b.sessionID, "err", err)
 		}
 
 		var msg Message
@@ -181,6 +206,11 @@ func (b *bridge) writeMessage(msg Message) error {
 	data, err := json.Marshal(msg)
 	if err != nil {
 		return fmt.Errorf("marshal message: %w", err)
+	}
+	// 写超时兜底：半开 TCP 下 WriteMessage 会永久阻塞，导致 readTunnel goroutine 卡死，
+	// server 端 stream 与缓冲无法释放。
+	if err := b.conn.SetWriteDeadline(time.Now().Add(b.writeTimeout)); err != nil {
+		return fmt.Errorf("set write deadline: %w", err)
 	}
 	return b.conn.WriteMessage(websocket.TextMessage, data)
 }
