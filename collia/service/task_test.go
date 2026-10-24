@@ -43,10 +43,10 @@ func TestBuildReportArgsFullReport(t *testing.T) {
 
 	r := &task.MonitorReport{
 		Host: &task.HostReport{
-			Uptime:    "7d",
-			Hostname:  "prod-01",
-			Os:        "linux",
-			Platform:  "ubuntu",
+			Uptime:     "7d",
+			Hostname:   "prod-01",
+			Os:         "linux",
+			Platform:   "ubuntu",
 			KernelArch: "x86_64",
 		},
 		CPU: &task.CPUReport{

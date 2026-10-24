@@ -126,9 +126,6 @@ func (a *Router) verifyAgentInstallToken(ctx *fiber.Ctx) error {
 	if token == "" {
 		token = strings.TrimPrefix(ctx.Get("Authorization"), "Bearer ")
 	}
-	if token == "" {
-		token = ctx.Query("token")
-	}
 	if token != a.config.AgentInstall.Token {
 		return fiber.NewError(http.StatusUnauthorized, "invalid install token")
 	}
@@ -214,6 +211,7 @@ tar -xzf "$WORKDIR/certs.tar.gz" -C /etc/collia/certs
 	}
 	return fmt.Sprintf(`#!/bin/sh
 set -eu
+umask 077
 
 BASE_URL=%s
 NODE=%s
@@ -246,7 +244,7 @@ cleanup() {
 trap cleanup EXIT
 
 download() {
-  curl -kfsSL -H "X-Install-Token: $TOKEN" "$1" -o "$2"
+  curl -fsSL -H "X-Install-Token: $TOKEN" "$1" -o "$2"
 }
 
 mkdir -p /etc/collia /data/beacon/collia/storage /data/beacon/logs/collia /usr/sbin
@@ -256,7 +254,7 @@ download "$BASE_URL/api/v1/host/install/config?node=$NODE" "$WORKDIR/config.yml"
 %s
 
 install -m 0755 "$WORKDIR/collia" /usr/sbin/collia
-install -m 0644 "$WORKDIR/config.yml" /etc/collia/config.yml
+install -m 0600 "$WORKDIR/config.yml" /etc/collia/config.yml
 
 collia install || true
 # 升级场景：仅当旧实例在运行时才先停，避免首次安装时 stop 打印 [FAILED] 误报。

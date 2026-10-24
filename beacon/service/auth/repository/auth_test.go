@@ -99,7 +99,10 @@ func TestAuthRepoPassUpdate(t *testing.T) {
 	defer db.Close()
 
 	repo := NewAuthRepo(db)
-	createTestUser(t, db, "update-alice", "old-pass")
+	user := createTestUser(t, db, "update-alice", "old-pass")
+	if err := db.Model(&user).Update("must_change_password", true).Error; err != nil {
+		t.Fatalf("mark test user for password change: %v", err)
+	}
 
 	ctx := context.Background()
 
@@ -121,9 +124,16 @@ func TestAuthRepoPassUpdate(t *testing.T) {
 	if _, err := repo.Login(ctx, schema.LoginArgs{Username: "update-alice", Password: "old-pass"}); err == nil {
 		t.Fatal("login with old password should fail")
 	}
+	mustChange, err := repo.MustChangePassword(ctx, user.ID.String())
+	if err != nil {
+		t.Fatalf("query password change state: %v", err)
+	}
+	if mustChange {
+		t.Fatal("successful password update did not clear must_change_password")
+	}
 
 	// Wrong old password should fail.
-	err := repo.PassUpdate(ctx, schema.PasswordUpdateArgs{
+	err = repo.PassUpdate(ctx, schema.PasswordUpdateArgs{
 		Username:    "update-alice",
 		OldPassword: "wrong-pass",
 		NewPassword: "another-pass",

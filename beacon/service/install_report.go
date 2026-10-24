@@ -77,7 +77,7 @@ func ReportInstallation(ctx context.Context, config *Config) {
 		slog.Warn("install report returned non-2xx status", "status", resp.StatusCode)
 		return
 	}
-	slog.Info("install report sent", "url", reportURL)
+	slog.Info("install report sent")
 }
 
 func buildInstallReportPayload(config *Config) (installReportPayload, error) {
@@ -103,7 +103,24 @@ func loadOrCreateInstallID(path string) (string, error) {
 	if strings.TrimSpace(path) == "" {
 		path = defaultInstallReportIDFile
 	}
-	if data, err := os.ReadFile(path); err == nil {
+	dir := filepath.Dir(path)
+	name := filepath.Base(path)
+	if name == "." || name == string(filepath.Separator) {
+		return "", fmt.Errorf("install id path must name a file")
+	}
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return "", err
+	}
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return "", err
+	}
+	defer root.Close()
+
+	if data, err := root.ReadFile(name); err == nil {
+		if err := root.Chmod(name, 0600); err != nil {
+			return "", err
+		}
 		id := strings.TrimSpace(string(data))
 		if id != "" {
 			return id, nil
@@ -116,10 +133,7 @@ func loadOrCreateInstallID(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		return "", err
-	}
-	if err := os.WriteFile(path, []byte(id+"\n"), 0600); err != nil {
+	if err := root.WriteFile(name, []byte(id+"\n"), 0600); err != nil {
 		return "", err
 	}
 	return id, nil

@@ -50,11 +50,6 @@ func NewRPCClient(config *Config, agentService *agent.Service, certManager *Cert
 
 	tun := tunnelpkg.NewServerTunnel()
 	tun.SetJoinToken(joinToken)
-	if joinToken == "" {
-		// 非生产且未配置 join token 时显式允许匿名注册以保留本地开发便利；
-		// 生产模式 resolveControlToken 已拒绝空 token，不会走到这里。
-		tun.SetAllowAnonymous(true)
-	}
 	agentService.SetTunnel(tun)
 	if config.Control.TLS.Enable {
 		tlsCfg, err := transporttls.ServerConfig(config.Control.TLS.CertDir, config.Control.TLS.ClientNames)

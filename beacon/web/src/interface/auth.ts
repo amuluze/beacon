@@ -10,8 +10,7 @@ export interface LoginForm {
 }
 
 export interface LoginResponse {
-    access_token: string
-    refresh_token: string
+    must_change_password: boolean
 }
 
 export interface UpdatePassword {
@@ -25,4 +24,5 @@ export interface UserInfo {
     username: string
     status: number
     is_admin: number
+    must_change_password: boolean
 }

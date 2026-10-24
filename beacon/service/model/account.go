@@ -12,15 +12,16 @@ import (
 type Users []*User
 
 type User struct {
-	ID        uuid.UUID `gorm:"type:uuid;primaryKey;comment:唯一标识"`
-	CreatedAt time.Time `gorm:"comment:创建时间"`
-	UpdatedAt time.Time `gorm:"comment:更新时间"`
-	Username  string    `gorm:"size:255;uniqueIndex;not null;comment:用户名"`
-	Password  string    `gorm:"size:128;not null;comment:密码"`
-	Remark    string    `gorm:"size:200;comment:备注"`
-	IsAdmin   int       `gorm:"default:0;comment:是否是管理员(1:是 2:否)"`
-	Status    int       `gorm:"index;comment:状态(1:启用 2:停用)"`
-	Roles     Roles     `gorm:"many2many:sys_user_roles;"`
+	ID                 uuid.UUID `gorm:"type:uuid;primaryKey;comment:唯一标识"`
+	CreatedAt          time.Time `gorm:"comment:创建时间"`
+	UpdatedAt          time.Time `gorm:"comment:更新时间"`
+	Username           string    `gorm:"size:255;uniqueIndex;not null;comment:用户名"`
+	Password           string    `gorm:"size:128;not null;comment:密码"`
+	MustChangePassword bool      `gorm:"not null;default:false;comment:登录后必须修改密码"`
+	Remark             string    `gorm:"size:200;comment:备注"`
+	IsAdmin            int       `gorm:"default:0;comment:是否是管理员(1:是 2:否)"`
+	Status             int       `gorm:"index;comment:状态(1:启用 2:停用)"`
+	Roles              Roles     `gorm:"many2many:sys_user_roles;"`
 }
 
 func (a User) TableName() string {

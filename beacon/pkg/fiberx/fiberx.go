@@ -6,33 +6,10 @@ package fiberx
 
 import (
 	"net/http"
-	"strings"
 
 	"beacon/pkg/errors"
 	"github.com/gofiber/fiber/v2"
 )
-
-// GetToken Get jwt token from header (Authorization: Bearer xxx)
-func GetToken(c *fiber.Ctx) string {
-	var token string
-	auth := c.Get("Authorization")
-	prefix := "Bearer "
-	if auth != "" && strings.HasPrefix(auth, prefix) {
-		token = auth[len(prefix):]
-	}
-	return token
-}
-
-// GetWebSocketToken returns the access token used during a WebSocket
-// handshake. Browsers cannot attach an Authorization header to WebSocket
-// requests, so the terminal client may use the token query parameter instead.
-// Header authentication takes precedence when both forms are present.
-func GetWebSocketToken(c *fiber.Ctx) string {
-	if token := GetToken(c); token != "" {
-		return token
-	}
-	return c.Query("token")
-}
 
 // Success response.status = 200
 func Success(c *fiber.Ctx, v interface{}) error {

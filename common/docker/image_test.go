@@ -6,57 +6,66 @@ package docker
 
 import (
 	"context"
-	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
 )
 
-func TestListImage(t *testing.T) {
-	manager, _ := NewManager()
-	images, _ := manager.ListImage(context.Background())
-	for _, image := range images {
-		fmt.Printf("image: %#v\n", image)
-	}
-}
+func TestImageLifecycle(t *testing.T) {
+	manager := testManager(t)
+	imageName := ensureTestImage(t, manager)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
 
-func TestSearchImage(t *testing.T) {
-	term := "ubuntu"
-	manager, _ := NewManager()
-	result, err := manager.SearchImage(context.Background(), term)
+	images, err := manager.ListImage(ctx)
 	if err != nil {
-		fmt.Printf("err: %#v", err)
-		return
+		t.Fatalf("list images: %v", err)
 	}
-	for index, item := range result {
-		fmt.Printf("index: %#v, item name: %#v\n", index, item.Name)
+	if len(images) == 0 {
+		t.Fatal("Docker daemon returned no tagged images")
 	}
-}
+	summary, err := manager.GetImageByName(ctx, imageName)
+	if err != nil {
+		t.Fatalf("get image by name: %v", err)
+	}
+	if _, err := manager.GetImageByID(ctx, summary.ID); err != nil {
+		t.Fatalf("get image by ID: %v", err)
+	}
 
-func TestPullImage(t *testing.T) {
-	imageName := "ubuntu:20.04"
-	manager, _ := NewManager()
-	err := manager.PullImage(context.Background(), imageName)
-	fmt.Printf("pull error: %v", err)
-}
+	tag := uniqueDockerName("image") + ":test"
+	if err := manager.TagImage(ctx, imageName, tag); err != nil {
+		t.Fatalf("tag image: %v", err)
+	}
+	t.Cleanup(func() {
+		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cleanupCancel()
+		if err := manager.DeleteImage(cleanupCtx, tag); err != nil {
+			t.Logf("cleanup image tag %s: %v", tag, err)
+		}
+	})
+	if _, err := manager.GetImageByName(ctx, tag); err != nil {
+		t.Fatalf("get tagged image: %v", err)
+	}
 
-func TestTagImage(t *testing.T) {
-	oldTag := "ubuntu:latest"
-	newTag := "ubuntu:22.04"
-	manager, _ := NewManager()
-	err := manager.TagImage(context.Background(), oldTag, newTag)
-	t.Log("image tag error: ", err)
-}
-
-func TestExportImage(t *testing.T) {
-	imageIDs := []string{"ubuntu:latest"}
-	targetFile := "/Users/amu/Desktop/ubuntu.tar"
-	manager, _ := NewManager()
-	err := manager.ExportImage(context.Background(), imageIDs, targetFile)
-	t.Log("export image error: ", err)
-}
-
-func TestImportImage(t *testing.T) {
-	sourceFile := "/Users/amu/Desktop/ubuntu.tar"
-	manager, _ := NewManager()
-	err := manager.ImportImage(context.Background(), sourceFile)
-	t.Log("import image error: ", err)
+	targetFile := filepath.Join(t.TempDir(), "image.tar")
+	if err := os.WriteFile(targetFile, []byte("stale image"), 0o644); err != nil {
+		t.Fatalf("seed image archive: %v", err)
+	}
+	if err := os.Chmod(targetFile, 0o644); err != nil {
+		t.Fatalf("set insecure image archive permissions: %v", err)
+	}
+	if err := manager.ExportImage(ctx, []string{tag}, targetFile); err != nil {
+		t.Fatalf("export image: %v", err)
+	}
+	info, err := os.Stat(targetFile)
+	if err != nil {
+		t.Fatalf("stat exported image: %v", err)
+	}
+	if got := info.Mode().Perm(); got != 0o600 {
+		t.Fatalf("exported image permissions = %o, want 600", got)
+	}
+	if err := manager.ImportImage(ctx, targetFile); err != nil {
+		t.Fatalf("import image: %v", err)
+	}
 }

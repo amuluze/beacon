@@ -6,13 +6,18 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	rpcSchema "common/rpc/schema"
 )
+
+var ErrInsecureTokenTransport = errors.New("refusing to send report token over non-HTTPS transport")
 
 // Client pushes monitoring data to the Server via HTTP POST.
 type Client struct {
@@ -37,6 +42,12 @@ func (c *Client) Push(ctx context.Context, args rpcSchema.MonitorReportArgs) err
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	if c.token != "" {
+		parsed, err := url.Parse(c.url)
+		if err != nil || !strings.EqualFold(parsed.Scheme, "https") || parsed.Host == "" || parsed.User != nil {
+			return ErrInsecureTokenTransport
+		}
+	}
 
 	body, err := json.Marshal(args)
 	if err != nil {
@@ -54,7 +65,7 @@ func (c *Client) Push(ctx context.Context, args rpcSchema.MonitorReportArgs) err
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		slog.Error("report push failed", "agent", args.AgentID, "url", c.url, "error", err)
+		slog.Error("report push failed", "agent", args.AgentID, "error", err)
 		return fmt.Errorf("http post: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()

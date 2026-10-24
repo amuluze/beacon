@@ -8,6 +8,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/glebarez/sqlite"
@@ -15,6 +20,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	gormlogger "gorm.io/gorm/logger"
 )
 
 type DB struct {
@@ -32,28 +38,84 @@ func NewDB(opts ...Option) (*DB, error) {
 		o(opt)
 	}
 	dial := dial(opt)
+	if isSQLite(opt.Type) {
+		if err := prepareSQLiteStorage(opt.DBName); err != nil {
+			return nil, err
+		}
+	}
 
-	db, err := gorm.Open(dial, &gorm.Config{})
+	db, err := gorm.Open(dial, &gorm.Config{Logger: parameterizedLogger(opt)})
 	if err != nil {
 		return nil, err
 	}
 
-	// 开启调试模式
-	if opt.Debug {
-		db = db.Debug()
-	}
-
 	sqlDB, err := db.DB()
 	if err != nil {
-		fmt.Println(err.Error())
 		return nil, err
 	}
 
 	sqlDB.SetMaxIdleConns(opt.MaxIdleConns)
 	sqlDB.SetMaxOpenConns(opt.MaxOpenConns)
 	sqlDB.SetConnMaxLifetime(time.Second * time.Duration(opt.MaxLifetime))
+	if isSQLite(opt.Type) {
+		if err := SecureSQLiteFiles(opt.DBName); err != nil {
+			_ = sqlDB.Close()
+			return nil, err
+		}
+	}
 
 	return &DB{db}, nil
+}
+
+func isSQLite(dbType string) bool {
+	return dbType == "" || strings.EqualFold(dbType, "sqlite")
+}
+
+func sqliteFilePath(dbName string) string {
+	return dbName + ".db"
+}
+
+func prepareSQLiteStorage(dbName string) error {
+	if strings.TrimSpace(dbName) == "" {
+		return nil
+	}
+	dir := filepath.Dir(sqliteFilePath(dbName))
+	if dir == "." {
+		return nil
+	}
+	return os.MkdirAll(dir, 0o700)
+}
+
+// SecureSQLiteFiles applies owner-only permissions to the database and its
+// transient WAL/SHM companions whenever they exist.
+func SecureSQLiteFiles(dbName string) error {
+	if strings.TrimSpace(dbName) == "" {
+		return nil
+	}
+	base := sqliteFilePath(dbName)
+	for _, path := range []string{base, base + "-wal", base + "-shm"} {
+		if err := os.Chmod(path, 0o600); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("secure sqlite file %s: %w", filepath.Base(path), err)
+		}
+	}
+	return nil
+}
+
+func parameterizedLogger(opt *option) gormlogger.Interface {
+	level := gormlogger.Warn
+	if opt.Debug {
+		level = gormlogger.Info
+	}
+	var writer io.Writer = os.Stdout
+	if opt.LogWriter != nil {
+		writer = opt.LogWriter
+	}
+	return gormlogger.New(log.New(writer, "", log.LstdFlags), gormlogger.Config{
+		SlowThreshold:        200 * time.Millisecond,
+		LogLevel:             level,
+		ParameterizedQueries: true,
+		Colorful:             false,
+	})
 }
 
 func dial(opt *option) gorm.Dialector {

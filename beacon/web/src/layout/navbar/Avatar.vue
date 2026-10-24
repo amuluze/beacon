@@ -17,7 +17,7 @@ async function doLogout() {
   // 1. 退出登录
   await logout()
   // 2.清除缓存
-  store.user.setToken('', '')
+  store.user.clearSession()
   store.agent.clear()
   // 3.重定向到登录页
   await router.replace('/login')

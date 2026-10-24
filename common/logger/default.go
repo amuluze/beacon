@@ -13,7 +13,6 @@ import (
 var defaultLogger *Logger
 
 func NewLogger(config *Config) *Logger {
-	fmt.Printf("logger config: %#v\n", config)
 	defaultLogger.NewLogger(
 		SetName(config.Name),
 		SetLogFile(config.LogFile),

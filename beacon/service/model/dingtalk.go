@@ -11,7 +11,7 @@ type DingTalk struct {
 	Key     string `gorm:"type:varchar(64);uniqueIndex;not null;comment:配置键"`
 	Enabled bool   `gorm:"comment:是否启用"`
 	Webhook string `gorm:"type:text;comment:群机器人 Webhook"`
-	Secret  string `gorm:"type:varchar(255);comment:加签密钥"`
+	Secret  string `gorm:"type:text;comment:加密加签密钥"`
 	AtAll   bool   `gorm:"comment:是否提醒所有人"`
 }
 

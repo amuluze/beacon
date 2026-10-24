@@ -164,28 +164,28 @@ func (s *Service) ImagesPrune(ctx context.Context) error {
 }
 
 func (s *Service) ImageImport(ctx context.Context, args rpcSchema.ImageImportArgs, reply *rpcSchema.ImageImportReply) error {
-	sourceFile := args.SourceFile
-	if len(args.Data) > 0 {
-		fileName := args.FileName
-		if fileName == "" {
-			fileName = "image.tar"
-		}
-		tmpFile, err := os.CreateTemp("", "collia-image-import-*-"+filepath.Base(fileName))
-		if err != nil {
-			return err
-		}
-		sourceFile = tmpFile.Name()
-		if _, err := tmpFile.Write(args.Data); err != nil {
-			_ = tmpFile.Close()
-			_ = os.Remove(sourceFile)
-			return err
-		}
-		if err := tmpFile.Close(); err != nil {
-			_ = os.Remove(sourceFile)
-			return err
-		}
-		defer func() { _ = os.Remove(sourceFile) }()
+	if len(args.Data) == 0 {
+		return fmt.Errorf("image data is empty")
 	}
+	fileName := args.FileName
+	if fileName == "" {
+		fileName = "image.tar"
+	}
+	tmpFile, err := os.CreateTemp("", "collia-image-import-*-"+filepath.Base(fileName))
+	if err != nil {
+		return err
+	}
+	sourceFile := tmpFile.Name()
+	if _, err := tmpFile.Write(args.Data); err != nil {
+		_ = tmpFile.Close()
+		_ = os.Remove(sourceFile)
+		return err
+	}
+	if err := tmpFile.Close(); err != nil {
+		_ = os.Remove(sourceFile)
+		return err
+	}
+	defer func() { _ = os.Remove(sourceFile) }()
 	if err := s.Manager.ImportImage(ctx, sourceFile); err != nil {
 		return err
 	}

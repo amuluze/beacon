@@ -369,7 +369,6 @@ func (h *HostService) GetSystemTimeZoneList(ctx context.Context, args schema.Get
 	return reply, nil
 }
 
-
 // isStale checks if a timestamp is older than the given staleness threshold.
 func isStale(ts int64, stalenessSeconds int64) bool {
 	if stalenessSeconds <= 0 {

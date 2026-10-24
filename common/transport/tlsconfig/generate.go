@@ -28,6 +28,10 @@ func GenerateCA(dir string) error {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}
+	// #nosec G302 -- certificate directories intentionally require owner traversal and deny group/other access.
+	if err := os.Chmod(dir, 0o700); err != nil {
+		return fmt.Errorf("secure ca directory: %w", err)
+	}
 
 	caCertPath := filepath.Join(dir, CACertFile)
 	caKeyPath := filepath.Join(dir, CAKeyFile)
@@ -83,6 +87,10 @@ func GenerateLeafCert(dir, caDir, commonName string, dnsNames, ipAddresses []str
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}
+	// #nosec G302 -- certificate directories intentionally require owner traversal and deny group/other access.
+	if err := os.Chmod(dir, 0o700); err != nil {
+		return fmt.Errorf("secure leaf certificate directory: %w", err)
+	}
 
 	caCert, caKey, err := loadCA(caDir)
 	if err != nil {
@@ -102,12 +110,12 @@ func GenerateLeafCert(dir, caDir, commonName string, dnsNames, ipAddresses []str
 			OrganizationalUnit: []string{"Beacon"},
 			Country:            []string{"CN"},
 		},
-		NotBefore:    time.Now().Add(-1 * time.Minute),
-		NotAfter:     time.Now().Add(leafValidity),
-		KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
-		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-		DNSNames:     dnsNames,
-		IPAddresses:  parseIPs(ipAddresses),
+		NotBefore:   time.Now().Add(-1 * time.Minute),
+		NotAfter:    time.Now().Add(leafValidity),
+		KeyUsage:    x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		DNSNames:    dnsNames,
+		IPAddresses: parseIPs(ipAddresses),
 	}
 	if len(tmpl.DNSNames) == 0 && len(tmpl.IPAddresses) == 0 {
 		tmpl.DNSNames = []string{commonName}
@@ -140,9 +148,20 @@ func GenerateLeafCert(dir, caDir, commonName string, dnsNames, ipAddresses []str
 // tls.key from the provided directories. caDir is the directory holding the CA,
 // leafDir is the directory holding the leaf certificate.
 func CreateCertPackage(caDir, leafDir, outPath string) error {
-	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
+	outDir := filepath.Dir(outPath)
+	outName := filepath.Base(outPath)
+	if err := os.MkdirAll(outDir, 0o700); err != nil {
 		return err
 	}
+	// #nosec G302 -- package directories intentionally require owner traversal and deny group/other access.
+	if err := os.Chmod(outDir, 0o700); err != nil {
+		return err
+	}
+	outRoot, err := os.OpenRoot(outDir)
+	if err != nil {
+		return fmt.Errorf("open package directory: %w", err)
+	}
+	defer outRoot.Close()
 
 	files := map[string]string{
 		CACertFile:  filepath.Join(caDir, CACertFile),
@@ -150,9 +169,13 @@ func CreateCertPackage(caDir, leafDir, outPath string) error {
 		TLSKeyFile:  filepath.Join(leafDir, TLSKeyFile),
 	}
 
-	out, err := os.Create(outPath)
+	out, err := outRoot.OpenFile(outName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 	if err != nil {
 		return fmt.Errorf("create package: %w", err)
+	}
+	if err := outRoot.Chmod(outName, 0o600); err != nil {
+		_ = out.Close()
+		return fmt.Errorf("secure package: %w", err)
 	}
 	defer out.Close()
 
@@ -268,6 +291,9 @@ func fileExists(path string) bool {
 func writeFile(path string, data []byte, perm os.FileMode) error {
 	if err := os.WriteFile(path, data, perm); err != nil {
 		return fmt.Errorf("write %s: %w", filepath.Base(path), err)
+	}
+	if err := os.Chmod(path, perm); err != nil {
+		return fmt.Errorf("chmod %s: %w", filepath.Base(path), err)
 	}
 	return nil
 }

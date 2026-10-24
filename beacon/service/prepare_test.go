@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -28,7 +29,9 @@ func TestInitAlarmThresholdCreatesAllDefaultsAndPreservesOverrides(t *testing.T)
 	}
 
 	prepare := &Prepare{db: db}
-	prepare.InitAlarmThreshold()
+	if err := prepare.InitAlarmThreshold(); err != nil {
+		t.Fatalf("initialize alarm thresholds: %v", err)
+	}
 
 	var got []model.AlarmThreshold
 	if err := db.Order("type").Find(&got).Error; err != nil {
@@ -43,7 +46,9 @@ func TestInitAlarmThresholdCreatesAllDefaultsAndPreservesOverrides(t *testing.T)
 		Updates(map[string]any{"duration": 5, "threshold": 90}).Error; err != nil {
 		t.Fatalf("override memory alarm threshold: %v", err)
 	}
-	prepare.InitAlarmThreshold()
+	if err := prepare.InitAlarmThreshold(); err != nil {
+		t.Fatalf("reinitialize alarm thresholds: %v", err)
+	}
 
 	var count int64
 	if err := db.Model(&model.AlarmThreshold{}).Count(&count).Error; err != nil {
@@ -62,52 +67,102 @@ func TestInitAlarmThresholdCreatesAllDefaultsAndPreservesOverrides(t *testing.T)
 	}
 }
 
-func TestDefaultUserPasswordsUseLoginHash(t *testing.T) {
-	cases := []struct {
-		name     string
-		username string
-		password string
-	}{
-		{name: "admin", username: "admin", password: "admin123"},
-		{name: "beacon", username: "beacon", password: "123456"},
-	}
+func TestInitAccountRequiresBootstrapPasswordForNewDatabase(t *testing.T) {
+	db := newPrepareTestDB(t)
+	prepare := &Prepare{db: db}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			for _, user := range users {
-				if user.Username != tc.username {
-					continue
-				}
-				if err := hash.BcryptVerify(tc.password, user.Password); err != nil {
-					t.Fatalf("default password for %q should pass bcrypt login verification: %v", tc.username, err)
-				}
-				return
-			}
-			t.Fatalf("default user %q not found", tc.username)
-		})
+	t.Setenv(bootstrapAdminPasswordEnv, "")
+	err := prepare.InitAccount(fiber.New())
+	if !errors.Is(err, ErrBootstrapAdminPasswordRequired) {
+		t.Fatalf("InitAccount() error = %v, want ErrBootstrapAdminPasswordRequired", err)
 	}
 }
 
-func TestLegacyDefaultPasswordHashesMatchPreviousDefaults(t *testing.T) {
-	cases := []struct {
-		name     string
-		username string
-		password string
-	}{
-		{name: "admin", username: "admin", password: "admin123"},
-		{name: "beacon", username: "beacon", password: "123456"},
+func TestInitAccountRejectsWeakBootstrapPassword(t *testing.T) {
+	db := newPrepareTestDB(t)
+	prepare := &Prepare{db: db}
+
+	t.Setenv(bootstrapAdminPasswordEnv, "too-short")
+	err := prepare.InitAccount(fiber.New())
+	if !errors.Is(err, ErrBootstrapAdminPasswordWeak) {
+		t.Fatalf("InitAccount() error = %v, want ErrBootstrapAdminPasswordWeak", err)
+	}
+}
+
+func TestInitAccountCreatesOnlyMandatoryChangeAdministrator(t *testing.T) {
+	db := newPrepareTestDB(t)
+	prepare := &Prepare{db: db}
+	const bootstrapPassword = "Bootstrap-Secure-9!"
+	t.Setenv(bootstrapAdminPasswordEnv, bootstrapPassword)
+
+	if err := prepare.InitAccount(fiber.New()); err != nil {
+		t.Fatalf("InitAccount() error = %v", err)
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			got, ok := legacyDefaultPasswordHashes[tc.username]
-			if !ok {
-				t.Fatalf("legacy hash for %q not found", tc.username)
-			}
-			if want := hash.SHA1String(tc.password); got != want {
-				t.Fatalf("legacy hash for %q = %q, want %q", tc.username, got, want)
-			}
-		})
+	var admin model.User
+	if err := db.Where("username = ?", "admin").First(&admin).Error; err != nil {
+		t.Fatalf("query bootstrap administrator: %v", err)
+	}
+	if !admin.MustChangePassword {
+		t.Fatal("bootstrap administrator must be required to change password")
+	}
+	if err := hash.BcryptVerify(bootstrapPassword, admin.Password); err != nil {
+		t.Fatalf("bootstrap password does not match stored hash: %v", err)
+	}
+
+	var normalCount int64
+	if err := db.Model(&model.User{}).Where("username = ?", "beacon").Count(&normalCount).Error; err != nil {
+		t.Fatalf("count removed default user: %v", err)
+	}
+	if normalCount != 0 {
+		t.Fatalf("default normal user count = %d, want 0", normalCount)
+	}
+}
+
+func newPrepareTestDB(t *testing.T) *database.DB {
+	t.Helper()
+	db, err := database.NewDB(
+		database.WithType("sqlite"),
+		database.WithDBName(filepath.Join(t.TempDir(), "beacon")),
+	)
+	if err != nil {
+		t.Fatalf("create test database: %v", err)
+	}
+	t.Cleanup(db.Close)
+	if err := db.AutoMigrate(&model.User{}, &model.Role{}, &model.Resource{}); err != nil {
+		t.Fatalf("migrate account models: %v", err)
+	}
+	return db
+}
+
+func TestInitAccountMarksHistoricalDefaultForMandatoryChange(t *testing.T) {
+	db := newPrepareTestDB(t)
+	var legacyHash, migratedHash string
+	for legacyHash, migratedHash = range legacyPasswordMigrations {
+		break
+	}
+	admin := model.User{
+		ID:       uuid.MustUUID(),
+		Username: "admin",
+		Password: legacyHash,
+		Status:   1,
+		IsAdmin:  1,
+	}
+	if err := db.Create(&admin).Error; err != nil {
+		t.Fatalf("create legacy administrator: %v", err)
+	}
+
+	if err := (&Prepare{db: db}).InitAccount(fiber.New()); err != nil {
+		t.Fatalf("InitAccount() error = %v", err)
+	}
+	if err := db.First(&admin, "id = ?", admin.ID).Error; err != nil {
+		t.Fatalf("reload migrated administrator: %v", err)
+	}
+	if admin.Password != migratedHash {
+		t.Fatalf("migrated password hash = %q, want historical bcrypt hash", admin.Password)
+	}
+	if !admin.MustChangePassword {
+		t.Fatal("historical default password was not marked for mandatory change")
 	}
 }
 
@@ -136,10 +191,18 @@ func TestInitAccountSyncsNewRoutesToExistingAdminRole(t *testing.T) {
 
 	adminRole := &model.Role{ID: uuid.MustUUID(), Name: "管理员", Status: 1}
 	normalRole := &model.Role{ID: uuid.MustUUID(), Name: "普通用户", Status: 1}
+	adminPassword, err := hash.BcryptHash("Existing-Admin-9!")
+	if err != nil {
+		t.Fatalf("hash existing admin password: %v", err)
+	}
+	normalPassword, err := hash.BcryptHash("Existing-Normal-9!")
+	if err != nil {
+		t.Fatalf("hash existing normal password: %v", err)
+	}
 	admin := &model.User{
 		ID:       uuid.MustUUID(),
 		Username: "admin",
-		Password: defaultAdminPasswordHash,
+		Password: adminPassword,
 		IsAdmin:  1,
 		Status:   1,
 		Roles:    model.Roles{adminRole},
@@ -147,7 +210,7 @@ func TestInitAccountSyncsNewRoutesToExistingAdminRole(t *testing.T) {
 	normal := &model.User{
 		ID:       uuid.MustUUID(),
 		Username: "beacon",
-		Password: defaultBeaconPasswordHash,
+		Password: normalPassword,
 		IsAdmin:  2,
 		Status:   1,
 		Roles:    model.Roles{normalRole},
@@ -174,9 +237,15 @@ func TestInitAccountSyncsNewRoutesToExistingAdminRole(t *testing.T) {
 		t.Fatalf("seed stale normal-user dingtalk policy: %v", err)
 	}
 	prepare := &Prepare{db: db, enforcer: enforcer}
-	prepare.InitAccount(app)
-	prepare.InitAccount(app)
-	prepare.InitCasbinRules()
+	if err := prepare.InitAccount(app); err != nil {
+		t.Fatalf("first InitAccount: %v", err)
+	}
+	if err := prepare.InitAccount(app); err != nil {
+		t.Fatalf("second InitAccount: %v", err)
+	}
+	if err := prepare.InitCasbinRules(); err != nil {
+		t.Fatalf("InitCasbinRules: %v", err)
+	}
 
 	for _, route := range []struct {
 		path   string
@@ -231,5 +300,66 @@ func TestInitAccountSyncsNewRoutesToExistingAdminRole(t *testing.T) {
 		if _, ok := linkedRoutes[key]; !ok {
 			t.Fatalf("administrator role is missing resource %s", key)
 		}
+	}
+}
+
+func TestInitAlarmThresholdNormalizesRecordsAndPreservesOverrides(t *testing.T) {
+	db, err := database.NewDB(
+		database.WithType("sqlite"),
+		database.WithDBName(filepath.Join(t.TempDir(), "beacon")),
+	)
+	if err != nil {
+		t.Fatalf("create test database: %v", err)
+	}
+	t.Cleanup(db.Close)
+	if err := db.AutoMigrate(&model.AlarmThreshold{}); err != nil {
+		t.Fatalf("migrate alarm threshold: %v", err)
+	}
+
+	seed := []model.AlarmThreshold{
+		{Type: "cpu", Duration: 5, Threshold: 71},
+		{Type: "cpu", Duration: 2, Threshold: 80},
+		{Type: "mem", Duration: 4, Threshold: 73},
+		{Type: "memory", Duration: 8, Threshold: 91},
+	}
+	if err := db.Create(&seed).Error; err != nil {
+		t.Fatalf("seed thresholds: %v", err)
+	}
+
+	prepare := &Prepare{db: db}
+	if err := prepare.InitAlarmThreshold(); err != nil {
+		t.Fatalf("first normalize alarm thresholds: %v", err)
+	}
+	if err := prepare.InitAlarmThreshold(); err != nil {
+		t.Fatalf("second normalize alarm thresholds: %v", err)
+	}
+
+	var records []model.AlarmThreshold
+	if err := db.Order("id ASC").Find(&records).Error; err != nil {
+		t.Fatalf("query normalized thresholds: %v", err)
+	}
+	if len(records) != 3 {
+		t.Fatalf("active threshold count = %d, want 3", len(records))
+	}
+
+	byType := make(map[string]model.AlarmThreshold, len(records))
+	for _, record := range records {
+		if _, exists := byType[record.Type]; exists {
+			t.Fatalf("duplicate active threshold type %q", record.Type)
+		}
+		byType[record.Type] = record
+	}
+
+	if cpu := byType["cpu"]; cpu.Duration != 5 || cpu.Threshold != 71 {
+		t.Fatalf("cpu threshold = %#v, want preserved user override", cpu)
+	}
+	if memory := byType["memory"]; memory.Duration != 4 || memory.Threshold != 73 {
+		t.Fatalf("memory threshold = %#v, want migrated earliest mem override", memory)
+	}
+	if disk := byType["disk"]; disk.Duration != 2 || disk.Threshold != 85 {
+		t.Fatalf("disk threshold = %#v, want default", disk)
+	}
+	if _, exists := byType["mem"]; exists {
+		t.Fatal("legacy mem threshold should not remain active")
 	}
 }

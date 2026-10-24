@@ -28,12 +28,7 @@ func newFakeStore() *fakeStore {
 func (f *fakeStore) Set(tokenString string, expiration time.Duration) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	// DestroyToken sets expiration to 1s; simulate by deleting the key
-	if expiration <= time.Second {
-		delete(f.data, tokenString)
-	} else {
-		f.data[tokenString] = true
-	}
+	f.data[tokenString] = true
 	return nil
 }
 
@@ -41,6 +36,13 @@ func (f *fakeStore) Check(key string) (bool, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.data[key], nil
+}
+
+func (f *fakeStore) Delete(tokenString string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	delete(f.data, tokenString)
+	return nil
 }
 
 func (f *fakeStore) Close() error {

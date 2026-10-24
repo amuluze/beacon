@@ -157,17 +157,17 @@ func TestMailService_MailUpdate(t *testing.T) {
 func TestMailService_MailTest(t *testing.T) {
 	tests := []struct {
 		name    string
-		fn      func(ctx context.Context, args schema.MailTestArgs) error
+		fn      func(ctx context.Context, args schema.MailTestArgs, title string) error
 		wantErr bool
 	}{
 		{
 			name:    "success",
-			fn:      func(ctx context.Context, args schema.MailTestArgs) error { return nil },
+			fn:      func(ctx context.Context, args schema.MailTestArgs, title string) error { return nil },
 			wantErr: false,
 		},
 		{
 			name:    "repo error",
-			fn:      func(ctx context.Context, args schema.MailTestArgs) error { return testutil.ErrTest },
+			fn:      func(ctx context.Context, args schema.MailTestArgs, title string) error { return testutil.ErrTest },
 			wantErr: true,
 		},
 	}

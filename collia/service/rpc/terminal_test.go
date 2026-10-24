@@ -58,6 +58,31 @@ func TestTerminalSessionStream_ContextCancel(t *testing.T) {
 	}
 }
 
+func TestTerminalSessionStream_RejectsUnsupportedShell(t *testing.T) {
+	svc := &Service{}
+	err := svc.TerminalSessionStream(context.Background(), rpcSchema.TerminalSessionArgs{
+		SessionID: "test-shell",
+		Shell:     "/tmp/untrusted-shell",
+		Rows:      24,
+		Cols:      80,
+	}, func(*tunnel.Frame) {})
+	if err == nil {
+		t.Fatal("expected unsupported shell to be rejected")
+	}
+}
+
+func TestPTYSessionResizeRejectsOutOfRangeSize(t *testing.T) {
+	session := &ptySession{id: "test-size"}
+	for _, size := range []struct {
+		rows int
+		cols int
+	}{{rows: 0, cols: 80}, {rows: 24, cols: 0}, {rows: 65536, cols: 80}, {rows: 24, cols: 65536}} {
+		if err := session.Resize(size.rows, size.cols); err == nil {
+			t.Fatalf("expected size rows=%d cols=%d to be rejected", size.rows, size.cols)
+		}
+	}
+}
+
 func TestTerminalInput_SessionNotFound(t *testing.T) {
 	svc := &Service{}
 	var reply rpcSchema.TerminalInputReply

@@ -33,7 +33,7 @@ func TestAuthService_Login(t *testing.T) {
 			args: schema.LoginArgs{Username: "admin", Password: "pass123"},
 			setup: func(a *testutil.FakeAuther, r *testutil.FakeAuthRepo) {
 				r.LoginFn = func(ctx context.Context, args schema.LoginArgs) (model.User, error) {
-					return model.User{ID: uuid.New(), Username: args.Username}, nil
+					return model.User{ID: uuid.New(), Username: args.Username, MustChangePassword: true}, nil
 				}
 			},
 			wantErr: false,
@@ -87,6 +87,9 @@ func TestAuthService_Login(t *testing.T) {
 			if result.RefreshToken == "" {
 				t.Error("refresh_token is empty")
 			}
+			if !result.MustChangePassword {
+				t.Error("must_change_password is false, want true")
+			}
 		})
 	}
 }
@@ -105,7 +108,12 @@ func TestAuthService_Logout(t *testing.T) {
 		{
 			name: "destroy error",
 			setup: func(a *testutil.FakeAuther) {
-				a.DestroyTokenFn = func(token string) error { return testutil.ErrTest }
+				a.DestroyTokenFn = func(token string) error {
+					if token == "access-token" {
+						return testutil.ErrTest
+					}
+					return nil
+				}
 			},
 			wantErr: true,
 		},
@@ -118,7 +126,7 @@ func TestAuthService_Logout(t *testing.T) {
 			tt.setup(auther)
 
 			svc := newTestAuthService(auther, repo)
-			err := svc.Logout(context.Background(), "some-token")
+			err := svc.Logout(context.Background(), "access-token", "refresh-token")
 
 			if tt.wantErr && err == nil {
 				t.Error("expected error, got nil")
@@ -139,7 +147,7 @@ func TestAuthService_PassUpdate(t *testing.T) {
 	}{
 		{
 			name:    "success",
-			args:    schema.PasswordUpdateArgs{Username: "admin", OldPassword: "old", NewPassword: "new"},
+			args:    schema.PasswordUpdateArgs{Username: "admin", OldPassword: "old", NewPassword: "New-Secure-Password9!"},
 			setup:   func(r *testutil.FakeAuthRepo) {},
 			wantErr: false,
 		},
@@ -151,7 +159,7 @@ func TestAuthService_PassUpdate(t *testing.T) {
 		},
 		{
 			name: "repo error",
-			args: schema.PasswordUpdateArgs{Username: "admin", OldPassword: "old", NewPassword: "new"},
+			args: schema.PasswordUpdateArgs{Username: "admin", OldPassword: "old", NewPassword: "New-Secure-Password9!"},
 			setup: func(r *testutil.FakeAuthRepo) {
 				r.PassUpdateFn = func(ctx context.Context, args schema.PasswordUpdateArgs) error { return testutil.ErrTest }
 			},
@@ -192,7 +200,7 @@ func TestAuthService_PassUpdateUsesAuthenticatedUsername(t *testing.T) {
 	err := svc.PassUpdate(ctx, schema.PasswordUpdateArgs{
 		Username:    "other-user",
 		OldPassword: "old",
-		NewPassword: "new",
+		NewPassword: "New-Secure-Password9!",
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -215,7 +223,7 @@ func TestAuthService_PassUpdateKeepsBodyUsernameWithoutAuthContext(t *testing.T)
 	err := svc.PassUpdate(context.Background(), schema.PasswordUpdateArgs{
 		Username:    "body-user",
 		OldPassword: "old",
-		NewPassword: "new",
+		NewPassword: "New-Secure-Password9!",
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -254,6 +262,18 @@ func TestAuthService_TokenUpdate(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "old refresh token destroy error",
+			setup: func(a *testutil.FakeAuther) {
+				a.DestroyTokenFn = func(token string) error {
+					if token == "refresh-token" {
+						return testutil.ErrTest
+					}
+					return nil
+				}
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -263,7 +283,7 @@ func TestAuthService_TokenUpdate(t *testing.T) {
 			tt.setup(auther)
 
 			svc := newTestAuthService(auther, repo)
-			result, err := svc.TokenUpdate(context.Background(), "refresh-token")
+			result, err := svc.TokenUpdate(context.Background(), "access-token", "refresh-token")
 
 			if tt.wantErr {
 				if err == nil {
@@ -285,20 +305,18 @@ func TestAuthService_UserInfo(t *testing.T) {
 	tests := []struct {
 		name    string
 		setup   func(*testutil.FakeAuther, *testutil.FakeAuthRepo)
+		userID  string
 		wantErr bool
 	}{
 		{
 			name:    "success",
 			setup:   func(a *testutil.FakeAuther, r *testutil.FakeAuthRepo) {},
+			userID:  "user-1",
 			wantErr: false,
 		},
 		{
-			name: "parse token error",
-			setup: func(a *testutil.FakeAuther, r *testutil.FakeAuthRepo) {
-				a.ParseTokenFn = func(token, tokenType string) (string, string, error) {
-					return "", "", auth.ErrInvalidToken
-				}
-			},
+			name:    "missing authenticated user",
+			setup:   func(a *testutil.FakeAuther, r *testutil.FakeAuthRepo) {},
 			wantErr: true,
 		},
 		{
@@ -308,6 +326,7 @@ func TestAuthService_UserInfo(t *testing.T) {
 					return model.User{}, testutil.ErrTest
 				}
 			},
+			userID:  "user-1",
 			wantErr: true,
 		},
 	}
@@ -319,7 +338,11 @@ func TestAuthService_UserInfo(t *testing.T) {
 			tt.setup(auther, repo)
 
 			svc := newTestAuthService(auther, repo)
-			info, err := svc.UserInfo(context.Background(), "access-token")
+			ctx := context.Background()
+			if tt.userID != "" {
+				ctx = contextx.NewUserID(ctx, tt.userID)
+			}
+			info, err := svc.UserInfo(ctx)
 
 			if tt.wantErr {
 				if err == nil {

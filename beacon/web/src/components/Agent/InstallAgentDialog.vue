@@ -3,8 +3,6 @@ import { getInstallToken } from '@/api/host'
 import { success } from '@/components/Message/message'
 import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n()
-
 const props = defineProps<{
   visible: boolean
   title?: string
@@ -14,6 +12,8 @@ const emits = defineEmits<{
   (e: 'update:visible', visible: boolean): void
   (e: 'close'): void
 }>()
+
+const { t } = useI18n()
 
 const dialogVisible = computed<boolean>({
   get() {
@@ -29,7 +29,7 @@ const dialogVisible = computed<boolean>({
 const loading = shallowRef(false)
 const token = ref('')
 const node = ref('node-01')
-const nodeRegex = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
+const nodeRegex = /^[A-Z0-9][\w.-]*$/i
 const nodeError = ref('')
 
 const origin = window.location.origin
@@ -37,7 +37,7 @@ const origin = window.location.origin
 const curlCommand = computed(() => {
   const safeNode = nodeRegex.test(node.value) ? node.value : 'node-01'
   const tk = token.value || '<your-install-token>'
-  return `curl -kfsSL '${origin}/api/v1/host/install?node=${safeNode}' | sudo bash -s -- --token=${tk}`
+  return `curl -fsSL '${origin}/api/v1/host/install?node=${safeNode}' | sudo bash -s -- --token=${tk}`
 })
 
 const tips = computed(() => [
@@ -80,36 +80,38 @@ onMounted(loadToken)
 </script>
 
 <template>
-  <el-dialog v-model="dialogVisible" :title="t(props.title as string)" width="480px">
-    <div v-loading="loading" class="am-install-agent">
-      <p class="am-install-agent__desc">
-        {{ t('agent.installDesc') }}
-      </p>
-      <el-form label-position="top">
-        <el-form-item :label="t('agent.installServerLabel')">
-          <el-input :model-value="origin" readonly />
-        </el-form-item>
-        <el-form-item :label="t('agent.installNodeLabel')" :error="nodeError">
-          <el-input v-model="node" :placeholder="t('agent.installNodePlaceholder')" @input="validateNode" />
-        </el-form-item>
-        <el-form-item :label="t('agent.installTokenLabel')">
-          <el-input v-model="token" type="password" show-password readonly />
-        </el-form-item>
-      </el-form>
-      <div class="am-install-agent__code">
-        <div class="am-install-agent__code-head">
-          <span>{{ t('agent.installCommandLabel') }}</span>
-          <el-button text size="small" @click="copyCommand">
-            {{ t('agent.installCopy') }}
-          </el-button>
+    <el-dialog v-model="dialogVisible" :title="t(props.title as string)" width="480px">
+        <div v-loading="loading" class="am-install-agent">
+            <p class="am-install-agent__desc">
+                {{ t('agent.installDesc') }}
+            </p>
+            <el-form label-position="top">
+                <el-form-item :label="t('agent.installServerLabel')">
+                    <el-input :model-value="origin" readonly />
+                </el-form-item>
+                <el-form-item :label="t('agent.installNodeLabel')" :error="nodeError">
+                    <el-input v-model="node" :placeholder="t('agent.installNodePlaceholder')" @input="validateNode" />
+                </el-form-item>
+                <el-form-item :label="t('agent.installTokenLabel')">
+                    <el-input v-model="token" type="password" readonly show-password />
+                </el-form-item>
+            </el-form>
+            <div class="am-install-agent__code">
+                <div class="am-install-agent__code-head">
+                    <span>{{ t('agent.installCommandLabel') }}</span>
+                    <el-button text size="small" @click="copyCommand">
+                        {{ t('agent.installCopy') }}
+                    </el-button>
+                </div>
+                <pre class="am-install-agent__code-body">{{ curlCommand }}</pre>
+            </div>
+            <ul class="am-install-agent__tips">
+                <li v-for="tip in tips" :key="tip">
+                    {{ tip }}
+                </li>
+            </ul>
         </div>
-        <pre class="am-install-agent__code-body">{{ curlCommand }}</pre>
-      </div>
-      <ul class="am-install-agent__tips">
-        <li v-for="tip in tips" :key="tip">{{ tip }}</li>
-      </ul>
-    </div>
-  </el-dialog>
+    </el-dialog>
 </template>
 
 <style scoped lang="scss">

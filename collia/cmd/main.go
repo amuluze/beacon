@@ -2,13 +2,14 @@
 // Description: collia Agent CLI 入口。
 //
 // 子命令：
-//   run         前台运行（调试用）
-//   daemon      由 systemd 拉起时执行（通常无需手动调用）
-//   install     注册系统服务；执行 preflight（探测磁盘/网卡、回写 config、目录/端口预检）
-//   uninstall / remove  注销系统服务并清理二进制/配置/数据/日志
-//   start/stop/status  通过 daemon 控制 systemd 单元
-//   probe       仅执行 preflight 并打印结果（不注册服务）
-//   version     输出编译期版本
+//
+//	run         前台运行（调试用）
+//	daemon      由 systemd 拉起时执行（通常无需手动调用）
+//	install     注册系统服务；执行 preflight（探测磁盘/网卡、回写 config、目录/端口预检）
+//	uninstall / remove  注销系统服务并清理二进制/配置/数据/日志
+//	start/stop/status  通过 daemon 控制 systemd 单元
+//	probe       仅执行 preflight 并打印结果（不注册服务）
+//	version     输出编译期版本
 //
 // 设计对齐：spec agent-lifecycle-update.md（RU004 卸载清理）、agent_install.go 的调用契约。
 package main
@@ -29,13 +30,13 @@ import (
 var version = "dev"
 
 const (
-	serviceName  = "collia"
-	serviceDesc  = "Beacon Probe Agent"
-	defaultCfg   = "/etc/collia/config.yml"
-	binaryPath   = "/usr/sbin/collia"
-	configDir    = "/etc/collia"
-	dataDir      = "/data/beacon/collia"
-	logDir       = "/data/beacon/logs/collia"
+	serviceName   = "collia"
+	serviceDesc   = "Beacon Probe Agent"
+	defaultCfg    = "/etc/collia/config.yml"
+	binaryPath    = "/usr/sbin/collia"
+	configDir     = "/etc/collia"
+	dataDir       = "/data/beacon/collia"
+	logDir        = "/data/beacon/logs/collia"
 	defaultPrefix = "/"
 )
 

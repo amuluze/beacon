@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { success } from '@/components/Message/message.ts'
 import useStore from '@/store'
+import { getCSRFHeaders } from '@/utils/csrf'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
@@ -30,16 +31,18 @@ const dialogVisible = computed<boolean>({
 // 导入镜像
 const store = useStore()
 const imageImportLoading = ref(false)
-const uploadHeaders = computed(() => {
-  const headers: Record<string, string> = {}
-  if (store.user.token) {
-    headers.Authorization = `Bearer ${store.user.token}`
-  }
+const uploadHeaders = shallowRef<Record<string, string>>({})
+
+function refreshUploadHeaders(): boolean {
+  const headers: Record<string, string> = { ...getCSRFHeaders() }
   if (store.agent.selectedAgentID) {
     headers['X-Agent-ID'] = store.agent.selectedAgentID
   }
-  return headers
-})
+  uploadHeaders.value = headers
+  return true
+}
+
+watch(() => store.agent.selectedAgentID, refreshUploadHeaders, { immediate: true })
 
 function onSuccess() {
   success('导入成功')
@@ -60,6 +63,8 @@ const { t } = useI18n()
 
             action="/api/v1/container/image_import"
             :headers="uploadHeaders"
+            :before-upload="refreshUploadHeaders"
+            with-credentials
             :limit="1"
             :loading="imageImportLoading"
             multiple drag

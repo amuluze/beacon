@@ -3,20 +3,23 @@ import { defineStore } from 'pinia'
 
 export const useUserStore = defineStore('user', {
     state: (): UserState => ({
-        token: '',
-        refresh: '',
+        authenticated: false,
+        sessionChecked: false,
         userInfo: {} as UserInfo,
     }),
     actions: {
-        setToken(token: string, refresh: string) {
-            this.token = token
-            this.refresh = refresh
+        setUserInfo(name: string, status: number, isAdmin: number, mustChangePassword = false) {
+            this.userInfo = { name, status, isAdmin, mustChangePassword }
+            this.authenticated = true
+            this.sessionChecked = true
         },
-        setUserInfo(name: string, status: number, isAmin: number) {
-            this.userInfo.name = name
-            this.userInfo.status = status
-            this.userInfo.isAdmin = isAmin
+        clearSession() {
+            this.authenticated = false
+            this.sessionChecked = true
+            this.userInfo = {} as UserInfo
+        },
+        markSessionChecked() {
+            this.sessionChecked = true
         },
     },
-    persist: true,
 })

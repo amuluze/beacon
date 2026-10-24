@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"os"
 	"os/exec"
 	"sync"
@@ -52,7 +53,10 @@ func (s *ptySession) Resize(rows, cols int) error {
 	if s.closed {
 		return fmt.Errorf("session %s is closed", s.id)
 	}
-	return pty.Setsize(s.ptyFile, &pty.Winsize{Rows: uint16(rows), Cols: uint16(cols)})
+	if rows <= 0 || rows > math.MaxUint16 || cols <= 0 || cols > math.MaxUint16 {
+		return fmt.Errorf("terminal size out of range: rows=%d cols=%d", rows, cols)
+	}
+	return pty.Setsize(s.ptyFile, &pty.Winsize{Rows: uint16(rows), Cols: uint16(cols)}) // #nosec G115 -- both dimensions are bounded to uint16 above
 }
 
 func (s *ptySession) WriteInput(data []byte) error {
@@ -102,7 +106,15 @@ func (s *Service) TerminalSessionStream(ctx context.Context, args rpcSchema.Term
 		shell = "/bin/bash"
 	}
 
-	cmd := exec.CommandContext(ctx, shell)
+	var cmd *exec.Cmd
+	switch shell {
+	case "/bin/bash":
+		cmd = exec.CommandContext(ctx, "/bin/bash")
+	case "/bin/sh":
+		cmd = exec.CommandContext(ctx, "/bin/sh")
+	default:
+		return fmt.Errorf("unsupported shell %q", shell)
+	}
 	cmd.Env = os.Environ()
 
 	ptty, err := pty.Start(cmd)

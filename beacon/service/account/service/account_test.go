@@ -199,7 +199,7 @@ func TestAccountService_UserCreate(t *testing.T) {
 			},
 			args: schema.UserCreateArgs{
 				Username: "newuser",
-				Password: "secret",
+				Password: "Strong-Secret-9",
 				RoleIDs:  []string{roleID1.String(), roleID2.String()},
 			},
 			wantErr: false,
@@ -209,6 +209,21 @@ func TestAccountService_UserCreate(t *testing.T) {
 			setup: func(repo *testutil.FakeAccountRepo) {
 				repo.UserCreateFn = func(_ context.Context, _ schema.UserCreateArgs) (model.User, error) {
 					return model.User{}, testutil.ErrTest
+				}
+			},
+			args: schema.UserCreateArgs{
+				Username: "newuser",
+				Password: "Strong-Secret-9",
+				RoleIDs:  []string{roleID1.String()},
+			},
+			wantErr: true,
+		},
+		{
+			name: "weak_password_rejected",
+			setup: func(repo *testutil.FakeAccountRepo) {
+				repo.UserCreateFn = func(_ context.Context, _ schema.UserCreateArgs) (model.User, error) {
+					t.Fatal("repository should not be called for a weak password")
+					return model.User{}, nil
 				}
 			},
 			args: schema.UserCreateArgs{
@@ -229,7 +244,9 @@ func TestAccountService_UserCreate(t *testing.T) {
 			err := svc.UserCreate(ctx, tt.args)
 			if tt.wantErr {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, testutil.ErrTest)
+				if tt.name == "repo_error" {
+					assert.ErrorIs(t, err, testutil.ErrTest)
+				}
 				return
 			}
 			require.NoError(t, err)

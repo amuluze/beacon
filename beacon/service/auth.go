@@ -15,6 +15,7 @@ import (
 
 	"beacon/pkg/auth"
 	"beacon/pkg/auth/jwtauth"
+	"beacon/pkg/authcookie"
 
 	"common/database"
 
@@ -22,8 +23,11 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
-// weakDefaultSigningKey 是配置文件内置的弱签名密钥，仅用于本地开发。
-const weakDefaultSigningKey = "amprobe"
+// weakDefaultSigningKeys 是历史配置中出现过的公开 JWT 签名密钥。
+var weakDefaultSigningKeys = map[string]struct{}{
+	"amprobe": {},
+	"beacon":  {},
+}
 
 // productionEnv 标识生产运行模式，触发敏感配置的严格校验。
 const productionEnv = "production"
@@ -54,6 +58,11 @@ func isWeakDefaultSecret(s string) bool {
 	return ok
 }
 
+func isWeakDefaultSigningKey(s string) bool {
+	_, ok := weakDefaultSigningKeys[s]
+	return ok
+}
+
 // ErrInsecureSigningKey 表示生产模式下签名密钥不安全（缺失、弱默认或过短）。
 var ErrInsecureSigningKey = errors.New("insecure JWT signing key for production")
 
@@ -73,7 +82,7 @@ func resolveSigningKey(configured, env string) (string, error) {
 		if configured == "" {
 			return "", fmt.Errorf("%w: SigningKey is empty, set BEACON_AUTH_SIGNING_KEY", ErrInsecureSigningKey)
 		}
-		if configured == weakDefaultSigningKey {
+		if isWeakDefaultSigningKey(configured) {
 			return "", fmt.Errorf("%w: SigningKey is the built-in weak default", ErrInsecureSigningKey)
 		}
 		if len(configured) < minSigningKeyLen {
@@ -93,7 +102,7 @@ func resolveSigningKey(configured, env string) (string, error) {
 		slog.Warn("auth: SigningKey not configured; generated an ephemeral key (all tokens invalid on restart). Set BEACON_AUTH_SIGNING_KEY in production.")
 		return key, nil
 	}
-	if configured == weakDefaultSigningKey {
+	if isWeakDefaultSigningKey(configured) {
 		slog.Warn("auth: SigningKey is the built-in weak default. Override it via BEACON_AUTH_SIGNING_KEY in production.")
 	}
 	return configured, nil
@@ -160,6 +169,14 @@ func InitAuthStore(config *Config) (*jwtauth.Store, func(), error) {
 	}
 	cleanFunc := func() { err = authStore.Close() }
 	return authStore, cleanFunc, err
+}
+
+func InitAuthCookieManager(config *Config) *authcookie.Manager {
+	return authcookie.NewManager(
+		strings.EqualFold(config.App.Env, productionEnv),
+		config.Auth.Expired,
+		config.Auth.RefreshExpired,
+	)
 }
 
 func InitAuth(config *Config, authStore *jwtauth.Store, db *database.DB) (auth.Auther, func(), error) {

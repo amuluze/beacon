@@ -24,3 +24,22 @@ TDD_STAGES.md
 
 .pen
 website
+# Local secrets and runtime state
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.key
+*.p12
+*.pfx
+*.jks
+**/privkey.pem
+**/*-key.pem
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+**/certs/*.tar.gz

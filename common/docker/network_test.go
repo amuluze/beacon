@@ -7,45 +7,49 @@ package docker
 import (
 	"context"
 	"testing"
+	"time"
 )
 
-func TestListNetwork(t *testing.T) {
-	manager, _ := NewManager()
-	nets, _ := manager.ListNetwork(context.Background())
-	for _, net := range nets {
-		t.Logf("network: %#v\n", net)
-	}
-}
+func TestNetworkLifecycle(t *testing.T) {
+	manager := testManager(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	name := uniqueDockerName("network-only")
 
-func TestCreateNetwork(t *testing.T) {
-	manager, _ := NewManager()
-	networkID, err := manager.CreateNetwork(context.Background(), "test", "bridge", "172.20.0.0/24", "172.20.0.1", map[string]string{CreatedByProbe: "true"})
+	networkID, err := manager.CreateNetwork(ctx, name, "bridge", "", "", map[string]string{CreatedByProbe: "integration-test"})
 	if err != nil {
-		t.Fatalf("create network failed: %v\n", err)
+		t.Fatalf("create network: %v", err)
 	}
-	t.Logf("network id: %#v\n", networkID)
-}
-
-func TestQueryNetwork(t *testing.T) {
-	manager, _ := NewManager()
-	net, _ := manager.GetNetworkByID(context.Background(), "7be8e024bcb58caff65d38b39e42dff05e292e3f2f30963ae51732250b45a33f")
-	t.Logf("network detail: %#v\n", net)
-}
-
-func TestDeleteNetwork(t *testing.T) {
-	manager, _ := NewManager()
-	err := manager.DeleteNetwork(context.Background(), "6185489062d75740df5edffb2e4f282399e19d73d0740aadc911c81548ac7b7b")
+	cleanupNetwork(t, manager, networkID)
+	if exists, err := manager.HasSameNameNetwork(ctx, name); err != nil || !exists {
+		t.Fatalf("network exists = %v, err = %v", exists, err)
+	}
+	byName, err := manager.GetNetworkByName(ctx, name)
 	if err != nil {
-		t.Errorf("delete network failed: %v\n", err)
+		t.Fatalf("get network by name: %v", err)
 	}
-	t.Log("delete network success")
-}
-
-func TestPruneNetwork(t *testing.T) {
-	manager, _ := NewManager()
-	err := manager.PruneNetwork(context.Background())
+	if byName.ID != networkID {
+		t.Fatalf("network ID by name = %q, want %q", byName.ID, networkID)
+	}
+	byID, err := manager.GetNetworkByID(ctx, networkID)
 	if err != nil {
-		t.Errorf("prune network failed: %v\n", err)
+		t.Fatalf("get network by ID: %v", err)
 	}
-	t.Log("prune network success")
+	if byID.Name != name {
+		t.Fatalf("network name by ID = %q, want %q", byID.Name, name)
+	}
+	networks, err := manager.ListNetwork(ctx)
+	if err != nil {
+		t.Fatalf("list networks: %v", err)
+	}
+	found := false
+	for _, item := range networks {
+		if item.ID == networkID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("created network %s missing from network list", networkID)
+	}
 }

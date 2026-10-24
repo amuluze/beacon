@@ -4,7 +4,6 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
 import '@xterm/xterm/css/xterm.css'
-import { useUserStore } from '@/store/modules/user'
 
 export type TerminalStatus = 'idle' | 'connecting' | 'connected' | 'closed' | 'error'
 
@@ -37,10 +36,6 @@ function buildURL(agentId: string): string {
     rows: String(term?.rows || rows.value || 24),
     cols: String(term?.cols || cols.value || 80),
   })
-  // 浏览器 ws 握手无法携带 Authorization header，把 access token 写入 query 通过服务端鉴权。
-  const token = useUserStore().token
-  if (token)
-    params.set('token', token)
   return `${protocol}//${window.location.host}/ws/terminal?${params.toString()}`
 }
 
@@ -99,7 +94,7 @@ function initTerminal(): void {
   sendResize(term.rows, term.cols)
 }
 
-function connect(): void {
+async function connect(): Promise<void> {
   if (!term)
     return
 
@@ -113,8 +108,7 @@ function connect(): void {
   }
 
   setStatus('connecting')
-  const url = buildURL(props.agentId)
-  ws = new WebSocket(url)
+  ws = new WebSocket(buildURL(props.agentId))
 
   // HTTP upgrade only means the Server accepted the socket. The component
   // remains connecting until the Server confirms the Agent PTY is ready.
@@ -174,7 +168,7 @@ function newSession(): void {
   if (ws && ws.readyState !== WebSocket.CLOSED)
     ws.close()
   term?.clear()
-  connect()
+  void connect()
 }
 
 function onResize(): void {
@@ -187,7 +181,7 @@ function onResize(): void {
 
 onMounted(() => {
   initTerminal()
-  connect()
+  void connect()
   window.addEventListener('resize', onResize)
 })
 
@@ -202,7 +196,7 @@ onBeforeUnmount(() => {
 watch(() => props.agentId, () => {
   ws?.close()
   term?.clear()
-  connect()
+  void connect()
 })
 
 defineExpose({ status, cols, rows, clear, newSession })

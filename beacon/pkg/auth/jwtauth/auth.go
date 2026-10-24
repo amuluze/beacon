@@ -115,11 +115,12 @@ func (a *JWTAuth) GenerateToken(userID string, username string) (auth.TokenInfo,
 	}
 	refreshToken, err := a.generateRefreshToken(userID, username)
 	if err != nil {
+		_ = a.DestroyToken(accessToken)
 		return nil, err
 	}
 	tokenInfo := &tokenInfo{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
+		accessToken:  accessToken,
+		refreshToken: refreshToken,
 	}
 	return tokenInfo, nil
 }
@@ -146,7 +147,7 @@ func (a *JWTAuth) callStore(fn func(Storer) error) error {
 // DestroyToken 销毁令牌
 func (a *JWTAuth) DestroyToken(tokenString string) error {
 	return a.callStore(func(storer Storer) error {
-		return storer.Set(tokenString, 1*time.Second)
+		return storer.Delete(tokenString)
 	})
 }
 

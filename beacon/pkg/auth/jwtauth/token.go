@@ -4,21 +4,15 @@
 // Description:
 package jwtauth
 
-import "encoding/json"
-
 type tokenInfo struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	accessToken  string
+	refreshToken string
 }
 
 func (t *tokenInfo) GetAccessToken() string {
-	return t.AccessToken
+	return t.accessToken
 }
 
 func (t *tokenInfo) GetRefreshToken() string {
-	return t.RefreshToken
-}
-
-func (t *tokenInfo) EncodeToJSON() ([]byte, error) {
-	return json.Marshal(t)
+	return t.refreshToken
 }

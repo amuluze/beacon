@@ -6,6 +6,7 @@ package service
 
 import (
 	"beacon/pkg/rpc"
+	"beacon/pkg/secret"
 	"beacon/service/task"
 	"common/database"
 	"context"
@@ -23,7 +24,7 @@ type TimedTask struct {
 	stopCh        chan struct{}
 }
 
-func NewTimedTask(conf *Config, cli rpc.Caller, db *database.DB) *TimedTask {
+func NewTimedTask(conf *Config, cli rpc.Caller, db *database.DB, cipher *secret.Cipher) *TimedTask {
 	// 默认配置： 每 15s 执行一次
 	interval := conf.Task.Interval
 	tk := timex.NewTicker(time.Duration(interval) * time.Second)
@@ -31,7 +32,7 @@ func NewTimedTask(conf *Config, cli rpc.Caller, db *database.DB) *TimedTask {
 	// Cleanup runs once per hour (3600 seconds)
 	cleanupTk := timex.NewTicker(3600 * time.Second)
 
-	newTask := task.NewTask(db)
+	newTask := task.NewTask(db, cipher)
 	cleanupTask := task.NewCleanupTask(db, conf.Retention.Days)
 
 	return &TimedTask{

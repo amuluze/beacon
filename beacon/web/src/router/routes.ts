@@ -8,6 +8,11 @@ const routes: RouteRecordRaw[] = [
         component: async () => import('@/views/login/index.vue'),
     },
     {
+        path: '/change-password',
+        name: 'change-password',
+        component: async () => import('@/views/change-password/index.vue'),
+    },
+    {
         path: '/',
         name: 'layout',
         component: async () => import('@/layout/index.vue'),

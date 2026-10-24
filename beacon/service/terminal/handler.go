@@ -87,14 +87,9 @@ func (h *Handler) handle(conn ClientConnection) {
 
 	var recorder *Recorder
 	if h.recordingEnabled {
-		path, err := CleanSessionPath(h.sessionDir, sessionID)
-		if err != nil {
-			slog.Error("terminal: invalid session path", "session_id", sessionID, "err", err)
-			_ = sendError(conn, "invalid session configuration")
-			_ = h.closeSession(sessionID, "failed")
-			return
-		}
-		recorder, err = NewRecorder(path, cols, rows)
+		var path string
+		var err error
+		recorder, path, err = NewRecorder(h.sessionDir, sessionID, cols, rows)
 		if err != nil {
 			slog.Error("terminal: create recorder failed", "session_id", sessionID, "err", err)
 			_ = sendError(conn, "failed to start recording")

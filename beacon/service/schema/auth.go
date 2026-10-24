@@ -10,8 +10,7 @@ type LoginArgs struct {
 }
 
 type LoginResult struct {
-	AccessToken  string `json:"access_token" description:"访问令牌"`
-	RefreshToken string `json:"refresh_token" description:"刷新令牌"`
+	MustChangePassword bool `json:"must_change_password" description:"是否必须修改密码"`
 }
 
 type PasswordUpdateArgs struct {
@@ -21,8 +20,9 @@ type PasswordUpdateArgs struct {
 }
 
 type UserInfo struct {
-	ID       string `json:"id" description:"用户 id"`
-	Username string `json:"username" description:"用户名"`
-	Status   int    `json:"status" description:"状态"`
-	IsAdmin  int    `json:"is_admin" description:"是否是管理员"`
+	ID                 string `json:"id" description:"用户 id"`
+	Username           string `json:"username" description:"用户名"`
+	Status             int    `json:"status" description:"状态"`
+	IsAdmin            int    `json:"is_admin" description:"是否是管理员"`
+	MustChangePassword bool   `json:"must_change_password" description:"是否必须修改密码"`
 }

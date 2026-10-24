@@ -53,7 +53,7 @@ export interface paths {
         };
         /**
          * WebSocket upgrade for terminal channel
-         * @description Upgrade to WebSocket; rejects plain HTTP with 426.
+         * @description Same-origin upgrade authenticated by the HttpOnly access Cookie; rejects plain HTTP with 426.
          */
         get: operations["wsTerminal"];
         put?: never;
@@ -71,7 +71,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** WebSocket upgrade for log streaming */
+        /** Same-origin WebSocket upgrade for Cookie-authenticated log streaming */
         get: operations["wsLogStream"];
         put?: never;
         post?: never;
@@ -98,6 +98,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/csrf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Provision the readable pre-authentication CSRF Cookie */
+        get: operations["csrf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -109,7 +126,7 @@ export interface paths {
         put?: never;
         /**
          * User login
-         * @description Authenticate with username and password. Returns JWT access and refresh tokens. Rate-limited to 10 req/min/IP.
+         * @description Authenticate with username and password. JWTs are returned only as HttpOnly, SameSite Cookies. Rate-limited to 10 req/min/IP.
          */
         post: operations["login"];
         delete?: never;
@@ -162,10 +179,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Update access token via refresh token
-         * @description Used by the web client interceptor (see web/src/api/index.ts) when a
-         *     401 response is observed. Returns 400 when the refresh token is invalid;
-         *     the client treats that as a hard logout.
+         * Rotate access and refresh Cookies
+         * @description Uses the HttpOnly refresh Cookie plus X-CSRF-Token. Returns 204 and rotates Cookies without exposing JWTs in the body.
          */
         post: operations["tokenUpdate"];
         delete?: never;
@@ -1346,6 +1361,9 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        AuthSessionResponse: {
+            must_change_password: boolean;
+        };
         /**
          * @description Derived from the Agent-side collection timestamp in each monitoring row.
          *     `stale` and `degraded` are both true when the row's age exceeds the
@@ -1636,7 +1654,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie: {
+                beacon_access_token: string;
+            };
         };
         requestBody?: never;
         responses: {
@@ -1663,7 +1683,9 @@ export interface operations {
             path: {
                 id: string;
             };
-            cookie?: never;
+            cookie: {
+                beacon_access_token: string;
+            };
         };
         requestBody?: never;
         responses: {
@@ -1701,12 +1723,35 @@ export interface operations {
             };
         };
     };
-    login: {
+    csrf: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSRF Cookie provisioned */
+            204: {
+                headers: {
+                    "Set-Cookie"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    login: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path?: never;
+            cookie: {
+                beacon_csrf_token: string;
+            };
         };
         requestBody: {
             content: {
@@ -1720,9 +1765,12 @@ export interface operations {
             /** @description Login successful */
             200: {
                 headers: {
+                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AuthSessionResponse"];
+                };
             };
             /** @description Too many requests (rate limited) */
             429: {
@@ -1736,14 +1784,20 @@ export interface operations {
     logout: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
             path?: never;
-            cookie?: never;
+            cookie: {
+                beacon_access_token: string;
+                beacon_refresh_token: string;
+                beacon_csrf_token: string;
+            };
         };
         requestBody?: never;
         responses: {
             /** @description Logged out */
-            200: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1754,9 +1808,15 @@ export interface operations {
     passUpdate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
             path?: never;
-            cookie?: never;
+            cookie: {
+                beacon_access_token: string;
+                beacon_refresh_token: string;
+                beacon_csrf_token: string;
+            };
         };
         requestBody: {
             content: {
@@ -1767,7 +1827,7 @@ export interface operations {
         };
         responses: {
             /** @description Password updated */
-            200: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1778,21 +1838,27 @@ export interface operations {
     tokenUpdate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
             path?: never;
-            cookie?: never;
+            cookie: {
+                beacon_refresh_token: string;
+                beacon_csrf_token: string;
+            };
         };
         requestBody?: never;
         responses: {
-            /** @description New token pair issued */
-            200: {
+            /** @description Session Cookies rotated; no JWT response body */
+            204: {
                 headers: {
+                    "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description Refresh token invalid; client clears tokens */
-            400: {
+            /** @description Refresh Cookie invalid; client clears local user state */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1805,7 +1871,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie: {
+                beacon_access_token: string;
+            };
         };
         requestBody?: never;
         responses: {

@@ -17,8 +17,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+const testReportToken = "secret-token"
+
 // newTestApp 构造一个只挂载 HandleReport 的最小 Fiber app。
-// token 为空时跳过 token 校验；设置为非空时要求 X-Install-Token 匹配。
 func newTestApp(t *testing.T, token string) (*fiber.App, func()) {
 	t.Helper()
 	db, err := database.NewDB(database.WithDBName(filepath.Join(t.TempDir(), "probe")))
@@ -46,7 +47,7 @@ func mustMarshal(v interface{}) []byte {
 }
 
 func TestHandleReport_RejectsMissingAgentID(t *testing.T) {
-	app, cleanup := newTestApp(t, "")
+	app, cleanup := newTestApp(t, testReportToken)
 	defer cleanup()
 
 	body := mustMarshal(rpcSchema.MonitorReportArgs{
@@ -57,6 +58,7 @@ func TestHandleReport_RejectsMissingAgentID(t *testing.T) {
 	})
 	req := httptest.NewRequest("POST", "/api/v1/host/report", strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Install-Token", testReportToken)
 
 	resp, err := app.Test(req, -1)
 	if err != nil {
@@ -73,7 +75,7 @@ func TestHandleReport_RejectsMissingAgentID(t *testing.T) {
 }
 
 func TestHandleReport_RejectsInvalidAgentID(t *testing.T) {
-	app, cleanup := newTestApp(t, "")
+	app, cleanup := newTestApp(t, testReportToken)
 	defer cleanup()
 
 	body := mustMarshal(rpcSchema.MonitorReportArgs{
@@ -84,6 +86,7 @@ func TestHandleReport_RejectsInvalidAgentID(t *testing.T) {
 	})
 	req := httptest.NewRequest("POST", "/api/v1/host/report", strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Install-Token", testReportToken)
 
 	resp, err := app.Test(req, -1)
 	if err != nil {
@@ -96,7 +99,7 @@ func TestHandleReport_RejectsInvalidAgentID(t *testing.T) {
 }
 
 func TestHandleReport_AcceptsValidBatch(t *testing.T) {
-	app, cleanup := newTestApp(t, "")
+	app, cleanup := newTestApp(t, testReportToken)
 	defer cleanup()
 
 	now := time.Now()
@@ -114,6 +117,7 @@ func TestHandleReport_AcceptsValidBatch(t *testing.T) {
 	})
 	req := httptest.NewRequest("POST", "/api/v1/host/report", strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Install-Token", testReportToken)
 
 	resp, err := app.Test(req, -1)
 	if err != nil {
@@ -130,7 +134,7 @@ func TestHandleReport_AcceptsValidBatch(t *testing.T) {
 }
 
 func TestHandleReport_RejectsInvalidToken(t *testing.T) {
-	app, cleanup := newTestApp(t, "secret-token")
+	app, cleanup := newTestApp(t, testReportToken)
 	defer cleanup()
 
 	body := mustMarshal(rpcSchema.MonitorReportArgs{
@@ -154,7 +158,7 @@ func TestHandleReport_RejectsInvalidToken(t *testing.T) {
 }
 
 func TestHandleReport_AcceptsWithValidToken(t *testing.T) {
-	app, cleanup := newTestApp(t, "secret-token")
+	app, cleanup := newTestApp(t, testReportToken)
 	defer cleanup()
 
 	now := time.Now()
@@ -166,7 +170,7 @@ func TestHandleReport_AcceptsWithValidToken(t *testing.T) {
 	})
 	req := httptest.NewRequest("POST", "/api/v1/host/report", strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Install-Token", "secret-token")
+	req.Header.Set("X-Install-Token", testReportToken)
 
 	resp, err := app.Test(req, -1)
 	if err != nil {
@@ -175,5 +179,39 @@ func TestHandleReport_AcceptsWithValidToken(t *testing.T) {
 
 	if resp.StatusCode != fiber.StatusOK {
 		t.Fatalf("expected 200, got %d", resp.StatusCode)
+	}
+}
+
+func TestHandleReport_RejectsQueryTokenFallback(t *testing.T) {
+	app, cleanup := newTestApp(t, testReportToken)
+	defer cleanup()
+
+	body := mustMarshal(rpcSchema.MonitorReportArgs{AgentID: "agent-a"})
+	req := httptest.NewRequest("POST", "/api/v1/host/report?token=secret-token", strings.NewReader(string(body)))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("app.Test: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != fiber.StatusUnauthorized {
+		t.Fatalf("query token status = %d, want 401", resp.StatusCode)
+	}
+}
+
+func TestHandleReport_RejectsWhenServerTokenIsNotConfigured(t *testing.T) {
+	app, cleanup := newTestApp(t, "")
+	defer cleanup()
+
+	body := mustMarshal(rpcSchema.MonitorReportArgs{AgentID: "agent-a"})
+	req := httptest.NewRequest("POST", "/api/v1/host/report", strings.NewReader(string(body)))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("app.Test: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != fiber.StatusServiceUnavailable {
+		t.Fatalf("unconfigured token status = %d, want 503", resp.StatusCode)
 	}
 }

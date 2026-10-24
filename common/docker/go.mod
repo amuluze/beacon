@@ -1,6 +1,6 @@
 module github.com/amuluze/docker
 
-go 1.21
+go 1.25.0
 
 require (
 	github.com/docker/docker v27.0.3+incompatible

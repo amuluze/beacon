@@ -1,5 +1,5 @@
 > [!IMPORTANT]
-> **Repository rename:** this repository has moved from `amuluze/amprobe` to `amuluze/beacon`. GitHub temporarily redirects old links, but existing clones should run `git remote set-url origin git@github.com:amuluze/beacon.git` and update bookmarks, badges, and automation to the new address.
+> **Repository rename:** this repository has moved from `amuluze/amprobe` to `amuluze/beacon-pro`. GitHub temporarily redirects old links, but existing clones should run `git remote set-url origin git@github.com:amuluze/beacon-pro.git` and update bookmarks, badges, and automation to the new address.
 
 <p align="center">
   <img src="beacon/web/src/assets/images/beacon.png" alt="Beacon Logo" width="128" />
@@ -48,11 +48,6 @@
 
 Website: [beacon.amuluze.com](https://beacon.amuluze.com) · Repository: [github.com/amuluze/beacon](https://github.com/amuluze/beacon)
 
-## 🖼️ Screenshot
-
-See the live product at [beacon.amuluze.com](https://beacon.amuluze.com) for screenshots.
-
-
 ## ✨ Features
 
 ### 🐳 Docker management
@@ -99,17 +94,17 @@ Beacon keeps three paths distinct:
 2. **Monitoring reports** are atomically persisted in batches sent by Collia over HTTP.
 3. **Control calls** target an Agent through the reverse gRPC tunnel opened by Collia.
 
-See each module's `README.md` and source comments for the complete boundaries and dependency direction.
+See [System Architecture](./.docs/architecture.md) and [Data Flow](./.docs/concepts/data-flow.md) for the complete boundaries and dependency direction.
 
 ## 🚀 Quick Start
 
 ### Online installer (recommended)
 
 ```bash
-bash -c "$(curl -fsSLk https://beacon.amuluze.com/release/latest/manager.sh)"
+bash -c "$(curl -fsSL https://beacon.amuluze.com/release/latest/manager.sh)" -- install BEACON_PUBLIC_BASE_URL=https://beacon.example.com
 ```
 
-The installer guides you through Web port, Agent control port, and security credential configuration.
+Production mode accepts HTTPS only. First provide a trusted reverse proxy that forwards this HTTPS origin to Beacon's Web port. The installer then configures the ports and generates authentication, data-encryption, and bootstrap-administrator credentials. `BEACON_DATA_ENCRYPTION_KEY` is stored in the mode-`0600` `.env` file and must be retained permanently.
 
 ### Run from source
 
@@ -117,33 +112,38 @@ Prerequisites:
 
 - Docker >= 20.10.9 with Docker Compose.
 - Go 1.25 for local backend development.
-- Node.js and pnpm to build the `beacon/web` admin UI.
+- Node.js, pnpm, and [Task](https://taskfile.dev/) to build Web assets.
 
 ```bash
-# Clone the repository
-git clone https://github.com/amuluze/beacon.git
-cd beacon
+# Clone the renamed repository
+git clone https://github.com/amuluze/beacon-pro.git
+cd beacon-pro
 
-# Build the beacon/web admin UI assets
-cd beacon/web
-pnpm install
-pnpm build
-cd ../..
+# Build frontend assets
+task beacon-web:install
+task beacon-web:build
 
-# Build the Beacon image
+# Build the Beacon image and start the local Compose stack
 docker build -f beacon/Dockerfile -t beacon:latest .
+docker compose -f website/docker-compose.yml up -d
 
-# Verify (use docker run or `go run ./cmd/beacon` directly for local dev)
+# Verify
 curl http://127.0.0.1:8000/health
 ```
 
-For local development, run `cd beacon && go run ./cmd/beacon` to start the Server. Before production deployment, generate unique high-entropy secrets and inject `BEACON_AUTH_SIGNING_KEY`, `BEACON_AGENT_INSTALL_TOKEN`, and `BEACON_CONTROL_JOIN_TOKEN`.
+The local Compose stack exposes `8000` for HTTP and `17000` for Agent control and is intended for development and verification. Before production deployment, generate unique high-entropy secrets and inject `BEACON_AUTH_SIGNING_KEY`, `BEACON_AGENT_INSTALL_TOKEN`, `BEACON_CONTROL_JOIN_TOKEN`, and `BEACON_DATA_ENCRYPTION_KEY`; a new database also requires `BEACON_BOOTSTRAP_ADMIN_PASSWORD`.
 
 After Beacon starts, install Collia on a target host (replace the address, node number, and token with real values):
 
 ```bash
-curl -kfsSL 'http://<beacon-host>:8000/api/v1/host/install?node=1' | sudo bash -s -- --token=<install-token>
+curl -fsSL 'https://<beacon-host>/api/v1/host/install?node=1' | sudo bash -s -- --token=<install-token>
 ```
+
+### Optional installation reporting
+
+Installation reporting is disabled by default and sends nothing without explicit opt-in. Beacon sends one installation report only after an administrator sets `Enable = true` under `[InstallReport]` in `beacon/configs/config.toml`. The report is sent to the configured `URL`, which defaults to `https://beacon.amuluze.com/api/v1/install/report`.
+
+The payload contains only `install_id`, `image`, `version`, `public_base_url`, `install_dir`, `http_port`, `control_port`, `container_name`, and `hostname`. `install_id` is a random identifier persisted locally. The request does not contain administrator accounts, passwords, authentication tokens, DingTalk Webhooks, SMTP passwords, or monitoring data.
 
 ## 🛠️ Tech Stack
 
@@ -161,36 +161,45 @@ curl -kfsSL 'http://<beacon-host>:8000/api/v1/host/install?node=1' | sudo bash -
 
 ```text
 beacon/
-├── beacon/                 # Server, admin Web UI, HTTP/WS API, tunnel client
+├── beacon/                 # Server, Web UI, HTTP/WS API, and tunnel client
 │   ├── cmd/beacon/         # Server process entrypoint
-│   ├── service/            # Business services, routing, auth, persistence
-│   ├── web/                # Vue 3 admin UI (embedded in Server module)
-│   ├── Dockerfile          # Server image build entrypoint
-│   └── nginx/              # Reverse proxy configuration
+│   ├── service/            # Business services, routing, auth, and persistence
+│   └── web/                # Vue 3 admin UI
 ├── collia/                 # Agent collection, host/Docker ops, tunnel service
 ├── common/                 # Shared schemas, database, and tunnel transport
-├── LICENSE                 # MIT License
-└── go.work                 # Go workspace definition
+├── website/                # Product website, installer, and release artifacts
+│   ├── compose.yml         # Local dev Compose (NODE_ENV=development)
+│   ├── docker-compose.yml  # Production Compose (NODE_ENV=production)
+│   └── release/latest/     # Online installer bundle (manager.sh / compose.yaml / SHA256SUMS)
+├── .docs/                  # Current implementation documentation
+├── .specs/                 # SDD Domain and Task Specs
+└── Taskfile.yml            # Workspace command entrypoint
 ```
 
-> Note: the marketing site, deployment manifests, and SDD docs are not part of this open-source repository. See [beacon.amuluze.com](https://beacon.amuluze.com).
+## 📚 Documentation
+
+| Document | Contents |
+|---|---|
+| [Architecture](./.docs/architecture.md) | Module boundaries, runtime paths, and dependency direction |
+| [Data Flow](./.docs/concepts/data-flow.md) | Request lifecycle, data ownership, and cross-module flow |
+| [Deployment](./.docs/deployment.md) | Environment, build, configuration, and release checks |
+| [API Routes](./.docs/api/routes.md) | Current HTTP route and handler index |
+| [OpenAPI](./.docs/api/openapi.yml) | Beacon HTTP API contract |
+| [Domain Constraints](./.specs/domain/monitoring-platform.md) | Durable monitoring behavior and invariants |
 
 ## 🧑‍💻 Development and Contributing
 
 Common commands:
 
 ```bash
-# Backend tests
+task beacon:dev
+task beacon-web:dev
+task collia:amd64
+
 cd beacon && go test ./...
 cd collia && go test ./...
 cd common && go test ./...
-
-# Admin UI build and checks
-cd beacon/web
-pnpm install
-pnpm test:run
-pnpm ts        # vue-tsc typecheck
-pnpm build
+cd beacon/web && pnpm test:run && pnpm ts && pnpm build
 ```
 
 Issues and pull requests are welcome:

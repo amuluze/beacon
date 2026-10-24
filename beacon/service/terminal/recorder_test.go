@@ -11,9 +11,15 @@ import (
 
 func TestRecorder_WriteOutput(t *testing.T) {
 	dir := t.TempDir()
-	path := filepath.Join(dir, "test.cast")
+	stalePath := filepath.Join(dir, "test.cast")
+	if err := os.WriteFile(stalePath, []byte("stale recording"), 0644); err != nil {
+		t.Fatalf("seed recording: %v", err)
+	}
+	if err := os.Chmod(stalePath, 0644); err != nil {
+		t.Fatalf("set insecure recording permissions: %v", err)
+	}
 
-	r, err := NewRecorder(path, 80, 24)
+	r, path, err := NewRecorder(dir, "test", 80, 24)
 	if err != nil {
 		t.Fatalf("new recorder failed: %v", err)
 	}
@@ -29,6 +35,13 @@ func TestRecorder_WriteOutput(t *testing.T) {
 	}
 	if err := r.Close(); err != nil {
 		t.Fatalf("close failed: %v", err)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("stat recording: %v", err)
+	}
+	if got := info.Mode().Perm(); got != 0600 {
+		t.Fatalf("recording permissions = %o, want 600", got)
 	}
 
 	data, err := os.ReadFile(path)
@@ -80,8 +93,7 @@ func TestCleanSessionPath(t *testing.T) {
 
 func TestRecorder_ConcurrentWrites(t *testing.T) {
 	dir := t.TempDir()
-	path := filepath.Join(dir, "concurrent.cast")
-	r, err := NewRecorder(path, 80, 24)
+	r, path, err := NewRecorder(dir, "concurrent", 80, 24)
 	if err != nil {
 		t.Fatalf("new recorder failed: %v", err)
 	}
@@ -126,5 +138,27 @@ func TestRecorder_ConcurrentWrites(t *testing.T) {
 	}
 	if outputCount < 200 {
 		t.Fatalf("expected at least 200 output events, got %d", outputCount)
+	}
+}
+
+func TestNewRecorderRejectsSymlinkEscape(t *testing.T) {
+	dir := t.TempDir()
+	outside := filepath.Join(t.TempDir(), "outside.cast")
+	if err := os.WriteFile(outside, []byte("do not overwrite"), 0600); err != nil {
+		t.Fatalf("write outside file: %v", err)
+	}
+	if err := os.Symlink(outside, filepath.Join(dir, "linked.cast")); err != nil {
+		t.Fatalf("create symlink: %v", err)
+	}
+
+	if _, _, err := NewRecorder(dir, "linked", 80, 24); err == nil {
+		t.Fatal("expected symlink escape to be rejected")
+	}
+	data, err := os.ReadFile(outside)
+	if err != nil {
+		t.Fatalf("read outside file: %v", err)
+	}
+	if string(data) != "do not overwrite" {
+		t.Fatalf("outside file was modified: %q", data)
 	}
 }

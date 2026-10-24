@@ -75,7 +75,9 @@ func (a *AgentTunnel) SetHandler(h Handler) {
 func (a *AgentTunnel) Start(ctx context.Context) error {
 	for {
 		if a.conn != nil {
-			a.conn.Close()
+			if err := a.conn.Close(); err != nil {
+				slog.Debug("agent tunnel: close previous connection failed", "err", err)
+			}
 		}
 
 		slog.Info("agent tunnel: connecting to server", "addr", a.serverAddr, "agent_id", a.agentID)
@@ -109,7 +111,9 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 		stream, err := a.client.Tunnel(ctx)
 		if err != nil {
 			slog.Error("agent tunnel: create stream failed", "err", err)
-			conn.Close()
+			if closeErr := conn.Close(); closeErr != nil {
+				slog.Debug("agent tunnel: close failed connection failed", "err", closeErr)
+			}
 			if !a.reconnect {
 				return err
 			}
@@ -135,7 +139,9 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 		}
 		if err := a.sendFrame(stream, regFrame); err != nil {
 			slog.Error("agent tunnel: send registration failed", "err", err)
-			conn.Close()
+			if closeErr := conn.Close(); closeErr != nil {
+				slog.Debug("agent tunnel: close unregistered connection failed", "err", closeErr)
+			}
 			continue
 		}
 		slog.Info("agent tunnel: registered as", "agent_id", a.agentID)
@@ -144,14 +150,15 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 		heartbeatCtx, heartbeatCancel := context.WithCancel(ctx)
 		go a.heartbeatLoop(heartbeatCtx, stream)
 
-		if err := a.processStream(heartbeatCtx, stream); err != nil {
-			slog.Warn("agent tunnel: stream ended", "err", err)
+		streamErr := a.processStream(heartbeatCtx, stream)
+		if streamErr != nil {
+			slog.Warn("agent tunnel: stream ended", "err", streamErr)
 		}
 
 		heartbeatCancel()
 
 		if !a.reconnect {
-			return err
+			return streamErr
 		}
 		select {
 		case <-ctx.Done():

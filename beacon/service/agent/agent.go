@@ -18,6 +18,11 @@ import (
 
 var Set = wire.NewSet(NewAgentRepo, NewAgentService, NewAgentAPI)
 
+const (
+	agentStatusOnline  = "online"
+	agentStatusOffline = "offline"
+)
+
 // ── Repository ──
 
 type Repository struct {
@@ -45,8 +50,16 @@ func (r *Repository) UpdateStatus(agentID string, status string) error {
 func (r *Repository) UpdateLastSeen(agentID string, t time.Time) error {
 	return r.DB.Model(&model.Agent{}).Where("agent_id = ?", agentID).Updates(map[string]interface{}{
 		"last_seen": t,
-		"status":    "online",
+		"status":    agentStatusOnline,
 	}).Error
+}
+
+// MarkAllOffline clears connection state left by a previous Server process.
+// A persisted online flag cannot prove that the current process owns a live tunnel.
+func (r *Repository) MarkAllOffline() error {
+	return r.DB.Model(&model.Agent{}).
+		Where("status IS NULL OR status <> ?", agentStatusOffline).
+		Update("status", agentStatusOffline).Error
 }
 
 func (r *Repository) Count(ctx context.Context) (int64, error) {
@@ -59,7 +72,11 @@ func (r *Repository) Count(ctx context.Context) (int64, error) {
 
 type Service struct {
 	repo   *Repository
-	tunnel *tunnelpkg.ServerTunnel
+	tunnel onlineChecker
+}
+
+type onlineChecker interface {
+	IsOnline(agentID string) bool
 }
 
 func NewAgentService(repo *Repository) *Service {
@@ -68,6 +85,13 @@ func NewAgentService(repo *Repository) *Service {
 
 // SetTunnel wires the tunnel lifecycle hooks into the agent service.
 func (s *Service) SetTunnel(tun *tunnelpkg.ServerTunnel) {
+	if err := s.repo.MarkAllOffline(); err != nil {
+		slog.Error("reset stale agent status failed", "err", err)
+	}
+	if tun == nil {
+		s.tunnel = nil
+		return
+	}
 	s.tunnel = tun
 	tun.SetAgentLifecycle(s)
 }
@@ -79,7 +103,7 @@ func (s *Service) OnAgentConnect(info tunnelpkg.AgentInfo) {
 		Version:  info.Version,
 		OS:       info.OS,
 		Arch:     info.Arch,
-		Status:   "online",
+		Status:   agentStatusOnline,
 		LastSeen: time.Now(),
 	}
 	if err := s.repo.Upsert(agent); err != nil {
@@ -89,7 +113,7 @@ func (s *Service) OnAgentConnect(info tunnelpkg.AgentInfo) {
 
 // OnAgentDisconnect implements tunnel.AgentLifecycle.
 func (s *Service) OnAgentDisconnect(agentID string) {
-	if err := s.repo.UpdateStatus(agentID, "offline"); err != nil {
+	if err := s.repo.UpdateStatus(agentID, agentStatusOffline); err != nil {
 		slog.Error("agent status update failed", "agent_id", agentID, "err", err)
 	}
 }
@@ -102,7 +126,17 @@ func (s *Service) OnAgentHeartbeat(agentID string) {
 }
 
 func (s *Service) List(ctx context.Context) ([]model.Agent, error) {
-	return s.repo.List(ctx)
+	agents, err := s.repo.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for i := range agents {
+		agents[i].Status = agentStatusOffline
+		if s.tunnel != nil && s.tunnel.IsOnline(agents[i].AgentID) {
+			agents[i].Status = agentStatusOnline
+		}
+	}
+	return agents, nil
 }
 
 func (s *Service) Count(ctx context.Context) (int64, error) {

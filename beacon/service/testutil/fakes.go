@@ -9,10 +9,10 @@ import (
 	"fmt"
 
 	"beacon/pkg/auth"
+	accountRepo "beacon/service/account/repository"
 	alarmRepo "beacon/service/alarm/repository"
 	auditRepo "beacon/service/audit/repository"
 	authRepo "beacon/service/auth/repository"
-	accountRepo "beacon/service/account/repository"
 	mailRepo "beacon/service/mail/repository"
 	"beacon/service/model"
 	"beacon/service/schema"
@@ -52,8 +52,8 @@ func (f *FakeAuther) GenerateToken(userID, username string) (auth.TokenInfo, err
 func (f *FakeAuther) ParseToken(token, tokenType string) (string, string, error) {
 	return f.ParseTokenFn(token, tokenType)
 }
-func (f *FakeAuther) DestroyToken(token string) error { return f.DestroyTokenFn(token) }
-func (f *FakeAuther) Release() error                  { return f.ReleaseFn() }
+func (f *FakeAuther) DestroyToken(token string) error      { return f.DestroyTokenFn(token) }
+func (f *FakeAuther) Release() error                       { return f.ReleaseFn() }
 func (f *FakeAuther) RecordAudit(username, operate string) { f.RecordAuditFn(username, operate) }
 
 type fakeTokenInfo struct {
@@ -67,9 +67,10 @@ func (t *fakeTokenInfo) GetRefreshToken() string { return t.refreshToken }
 // ── FakeAuthRepo ──
 
 type FakeAuthRepo struct {
-	LoginFn    func(ctx context.Context, args schema.LoginArgs) (model.User, error)
-	PassUpdateFn func(ctx context.Context, args schema.PasswordUpdateArgs) error
-	UserInfoFn  func(ctx context.Context, userID string) (model.User, error)
+	LoginFn              func(ctx context.Context, args schema.LoginArgs) (model.User, error)
+	PassUpdateFn         func(ctx context.Context, args schema.PasswordUpdateArgs) error
+	UserInfoFn           func(ctx context.Context, userID string) (model.User, error)
+	MustChangePasswordFn func(ctx context.Context, userID string) (bool, error)
 }
 
 func NewFakeAuthRepo() *FakeAuthRepo {
@@ -81,6 +82,7 @@ func NewFakeAuthRepo() *FakeAuthRepo {
 		UserInfoFn: func(ctx context.Context, userID string) (model.User, error) {
 			return model.User{Username: "admin"}, nil
 		},
+		MustChangePasswordFn: func(context.Context, string) (bool, error) { return false, nil },
 	}
 }
 
@@ -93,6 +95,9 @@ func (f *FakeAuthRepo) PassUpdate(ctx context.Context, args schema.PasswordUpdat
 func (f *FakeAuthRepo) UserInfo(ctx context.Context, userID string) (model.User, error) {
 	return f.UserInfoFn(ctx, userID)
 }
+func (f *FakeAuthRepo) MustChangePassword(ctx context.Context, userID string) (bool, error) {
+	return f.MustChangePasswordFn(ctx, userID)
+}
 
 // Verify interface compliance
 var _ authRepo.IAuthRepository = (*FakeAuthRepo)(nil)
@@ -100,32 +105,32 @@ var _ authRepo.IAuthRepository = (*FakeAuthRepo)(nil)
 // ── FakeAccountRepo ──
 
 type FakeAccountRepo struct {
-	UserQueryFn    func(ctx context.Context, args schema.UserQueryArgs) (model.Users, error)
-	UserCreateFn   func(ctx context.Context, args schema.UserCreateArgs) (model.User, error)
-	UserUpdateFn   func(ctx context.Context, args schema.UserUpdateArgs) (model.User, error)
-	UserDeleteFn   func(ctx context.Context, args schema.UserDeleteArgs) error
-	UserCountFn    func(ctx context.Context) (int64, error)
-	RoleQueryFn    func(ctx context.Context, args schema.RoleQueryArgs) (model.Roles, error)
-	RoleCreateFn   func(ctx context.Context, args schema.RoleCreateArgs) (model.Role, error)
-	RoleUpdateFn   func(ctx context.Context, args schema.RoleUpdateArgs) (model.Role, error)
-	RoleDeleteFn   func(ctx context.Context, args schema.RoleDeleteArgs) error
-	RoleCountFn    func(ctx context.Context) (int64, error)
+	UserQueryFn     func(ctx context.Context, args schema.UserQueryArgs) (model.Users, error)
+	UserCreateFn    func(ctx context.Context, args schema.UserCreateArgs) (model.User, error)
+	UserUpdateFn    func(ctx context.Context, args schema.UserUpdateArgs) (model.User, error)
+	UserDeleteFn    func(ctx context.Context, args schema.UserDeleteArgs) error
+	UserCountFn     func(ctx context.Context) (int64, error)
+	RoleQueryFn     func(ctx context.Context, args schema.RoleQueryArgs) (model.Roles, error)
+	RoleCreateFn    func(ctx context.Context, args schema.RoleCreateArgs) (model.Role, error)
+	RoleUpdateFn    func(ctx context.Context, args schema.RoleUpdateArgs) (model.Role, error)
+	RoleDeleteFn    func(ctx context.Context, args schema.RoleDeleteArgs) error
+	RoleCountFn     func(ctx context.Context) (int64, error)
 	ResourceQueryFn func(ctx context.Context, args schema.ResourceQueryArgs) (model.Resources, error)
 	ResourceCountFn func(ctx context.Context) (int64, error)
 }
 
 func NewFakeAccountRepo() *FakeAccountRepo {
 	return &FakeAccountRepo{
-		UserQueryFn:    func(ctx context.Context, args schema.UserQueryArgs) (model.Users, error) { return nil, nil },
-		UserCreateFn:   func(ctx context.Context, args schema.UserCreateArgs) (model.User, error) { return model.User{}, nil },
-		UserUpdateFn:   func(ctx context.Context, args schema.UserUpdateArgs) (model.User, error) { return model.User{}, nil },
-		UserDeleteFn:   func(ctx context.Context, args schema.UserDeleteArgs) error { return nil },
-		UserCountFn:    func(ctx context.Context) (int64, error) { return 0, nil },
-		RoleQueryFn:    func(ctx context.Context, args schema.RoleQueryArgs) (model.Roles, error) { return nil, nil },
-		RoleCreateFn:   func(ctx context.Context, args schema.RoleCreateArgs) (model.Role, error) { return model.Role{}, nil },
-		RoleUpdateFn:   func(ctx context.Context, args schema.RoleUpdateArgs) (model.Role, error) { return model.Role{}, nil },
-		RoleDeleteFn:   func(ctx context.Context, args schema.RoleDeleteArgs) error { return nil },
-		RoleCountFn:    func(ctx context.Context) (int64, error) { return 0, nil },
+		UserQueryFn:     func(ctx context.Context, args schema.UserQueryArgs) (model.Users, error) { return nil, nil },
+		UserCreateFn:    func(ctx context.Context, args schema.UserCreateArgs) (model.User, error) { return model.User{}, nil },
+		UserUpdateFn:    func(ctx context.Context, args schema.UserUpdateArgs) (model.User, error) { return model.User{}, nil },
+		UserDeleteFn:    func(ctx context.Context, args schema.UserDeleteArgs) error { return nil },
+		UserCountFn:     func(ctx context.Context) (int64, error) { return 0, nil },
+		RoleQueryFn:     func(ctx context.Context, args schema.RoleQueryArgs) (model.Roles, error) { return nil, nil },
+		RoleCreateFn:    func(ctx context.Context, args schema.RoleCreateArgs) (model.Role, error) { return model.Role{}, nil },
+		RoleUpdateFn:    func(ctx context.Context, args schema.RoleUpdateArgs) (model.Role, error) { return model.Role{}, nil },
+		RoleDeleteFn:    func(ctx context.Context, args schema.RoleDeleteArgs) error { return nil },
+		RoleCountFn:     func(ctx context.Context) (int64, error) { return 0, nil },
 		ResourceQueryFn: func(ctx context.Context, args schema.ResourceQueryArgs) (model.Resources, error) { return nil, nil },
 		ResourceCountFn: func(ctx context.Context) (int64, error) { return 0, nil },
 	}
@@ -160,7 +165,9 @@ func (f *FakeAccountRepo) RoleCount(ctx context.Context) (int64, error) { return
 func (f *FakeAccountRepo) ResourceQuery(ctx context.Context, args schema.ResourceQueryArgs) (model.Resources, error) {
 	return f.ResourceQueryFn(ctx, args)
 }
-func (f *FakeAccountRepo) ResourceCount(ctx context.Context) (int64, error) { return f.ResourceCountFn(ctx) }
+func (f *FakeAccountRepo) ResourceCount(ctx context.Context) (int64, error) {
+	return f.ResourceCountFn(ctx)
+}
 
 var _ accountRepo.IAccountRepository = (*FakeAccountRepo)(nil)
 
@@ -193,7 +200,7 @@ type FakeMailRepo struct {
 	MailQueryFn  func(ctx context.Context) (model.Mail, error)
 	MailCreateFn func(ctx context.Context, args schema.MailCreateArgs) error
 	MailUpdateFn func(ctx context.Context, args schema.MailUpdateArgs) error
-	MailTestFn   func(ctx context.Context, args schema.MailTestArgs) error
+	MailTestFn   func(ctx context.Context, args schema.MailTestArgs, title string) error
 }
 
 func NewFakeMailRepo() *FakeMailRepo {
@@ -201,19 +208,19 @@ func NewFakeMailRepo() *FakeMailRepo {
 		MailQueryFn:  func(ctx context.Context) (model.Mail, error) { return model.Mail{}, nil },
 		MailCreateFn: func(ctx context.Context, args schema.MailCreateArgs) error { return nil },
 		MailUpdateFn: func(ctx context.Context, args schema.MailUpdateArgs) error { return nil },
-		MailTestFn:   func(ctx context.Context, args schema.MailTestArgs) error { return nil },
+		MailTestFn:   func(ctx context.Context, args schema.MailTestArgs, title string) error { return nil },
 	}
 }
 
-func (f *FakeMailRepo) MailQuery(ctx context.Context) (model.Mail, error)   { return f.MailQueryFn(ctx) }
+func (f *FakeMailRepo) MailQuery(ctx context.Context) (model.Mail, error) { return f.MailQueryFn(ctx) }
 func (f *FakeMailRepo) MailCreate(ctx context.Context, args schema.MailCreateArgs) error {
 	return f.MailCreateFn(ctx, args)
 }
 func (f *FakeMailRepo) MailUpdate(ctx context.Context, args schema.MailUpdateArgs) error {
 	return f.MailUpdateFn(ctx, args)
 }
-func (f *FakeMailRepo) MailTest(ctx context.Context, args schema.MailTestArgs) error {
-	return f.MailTestFn(ctx, args)
+func (f *FakeMailRepo) MailTest(ctx context.Context, args schema.MailTestArgs, title string) error {
+	return f.MailTestFn(ctx, args, title)
 }
 
 var _ mailRepo.IMailRepository = (*FakeMailRepo)(nil)
@@ -250,28 +257,28 @@ var ErrTest = fmt.Errorf("test error")
 
 // FakeHostRepo implements host/repository.IHostRepo
 type FakeHostRepo struct {
-	HostInfoFn    func(context.Context, rpcSchema.HostInfoArgs) (rpcSchema.HostInfoReply, error)
-	CPUInfoFn     func(context.Context, rpcSchema.CPUInfoArgs) (rpcSchema.CPUInfoReply, error)
-	CPUUsageFn    func(context.Context, rpcSchema.CPUUsageArgs) (rpcSchema.CPUUsageReply, error)
-	MemInfoFn     func(context.Context, rpcSchema.MemoryInfoArgs) (rpcSchema.MemoryInfoReply, error)
-	MemUsageFn    func(context.Context, rpcSchema.MemoryUsageArgs) (rpcSchema.MemoryUsageReply, error)
-	DiskInfoFn    func(context.Context, rpcSchema.DiskInfoArgs) (rpcSchema.DiskInfoReply, error)
-	DiskUsageFn   func(context.Context, rpcSchema.DiskUsageArgs) (rpcSchema.DiskUsageReply, error)
-	NetUsageFn    func(context.Context, rpcSchema.NetUsageArgs) (rpcSchema.NetUsageReply, error)
-	FilesSearchFn func(context.Context, rpcSchema.FilesSearchArgs) (rpcSchema.FilesSearchReply, error)
+	HostInfoFn     func(context.Context, rpcSchema.HostInfoArgs) (rpcSchema.HostInfoReply, error)
+	CPUInfoFn      func(context.Context, rpcSchema.CPUInfoArgs) (rpcSchema.CPUInfoReply, error)
+	CPUUsageFn     func(context.Context, rpcSchema.CPUUsageArgs) (rpcSchema.CPUUsageReply, error)
+	MemInfoFn      func(context.Context, rpcSchema.MemoryInfoArgs) (rpcSchema.MemoryInfoReply, error)
+	MemUsageFn     func(context.Context, rpcSchema.MemoryUsageArgs) (rpcSchema.MemoryUsageReply, error)
+	DiskInfoFn     func(context.Context, rpcSchema.DiskInfoArgs) (rpcSchema.DiskInfoReply, error)
+	DiskUsageFn    func(context.Context, rpcSchema.DiskUsageArgs) (rpcSchema.DiskUsageReply, error)
+	NetUsageFn     func(context.Context, rpcSchema.NetUsageArgs) (rpcSchema.NetUsageReply, error)
+	FilesSearchFn  func(context.Context, rpcSchema.FilesSearchArgs) (rpcSchema.FilesSearchReply, error)
 	FileDownloadFn func(context.Context, rpcSchema.FileDownloadArgs) (rpcSchema.FileDownloadReply, error)
-	FileDeleteFn  func(context.Context, rpcSchema.FileDeleteArgs) error
-	FileCreateFn  func(context.Context, rpcSchema.FileCreateArgs) error
+	FileDeleteFn   func(context.Context, rpcSchema.FileDeleteArgs) error
+	FileCreateFn   func(context.Context, rpcSchema.FileCreateArgs) error
 	FolderCreateFn func(context.Context, rpcSchema.FolderCreateArgs) error
-	GetDNSFn      func(context.Context, rpcSchema.GetDNSArgs) (rpcSchema.GetDNSReply, error)
-	SetDNSFn      func(context.Context, rpcSchema.SetDNSArgs) error
-	GetTimeFn     func(context.Context, rpcSchema.GetSystemTimeArgs) (rpcSchema.GetSystemTimeReply, error)
-	SetTimeFn     func(context.Context, rpcSchema.SetSystemTimeArgs) error
-	GetTZListFn   func(context.Context, rpcSchema.GetSystemTimeZoneListArgs) (rpcSchema.GetSystemTimeZoneListReply, error)
-	GetTZFn       func(context.Context, rpcSchema.GetSystemTimeZoneArgs) (rpcSchema.GetSystemTimeZoneReply, error)
-	SetTZFn       func(context.Context, rpcSchema.SetSystemTimeZoneArgs) error
-	RebootFn      func(context.Context, rpcSchema.RebootArgs) error
-	ShutdownFn    func(context.Context, rpcSchema.ShutdownArgs) error
+	GetDNSFn       func(context.Context, rpcSchema.GetDNSArgs) (rpcSchema.GetDNSReply, error)
+	SetDNSFn       func(context.Context, rpcSchema.SetDNSArgs) error
+	GetTimeFn      func(context.Context, rpcSchema.GetSystemTimeArgs) (rpcSchema.GetSystemTimeReply, error)
+	SetTimeFn      func(context.Context, rpcSchema.SetSystemTimeArgs) error
+	GetTZListFn    func(context.Context, rpcSchema.GetSystemTimeZoneListArgs) (rpcSchema.GetSystemTimeZoneListReply, error)
+	GetTZFn        func(context.Context, rpcSchema.GetSystemTimeZoneArgs) (rpcSchema.GetSystemTimeZoneReply, error)
+	SetTZFn        func(context.Context, rpcSchema.SetSystemTimeZoneArgs) error
+	RebootFn       func(context.Context, rpcSchema.RebootArgs) error
+	ShutdownFn     func(context.Context, rpcSchema.ShutdownArgs) error
 }
 
 func (f *FakeHostRepo) HostInfo(ctx context.Context, args rpcSchema.HostInfoArgs) (rpcSchema.HostInfoReply, error) {
@@ -343,28 +350,28 @@ func (f *FakeHostRepo) Shutdown(ctx context.Context, args rpcSchema.ShutdownArgs
 
 // FakeContainerRepo implements container/repository.IContainerRepo
 type FakeContainerRepo struct {
-	VersionFn                func(ctx context.Context, args rpcSchema.DockerArgs) (rpcSchema.DockerReply, error)
-	ContainerListFn          func(ctx context.Context, args rpcSchema.ContainerQueryArgs) (rpcSchema.ContainerQueryReply, error)
-	UsageFn                  func(ctx context.Context, args rpcSchema.ContainerUsageArgs) (rpcSchema.ContainerUsageReply, error)
-	ContainersByImageFn      func(ctx context.Context, image string) (int, error)
-	ContainerCountFn         func(ctx context.Context, args rpcSchema.ContainerCountArgs) (rpcSchema.ContainerCountReply, error)
-	ContainerCreateFn        func(ctx context.Context, args rpcSchema.ContainerCreateArgs) (rpcSchema.ContainerCreateReply, error)
-	ContainerUpdateFn        func(ctx context.Context, args rpcSchema.ContainerUpdateArgs) (rpcSchema.ContainerUpdateReply, error)
-	ContainerDeleteFn        func(ctx context.Context, args rpcSchema.ContainerDeleteArgs) error
-	ContainerStartFn         func(ctx context.Context, args rpcSchema.ContainerStartArgs) error
-	ContainerStopFn          func(ctx context.Context, args rpcSchema.ContainerStopArgs) error
-	ContainerRestartFn       func(ctx context.Context, args rpcSchema.ContainerRestartArgs) error
-	ImageListFn              func(ctx context.Context, args rpcSchema.ImageQueryArgs) (rpcSchema.ImageQueryReply, error)
-	ImageCountFn             func(ctx context.Context, args rpcSchema.ImageCountArgs) (rpcSchema.ImageCountReply, error)
-	ImagePullFn              func(ctx context.Context, args rpcSchema.ImagePullArgs) error
-	ImageTagFn               func(ctx context.Context, args rpcSchema.ImageTagArgs) error
-	ImageImportFn            func(ctx context.Context, args rpcSchema.ImageImportArgs) error
-	ImageDeleteFn            func(ctx context.Context, args rpcSchema.ImageDeleteArgs) error
-	ImagesPruneFn            func(ctx context.Context) error
-	NetworkListFn            func(ctx context.Context, args rpcSchema.NetworkQueryArgs) (rpcSchema.NetworkQueryReply, error)
-	NetworkCountFn           func(ctx context.Context, args rpcSchema.NetworkCountArgs) (rpcSchema.NetworkCountReply, error)
-	NetworkCreateFn          func(ctx context.Context, args rpcSchema.NetworkCreateArgs) (rpcSchema.NetworkCreateReply, error)
-	NetworkDeleteFn          func(ctx context.Context, args rpcSchema.NetworkDeleteArgs) error
+	VersionFn                  func(ctx context.Context, args rpcSchema.DockerArgs) (rpcSchema.DockerReply, error)
+	ContainerListFn            func(ctx context.Context, args rpcSchema.ContainerQueryArgs) (rpcSchema.ContainerQueryReply, error)
+	UsageFn                    func(ctx context.Context, args rpcSchema.ContainerUsageArgs) (rpcSchema.ContainerUsageReply, error)
+	ContainersByImageFn        func(ctx context.Context, image string) (int, error)
+	ContainerCountFn           func(ctx context.Context, args rpcSchema.ContainerCountArgs) (rpcSchema.ContainerCountReply, error)
+	ContainerCreateFn          func(ctx context.Context, args rpcSchema.ContainerCreateArgs) (rpcSchema.ContainerCreateReply, error)
+	ContainerUpdateFn          func(ctx context.Context, args rpcSchema.ContainerUpdateArgs) (rpcSchema.ContainerUpdateReply, error)
+	ContainerDeleteFn          func(ctx context.Context, args rpcSchema.ContainerDeleteArgs) error
+	ContainerStartFn           func(ctx context.Context, args rpcSchema.ContainerStartArgs) error
+	ContainerStopFn            func(ctx context.Context, args rpcSchema.ContainerStopArgs) error
+	ContainerRestartFn         func(ctx context.Context, args rpcSchema.ContainerRestartArgs) error
+	ImageListFn                func(ctx context.Context, args rpcSchema.ImageQueryArgs) (rpcSchema.ImageQueryReply, error)
+	ImageCountFn               func(ctx context.Context, args rpcSchema.ImageCountArgs) (rpcSchema.ImageCountReply, error)
+	ImagePullFn                func(ctx context.Context, args rpcSchema.ImagePullArgs) error
+	ImageTagFn                 func(ctx context.Context, args rpcSchema.ImageTagArgs) error
+	ImageImportFn              func(ctx context.Context, args rpcSchema.ImageImportArgs) error
+	ImageDeleteFn              func(ctx context.Context, args rpcSchema.ImageDeleteArgs) error
+	ImagesPruneFn              func(ctx context.Context) error
+	NetworkListFn              func(ctx context.Context, args rpcSchema.NetworkQueryArgs) (rpcSchema.NetworkQueryReply, error)
+	NetworkCountFn             func(ctx context.Context, args rpcSchema.NetworkCountArgs) (rpcSchema.NetworkCountReply, error)
+	NetworkCreateFn            func(ctx context.Context, args rpcSchema.NetworkCreateArgs) (rpcSchema.NetworkCreateReply, error)
+	NetworkDeleteFn            func(ctx context.Context, args rpcSchema.NetworkDeleteArgs) error
 	GetDockerRegistryMirrorsFn func(ctx context.Context, args rpcSchema.GetDockerRegistryMirrorsArgs) (rpcSchema.GetDockerRegistryMirrorsReply, error)
 	SetDockerRegistryMirrorsFn func(ctx context.Context, args rpcSchema.SetDockerRegistryMirrorsArgs) error
 }

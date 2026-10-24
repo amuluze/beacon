@@ -60,6 +60,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		cleanup()
 		return nil, nil, err
 	}
+	manager := InitAuthCookieManager(config)
 	adapter := InitAdapter(db)
 	syncedEnforcer, cleanup3, err := InitCasbin(config, modelFile, adapter)
 	if err != nil {
@@ -86,17 +87,24 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	hostAPI := api2.NewHostAPI(hostService)
 	authRepo := repository3.NewAuthRepo(db)
 	authService := service3.NewAuthService(auther, authRepo)
-	authAPI := api3.NewLoginAPI(authService)
+	authAPI := api3.NewLoginAPI(authService, manager)
 	auditRepo := repository4.NewAuditRepo(db)
 	auditService := service4.NewAuditService(auditRepo)
 	auditAPI := api4.NewAuditAPI(auditService)
 	accountRepository := repository5.NewAccountRepository(db)
 	accountService := service5.NewAccountService(accountRepository, syncedEnforcer)
 	accountAPI := api5.NewAccountAPI(accountService)
-	mailRepository := repository6.NewMailRepository(db)
+	cipher, err := NewDataCipher(config)
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	mailRepository := repository6.NewMailRepository(db, cipher)
 	mailService := service6.NewMailService(mailRepository)
 	mailAPI := api6.NewMailAPI(mailService)
-	dingTalkRepository := repository7.NewDingTalkRepository(db)
+	dingTalkRepository := repository7.NewDingTalkRepository(db, cipher)
 	sender := client.NewSender()
 	dingTalkService := service7.NewDingTalkService(dingTalkRepository, sender)
 	dingTalkAPI := api7.NewDingTalkAPI(dingTalkService)
@@ -117,10 +125,12 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	router := &Router{
 		config:          config,
 		auth:            auther,
+		sessionCookies:  manager,
 		enforcer:        syncedEnforcer,
 		containerAPI:    containerAPI,
 		hostAPI:         hostAPI,
 		authAPI:         authAPI,
+		authService:     authService,
 		auditAPI:        auditAPI,
 		accountAPI:      accountAPI,
 		mailAPI:         mailAPI,
@@ -136,9 +146,10 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	app := NewFiberApp(config, router)
 	prepare := &Prepare{
 		db:       db,
+		cipher:   cipher,
 		enforcer: syncedEnforcer,
 	}
-	timedTask := NewTimedTask(config, caller, db)
+	timedTask := NewTimedTask(config, caller, db, cipher)
 	logger := NewLogger(config)
 	injector, err := NewInjector(app, router, prepare, config, timedTask, reportService, logger)
 	if err != nil {

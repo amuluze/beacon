@@ -5,7 +5,9 @@
 package service
 
 import (
+	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/spf13/viper"
 )
@@ -32,9 +34,15 @@ func NewConfig(configFile string, prefix Prefix) (*Config, error) {
 		slog.Error("read config error", "err", err)
 		return nil, err
 	}
+	if err := os.Chmod(configFile, 0o600); err != nil {
+		return nil, fmt.Errorf("secure config file: %w", err)
+	}
 
 	if err := viper.Unmarshal(config); err != nil {
 		slog.Error("parse config error", "error", err)
+		return nil, err
+	}
+	if err := validateTransportSecurity(config); err != nil {
 		return nil, err
 	}
 	config.prefix = prefix

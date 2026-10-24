@@ -3,86 +3,14 @@ package fiberx
 import (
 	"context"
 	"fmt"
-	"net/http/httptest"
 	"testing"
 
 	"beacon/pkg/contextx"
 	pkgerrors "beacon/pkg/errors"
 	tunnelpkg "common/rpc/tunnel"
 
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
-
-func TestGetTokenMissingAuthorization(t *testing.T) {
-	app := fiber.New()
-	var got string
-	app.Get("/", func(c *fiber.Ctx) error {
-		got = GetToken(c)
-		return c.SendStatus(fiber.StatusNoContent)
-	})
-
-	req := httptest.NewRequest("GET", "/", nil)
-	if _, err := app.Test(req); err != nil {
-		t.Fatalf("request failed: %v", err)
-	}
-	if got != "" {
-		t.Fatalf("expected empty token, got %q", got)
-	}
-}
-
-func TestGetTokenBearerAuthorization(t *testing.T) {
-	app := fiber.New()
-	var got string
-	app.Get("/", func(c *fiber.Ctx) error {
-		got = GetToken(c)
-		return c.SendStatus(fiber.StatusNoContent)
-	})
-
-	req := httptest.NewRequest("GET", "/", nil)
-	req.Header.Set("Authorization", "Bearer access-token")
-	if _, err := app.Test(req); err != nil {
-		t.Fatalf("request failed: %v", err)
-	}
-	if got != "access-token" {
-		t.Fatalf("expected bearer token, got %q", got)
-	}
-}
-
-func TestGetWebSocketTokenFromQuery(t *testing.T) {
-	app := fiber.New()
-	var got string
-	app.Get("/ws/terminal", func(c *fiber.Ctx) error {
-		got = GetWebSocketToken(c)
-		return c.SendStatus(fiber.StatusNoContent)
-	})
-
-	req := httptest.NewRequest("GET", "/ws/terminal?token=query-token", nil)
-	if _, err := app.Test(req); err != nil {
-		t.Fatalf("request failed: %v", err)
-	}
-	if got != "query-token" {
-		t.Fatalf("expected query token, got %q", got)
-	}
-}
-
-func TestGetWebSocketTokenPrefersAuthorizationHeader(t *testing.T) {
-	app := fiber.New()
-	var got string
-	app.Get("/ws/terminal", func(c *fiber.Ctx) error {
-		got = GetWebSocketToken(c)
-		return c.SendStatus(fiber.StatusNoContent)
-	})
-
-	req := httptest.NewRequest("GET", "/ws/terminal?token=query-token", nil)
-	req.Header.Set("Authorization", "Bearer header-token")
-	if _, err := app.Test(req); err != nil {
-		t.Fatalf("request failed: %v", err)
-	}
-	if got != "header-token" {
-		t.Fatalf("expected header token, got %q", got)
-	}
-}
 
 // TestServiceError_Mapping 覆盖领域错误到 HTTP 状态码的映射，
 // 验证 Domain R001（不可达/未实现必须返回可区分错误，禁止统一降级 500）。

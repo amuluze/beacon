@@ -13,6 +13,13 @@ import (
 
 var errContainerMutation = errors.New("container mutation failed")
 
+func TestImageImportRejectsEmptyData(t *testing.T) {
+	err := (&Service{}).ImageImport(context.Background(), rpcSchema.ImageImportArgs{FileName: "image.tar"}, &rpcSchema.ImageImportReply{})
+	if err == nil {
+		t.Fatal("expected empty image data to be rejected")
+	}
+}
+
 type fakeContainerMutationManager struct {
 	containers []docker.ContainerSummary
 	createID   string

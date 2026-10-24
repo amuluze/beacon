@@ -33,7 +33,16 @@ func NewDB(config *Config, models *model.Models) (*database.DB, error) {
 		return nil, err
 	}
 	// SQLite 启用WAL模式
-	db.Exec("PRAGMA journal_mode=WAL;")
+	if err := db.Exec("PRAGMA journal_mode=WAL;").Error; err != nil {
+		db.Close()
+		return nil, err
+	}
+	if strings.EqualFold(gormConfig.DBType, "sqlite") || gormConfig.DBType == "" {
+		if err := database.SecureSQLiteFiles(dbConfig.DBName); err != nil {
+			db.Close()
+			return nil, err
+		}
+	}
 
 	if gormConfig.EnableAutoMigrate {
 		if dbType := gormConfig.DBType; strings.ToLower(dbType) == "mysql" {

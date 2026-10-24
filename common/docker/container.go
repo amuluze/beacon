@@ -14,6 +14,7 @@ import (
 
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -209,9 +210,6 @@ func (m *Manager) CreateContainer(ctx context.Context, containerName, imageName,
 	for _, w := range createResponse.Warnings {
 		fmt.Printf("Container Create Warning: %s\n", w)
 	}
-	if err := m.client.NetworkConnect(ctx, nt.ID, createResponse.ID, nil); err != nil {
-		return "", err
-	}
 
 	return createResponse.ID, nil
 }
@@ -237,11 +235,26 @@ func (m *Manager) DeleteContainer(ctx context.Context, containerID string) error
 }
 
 func (m *Manager) CopyFileToContainer(ctx context.Context, containerID string, srcFile, dstFile string) error {
-	file, err := os.Open(srcFile)
+	root, name, err := openFileRoot(srcFile)
 	if err != nil {
 		return err
 	}
+	defer root.Close()
+	file, err := root.Open(name)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
 	return m.client.CopyToContainer(ctx, containerID, dstFile, file, container.CopyToContainerOptions{})
+}
+
+func openFileRoot(path string) (*os.Root, string, error) {
+	dir := filepath.Dir(path)
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return nil, "", err
+	}
+	return root, filepath.Base(path), nil
 }
 
 func (m *Manager) GetContainerMem(ctx context.Context, containerID string) (float64, float64, float64, error) {
@@ -298,7 +311,7 @@ func (m *Manager) GetContainerIDByContainerName(ctx context.Context, containerNa
 		return "", err
 	}
 	for _, ct := range containers {
-		if ct.Names[0] == containerName {
+		if len(ct.Names) > 0 && strings.TrimPrefix(ct.Names[0], "/") == strings.TrimPrefix(containerName, "/") {
 			return ct.ID, nil
 		}
 	}

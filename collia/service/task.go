@@ -59,14 +59,16 @@ func NewTimedTask(conf *Config) *TimedTask {
 }
 
 func (a *TimedTask) Execute() {
-	timestamp := time.Now()
-	r, err := a.task.Report(timestamp)
+	r, err := a.task.Report(time.Now())
 	if err != nil {
 		slog.Error("report collection failed", "error", err)
 		return
 	}
 	if a.reportClient != nil && r != nil {
-		args := a.buildReportArgs(timestamp, r)
+		// Use the batch completion time so the timestamp reflects when all
+		// collected values became ready for transport, rather than when a
+		// potentially long Docker/host collection cycle started.
+		args := a.buildReportArgs(time.Now(), r)
 		if err := a.reportClient.Push(context.Background(), args); err != nil {
 			slog.Error("push report failed", "error", err)
 		}

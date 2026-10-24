@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"sync"
 	"time"
 
+	"beacon/pkg/secret"
 	"beacon/pkg/utils"
 	dingtalkclient "beacon/service/dingtalk/client"
 	"beacon/service/model"
@@ -21,6 +23,27 @@ import (
 
 var _ ITask = (*Task)(nil)
 
+const (
+	alarmDeduplicationWindow = 10 * time.Minute
+	alarmSampleFreshness     = 90 * time.Second
+	alarmWindowGrace         = 45 * time.Second
+	alarmMaximumSampleGap    = 90 * time.Second
+	containerStateFreshness  = 2 * time.Minute
+)
+
+type alarmWindowState uint8
+
+const (
+	alarmWindowUnknown alarmWindowState = iota
+	alarmWindowNormal
+	alarmWindowFiring
+)
+
+type metricSample struct {
+	observedAt time.Time
+	value      float64
+}
+
 type ITask interface {
 	CPUAlarmTask(context.Context) error
 	MemoryAlarmTask(context.Context) error
@@ -31,7 +54,7 @@ type ITask interface {
 // MailSender abstracts the email delivery so unit tests can stub it out
 // without dialing a real SMTP server.
 type MailSender interface {
-	Send(msg string) error
+	Send(title string, msg string) error
 }
 
 type Task struct {
@@ -39,14 +62,22 @@ type Task struct {
 	cache          *cache.Cache
 	mailSender     MailSender
 	dingTalkSender dingtalkclient.Sender
+	cipher         *secret.Cipher
+	alarmMu        sync.Mutex
+	now            func() time.Time
 }
 
-func NewTask(db *database.DB) *Task {
-	return &Task{
+func NewTask(db *database.DB, ciphers ...*secret.Cipher) *Task {
+	task := &Task{
 		db:             db,
 		cache:          cache.New(5*time.Minute, 10*time.Minute),
 		dingTalkSender: dingtalkclient.NewSender(),
+		now:            time.Now,
 	}
+	if len(ciphers) > 0 {
+		task.cipher = ciphers[0]
+	}
+	return task
 }
 
 // SetMailSender overrides the default SMTP-based mail sender. Useful for
@@ -109,6 +140,80 @@ func (t *Task) hostname(ctx context.Context, agentID string) string {
 	return agentID
 }
 
+func alarmQueryStart(now time.Time, duration int) time.Time {
+	if duration <= 0 {
+		return now.Add(-alarmSampleFreshness)
+	}
+	return now.Add(-time.Duration(duration) * time.Minute)
+}
+
+// evaluateAlarmWindow distinguishes a valid normal window from missing or
+// stale data. For a positive duration, samples must cover the whole window,
+// arrive without a long gap, and all remain strictly above the threshold.
+func evaluateAlarmWindow(samples []metricSample, now time.Time, duration int, threshold int) alarmWindowState {
+	if len(samples) == 0 {
+		return alarmWindowUnknown
+	}
+
+	if duration <= 0 {
+		latest := samples[len(samples)-1]
+		if latest.observedAt.Before(now.Add(-alarmSampleFreshness)) || latest.observedAt.After(now.Add(alarmWindowGrace)) {
+			return alarmWindowUnknown
+		}
+		if utils.Decimal(latest.value) > float64(threshold) {
+			return alarmWindowFiring
+		}
+		return alarmWindowNormal
+	}
+
+	windowDuration := time.Duration(duration) * time.Minute
+	windowStart := now.Add(-windowDuration)
+	grace := alarmWindowGrace
+	if quarterWindow := windowDuration / 4; quarterWindow < grace {
+		grace = quarterWindow
+	}
+	first := samples[0]
+	latest := samples[len(samples)-1]
+	if first.observedAt.After(windowStart.Add(grace)) || latest.observedAt.Before(now.Add(-grace)) || latest.observedAt.After(now.Add(alarmWindowGrace)) {
+		return alarmWindowUnknown
+	}
+
+	previous := first.observedAt
+	for index, sample := range samples {
+		if index > 0 && sample.observedAt.Sub(previous) > alarmMaximumSampleGap {
+			return alarmWindowUnknown
+		}
+		previous = sample.observedAt
+		if utils.Decimal(sample.value) <= float64(threshold) {
+			return alarmWindowNormal
+		}
+	}
+	return alarmWindowFiring
+}
+
+func cpuSamples(rows []model.MonitorCPU) []metricSample {
+	samples := make([]metricSample, 0, len(rows))
+	for _, row := range rows {
+		samples = append(samples, metricSample{observedAt: row.CreatedAt, value: row.CPUPercent})
+	}
+	return samples
+}
+
+func memorySamples(rows []model.MonitorMemory) []metricSample {
+	samples := make([]metricSample, 0, len(rows))
+	for _, row := range rows {
+		samples = append(samples, metricSample{observedAt: row.CreatedAt, value: row.MemPercent})
+	}
+	return samples
+}
+
+func exceededThresholdMessage(resource string, duration int, threshold int) string {
+	if duration <= 0 {
+		return fmt.Sprintf("%s 使用率超过 %d%%", resource, threshold)
+	}
+	return fmt.Sprintf("%s 使用率连续 %d 分钟超过 %d%%", resource, duration, threshold)
+}
+
 func (t *Task) CPUAlarmTask(ctx context.Context) error {
 	threshold, err := t.threshold("cpu")
 	if err != nil {
@@ -119,24 +224,26 @@ func (t *Task) CPUAlarmTask(ctx context.Context) error {
 		return err
 	}
 
-	startTime := time.Now().Add(-time.Duration(threshold.Duration) * time.Minute).Unix()
+	now := t.now()
+	startTime := alarmQueryStart(now, threshold.Duration)
 	for _, agentID := range agentIDs {
 		var cpuData []model.MonitorCPU
 		if err := t.db.WithContext(ctx).Model(&model.MonitorCPU{}).
-			Where("agent_id = ? AND timestamp > ?", agentID, time.Unix(startTime, 0)).
-			Order("timestamp asc").Find(&cpuData).Error; err != nil {
+			Where("agent_id = ? AND created_at >= ? AND created_at <= ?", agentID, startTime, now.Add(alarmWindowGrace)).
+			Order("created_at asc").Find(&cpuData).Error; err != nil {
 			return err
 		}
 
-		total := 0.0
-		for _, item := range cpuData {
-			total += item.CPUPercent
-		}
-		// Collia/gopsutil 上报的 CPUPercent 已经是 0-100 的百分数，
-		// 这里直接与配置阈值比较，禁止再次乘以 100。
-		if len(cpuData) > 0 && utils.Decimal(total/float64(len(cpuData))) > float64(threshold.Threshold) {
-			msg := fmt.Sprintf("[%s] %s CPU 使用率连续 %d 分钟超过 %d%%", agentID, t.hostname(ctx, agentID), threshold.Duration, threshold.Threshold)
-			if err := t.triggerAlarm(ctx, "cpu:"+agentID, msg, agentID); err != nil {
+		key := "cpu:" + agentID
+		switch evaluateAlarmWindow(cpuSamples(cpuData), now, threshold.Duration, threshold.Threshold) {
+		case alarmWindowFiring:
+			msg := exceededThresholdMessage(fmt.Sprintf("[%s] %s CPU", agentID, t.hostname(ctx, agentID)), threshold.Duration, threshold.Threshold)
+			if err := t.triggerAlarm(ctx, key, msg, agentID); err != nil {
+				return err
+			}
+		case alarmWindowNormal:
+			msg := fmt.Sprintf("[%s] %s CPU 使用率已恢复至 %d%% 以下", agentID, t.hostname(ctx, agentID), threshold.Threshold)
+			if err := t.resolveAlarm(ctx, key, msg, agentID); err != nil {
 				return err
 			}
 		}
@@ -154,22 +261,26 @@ func (t *Task) MemoryAlarmTask(ctx context.Context) error {
 		return err
 	}
 
-	startTime := time.Now().Add(-time.Duration(threshold.Duration) * time.Minute).Unix()
+	now := t.now()
+	startTime := alarmQueryStart(now, threshold.Duration)
 	for _, agentID := range agentIDs {
 		var memData []model.MonitorMemory
 		if err := t.db.WithContext(ctx).Model(&model.MonitorMemory{}).
-			Where("agent_id = ? AND timestamp > ?", agentID, time.Unix(startTime, 0)).
-			Order("timestamp asc").Find(&memData).Error; err != nil {
+			Where("agent_id = ? AND created_at >= ? AND created_at <= ?", agentID, startTime, now.Add(alarmWindowGrace)).
+			Order("created_at asc").Find(&memData).Error; err != nil {
 			return err
 		}
 
-		total := 0.0
-		for _, item := range memData {
-			total += item.MemPercent
-		}
-		if len(memData) > 0 && int(utils.Decimal(total/float64(len(memData)))*100) > threshold.Threshold {
-			msg := fmt.Sprintf("[%s] %s 内存使用率连续 %d 分钟超过 %d%%", agentID, t.hostname(ctx, agentID), threshold.Duration, threshold.Threshold)
-			if err := t.triggerAlarm(ctx, "memory:"+agentID, msg, agentID); err != nil {
+		key := "memory:" + agentID
+		switch evaluateAlarmWindow(memorySamples(memData), now, threshold.Duration, threshold.Threshold) {
+		case alarmWindowFiring:
+			msg := exceededThresholdMessage(fmt.Sprintf("[%s] %s 内存", agentID, t.hostname(ctx, agentID)), threshold.Duration, threshold.Threshold)
+			if err := t.triggerAlarm(ctx, key, msg, agentID); err != nil {
+				return err
+			}
+		case alarmWindowNormal:
+			msg := fmt.Sprintf("[%s] %s 内存使用率已恢复至 %d%% 以下", agentID, t.hostname(ctx, agentID), threshold.Threshold)
+			if err := t.resolveAlarm(ctx, key, msg, agentID); err != nil {
 				return err
 			}
 		}
@@ -187,23 +298,36 @@ func (t *Task) DiskAlarmTask(ctx context.Context) error {
 		return err
 	}
 
+	now := t.now()
+	startTime := alarmQueryStart(now, threshold.Duration)
 	for _, agentID := range agentIDs {
 		var diskData []model.MonitorDisk
-		latest := t.db.WithContext(ctx).Model(&model.MonitorDisk{}).
-			Where("agent_id = ?", agentID).
-			Select("agent_id, device, MAX(timestamp) AS timestamp").
-			Group("agent_id, device")
 		if err := t.db.WithContext(ctx).Model(&model.MonitorDisk{}).
-			Where("m_disk.agent_id = ?", agentID).
-			Joins("JOIN (?) latest ON latest.agent_id = m_disk.agent_id AND latest.device = m_disk.device AND latest.timestamp = m_disk.timestamp", latest).
+			Where("agent_id = ? AND created_at >= ? AND created_at <= ?", agentID, startTime, now.Add(alarmWindowGrace)).
+			Order("device asc, created_at asc").
 			Find(&diskData).Error; err != nil {
 			return err
 		}
 
+		deviceOrder := make([]string, 0)
+		deviceSamples := make(map[string][]metricSample)
 		for _, item := range diskData {
-			if int(utils.Decimal(item.DiskPercent)*100) > threshold.Threshold {
-				msg := fmt.Sprintf("[%s] %s 磁盘 %s 使用率超过 %d%%", agentID, t.hostname(ctx, agentID), item.Device, threshold.Threshold)
-				if err := t.triggerAlarm(ctx, "disk:"+agentID+":"+item.Device, msg, agentID); err != nil {
+			if _, exists := deviceSamples[item.Device]; !exists {
+				deviceOrder = append(deviceOrder, item.Device)
+			}
+			deviceSamples[item.Device] = append(deviceSamples[item.Device], metricSample{observedAt: item.CreatedAt, value: item.DiskPercent})
+		}
+		for _, device := range deviceOrder {
+			key := "disk:" + agentID + ":" + device
+			switch evaluateAlarmWindow(deviceSamples[device], now, threshold.Duration, threshold.Threshold) {
+			case alarmWindowFiring:
+				msg := exceededThresholdMessage(fmt.Sprintf("[%s] %s 磁盘 %s", agentID, t.hostname(ctx, agentID), device), threshold.Duration, threshold.Threshold)
+				if err := t.triggerAlarm(ctx, key, msg, agentID); err != nil {
+					return err
+				}
+			case alarmWindowNormal:
+				msg := fmt.Sprintf("[%s] %s 磁盘 %s 使用率已恢复至 %d%% 以下", agentID, t.hostname(ctx, agentID), device, threshold.Threshold)
+				if err := t.resolveAlarm(ctx, key, msg, agentID); err != nil {
 					return err
 				}
 			}
@@ -218,15 +342,17 @@ func (t *Task) ServiceTask(ctx context.Context) error {
 		return err
 	}
 
+	now := t.now()
+	freshAfter := now.Add(-containerStateFreshness)
 	for _, agentID := range agentIDs {
 		var containers []model.MonitorContainer
 		latest := t.db.WithContext(ctx).Model(&model.MonitorContainer{}).
-			Where("agent_id = ?", agentID).
-			Select("agent_id, name, MAX(timestamp) AS timestamp").
+			Where("agent_id = ? AND created_at >= ? AND created_at <= ?", agentID, freshAfter, now.Add(alarmWindowGrace)).
+			Select("agent_id, name, MAX(created_at) AS created_at").
 			Group("agent_id, name")
 		if err := t.db.WithContext(ctx).Model(&model.MonitorContainer{}).
-			Where("m_container.agent_id = ?", agentID).
-			Joins("JOIN (?) latest ON latest.agent_id = m_container.agent_id AND latest.name = m_container.name AND latest.timestamp = m_container.timestamp", latest).
+			Where("m_container.agent_id = ? AND m_container.created_at >= ? AND m_container.created_at <= ?", agentID, freshAfter, now.Add(alarmWindowGrace)).
+			Joins("JOIN (?) latest ON latest.agent_id = m_container.agent_id AND latest.name = m_container.name AND latest.created_at = m_container.created_at", latest).
 			Find(&containers).Error; err != nil {
 			return err
 		}
@@ -250,7 +376,10 @@ func (t *Task) ServiceTask(ctx context.Context) error {
 // triggerAlarm persists the alarm before attempting each notification channel.
 // Delivery failures are isolated from each other and never roll back the audit.
 func (t *Task) triggerAlarm(ctx context.Context, key string, msg string, agentID string) error {
+	t.alarmMu.Lock()
 	if _, ok := t.cache.Get(key); ok {
+		t.cache.Set("alarm-state:"+key, "firing", cache.NoExpiration)
+		t.alarmMu.Unlock()
 		return nil
 	}
 	operateLog := model.Audit{
@@ -259,9 +388,35 @@ func (t *Task) triggerAlarm(ctx context.Context, key string, msg string, agentID
 		Operate:  msg,
 	}
 	if err := t.db.WithContext(ctx).Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
+		t.alarmMu.Unlock()
 		return err
 	}
-	t.cache.Set(key, "true", 10*time.Minute)
+	t.cache.Set(key, "true", alarmDeduplicationWindow)
+	t.cache.Set("alarm-state:"+key, "firing", cache.NoExpiration)
+	t.alarmMu.Unlock()
+	t.notify(ctx, msg)
+	return nil
+}
+
+func (t *Task) resolveAlarm(ctx context.Context, key string, msg string, agentID string) error {
+	stateKey := "alarm-state:" + key
+	t.alarmMu.Lock()
+	if _, ok := t.cache.Get(stateKey); !ok {
+		t.alarmMu.Unlock()
+		return nil
+	}
+	operateLog := model.Audit{
+		Username: "system",
+		AgentID:  agentID,
+		Operate:  msg,
+	}
+	if err := t.db.WithContext(ctx).Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
+		t.alarmMu.Unlock()
+		return err
+	}
+	t.cache.Delete(stateKey)
+	t.cache.Delete(key)
+	t.alarmMu.Unlock()
 	t.notify(ctx, msg)
 	return nil
 }
@@ -280,27 +435,33 @@ func (t *Task) sendAlarmAudit(ctx context.Context, msg string, agentID string) e
 }
 
 func (t *Task) notify(ctx context.Context, msg string) {
-	if err := t.sendMail(msg); err != nil {
+	title := "服务器告警"
+	if err := t.sendMail(ctx, title, msg); err != nil {
 		slog.Warn("send alarm notification failed", "channel", "mail", "err", err)
 	}
-	if err := t.sendDingTalk(ctx, msg); err != nil {
+	if err := t.sendDingTalk(ctx, title, msg); err != nil {
 		slog.Warn("send alarm notification failed", "channel", "dingtalk", "err", err)
 	}
 }
 
-func (t *Task) sendMail(msg string) error {
+func (t *Task) sendMail(ctx context.Context, title string, msg string) error {
 	// If a test injected a MailSender, prefer it (avoids dialing a real SMTP
 	// server during unit tests).
 	if t.mailSender != nil {
-		return t.mailSender.Send(msg)
+		return t.mailSender.Send(title, msg)
 	}
 	var mail model.Mail
-	if err := t.db.Model(&model.Mail{}).First(&mail).Error; err != nil {
+	if err := t.db.WithContext(ctx).Model(&model.Mail{}).First(&mail).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
 		return err
 	}
+	password, err := t.decryptAndMigrate(ctx, &mail, "password", mail.Password)
+	if err != nil {
+		return err
+	}
+	mail.Password = password
 	dialer := gomail.NewDialer(mail.Server, mail.Port, mail.Sender, mail.Password)
 	var sendErrors []error
 	for _, recv := range strings.Split(mail.Receiver, ",") {
@@ -311,7 +472,7 @@ func (t *Task) sendMail(msg string) error {
 		mailMessage := gomail.NewMessage()
 		mailMessage.SetHeader("From", mail.Sender)
 		mailMessage.SetHeader("To", recv)
-		mailMessage.SetHeader("Subject", "服务器告警")
+		mailMessage.SetHeader("Subject", title)
 		mailMessage.SetBody("text/plain", msg)
 
 		if err := dialer.DialAndSend(mailMessage); err != nil {
@@ -321,7 +482,7 @@ func (t *Task) sendMail(msg string) error {
 	return errors.Join(sendErrors...)
 }
 
-func (t *Task) sendDingTalk(ctx context.Context, msg string) error {
+func (t *Task) sendDingTalk(ctx context.Context, title string, msg string) error {
 	var setting model.DingTalk
 	err := t.db.WithContext(ctx).
 		Where("key = ?", model.DefaultDingTalkConfigKey).
@@ -332,12 +493,43 @@ func (t *Task) sendDingTalk(ctx context.Context, msg string) error {
 	if err != nil {
 		return err
 	}
+	webhook, err := t.decryptAndMigrate(ctx, &setting, "webhook", setting.Webhook)
+	if err != nil {
+		return err
+	}
+	secretValue, err := t.decryptAndMigrate(ctx, &setting, "secret", setting.Secret)
+	if err != nil {
+		return err
+	}
+	setting.Webhook = webhook
+	setting.Secret = secretValue
 	if !setting.Enabled || setting.Webhook == "" {
 		return nil
 	}
 	return t.dingTalkSender.Send(ctx, dingtalkclient.Config{
-		Webhook: setting.Webhook,
-		Secret:  setting.Secret,
-		AtAll:   setting.AtAll,
+		Webhook:      setting.Webhook,
+		Secret:       setting.Secret,
+		AtAll:        setting.AtAll,
 	}, msg)
+}
+
+func (t *Task) decryptAndMigrate(ctx context.Context, target any, column, value string) (string, error) {
+	if t.cipher == nil {
+		return value, nil
+	}
+	plaintext, legacy, err := t.cipher.Decrypt(value)
+	if err != nil {
+		return "", err
+	}
+	if !legacy {
+		return plaintext, nil
+	}
+	encrypted, err := t.cipher.Encrypt(plaintext)
+	if err != nil {
+		return "", err
+	}
+	if err := t.db.WithContext(ctx).Model(target).Update(column, encrypted).Error; err != nil {
+		return "", err
+	}
+	return plaintext, nil
 }

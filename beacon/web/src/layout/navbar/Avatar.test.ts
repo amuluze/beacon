@@ -3,12 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import Avatar from './Avatar.vue'
 
-const { clearAgent, logoutMock, openUpdatePassword, replace, setToken } = vi.hoisted(() => ({
+const { clearAgent, clearSession, logoutMock, openUpdatePassword, replace } = vi.hoisted(() => ({
     clearAgent: vi.fn(),
     logoutMock: vi.fn(),
     openUpdatePassword: vi.fn(),
     replace: vi.fn(),
-    setToken: vi.fn(),
+    clearSession: vi.fn(),
 }))
 
 vi.mock('@/api/auth', () => ({
@@ -23,7 +23,7 @@ vi.mock('@/store', () => ({
     default: () => ({
         user: {
             userInfo: { name: 'admin' },
-            setToken,
+            clearSession,
         },
         agent: { clear: clearAgent },
     }),
@@ -110,7 +110,7 @@ describe('navbar avatar', () => {
         await flushPromises()
 
         expect(logoutMock).toHaveBeenCalledOnce()
-        expect(setToken).toHaveBeenCalledWith('', '')
+        expect(clearSession).toHaveBeenCalledOnce()
         expect(clearAgent).toHaveBeenCalledOnce()
         expect(replace).toHaveBeenCalledWith('/login')
     })

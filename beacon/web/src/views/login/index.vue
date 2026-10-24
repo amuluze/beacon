@@ -42,13 +42,17 @@ async function handleLogin() {
   try {
     // 提交前先做表单校验（用户名必填、密码长度），校验不通过则不发起登录请求
     await loginFormRef.value.validate()
-    const { data } = await login({ ...loginForm })
-    store.user.setToken(data.access_token, data.refresh_token)
+    await login({ ...loginForm })
     const userInfo = await getUserInfo()
-    store.user.setUserInfo(userInfo.data.username, userInfo.data.status, userInfo.data.is_admin)
+    store.user.setUserInfo(
+      userInfo.data.username,
+      userInfo.data.status,
+      userInfo.data.is_admin,
+      userInfo.data.must_change_password,
+    )
     // 每次认证会话都重新确认可用 Agent，避免沿用上一个会话的目标节点。
     store.agent.clear()
-    await router.replace('/monitor')
+    await router.replace(userInfo.data.must_change_password ? '/change-password' : '/monitor')
   }
   catch (error) {
     if (error instanceof Error)

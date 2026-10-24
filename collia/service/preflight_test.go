@@ -126,6 +126,13 @@ func TestMergeProbeIntoConfigKeepsUserValues(t *testing.T) {
 	if report.ConfigUpdated {
 		t.Fatal("不应覆盖用户显式配置")
 	}
+	info, err := os.Stat(cfgPath)
+	if err != nil {
+		t.Fatalf("stat config: %v", err)
+	}
+	if got := info.Mode().Perm(); got != 0o600 {
+		t.Fatalf("config permissions = %o, want 600", got)
+	}
 }
 
 func TestPreflightReportHasError(t *testing.T) {

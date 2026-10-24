@@ -59,5 +59,5 @@ func (m *MailService) MailUpdate(ctx context.Context, args schema.MailUpdateArgs
 }
 
 func (m *MailService) MailTest(ctx context.Context, args schema.MailTestArgs) error {
-	return m.MailRepository.MailTest(ctx, args)
+	return m.MailRepository.MailTest(ctx, args, "服务器告警")
 }

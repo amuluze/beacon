@@ -81,13 +81,16 @@ func (m *Manager) HasSameNameNetwork(ctx context.Context, networkName string) (b
 }
 
 func (m *Manager) CreateNetwork(ctx context.Context, name, driver, subnet, gateway string, labels map[string]string) (string, error) {
-	nt, err := m.client.NetworkCreate(ctx, name, network.CreateOptions{
+	options := network.CreateOptions{
 		Driver:     driver,
-		IPAM:       &network.IPAM{Config: []network.IPAMConfig{{Subnet: subnet, Gateway: gateway}}},
 		Labels:     labels,
 		Internal:   false,
 		Attachable: true,
-	})
+	}
+	if subnet != "" || gateway != "" {
+		options.IPAM = &network.IPAM{Config: []network.IPAMConfig{{Subnet: subnet, Gateway: gateway}}}
+	}
+	nt, err := m.client.NetworkCreate(ctx, name, options)
 	return nt.ID, err
 }
 

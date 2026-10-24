@@ -152,7 +152,7 @@ func dirWritable(dir string) error {
 			return fmt.Errorf("stat %s: %w", dir, err)
 		}
 		// 父目录可写即可创建
-		if err := os.MkdirAll(dir, 0o755); err != nil {
+		if err := os.MkdirAll(dir, 0o750); err != nil {
 			return fmt.Errorf("mkdir %s: %w", dir, err)
 		}
 	} else if !info.IsDir() {
@@ -230,7 +230,15 @@ func MergeProbeIntoConfig(configPath string, report *PreflightReport) error {
 	if configPath == "" {
 		return errors.New("config path 为空")
 	}
-	raw, err := os.ReadFile(configPath)
+	configDir := filepath.Dir(configPath)
+	configName := filepath.Base(configPath)
+	configRoot, err := os.OpenRoot(configDir)
+	if err != nil {
+		return fmt.Errorf("open config directory: %w", err)
+	}
+	defer configRoot.Close()
+
+	raw, err := configRoot.ReadFile(configName)
 	if err != nil {
 		return fmt.Errorf("read config: %w", err)
 	}
@@ -270,18 +278,25 @@ func MergeProbeIntoConfig(configPath string, report *PreflightReport) error {
 	}
 
 	if !changed {
+		if err := configRoot.Chmod(configName, 0o600); err != nil {
+			return fmt.Errorf("secure config: %w", err)
+		}
 		return nil
 	}
 	out, err := yaml.Marshal(root)
 	if err != nil {
 		return fmt.Errorf("marshal config: %w", err)
 	}
-	tmp := configPath + ".tmp"
-	if err := os.WriteFile(tmp, out, 0o644); err != nil {
+	tmpName := configName + ".tmp"
+	if err := configRoot.WriteFile(tmpName, out, 0o600); err != nil {
 		return fmt.Errorf("write config: %w", err)
 	}
-	if err := os.Rename(tmp, configPath); err != nil {
+	if err := configRoot.Rename(tmpName, configName); err != nil {
+		_ = configRoot.Remove(tmpName)
 		return fmt.Errorf("rename config: %w", err)
+	}
+	if err := configRoot.Chmod(configName, 0o600); err != nil {
+		return fmt.Errorf("secure config: %w", err)
 	}
 	report.ConfigUpdated = true
 	slog.Info("preflight 已将探测结果合并进 config", "config", configPath,

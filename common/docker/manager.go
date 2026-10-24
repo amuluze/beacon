@@ -6,9 +6,9 @@ package docker
 
 import (
 	"context"
-	"github.com/docker/docker/api/types/registry"
 	"io"
 
+	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 )
 
@@ -18,7 +18,10 @@ type Manager struct {
 
 func NewManager() (*Manager, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	return &Manager{client: cli}, err
+	if err != nil {
+		return nil, err
+	}
+	return &Manager{client: cli}, nil
 }
 
 var _ IManager = (*Manager)(nil)

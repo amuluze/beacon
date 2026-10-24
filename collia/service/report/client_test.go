@@ -1,6 +1,7 @@
 package report
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"testing"
@@ -17,7 +18,7 @@ func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 func TestPushAcceptsNilContext(t *testing.T) {
 	var gotToken string
 
-	client := NewClient("http://example.test/report", "secret")
+	client := NewClient("https://example.test/report", "secret")
 	client.httpClient.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
 		gotToken = r.Header.Get("X-Install-Token")
 		return &http.Response{
@@ -34,5 +35,23 @@ func TestPushAcceptsNilContext(t *testing.T) {
 	}
 	if gotToken != "secret" {
 		t.Fatalf("expected install token header, got %q", gotToken)
+	}
+}
+
+func TestPushRejectsTokenOverHTTPBeforeNetwork(t *testing.T) {
+	called := false
+	client := NewClient("http://example.test/report", "secret")
+	client.httpClient.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		called = true
+		return nil, errors.New("must not be called")
+	})
+	defer func() { _ = client.Close() }()
+
+	err := client.Push(nil, rpcSchema.MonitorReportArgs{AgentID: "agent-a"}) //nolint:staticcheck // verifies nil context and transport refusal
+	if !errors.Is(err, ErrInsecureTokenTransport) {
+		t.Fatalf("Push() error = %v, want ErrInsecureTokenTransport", err)
+	}
+	if called {
+		t.Fatal("HTTP transport was invoked before insecure token target was rejected")
 	}
 }

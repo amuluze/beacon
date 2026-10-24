@@ -18,6 +18,8 @@ type Storer interface {
 	Set(tokenString string, expiration time.Duration) error
 	// Check 检查令牌是否存在
 	Check(tokenString string) (bool, error)
+	// Delete 立即销毁令牌，防止登出或刷新轮换后的短暂重放窗口。
+	Delete(tokenString string) error
 	// Close 关闭存储
 	Close() error
 }
@@ -46,4 +48,9 @@ func (s *Store) Check(key string) (bool, error) {
 		return found, nil
 	}
 	return false, errors.New("key not found")
+}
+
+func (s *Store) Delete(tokenString string) error {
+	s.Storage.Delete(s.wrapperKey(tokenString))
+	return nil
 }

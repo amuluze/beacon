@@ -13,6 +13,7 @@ import type { LoginForm, LoginResponse, UpdatePassword, UserInfo } from '@/inter
  * @param data
  */
 export async function login(data: LoginForm) {
+    await request.get<void>('/api/v1/auth/csrf')
     return request.post<LoginResponse>('/api/v1/auth/login', data)
 }
 

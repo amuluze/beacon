@@ -5,12 +5,15 @@ import (
 	"errors"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	dingtalkclient "beacon/service/dingtalk/client"
 	"beacon/service/model"
 	"common/database"
+
+	"gorm.io/gorm"
 )
 
 func newTaskTestDB(t *testing.T) *database.DB {
@@ -78,7 +81,7 @@ type stubMailSender struct {
 	err      error
 }
 
-func (s *stubMailSender) Send(msg string) error {
+func (s *stubMailSender) Send(title string, msg string) error {
 	s.messages = append(s.messages, msg)
 	return s.err
 }
@@ -100,7 +103,7 @@ func (s *stubDingTalkSender) Send(_ context.Context, config dingtalkclient.Confi
 func TestCPUAlarmTaskEvaluatesAgentsIndependently(t *testing.T) {
 	db := newTaskTestDB(t)
 	now := time.Now()
-	if err := db.Create(&model.AlarmThreshold{Type: "cpu", Duration: 2, Threshold: 80}).Error; err != nil {
+	if err := db.Create(&model.AlarmThreshold{Type: "cpu", Duration: 0, Threshold: 80}).Error; err != nil {
 		t.Fatalf("create threshold: %v", err)
 	}
 	seedTwoAgents(t, db, now)
@@ -151,7 +154,7 @@ func TestCPUAlarmTaskScopesDataByAgent(t *testing.T) {
 	t.Cleanup(db.Close)
 
 	now := time.Now()
-	createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 10, Threshold: 80})
+	createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 0, Threshold: 80})
 	seedTaskHost(t, db, "agent-a", "host-a")
 	seedTaskHost(t, db, "agent-b", "host-b")
 	createTaskRecord(t, db, &model.MonitorCPU{AgentID: "agent-a", Timestamp: now, CPUPercent: 95})
@@ -178,8 +181,8 @@ func TestCPUAlarmTaskUsesCPUThresholdType(t *testing.T) {
 	db := newTaskTestDB(t)
 	t.Cleanup(db.Close)
 
-	createTaskRecord(t, db, &model.AlarmThreshold{Type: "memory", Duration: 10, Threshold: 1})
-	createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 10, Threshold: 80})
+	createTaskRecord(t, db, &model.AlarmThreshold{Type: "memory", Duration: 0, Threshold: 1})
+	createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 0, Threshold: 80})
 	seedTaskHost(t, db, "agent-a", "host-a")
 	createTaskRecord(t, db, &model.MonitorCPU{AgentID: "agent-a", Timestamp: time.Now(), CPUPercent: 50})
 
@@ -196,7 +199,7 @@ func TestCPUAlarmTaskUsesReportedPercentScale(t *testing.T) {
 	db := newTaskTestDB(t)
 	t.Cleanup(db.Close)
 
-	createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 10, Threshold: 80})
+	createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 0, Threshold: 80})
 	seedTaskHost(t, db, "agent-a", "host-a")
 	createTaskRecord(t, db, &model.MonitorCPU{AgentID: "agent-a", Timestamp: time.Now(), CPUPercent: 12})
 
@@ -213,7 +216,7 @@ func TestCPUAlarmTaskDeduplicatesRepeatedHighSamples(t *testing.T) {
 	db := newTaskTestDB(t)
 	t.Cleanup(db.Close)
 
-	createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 10, Threshold: 80})
+	createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 0, Threshold: 80})
 	seedTaskHost(t, db, "agent-a", "host-a")
 	createTaskRecord(t, db, &model.MonitorCPU{AgentID: "agent-a", Timestamp: time.Now(), CPUPercent: 90})
 
@@ -278,10 +281,11 @@ func TestCPUAlarmRecoversAfterMetricDrops(t *testing.T) {
 	createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 5, Threshold: 80})
 	seedTaskHost(t, db, "agent-a", "host-a")
 
-	now := time.Now()
+	now := time.Now().Truncate(time.Second)
 	// Simulate sustained high CPU for 5+ minutes
 	for i := 0; i < 6; i++ {
 		createTaskRecord(t, db, &model.MonitorCPU{
+			Model:      gorm.Model{CreatedAt: now.Add(-time.Duration(5-i) * time.Minute)},
 			AgentID:    "agent-a",
 			Timestamp:  now.Add(-time.Duration(5-i) * time.Minute),
 			CPUPercent: 90, // 90% — above 80% threshold
@@ -289,6 +293,7 @@ func TestCPUAlarmRecoversAfterMetricDrops(t *testing.T) {
 	}
 
 	task := NewTask(db)
+	task.now = func() time.Time { return now }
 	if err := task.CPUAlarmTask(context.Background()); err != nil {
 		t.Fatalf("CPUAlarmTask: %v", err)
 	}
@@ -302,28 +307,270 @@ func TestCPUAlarmRecoversAfterMetricDrops(t *testing.T) {
 		t.Fatalf("expected CPU alarm message, got %q", audits[0].Operate)
 	}
 
-	// Now simulate recovery: CPU drops below threshold
-	for i := 0; i < 3; i++ {
-		createTaskRecord(t, db, &model.MonitorCPU{
-			AgentID:    "agent-a",
-			Timestamp:  now.Add(time.Duration(i) * time.Minute),
-			CPUPercent: 30, // 30% — well below 80% threshold
-		})
-	}
+	// Now simulate a fresh recovery sample: one normal value makes the complete
+	// window normal and emits exactly one recovery event.
+	now = now.Add(time.Minute)
+	createTaskRecord(t, db, &model.MonitorCPU{
+		Model:      gorm.Model{CreatedAt: now},
+		AgentID:    "agent-a",
+		Timestamp:  now,
+		CPUPercent: 30,
+	})
 
-	// Run the task again — should NOT generate a new alarm
+	// Run the task again — should generate one recovery audit.
 	if err := task.CPUAlarmTask(context.Background()); err != nil {
 		t.Fatalf("CPUAlarmTask after recovery: %v", err)
 	}
 
-	// No additional audits beyond the original alarm
 	audits = taskAudits(t, db)
-	if len(audits) != 1 {
-		t.Fatalf("audit count after recovery = %d, want 1 (no new alarm)", len(audits))
+	if len(audits) != 2 {
+		t.Fatalf("audit count after recovery = %d, want 2 (alarm and recovery)", len(audits))
+	}
+	if !strings.Contains(audits[1].Operate, "恢复") {
+		t.Fatalf("expected recovery audit, got %q", audits[1].Operate)
+	}
+	if err := task.CPUAlarmTask(context.Background()); err != nil {
+		t.Fatalf("repeated CPUAlarmTask after recovery: %v", err)
+	}
+	if audits := taskAudits(t, db); len(audits) != 2 {
+		t.Fatalf("repeated recovery audit count = %d, want 2", len(audits))
 	}
 	// I004: audit row must carry the source AgentID.
 	if audits[0].AgentID != "agent-a" {
 		t.Fatalf("audit AgentID = %q, want agent-a", audits[0].AgentID)
+	}
+}
+
+func TestCPUAlarmRequiresCompleteContinuousWindow(t *testing.T) {
+	tests := []struct {
+		name    string
+		offsets []time.Duration
+		values  []float64
+		want    int
+	}{
+		{name: "single high sample is insufficient", offsets: []time.Duration{0}, values: []float64{95}},
+		{name: "complete high window fires", offsets: []time.Duration{-2 * time.Minute, -time.Minute, 0}, values: []float64{95, 94, 93}, want: 1},
+		{name: "one normal sample keeps window normal", offsets: []time.Duration{-2 * time.Minute, -time.Minute, 0}, values: []float64{95, 50, 95}},
+		{name: "sample gap makes window unknown", offsets: []time.Duration{-2 * time.Minute, 0}, values: []float64{95, 95}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := newTaskTestDB(t)
+			now := time.Now().Truncate(time.Second)
+			createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 2, Threshold: 80})
+			seedTaskHost(t, db, "agent-a", "host-a")
+			for index, offset := range tt.offsets {
+				observedAt := now.Add(offset)
+				createTaskRecord(t, db, &model.MonitorCPU{
+					Model:      gorm.Model{CreatedAt: observedAt},
+					AgentID:    "agent-a",
+					Timestamp:  observedAt,
+					CPUPercent: tt.values[index],
+				})
+			}
+			task := NewTask(db)
+			task.SetMailSender(&stubMailSender{})
+			task.now = func() time.Time { return now }
+			if err := task.CPUAlarmTask(context.Background()); err != nil {
+				t.Fatalf("CPUAlarmTask: %v", err)
+			}
+			if audits := taskAudits(t, db); len(audits) != tt.want {
+				t.Fatalf("audit count = %d, want %d", len(audits), tt.want)
+			}
+		})
+	}
+}
+
+func TestCPUAlarmIgnoresStaleLatestSample(t *testing.T) {
+	db := newTaskTestDB(t)
+	now := time.Now().Truncate(time.Second)
+	createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 0, Threshold: 80})
+	seedTaskHost(t, db, "agent-a", "host-a")
+	staleAt := now.Add(-2 * time.Minute)
+	createTaskRecord(t, db, &model.MonitorCPU{
+		Model:      gorm.Model{CreatedAt: staleAt},
+		AgentID:    "agent-a",
+		Timestamp:  staleAt,
+		CPUPercent: 95,
+	})
+	task := NewTask(db)
+	task.now = func() time.Time { return now }
+	if err := task.CPUAlarmTask(context.Background()); err != nil {
+		t.Fatalf("CPUAlarmTask: %v", err)
+	}
+	if audits := taskAudits(t, db); len(audits) != 0 {
+		t.Fatalf("audit count = %d, want 0 for stale data", len(audits))
+	}
+}
+
+func TestMemoryAlarmUsesZeroToOneHundredPercentScale(t *testing.T) {
+	db := newTaskTestDB(t)
+	now := time.Now().Truncate(time.Second)
+	createTaskRecord(t, db, &model.AlarmThreshold{Type: "memory", Duration: 0, Threshold: 80})
+	seedTaskHost(t, db, "agent-a", "host-a")
+	createTaskRecord(t, db, &model.MonitorMemory{
+		Model:      gorm.Model{CreatedAt: now},
+		AgentID:    "agent-a",
+		Timestamp:  now,
+		MemPercent: 65.2,
+	})
+	task := NewTask(db)
+	task.now = func() time.Time { return now }
+	if err := task.MemoryAlarmTask(context.Background()); err != nil {
+		t.Fatalf("MemoryAlarmTask: %v", err)
+	}
+	if audits := taskAudits(t, db); len(audits) != 0 {
+		t.Fatalf("audit count = %d, want 0 for memory 65.2%% below 80%%", len(audits))
+	}
+}
+
+func TestDiskAlarmUsesPercentScaleAndDurationWindow(t *testing.T) {
+	t.Run("55 percent is below 85 percent", func(t *testing.T) {
+		db := newTaskTestDB(t)
+		now := time.Now().Truncate(time.Second)
+		createTaskRecord(t, db, &model.AlarmThreshold{Type: "disk", Duration: 0, Threshold: 85})
+		seedTaskHost(t, db, "agent-a", "host-a")
+		createTaskRecord(t, db, &model.MonitorDisk{
+			Model:       gorm.Model{CreatedAt: now},
+			AgentID:     "agent-a",
+			Timestamp:   now,
+			Device:      "/dev/disk1",
+			DiskPercent: 55,
+		})
+		task := NewTask(db)
+		task.now = func() time.Time { return now }
+		if err := task.DiskAlarmTask(context.Background()); err != nil {
+			t.Fatalf("DiskAlarmTask: %v", err)
+		}
+		if audits := taskAudits(t, db); len(audits) != 0 {
+			t.Fatalf("audit count = %d, want 0", len(audits))
+		}
+	})
+
+	t.Run("complete sustained window fires", func(t *testing.T) {
+		db := newTaskTestDB(t)
+		now := time.Now().Truncate(time.Second)
+		createTaskRecord(t, db, &model.AlarmThreshold{Type: "disk", Duration: 2, Threshold: 85})
+		seedTaskHost(t, db, "agent-a", "host-a")
+		for _, offset := range []time.Duration{-2 * time.Minute, -time.Minute, 0} {
+			observedAt := now.Add(offset)
+			createTaskRecord(t, db, &model.MonitorDisk{
+				Model:       gorm.Model{CreatedAt: observedAt},
+				AgentID:     "agent-a",
+				Timestamp:   observedAt,
+				Device:      "/dev/disk1",
+				DiskPercent: 90,
+			})
+		}
+		task := NewTask(db)
+		task.SetMailSender(&stubMailSender{})
+		task.now = func() time.Time { return now }
+		if err := task.DiskAlarmTask(context.Background()); err != nil {
+			t.Fatalf("DiskAlarmTask: %v", err)
+		}
+		audits := taskAudits(t, db)
+		if len(audits) != 1 || !strings.Contains(audits[0].Operate, "连续 2 分钟") {
+			t.Fatalf("audits = %+v, want one sustained disk alarm", audits)
+		}
+	})
+}
+
+func TestAlarmRecoveryNotifiesOnceAndAllowsRetrigger(t *testing.T) {
+	db := newTaskTestDB(t)
+	now := time.Now().Truncate(time.Second)
+	createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 0, Threshold: 80})
+	seedTaskHost(t, db, "agent-a", "host-a")
+	task := NewTask(db)
+	mail := &stubMailSender{}
+	task.SetMailSender(mail)
+	task.now = func() time.Time { return now }
+
+	insertCPU := func(value float64) {
+		createTaskRecord(t, db, &model.MonitorCPU{
+			Model:      gorm.Model{CreatedAt: now},
+			AgentID:    "agent-a",
+			Timestamp:  now,
+			CPUPercent: value,
+		})
+	}
+	insertCPU(95)
+	if err := task.CPUAlarmTask(context.Background()); err != nil {
+		t.Fatalf("initial CPUAlarmTask: %v", err)
+	}
+	now = now.Add(time.Second)
+	insertCPU(30)
+	if err := task.CPUAlarmTask(context.Background()); err != nil {
+		t.Fatalf("recovery CPUAlarmTask: %v", err)
+	}
+	if err := task.CPUAlarmTask(context.Background()); err != nil {
+		t.Fatalf("repeated recovery CPUAlarmTask: %v", err)
+	}
+	now = now.Add(time.Second)
+	insertCPU(96)
+	if err := task.CPUAlarmTask(context.Background()); err != nil {
+		t.Fatalf("retrigger CPUAlarmTask: %v", err)
+	}
+
+	audits := taskAudits(t, db)
+	if len(audits) != 3 {
+		t.Fatalf("audit count = %d, want alarm, one recovery, and retrigger", len(audits))
+	}
+	if !strings.Contains(audits[1].Operate, "恢复") {
+		t.Fatalf("second audit = %q, want recovery", audits[1].Operate)
+	}
+	if len(mail.messages) != 3 {
+		t.Fatalf("notification count = %d, want 3", len(mail.messages))
+	}
+}
+
+func TestServiceTaskIgnoresStaleContainerState(t *testing.T) {
+	db := newTaskTestDB(t)
+	now := time.Now().Truncate(time.Second)
+	seedTaskHost(t, db, "agent-a", "host-a")
+	staleAt := now.Add(-3 * time.Minute)
+	createTaskRecord(t, db, &model.MonitorContainer{
+		Model:     gorm.Model{CreatedAt: staleAt},
+		AgentID:   "agent-a",
+		Timestamp: staleAt,
+		Name:      "web",
+		State:     "running",
+	})
+	task := NewTask(db)
+	task.now = func() time.Time { return now }
+	task.cache.Set("container:agent-a:web", "exited", time.Minute)
+	if err := task.ServiceTask(context.Background()); err != nil {
+		t.Fatalf("ServiceTask: %v", err)
+	}
+	if audits := taskAudits(t, db); len(audits) != 0 {
+		t.Fatalf("audit count = %d, want 0 for stale container state", len(audits))
+	}
+}
+
+func TestTriggerAlarmDeduplicatesConcurrentCalls(t *testing.T) {
+	db := newTaskTestDB(t)
+	task := NewTask(db)
+	task.SetMailSender(&stubMailSender{})
+
+	const callers = 20
+	errs := make(chan error, callers)
+	var wait sync.WaitGroup
+	for range callers {
+		wait.Add(1)
+		go func() {
+			defer wait.Done()
+			errs <- task.triggerAlarm(context.Background(), "cpu:agent-a", "high CPU", "agent-a")
+		}()
+	}
+	wait.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Fatalf("triggerAlarm: %v", err)
+		}
+	}
+	if audits := taskAudits(t, db); len(audits) != 1 {
+		t.Fatalf("audit count = %d, want 1", len(audits))
 	}
 }
 
@@ -332,13 +579,13 @@ func TestCPUAlarmRecoversAfterMetricDrops(t *testing.T) {
 func TestMemoryAlarmTaskEvaluatesAgentsIndependently(t *testing.T) {
 	db := newTaskTestDB(t)
 	now := time.Now()
-	if err := db.Create(&model.AlarmThreshold{Type: "memory", Duration: 2, Threshold: 50}).Error; err != nil {
+	if err := db.Create(&model.AlarmThreshold{Type: "memory", Duration: 0, Threshold: 50}).Error; err != nil {
 		t.Fatalf("create threshold: %v", err)
 	}
 	seedTwoAgents(t, db, now)
 	if err := db.Create(&[]model.MonitorMemory{
-		{AgentID: "agent-a", Timestamp: now, MemPercent: 0.9}, // 90%
-		{AgentID: "agent-b", Timestamp: now, MemPercent: 0.2}, // 20%
+		{AgentID: "agent-a", Timestamp: now, MemPercent: 90},
+		{AgentID: "agent-b", Timestamp: now, MemPercent: 20},
 	}).Error; err != nil {
 		t.Fatalf("create mem rows: %v", err)
 	}
@@ -367,13 +614,13 @@ func TestMemoryAlarmTaskEvaluatesAgentsIndependently(t *testing.T) {
 func TestDiskAlarmTaskScopesByAgent(t *testing.T) {
 	db := newTaskTestDB(t)
 	now := time.Now()
-	if err := db.Create(&model.AlarmThreshold{Type: "disk", Duration: 2, Threshold: 50}).Error; err != nil {
+	if err := db.Create(&model.AlarmThreshold{Type: "disk", Duration: 0, Threshold: 50}).Error; err != nil {
 		t.Fatalf("create threshold: %v", err)
 	}
 	seedTwoAgents(t, db, now)
 	if err := db.Create(&[]model.MonitorDisk{
-		{AgentID: "agent-a", Timestamp: now, Device: "/dev/sda1", DiskPercent: 0.9},
-		{AgentID: "agent-b", Timestamp: now, Device: "/dev/sda1", DiskPercent: 0.1},
+		{AgentID: "agent-a", Timestamp: now, Device: "/dev/sda1", DiskPercent: 90},
+		{AgentID: "agent-b", Timestamp: now, Device: "/dev/sda1", DiskPercent: 10},
 	}).Error; err != nil {
 		t.Fatalf("create disk rows: %v", err)
 	}
@@ -466,7 +713,7 @@ func TestResourceAlarmTasksSendDingTalk(t *testing.T) {
 			alarmType: "memory",
 			threshold: 80,
 			seed: func(t *testing.T, db *database.DB) {
-				createTaskRecord(t, db, &model.MonitorMemory{AgentID: "agent-a", Timestamp: time.Now(), MemPercent: 0.95})
+				createTaskRecord(t, db, &model.MonitorMemory{AgentID: "agent-a", Timestamp: time.Now(), MemPercent: 95})
 			},
 			run:          func(task *Task) error { return task.MemoryAlarmTask(context.Background()) },
 			messageParts: []string{"agent-a", "host-a", "内存", "80%"},
@@ -476,7 +723,7 @@ func TestResourceAlarmTasksSendDingTalk(t *testing.T) {
 			alarmType: "disk",
 			threshold: 80,
 			seed: func(t *testing.T, db *database.DB) {
-				createTaskRecord(t, db, &model.MonitorDisk{AgentID: "agent-a", Timestamp: time.Now(), Device: "/dev/disk1", DiskPercent: 0.95})
+				createTaskRecord(t, db, &model.MonitorDisk{AgentID: "agent-a", Timestamp: time.Now(), Device: "/dev/disk1", DiskPercent: 95})
 			},
 			run:          func(task *Task) error { return task.DiskAlarmTask(context.Background()) },
 			messageParts: []string{"agent-a", "host-a", "磁盘", "/dev/disk1", "80%"},
@@ -486,7 +733,7 @@ func TestResourceAlarmTasksSendDingTalk(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db := newTaskTestDB(t)
-			createTaskRecord(t, db, &model.AlarmThreshold{Type: tt.alarmType, Duration: 2, Threshold: tt.threshold})
+			createTaskRecord(t, db, &model.AlarmThreshold{Type: tt.alarmType, Duration: 0, Threshold: tt.threshold})
 			seedTaskHost(t, db, "agent-a", "host-a")
 			createTaskRecord(t, db, &model.DingTalk{
 				Key:     model.DefaultDingTalkConfigKey,
@@ -522,7 +769,7 @@ func TestResourceAlarmTasksSendDingTalk(t *testing.T) {
 func TestNotificationChannelsDoNotBlockEachOther(t *testing.T) {
 	newConfiguredTask := func(t *testing.T) (*Task, *database.DB) {
 		db := newTaskTestDB(t)
-		createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 2, Threshold: 80})
+		createTaskRecord(t, db, &model.AlarmThreshold{Type: "cpu", Duration: 0, Threshold: 80})
 		seedTaskHost(t, db, "agent-a", "host-a")
 		createTaskRecord(t, db, &model.MonitorCPU{AgentID: "agent-a", Timestamp: time.Now(), CPUPercent: 95})
 		createTaskRecord(t, db, &model.DingTalk{

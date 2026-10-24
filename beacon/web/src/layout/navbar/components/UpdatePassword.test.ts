@@ -6,7 +6,7 @@ import UpdatePassword from './UpdatePassword.vue'
 
 const mocks = vi.hoisted(() => ({
     replace: vi.fn(),
-    setToken: vi.fn(),
+    clearSession: vi.fn(),
     success: vi.fn(),
     updatePassword: vi.fn(),
 }))
@@ -22,7 +22,7 @@ vi.mock('@/components/Message/message.ts', () => ({
 vi.mock('@/store', () => ({
     default: () => ({
         user: {
-            setToken: mocks.setToken,
+            clearSession: mocks.clearSession,
         },
     }),
 }))
@@ -90,7 +90,7 @@ async function submitPasswordUpdate() {
     })
     const inputs = wrapper.findAll('input')
     await inputs[1].setValue('old-pass')
-    await inputs[2].setValue('new-pass')
+    await inputs[2].setValue('New-Secure-Password9!')
     await wrapper.findAll('button')[1].trigger('click')
     await flushPromises()
     return wrapper
@@ -110,10 +110,10 @@ describe('update password drawer', () => {
         expect(mocks.updatePassword).toHaveBeenCalledWith({
             username: 'admin',
             old_password: 'old-pass',
-            new_password: 'new-pass',
+            new_password: 'New-Secure-Password9!',
         })
         expect(mocks.success).toHaveBeenCalledWith('更新成功')
-        expect(mocks.setToken).toHaveBeenCalledWith('', '')
+        expect(mocks.clearSession).toHaveBeenCalledOnce()
         expect(mocks.replace).toHaveBeenCalledWith('/login')
         expect(wrapper.emitted('update:visible')).toEqual([[false]])
     })
@@ -124,7 +124,7 @@ describe('update password drawer', () => {
         const wrapper = await submitPasswordUpdate()
 
         expect(mocks.success).not.toHaveBeenCalled()
-        expect(mocks.setToken).not.toHaveBeenCalled()
+        expect(mocks.clearSession).not.toHaveBeenCalled()
         expect(mocks.replace).not.toHaveBeenCalled()
         expect(wrapper.emitted('update:visible')).toBeUndefined()
     })

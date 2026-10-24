@@ -25,6 +25,7 @@ type IAuthRepository interface {
 	Login(ctx context.Context, args schema.LoginArgs) (model.User, error)
 	PassUpdate(ctx context.Context, args schema.PasswordUpdateArgs) error
 	UserInfo(ctx context.Context, userID string) (model.User, error)
+	MustChangePassword(ctx context.Context, userID string) (bool, error)
 }
 
 type AuthRepo struct {
@@ -66,11 +67,22 @@ func (a *AuthRepo) PassUpdate(ctx context.Context, args schema.PasswordUpdateArg
 			return err
 		}
 
-		if err := tx.Model(&model.User{}).Where("username = ?", args.Username).Update("password", hashed).Error; err != nil {
+		if err := tx.Model(&model.User{}).Where("username = ?", args.Username).Updates(map[string]any{
+			"password":             hashed,
+			"must_change_password": false,
+		}).Error; err != nil {
 			return err
 		}
 		return nil
 	})
+}
+
+func (a *AuthRepo) MustChangePassword(ctx context.Context, userID string) (bool, error) {
+	var user model.User
+	if err := a.DB.WithContext(ctx).Select("must_change_password").Where("id = ?", userID).First(&user).Error; err != nil {
+		return false, err
+	}
+	return user.MustChangePassword, nil
 }
 
 func (a *AuthRepo) UserInfo(ctx context.Context, userID string) (model.User, error) {

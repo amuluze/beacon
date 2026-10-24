@@ -3,15 +3,23 @@ version: '3'
 vars:
   APP: beacon
   SERVER: ./cmd/{{.APP}}
-  VERSION:
-    sh: cat VERSION
+  BEACON_VERSION:
+    # Included Taskfiles inherit the caller's TASKFILE_DIR in some Task
+    # versions. Resolve from the workspace root when included, while keeping
+    # standalone `cd beacon && task ...` usage working.
+    sh: |
+      if [ -f "{{.ROOT_DIR}}/beacon/VERSION" ]; then
+        cat "{{.ROOT_DIR}}/beacon/VERSION"
+      else
+        cat "{{.TASKFILE_DIR}}/VERSION"
+      fi
   REGISTRY: registry.cn-hangzhou.aliyuncs.com
   # amd64 与 arm64 走不同的镜像仓库，对齐 manager.sh 中 BEACON_ARCH 分支：
   #   amd64 -> amuluze/beacon
   #   arm64 -> amuluze/beacon-arm
   IMAGE: '{{.REGISTRY}}/amuluze/beacon'
   IMAGE_ARM: '{{.REGISTRY}}/amuluze/beacon-arm'
-  TAG: '{{.VERSION}}'
+  TAG: '{{.BEACON_VERSION}}'
   DEV_CONFIG_FILE: '{{.TASKFILE_DIR}}/configs/config.dev.toml'
   MODEL_FILE: '{{.TASKFILE_DIR}}/configs/model.conf'
 
@@ -41,7 +49,7 @@ tasks:
       GIT_BRANCH:
         sh: git rev-parse --abbrev-ref HEAD
     cmds:
-      - go build -ldflags "-w -s -X main.BuildStamp={{.STAMP}} -X main.GitHash={{.GIT_HASH}} -X main.GitBranch={{.GIT_BRANCH}} -X main.Version={{.VERSION}}" -o {{.APP}} {{.SERVER}}
+      - go build -ldflags "-w -s -X main.BuildStamp={{.STAMP}} -X main.GitHash={{.GIT_HASH}} -X main.GitBranch={{.GIT_BRANCH}} -X main.Version={{.BEACON_VERSION}}" -o {{.APP}} {{.SERVER}}
 
   amd64:
     desc: Build linux/amd64 Docker image into local Docker

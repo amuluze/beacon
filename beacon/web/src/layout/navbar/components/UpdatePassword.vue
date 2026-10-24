@@ -5,11 +5,14 @@ import { success } from '@/components/Message/message.ts'
 import useStore from '@/store'
 import { useI18n } from 'vue-i18n'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   visible: boolean
   username: string
   title?: string
-}>()
+  mandatory?: boolean
+}>(), {
+  mandatory: false,
+})
 const emits = defineEmits<{
   (e: 'update:visible', visible: boolean): void
   (e: 'close'): void
@@ -39,7 +42,7 @@ const passwordUpdateMode = ref<RuleForm>({
   old_password: '',
   new_password: '',
 })
-const passwordUpdateLoading = ref(false)
+const passwordUpdateLoading = shallowRef(false)
 const rules = ref({
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
@@ -67,7 +70,7 @@ async function confirmPasswordUpdate(formEl: FormInstance | undefined) {
     await updatePassword(passwordUpdateMode.value)
     drawerVisible.value = false
     success('更新成功')
-    store.user.setToken('', '')
+    store.user.clearSession()
     await router.replace('/login')
   }
   catch {
@@ -80,7 +83,14 @@ const { t } = useI18n()
 </script>
 
 <template>
-    <el-drawer v-model="drawerVisible" :title="t('account.updatePassword')" size="30%">
+    <el-drawer
+        v-model="drawerVisible"
+        :title="t('account.updatePassword')"
+        size="30%"
+        :close-on-click-modal="!props.mandatory"
+        :close-on-press-escape="!props.mandatory"
+        :show-close="!props.mandatory"
+    >
         <el-form
             ref="passwordUpdateRef"
             :model="passwordUpdateMode"
@@ -100,7 +110,7 @@ const { t } = useI18n()
         </el-form>
 
         <template #footer>
-            <el-button type="primary" plain @click="drawerVisible = false">
+            <el-button v-if="!props.mandatory" type="primary" plain @click="drawerVisible = false">
                 {{ t('account.cancel') }}
             </el-button>
             <el-button

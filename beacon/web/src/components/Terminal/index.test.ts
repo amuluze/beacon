@@ -36,10 +36,6 @@ vi.mock('@xterm/addon-web-links', () => ({
 }))
 vi.mock('@xterm/xterm/css/xterm.css', () => ({}))
 
-vi.mock('@/store/modules/user', () => ({
-    useUserStore: () => ({ token: 'tok' }),
-}))
-
 // --- WebSocket mock ------------------------------------------------------
 interface FakeWS {
     url: string
@@ -152,14 +148,15 @@ describe('terminal component', () => {
         })
     })
 
-    it('includes agent, token, and initial dimensions in the WebSocket URL', async () => {
+    it('uses the same-origin Cookie session without putting credentials in the WebSocket URL', async () => {
         await mountTerminal('node-01')
         await flush()
 
         const url = new URL(instances[0].url)
         expect(url.pathname).toBe('/ws/terminal')
         expect(url.searchParams.get('agent_id')).toBe('node-01')
-        expect(url.searchParams.get('token')).toBe('tok')
+        expect(url.searchParams.has('ticket')).toBe(false)
+        expect(url.searchParams.has('token')).toBe(false)
         expect(url.searchParams.get('rows')).toBe('40')
         expect(url.searchParams.get('cols')).toBe('120')
     })

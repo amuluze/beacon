@@ -221,7 +221,8 @@ func replaceBinary(tmpFile, target string) error {
 	if target == "" {
 		return errors.New("empty target binary path")
 	}
-	if err := os.Chmod(tmpFile, 0o755); err != nil {
+	// #nosec G302 -- executable must retain owner execute permission; group and other permissions are denied.
+	if err := os.Chmod(tmpFile, 0o700); err != nil {
 		return fmt.Errorf("chmod temp: %w", err)
 	}
 	// 备份当前二进制（若存在）

@@ -123,9 +123,8 @@ type ImagePullArgs struct {
 type ImagePullReply struct{}
 
 type ImageImportArgs struct {
-	SourceFile string `json:"source_file"`
-	FileName   string `json:"file_name"`
-	Data       []byte `json:"-"`
+	FileName string `json:"file_name"`
+	Data     []byte `json:"-"`
 }
 
 type ImageImportReply struct{}

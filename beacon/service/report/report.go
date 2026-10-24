@@ -3,6 +3,7 @@
 package report
 
 import (
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -34,11 +35,11 @@ func NewService(db *database.DB, token string) *Service {
 
 // HandleReport is the HTTP POST handler for Agent monitoring data reports.
 func (s *Service) HandleReport(c *fiber.Ctx) error {
-	token := c.Get("X-Install-Token")
-	if token == "" {
-		token = c.Query("token")
+	if s.Token == "" {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{"error": "report token not configured"})
 	}
-	if s.Token != "" && token != s.Token {
+	token := c.Get("X-Install-Token")
+	if subtle.ConstantTimeCompare([]byte(token), []byte(s.Token)) != 1 {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid token"})
 	}
 

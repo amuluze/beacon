@@ -23,6 +23,8 @@ control:
   server: 127.0.0.1:17000
   agent_id: agent-1
   join_token: secret
+  tls:
+    enable: true
 task:
   interval: 30
   disk:
@@ -30,14 +32,18 @@ task:
   ethernet:
     names: []
   report:
-    url: "http://localhost:8000/report"
+    url: "https://localhost:8000/report"
     token: "rpt-token"
     agent_id: agent-1
 db:
   dbtype: sqlite
   dbname: /tmp/collia-test
 `
-	cfg, err := NewConfig(writeTempYAML(t, yaml), Prefix("/test"))
+	configPath := writeTempYAML(t, yaml)
+	if err := os.Chmod(configPath, 0o644); err != nil {
+		t.Fatalf("chmod config: %v", err)
+	}
+	cfg, err := NewConfig(configPath, Prefix("/test"))
 	if err != nil {
 		t.Fatalf("NewConfig: %v", err)
 	}
@@ -50,11 +56,18 @@ db:
 	if cfg.Task.Interval != 30 {
 		t.Fatalf("task.interval = %d, want 30", cfg.Task.Interval)
 	}
-	if cfg.Task.Report.URL != "http://localhost:8000/report" {
+	if cfg.Task.Report.URL != "https://localhost:8000/report" {
 		t.Fatalf("task.report.url = %q", cfg.Task.Report.URL)
 	}
 	if cfg.prefix != Prefix("/test") {
 		t.Fatalf("prefix = %q, want /test", cfg.prefix)
+	}
+	info, err := os.Stat(configPath)
+	if err != nil {
+		t.Fatalf("stat config: %v", err)
+	}
+	if got := info.Mode().Perm(); got != 0o600 {
+		t.Fatalf("config permissions = %o, want 600", got)
 	}
 }
 

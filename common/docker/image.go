@@ -92,7 +92,12 @@ func (m *Manager) TagImage(ctx context.Context, oldTag, newTag string) error {
 }
 
 func (m *Manager) ImportImage(ctx context.Context, sourceFile string) error {
-	inputFile, err := os.Open(sourceFile)
+	root, name, err := openFileRoot(sourceFile)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	inputFile, err := root.Open(name)
 	if err != nil {
 		return err
 	}
@@ -133,8 +138,17 @@ func (m *Manager) ExportImage(ctx context.Context, imageIDs []string, targetFile
 			return
 		}
 	}(resp)
-	outputFile, err := os.Create(targetFile)
+	root, name, err := openFileRoot(targetFile)
 	if err != nil {
+		return err
+	}
+	defer root.Close()
+	outputFile, err := root.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
+	if err != nil {
+		return err
+	}
+	if err := root.Chmod(name, 0o600); err != nil {
+		_ = outputFile.Close()
 		return err
 	}
 	defer func(outputFile *os.File) {

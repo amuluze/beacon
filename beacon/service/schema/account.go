@@ -46,7 +46,7 @@ type UserQueryReply struct {
 
 type UserCreateArgs struct {
 	Username string   `json:"username" validate:"required,alphanum,gte=1,lte=64"`
-	Password string   `json:"password" validate:"required,gte=1,lte=128"`
+	Password string   `json:"password" validate:"required,gte=12,lte=128"`
 	Remark   string   `json:"remark,omitempty" validate:"lte=256"`
 	Status   int      `json:"status" validate:"required,oneof=0 1"`
 	RoleIDs  []string `json:"role_ids" validate:"required,min=1,max=32"`

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -37,6 +38,44 @@ Prefix = "auth_"
 	}
 	if cfg.Auth.SigningKey != "overridden-strong-secret-from-env" {
 		t.Fatalf("expected SigningKey overridden by env, got %q", cfg.Auth.SigningKey)
+	}
+}
+
+func TestNewConfig_EnvOverrideAppEnv(t *testing.T) {
+	const toml = `
+[App]
+Env = "development"
+`
+	t.Setenv("BEACON_APP_ENV", "production")
+
+	cfg, err := NewConfig(writeConfig(t, toml))
+	if err != nil {
+		t.Fatalf("NewConfig: %v", err)
+	}
+	if cfg.App.Env != "production" {
+		t.Fatalf("expected App.Env overridden by env, got %q", cfg.App.Env)
+	}
+}
+
+func TestNewConfigRejectsInsecureProductionTransport(t *testing.T) {
+	const toml = `
+[App]
+Env = "production"
+
+[AgentInstall]
+Enable = true
+PublicBaseURL = "http://beacon.example.com"
+TLSEnable = true
+
+[Control]
+Enable = true
+
+[Control.TLS]
+Enable = true
+`
+	_, err := NewConfig(writeConfig(t, toml))
+	if !errors.Is(err, ErrHTTPSPublicBaseURLRequired) {
+		t.Fatalf("NewConfig() error = %v, want ErrHTTPSPublicBaseURLRequired", err)
 	}
 }
 
@@ -151,6 +190,7 @@ func TestResolveSigningKey_ProductionRejectsInsecure(t *testing.T) {
 	}{
 		{"empty", "", true},
 		{"weak default", "amprobe", true},
+		{"weak current default", "beacon", true},
 		{"too short", "short", true},
 		{"strong", "a-very-long-random-production-secret-12345", false},
 	}

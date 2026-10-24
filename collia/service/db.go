@@ -7,12 +7,13 @@ package service
 import (
 	"collia/service/model"
 	"common/database"
+	"strings"
 )
 
 func NewDB(config *Config, models *model.Models) (*database.DB, error) {
 	dbConfig := config.DB
 	db, err := database.NewDB(
-		database.WithDebug(true),
+		database.WithDebug(false),
 		database.WithType(dbConfig.DBType),
 		database.WithHost(dbConfig.Host),
 		database.WithPort(dbConfig.Port),
@@ -27,7 +28,16 @@ func NewDB(config *Config, models *model.Models) (*database.DB, error) {
 		return nil, err
 	}
 	// 启用WAL模式
-	db.Exec("PRAGMA journal_mode=WAL;")
+	if err := db.Exec("PRAGMA journal_mode=WAL;").Error; err != nil {
+		db.Close()
+		return nil, err
+	}
+	if strings.EqualFold(dbConfig.DBType, "sqlite") || dbConfig.DBType == "" {
+		if err := database.SecureSQLiteFiles(dbConfig.DBName); err != nil {
+			db.Close()
+			return nil, err
+		}
+	}
 
 	err = db.AutoMigrate(models.GetAllModels()...)
 	if err != nil {

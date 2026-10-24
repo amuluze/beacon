@@ -201,13 +201,11 @@ type ImageDeleteArgs struct {
 type ImageDeleteReply struct{}
 
 type ImageImportArgs struct {
-	SourceFile string `json:"source_file"`
-	FileName   string `json:"file_name"`
-	Data       []byte `json:"data"`
+	FileName string `json:"file_name"`
+	Data     []byte `json:"data"`
 }
 
 type ImageImportReply struct{}
-
 
 type NetworkCreateArgs struct {
 	Name    string            `json:"name"`

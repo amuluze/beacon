@@ -4,6 +4,8 @@
 // Description:
 package database
 
+import "io"
+
 type Option func(*option)
 
 type option struct {
@@ -17,6 +19,16 @@ type option struct {
 	MaxLifetime  int
 	MaxOpenConns int
 	MaxIdleConns int
+	LogWriter    io.Writer
+}
+
+// WithLogWriter overrides the destination of parameterized GORM logs. It is
+// primarily useful for embedding and verification; query parameters are never
+// interpolated into the output.
+func WithLogWriter(writer io.Writer) Option {
+	return func(o *option) {
+		o.LogWriter = writer
+	}
 }
 
 func WithDebug(debug bool) Option {

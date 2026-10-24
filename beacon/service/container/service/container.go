@@ -301,9 +301,8 @@ func (a *ContainerService) ImageDelete(ctx context.Context, args schema.ImageDel
 
 func (a *ContainerService) ImageImport(ctx context.Context, args schema.ImageImportArgs) error {
 	rpcArgs := rpcSchema.ImageImportArgs{
-		SourceFile: args.SourceFile,
-		FileName:   args.FileName,
-		Data:       args.Data,
+		FileName: args.FileName,
+		Data:     args.Data,
 	}
 	return a.ContainerRepo.ImageImport(ctx, rpcArgs)
 }

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"beacon/pkg/auth"
+	"beacon/pkg/authcookie"
 	"beacon/pkg/contextx"
 	"beacon/service/agent"
 	healthapi "beacon/service/health/api"
@@ -25,6 +26,7 @@ import (
 	alarmAPI "beacon/service/alarm/api"
 	auditAPI "beacon/service/audit/api"
 	authAPI "beacon/service/auth/api"
+	authService "beacon/service/auth/service"
 	containerAPI "beacon/service/container/api"
 	dingTalkAPI "beacon/service/dingtalk/api"
 	hostAPI "beacon/service/host/api"
@@ -41,13 +43,15 @@ type IRouter interface {
 }
 
 type Router struct {
-	config   *Config
-	auth     auth.Auther
-	enforcer *casbin.SyncedEnforcer
+	config         *Config
+	auth           auth.Auther
+	sessionCookies *authcookie.Manager
+	enforcer       *casbin.SyncedEnforcer
 
 	containerAPI *containerAPI.ContainerAPI
 	hostAPI      *hostAPI.HostAPI
 	authAPI      *authAPI.AuthAPI
+	authService  *authService.AuthService
 	auditAPI     *auditAPI.AuditAPI
 	accountAPI   *accountAPI.AccountAPI
 	mailAPI      *mailAPI.MailAPI
@@ -81,7 +85,7 @@ func (a *Router) registerHealthProbes(app *fiber.App) {
 // WebSocket upgrade, auth, and casbin.
 // commonAuthSkipperPaths lists paths that are exempt from authentication and authorization checks.
 // These are typically public endpoints (health probes, login, token refresh) and agent installation.
-var commonAuthSkipperPaths = []string{"/health", "/ready", "/api/v1/index/index", "/api/v1/auth/login", "/api/v1/auth/token_update", "/api/v1/host/install", "/api/v1/host/report"}
+var commonAuthSkipperPaths = []string{"/health", "/ready", "/api/v1/index/index", "/api/v1/auth/csrf", "/api/v1/auth/login", "/api/v1/auth/token_update", "/api/v1/host/install", "/api/v1/host/report"}
 
 func (a *Router) registerMiddlewares(app *fiber.App) {
 	app.Use("/api/v1/auth/login", limiter.New(limiter.Config{
@@ -122,12 +126,17 @@ func (a *Router) registerMiddlewares(app *fiber.App) {
 		}
 		return c.Next()
 	})
+	if a.config.Auth.Enable {
+		app.Use("/api", middleware.CSRFMiddleware(a.sessionCookies))
+	}
 
 	a.registerWebSocketRoutes(app)
 
 	if a.config.Auth.Enable {
 		app.Use(middleware.UserAuthMiddleware(
 			a.auth,
+			a.sessionCookies,
+			a.authService,
 			middleware.AllowPathPrefixSkipper(commonAuthSkipperPaths...),
 		))
 	}
@@ -150,7 +159,7 @@ func (a *Router) registerWebSocketRoutes(app *fiber.App) {
 	})
 
 	if a.config.Auth.Enable {
-		webSocketAuth := middleware.WebSocketUserAuthMiddleware(a.auth)
+		webSocketAuth := middleware.WebSocketUserAuthMiddleware(a.auth, a.sessionCookies)
 		app.Get("/ws/terminal", webSocketAuth, websocket.New(a.terminalHandler.Handle))
 		app.Get("/ws/:id", webSocketAuth, websocket.New(a.loggerHandler.Handler))
 		return
@@ -206,6 +215,7 @@ func (a *Router) registerAgentListRoute(v1 fiber.Router) {
 
 func (a *Router) registerAuthRoutes(v1 fiber.Router) {
 	g := v1.Group("auth")
+	g.Get("/csrf", a.authAPI.CSRF).Name("获取 CSRF Cookie")
 	g.Post("/login", a.authAPI.Login).Name("登录")
 	g.Post("/logout", a.authAPI.Logout).Name("登出")
 	g.Post("/pass_update", a.authAPI.PassUpdate).Name("更新密码")

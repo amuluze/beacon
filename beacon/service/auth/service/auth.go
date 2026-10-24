@@ -20,11 +20,18 @@ var AuthServiceSet = wire.NewSet(NewAuthService, wire.Bind(new(IAuthService), ne
 var _ IAuthService = (*AuthService)(nil)
 
 type IAuthService interface {
-	Login(ctx context.Context, args schema.LoginArgs) (schema.LoginResult, error)
-	Logout(ctx context.Context, token string) error
+	Login(ctx context.Context, args schema.LoginArgs) (Session, error)
+	Logout(ctx context.Context, accessToken, refreshToken string) error
 	PassUpdate(ctx context.Context, args schema.PasswordUpdateArgs) error
-	TokenUpdate(ctx context.Context, token string) (schema.LoginResult, error)
-	UserInfo(ctx context.Context, token string) (schema.UserInfo, error)
+	MustChangePassword(ctx context.Context, userID string) (bool, error)
+	TokenUpdate(ctx context.Context, accessToken, refreshToken string) (Session, error)
+	UserInfo(ctx context.Context) (schema.UserInfo, error)
+}
+
+type Session struct {
+	AccessToken        string
+	RefreshToken       string
+	MustChangePassword bool
 }
 
 type AuthService struct {
@@ -36,23 +43,33 @@ func NewAuthService(auth auth.Auther, authRepo repository.IAuthRepository) *Auth
 	return &AuthService{Auth: auth, AuthRepo: authRepo}
 }
 
-func (a *AuthService) Login(ctx context.Context, args schema.LoginArgs) (schema.LoginResult, error) {
-	var reply schema.LoginResult
+func (a *AuthService) Login(ctx context.Context, args schema.LoginArgs) (Session, error) {
+	var session Session
 	u, err := a.AuthRepo.Login(ctx, args)
 	if err != nil {
-		return reply, err
+		return session, err
 	}
 	tokenInfo, err := a.Auth.GenerateToken(u.ID.String(), u.Username)
 	if err != nil {
-		return reply, err
+		return session, err
 	}
-	reply.AccessToken = tokenInfo.GetAccessToken()
-	reply.RefreshToken = tokenInfo.GetRefreshToken()
-	return reply, nil
+	session.AccessToken = tokenInfo.GetAccessToken()
+	session.RefreshToken = tokenInfo.GetRefreshToken()
+	session.MustChangePassword = u.MustChangePassword
+	return session, nil
 }
 
-func (a *AuthService) Logout(ctx context.Context, token string) error {
-	return a.Auth.DestroyToken(token)
+func (a *AuthService) Logout(ctx context.Context, accessToken, refreshToken string) error {
+	var firstErr error
+	for _, token := range []string{accessToken, refreshToken} {
+		if token == "" {
+			continue
+		}
+		if err := a.Auth.DestroyToken(token); err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+	return firstErr
 }
 
 func (a *AuthService) PassUpdate(ctx context.Context, args schema.PasswordUpdateArgs) error {
@@ -62,29 +79,41 @@ func (a *AuthService) PassUpdate(ctx context.Context, args schema.PasswordUpdate
 	if args.OldPassword == args.NewPassword {
 		return errors.New("same password")
 	}
+	if err := auth.ValidatePassword(args.NewPassword); err != nil {
+		return errors.New400Error(err.Error())
+	}
 	return a.AuthRepo.PassUpdate(ctx, args)
 }
 
-func (a *AuthService) TokenUpdate(ctx context.Context, token string) (schema.LoginResult, error) {
-	var reply schema.LoginResult
-	userID, username, err := a.Auth.ParseToken(token, "refresh_token")
+func (a *AuthService) MustChangePassword(ctx context.Context, userID string) (bool, error) {
+	return a.AuthRepo.MustChangePassword(ctx, userID)
+}
+
+func (a *AuthService) TokenUpdate(ctx context.Context, accessToken, refreshToken string) (Session, error) {
+	var session Session
+	userID, username, err := a.Auth.ParseToken(refreshToken, "refresh_token")
 	if err != nil {
-		return reply, err
+		return session, err
 	}
 	tokenInfo, err := a.Auth.GenerateToken(userID, username)
 	if err != nil {
-		return reply, err
+		return session, err
 	}
-	reply.AccessToken = tokenInfo.GetAccessToken()
-	reply.RefreshToken = tokenInfo.GetRefreshToken()
-	return reply, nil
+	if err := a.Logout(ctx, accessToken, refreshToken); err != nil {
+		_ = a.Auth.DestroyToken(tokenInfo.GetAccessToken())
+		_ = a.Auth.DestroyToken(tokenInfo.GetRefreshToken())
+		return session, err
+	}
+	session.AccessToken = tokenInfo.GetAccessToken()
+	session.RefreshToken = tokenInfo.GetRefreshToken()
+	return session, nil
 }
 
-func (a *AuthService) UserInfo(ctx context.Context, token string) (schema.UserInfo, error) {
+func (a *AuthService) UserInfo(ctx context.Context) (schema.UserInfo, error) {
 	var reply schema.UserInfo
-	userID, _, err := a.Auth.ParseToken(token, "access_token")
-	if err != nil {
-		return reply, err
+	userID := contextx.FromUserID(ctx)
+	if userID == "" {
+		return reply, auth.ErrInvalidToken
 	}
 	user, err := a.AuthRepo.UserInfo(ctx, userID)
 	if err != nil {
@@ -94,5 +123,6 @@ func (a *AuthService) UserInfo(ctx context.Context, token string) (schema.UserIn
 	reply.Username = user.Username
 	reply.Status = user.Status
 	reply.IsAdmin = user.IsAdmin
+	reply.MustChangePassword = user.MustChangePassword
 	return reply, nil
 }

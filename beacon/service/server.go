@@ -73,8 +73,11 @@ func Init(ctx context.Context, opts ...Option) (func(), error) {
 	// 安装统计上报不参与启动成败判定。
 	go ReportInstallation(ctx, injector.Config)
 
-	// 初始化预设数据
-	injector.Prepare.Init(injector.App)
+	// 初始化预设数据。账号、权限或阈值初始化失败时必须阻止服务启动。
+	if err := injector.Prepare.Init(injector.App); err != nil {
+		cleanFunc()
+		return nil, fmt.Errorf("initialize required data: %w", err)
+	}
 
 	// 定时任务
 	timedTask := injector.Task

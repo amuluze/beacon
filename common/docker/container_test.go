@@ -8,6 +8,7 @@ import (
 	"context"
 	"math"
 	"testing"
+	"time"
 )
 
 func TestPercentageReturnsJSONSafeValue(t *testing.T) {
@@ -36,89 +37,98 @@ func TestPercentageReturnsJSONSafeValue(t *testing.T) {
 	}
 }
 
-func TestListContainer(t *testing.T) {
-	manager, _ := NewManager()
-	containers, _ := manager.ListContainer(context.Background())
-	for _, c := range containers {
-		t.Logf("container name: %s, container ports: %#v, container labels: %#v, container network: %#v\n", c.Name, c.Ports, c.Labels, c.Network)
-	}
-}
+func TestContainerLifecycle(t *testing.T) {
+	manager := testManager(t)
+	imageName := ensureTestImage(t, manager)
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	defer cancel()
 
-func TestContainerCreate(t *testing.T) {
-	manager, _ := NewManager()
-	cid, err := manager.CreateContainer(
-		context.Background(),
-		"redis",
-		"redis:7.0.5",
-		"test",
-		[]string{"6379:6379"},
-		[]string{"/Users/amu/Desktop/common.scss:/app/common.scss:rw"},
-		[]string{},
-		[]string{"redis-server", "--requirepass", "coreblox123"},
-		map[string]string{CreatedByProbe: "true", ServerTypeLabel: WebServer},
+	networkName := uniqueDockerName("network")
+	networkID, err := manager.CreateNetwork(ctx, networkName, "bridge", "", "", map[string]string{CreatedByProbe: "integration-test"})
+	if err != nil {
+		t.Fatalf("create network: %v", err)
+	}
+	cleanupNetwork(t, manager, networkID)
+
+	containerName := uniqueDockerName("container")
+	containerID, err := manager.CreateContainer(
+		ctx,
+		containerName,
+		imageName,
+		networkName,
+		nil,
+		nil,
+		[]string{"BEACON_DOCKER_INTEGRATION=1"},
+		[]string{"sh", "-c", "echo beacon-docker-integration-ready; sleep 60"},
+		map[string]string{CreatedByProbe: "integration-test", ServerTypeLabel: WebServer},
 	)
 	if err != nil {
-		t.Error("create container error: ", err)
+		t.Fatalf("create container: %v", err)
 	}
-	t.Logf("container id: %#v", cid)
-}
+	cleanupContainer(t, manager, containerID)
 
-func TestContainerMem(t *testing.T) {
-	manager, _ := NewManager()
-	percent, used, limit, err := manager.GetContainerMem(context.Background(), "5c28bf6e16be")
-	if err != nil {
-		panic(err)
+	if err := manager.StartContainer(ctx, containerID); err != nil {
+		t.Fatalf("start container: %v", err)
 	}
-	t.Logf("container mem percent: %v, used: %v, limit: %v \n", percent, used, limit)
-}
+	if exists, err := manager.ContainerExists(ctx, containerID); err != nil || !exists {
+		t.Fatalf("container exists = %v, err = %v", exists, err)
+	}
+	if exists, err := manager.HasSameNameContainer(ctx, containerName); err != nil || !exists {
+		t.Fatalf("container name exists = %v, err = %v", exists, err)
+	}
+	if got, err := manager.GetContainerIDByContainerName(ctx, containerName); err != nil || got != containerID {
+		t.Fatalf("container ID by name = %q, err = %v, want %q", got, err, containerID)
+	}
 
-func TestContainerCPU(t *testing.T) {
-	manager, _ := NewManager()
-	cpu, err := manager.GetContainerCpu(context.Background(), "5c28bf6e16be")
+	containers, err := manager.ListContainer(ctx)
 	if err != nil {
-		panic(err)
+		t.Fatalf("list containers: %v", err)
 	}
-	t.Logf("cpu percent: %v\n", cpu)
-}
+	found := false
+	for _, container := range containers {
+		if container.ID == containerID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("created container %s missing from container list", containerID)
+	}
 
-func TestRenameContainer(t *testing.T) {
-	manager, _ := NewManager()
-	err := manager.RenameContainer(context.Background(), "5c28bf6e16be", "tt")
+	memPercent, _, memLimit, err := manager.GetContainerMem(ctx, containerID)
 	if err != nil {
-		t.Error("rename container error: ", err)
+		t.Fatalf("get container memory: %v", err)
 	}
-}
+	if math.IsNaN(memPercent) || math.IsInf(memPercent, 0) || memLimit <= 0 {
+		t.Fatalf("invalid memory stats: percent=%v limit=%v", memPercent, memLimit)
+	}
+	cpuPercent, err := manager.GetContainerCpu(ctx, containerID)
+	if err != nil {
+		t.Fatalf("get container CPU: %v", err)
+	}
+	if math.IsNaN(cpuPercent) || math.IsInf(cpuPercent, 0) {
+		t.Fatalf("invalid CPU stats: %v", cpuPercent)
+	}
 
-func TestContainerStart(t *testing.T) {
-	manager, _ := NewManager()
-	err := manager.StartContainer(context.Background(), "5c28bf6e16be")
+	logs, err := manager.ContainerLogs(ctx, containerID)
 	if err != nil {
-		t.Error("start container error: ", err)
+		t.Fatalf("open container logs: %v", err)
 	}
-}
+	if err := logs.Close(); err != nil {
+		t.Fatalf("close container logs: %v", err)
+	}
 
-func TestContainerStop(t *testing.T) {
-	manager, _ := NewManager()
-	err := manager.StopContainer(context.Background(), "eedaf881e6c8")
-	if err != nil {
-		t.Error("stop container error: ", err)
+	renamed := uniqueDockerName("renamed")
+	if err := manager.RenameContainer(ctx, containerID, renamed); err != nil {
+		t.Fatalf("rename container: %v", err)
 	}
-}
-
-func TestContainerDelete(t *testing.T) {
-	manager, _ := NewManager()
-	err := manager.DeleteContainer(context.Background(), "eedaf881e6c8")
-	if err != nil {
-		t.Error("delete container error: ", err)
+	if exists, err := manager.HasSameNameContainer(ctx, renamed); err != nil || !exists {
+		t.Fatalf("renamed container exists = %v, err = %v", exists, err)
 	}
-}
-
-func TestContainerExists(t *testing.T) {
-	manager, _ := NewManager()
-	exists, err := manager.ContainerExists(context.Background(), "e79ceb874917")
-	if err != nil {
-		t.Error("container exists error: ", err)
-		return
+	if err := manager.RestartContainer(ctx, containerID); err != nil {
+		t.Fatalf("restart container: %v", err)
 	}
-	t.Log(exists)
+	if err := manager.StopContainer(ctx, containerID); err != nil {
+		t.Fatalf("stop container: %v", err)
+	}
 }

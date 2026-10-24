@@ -89,7 +89,7 @@ func TestReplaceBinaryAtomicWithBackup(t *testing.T) {
 	}
 }
 
-func TestReplaceBinaryChmods0755(t *testing.T) {
+func TestReplaceBinaryChmods0700(t *testing.T) {
 	dir := t.TempDir()
 	target := filepath.Join(dir, "collia")
 	if err := os.WriteFile(target, []byte("old"), 0o755); err != nil {
@@ -106,8 +106,8 @@ func TestReplaceBinaryChmods0755(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.Mode().Perm() != 0o755 {
-		t.Fatalf("perm = %o, want 755", info.Mode().Perm())
+	if info.Mode().Perm() != 0o700 {
+		t.Fatalf("perm = %o, want 700", info.Mode().Perm())
 	}
 }
 

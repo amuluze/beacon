@@ -150,8 +150,21 @@ func TestCreateCertPackage(t *testing.T) {
 	}
 
 	outPath := filepath.Join(t.TempDir(), "node-a.tar.gz")
+	if err := os.WriteFile(outPath, []byte("stale package"), 0o644); err != nil {
+		t.Fatalf("seed package: %v", err)
+	}
+	if err := os.Chmod(outPath, 0o644); err != nil {
+		t.Fatalf("set insecure package permissions: %v", err)
+	}
 	if err := CreateCertPackage(caDir, leafDir, outPath); err != nil {
 		t.Fatalf("CreateCertPackage failed: %v", err)
+	}
+	info, err := os.Stat(outPath)
+	if err != nil {
+		t.Fatalf("stat package: %v", err)
+	}
+	if got := info.Mode().Perm(); got != 0o600 {
+		t.Fatalf("package permissions = %o, want 600", got)
 	}
 
 	f, err := os.Open(outPath)

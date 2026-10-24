@@ -45,13 +45,13 @@ type VersionChecker struct {
 
 // UpdateStatus 是一次版本检查的快照，供 API/UI 读取。
 type UpdateStatus struct {
-	UpdateAvailable  bool   `json:"update_available"`
-	CurrentVersion   string `json:"current_version"`
-	LatestVersion    string `json:"latest_version"`
-	MinRequired      string `json:"min_required_version,omitempty"`
-	ReleaseNotes     string `json:"release_notes,omitempty"`
-	CheckedAt        string `json:"checked_at,omitempty"`
-	LastError        string `json:"last_error,omitempty"`
+	UpdateAvailable bool   `json:"update_available"`
+	CurrentVersion  string `json:"current_version"`
+	LatestVersion   string `json:"latest_version"`
+	MinRequired     string `json:"min_required_version,omitempty"`
+	ReleaseNotes    string `json:"release_notes,omitempty"`
+	CheckedAt       string `json:"checked_at,omitempty"`
+	LastError       string `json:"last_error,omitempty"`
 }
 
 // NewVersionChecker 构造检查器，并应用 Update 配置的默认值（未配置时启用、6h、官方 URL）。

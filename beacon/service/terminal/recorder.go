@@ -22,17 +22,30 @@ type Recorder struct {
 	closed    bool
 }
 
-// NewRecorder creates a recorder that writes to the given file path.
-// The directory is created if it does not exist.
-func NewRecorder(path string, width, height int) (*Recorder, error) {
-	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0750); err != nil {
-		return nil, fmt.Errorf("failed to create session directory: %w", err)
-	}
-
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0640)
+// NewRecorder creates a recorder scoped to baseDir. sessionID is converted to
+// a single file name and os.Root prevents symlink or traversal escapes.
+func NewRecorder(baseDir, sessionID string, width, height int) (*Recorder, string, error) {
+	path, err := CleanSessionPath(baseDir, sessionID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create recording file: %w", err)
+		return nil, "", err
+	}
+	baseDir = filepath.Dir(path)
+	if err := os.MkdirAll(baseDir, 0700); err != nil {
+		return nil, "", fmt.Errorf("failed to create session directory: %w", err)
+	}
+	root, err := os.OpenRoot(baseDir)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to open session directory: %w", err)
+	}
+	defer root.Close()
+
+	file, err := root.OpenFile(filepath.Base(path), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create recording file: %w", err)
+	}
+	if err := root.Chmod(filepath.Base(path), 0600); err != nil {
+		_ = file.Close()
+		return nil, "", fmt.Errorf("failed to secure recording file: %w", err)
 	}
 
 	r := &Recorder{
@@ -44,9 +57,9 @@ func NewRecorder(path string, width, height int) (*Recorder, error) {
 
 	if err := r.writeHeader(); err != nil {
 		_ = file.Close()
-		return nil, err
+		return nil, "", err
 	}
-	return r, nil
+	return r, path, nil
 }
 
 func (r *Recorder) writeHeader() error {
@@ -135,11 +148,6 @@ func CleanSessionPath(baseDir, sessionID string) (string, error) {
 		return "", fmt.Errorf("session path escapes base directory")
 	}
 	return path, nil
-}
-
-// ReadRecording reads the full contents of a recording file. It is intended for tests.
-func ReadRecording(path string) ([]byte, error) {
-	return os.ReadFile(path)
 }
 
 var _ io.Closer = (*Recorder)(nil)

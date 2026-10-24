@@ -5,6 +5,7 @@
 package service
 
 import (
+	"beacon/pkg/fiberx"
 	"beacon/service/middleware"
 	"beacon/web"
 	"net/http"
@@ -29,15 +30,24 @@ func NewFiberApp(config *Config, r IRouter) *fiber.App {
 	app := fiber.New(fiberConfig)
 
 	// 添加中间件
+	app.Use(securityHeadersMiddleware(config))
 	app.Use(cors.New(buildCORSConfig(config.CORS)))
+	if strings.EqualFold(config.App.Env, productionEnv) {
+		app.Use(func(c *fiber.Ctx) error {
+			if c.Path() == "/health" || c.Path() == "/ready" || fiberx.IsHTTPS(c) {
+				return c.Next()
+			}
+			return c.Status(fiber.StatusUpgradeRequired).JSON(fiber.Map{"error": "HTTPS required"})
+		})
+	}
 	// 全局兜底限流：仅作用于 /api/ 路由，按 IP 计数；登录类由独立严格限流器接管。
 	if config.RateLimit.Enable {
 		app.Use(middleware.GlobalRateLimitMiddleware(config.RateLimit.GlobalMax))
 	}
 	app.Use(compress.New())
 	// pprof 暴露运行时内存/goroutine/profile，可泄漏密钥或被用于 DoS。
-	// 仅在非生产模式启用；生产模式禁用，避免 /debug/pprof/* 无鉴权暴露。
-	if !strings.EqualFold(config.App.Env, productionEnv) {
+	// 仅在明确的 development 模式启用；空值和未知环境均按安全默认禁用。
+	if strings.EqualFold(config.App.Env, "development") {
 		app.Use(pprof.New())
 	}
 	app.Use(middleware.PanicMiddleware())
@@ -57,6 +67,23 @@ func NewFiberApp(config *Config, r IRouter) *fiber.App {
 	return app
 }
 
+func securityHeadersMiddleware(config *Config) fiber.Handler {
+	production := strings.EqualFold(config.App.Env, productionEnv)
+	return func(c *fiber.Ctx) error {
+		c.Set("X-Frame-Options", "DENY")
+		c.Set("X-Content-Type-Options", "nosniff")
+		c.Set("Referrer-Policy", "no-referrer")
+		c.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()")
+		if production {
+			c.Set("Content-Security-Policy", "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' wss:")
+			if fiberx.IsHTTPS(c) {
+				c.Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+			}
+		}
+		return c.Next()
+	}
+}
+
 // devAllowOrigins 是未配置 CORS 白名单时的本地开发回退域（Vite 常用端口）。
 // 生产部署应显式配置 [CORS].AllowOrigins，避免回退到宽松的开发域。
 var devAllowOrigins = []string{
@@ -71,7 +98,7 @@ var devAllowOrigins = []string{
 //   - AllowOrigins 非空：严格限定到白名单。
 //   - AllowOrigins 为空：回退到本地开发域（仅适用于开发模式）。
 //
-// 凭证（Authorization）跨域依赖 AllowCredentials 与具体 Origin（不可用通配 *）。
+// HttpOnly Cookie 跨域依赖 AllowCredentials 与具体 Origin（不可用通配 *）。
 func buildCORSConfig(cfg CORS) cors.Config {
 	origins := cfg.AllowOrigins
 	if len(origins) == 0 {
@@ -80,7 +107,7 @@ func buildCORSConfig(cfg CORS) cors.Config {
 	return cors.Config{
 		AllowOrigins:     joinComma(origins),
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS,PATCH",
-		AllowHeaders:     "Origin,Content-Type,Accept,Authorization,X-Agent-ID,X-Install-Token",
+		AllowHeaders:     "Origin,Content-Type,Accept,X-Agent-ID,X-Install-Token,X-CSRF-Token",
 		ExposeHeaders:    "Content-Disposition,X-Agent-ID",
 		AllowCredentials: true,
 		MaxAge:           300,

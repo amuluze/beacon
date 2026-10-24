@@ -3,13 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import LoginView from './index.vue'
 
-const setToken = vi.fn()
 const setUserInfo = vi.fn()
 const setLanguage = vi.fn()
 const clearAgent = vi.fn()
 
 const stubStore = {
-    user: { setToken, setUserInfo },
+    user: { setUserInfo },
     app: { language: 'zh', setLanguage },
     agent: { clear: clearAgent },
 }
@@ -65,8 +64,8 @@ function mountLogin() {
 describe('login view', () => {
     beforeEach(() => {
         vi.clearAllMocks()
-        loginMock.mockResolvedValue({ data: { access_token: 'a', refresh_token: 'r' } })
-        getUserInfoMock.mockResolvedValue({ data: { username: 'admin', status: 1, is_admin: true } })
+        loginMock.mockResolvedValue({ data: { must_change_password: false } })
+        getUserInfoMock.mockResolvedValue({ data: { username: 'admin', status: 1, is_admin: true, must_change_password: false } })
     })
 
     it('renders the branded split layout with slogan and subline', () => {
@@ -98,9 +97,21 @@ describe('login view', () => {
         await Promise.resolve()
 
         expect(loginMock).toHaveBeenCalled()
-        expect(setToken).toHaveBeenCalledWith('a', 'r')
-        expect(setUserInfo).toHaveBeenCalledWith('admin', 1, true)
+        expect(setUserInfo).toHaveBeenCalledWith('admin', 1, true, false)
         expect(clearAgent).toHaveBeenCalledOnce()
         expect(replace).toHaveBeenCalledWith('/monitor')
+    })
+
+    it('redirects bootstrap accounts to mandatory password change', async () => {
+        getUserInfoMock.mockResolvedValueOnce({
+            data: { username: 'admin', status: 1, is_admin: true, must_change_password: true },
+        })
+        const wrapper = mountLogin()
+        await wrapper.find('.form-stub').trigger('submit')
+        await Promise.resolve()
+        await Promise.resolve()
+
+        expect(setUserInfo).toHaveBeenCalledWith('admin', 1, true, true)
+        expect(replace).toHaveBeenCalledWith('/change-password')
     })
 })

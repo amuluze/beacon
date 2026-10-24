@@ -2,11 +2,12 @@ export interface UserInfo {
     name: string
     status: number
     isAdmin: number
+    mustChangePassword: boolean
 }
 
 export interface UserState {
-    token: string
-    refresh: string
+    authenticated: boolean
+    sessionChecked: boolean
     userInfo: UserInfo
 }
 

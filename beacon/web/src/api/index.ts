@@ -15,6 +15,7 @@ import type { ResultData } from '@/interface/result.ts'
 import type { AxiosError, AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios'
 
 import useStore from '@/store'
+import { csrfHeaderName, getCSRFToken } from '@/utils/csrf'
 import axios from 'axios'
 
 const agentScopedPrefixes = [
@@ -64,6 +65,12 @@ interface QueuedRequest {
     reject: (reason?: unknown) => void
 }
 
+interface RetryableRequestConfig extends InternalAxiosRequestConfig {
+    _retry?: boolean
+}
+
+const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+
 class Request {
     service: AxiosInstance
     isRefreshing: boolean
@@ -100,25 +107,20 @@ class Request {
         })
     }
 
-    /** 强制登出：清 token 与排队请求，整页跳转到登录页（hash 路由） */
+    /** 强制登出：清用户态与排队请求，整页跳转到登录页（hash 路由） */
     private forceLogout = (reason: unknown = new Error('登录状态已失效')): void => {
         const store = useStore()
-        store.user.setToken('', '')
+        store.user.clearSession()
         store.agent.clear()
         this.rejectExpiredRequest(reason)
         this.isRefreshing = false
         window.location.href = '/#/login'
     }
 
-    /** 利用 refreshToken 更新 accessToken */
+    /** 利用 HttpOnly refresh Cookie 轮换服务端会话 Cookie */
     private updateAccessTokenByRefreshToken = (): void => {
-        const store = useStore()
-        this.service.post('/api/v1/auth/token_update', {}, {
-            headers: { Authorization: `Bearer ${store.user.refresh}` },
-        }).then((res) => {
-            // 更新本地 token
-            store.user.setToken(res.data.access_token, res.data.refresh_token)
-            // 更新 token 后，重放之前失败的请求
+        this.service.post('/api/v1/auth/token_update', {}).then(() => {
+            // Cookie 已由服务端轮换，重放之前失败的请求。
             this.againRequest()
         }).catch((error) => {
             // 此时 refreshToken 也失效了（或刷新请求本身异常），强制登出返回登录页
@@ -147,16 +149,18 @@ class Request {
         /**
          * 请求拦截器
          * 客户端发送请求 -> [请求拦截器] -> 服务器
-         * token 校验(JWT)：接收服务器返回的 token，存储到 pinia 本地存储当中
+         * JWT 保存在 HttpOnly Cookie 中；前端只补充 Agent 与 CSRF 请求头。
          */
         this.service.interceptors.request.use(
             async (config: InternalAxiosRequestConfig) => {
                 const store = useStore()
-                if (store.user.token !== '' && config.url !== '/api/v1/auth/token_update') {
-                    config.headers.Authorization = `Bearer ${store.user.token}`
-                }
                 if (requiresAgent(config.url) && store.agent.selectedAgentID) {
                     config.headers['X-Agent-ID'] = store.agent.selectedAgentID
+                }
+                if (unsafeMethods.has((config.method ?? 'GET').toUpperCase())) {
+                    const csrfToken = getCSRFToken()
+                    if (csrfToken)
+                        config.headers[csrfHeaderName] = csrfToken
                 }
                 if (config.url?.endsWith('login')) {
                     config.headers['Content-Type'] = 'multipart/form-data;charset=UTF-8'
@@ -220,10 +224,19 @@ class Request {
                 else if (status === 500) {
                     warning(data.err || data.msg || '服务器错误，请稍后再试')
                 }
-                else if (status === 401 && config.url !== '/api/v1/auth/token_update') {
+                else if (status === 401 && config.url === '/api/v1/auth/login') {
+                    warning(data?.err || data?.msg || '用户名或密码错误')
+                }
+                else if (status === 401) {
+                    const retryConfig = config as RetryableRequestConfig
+                    if (retryConfig._retry) {
+                        this.forceLogout(error.response)
+                        return Promise.reject(error.response)
+                    }
+                    retryConfig._retry = true
                     return new Promise((resolve, reject) => {
                         this.refreshToken({
-                            retry: async () => this.service(config),
+                            retry: async () => this.service(retryConfig),
                             resolve,
                             reject,
                         })

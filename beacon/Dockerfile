@@ -37,6 +37,7 @@ RUN for attempt in 1 2 3 4 5; do \
     CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /out/collia-arm64 ./cmd
 
 FROM public.ecr.aws/docker/library/ubuntu:22.04
+ENV BEACON_APP_ENV=production
 WORKDIR /app
 
 RUN apt-get update && \

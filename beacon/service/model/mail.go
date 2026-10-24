@@ -13,7 +13,7 @@ type Mail struct {
 	Server   string `gorm:"type:varchar(255);comment:邮箱服务器"`
 	Port     int    `gorm:"comment:端口"`
 	Sender   string `gorm:"type:varchar(255);comment:发信账号"`
-	Password string `gorm:"type:varchar(255);comment:密码"`
+	Password string `gorm:"type:text;comment:加密密码"`
 	Receiver string `gorm:"type:varchar(255);comment:邮箱服务器"`
 }
 

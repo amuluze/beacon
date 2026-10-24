@@ -2,6 +2,7 @@ package service
 
 import (
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -20,12 +21,54 @@ func TestPprofDisabledInProduction(t *testing.T) {
 	app := NewFiberApp(&Config{App: App{Env: "production"}}, noopRouter{})
 	defer func() { _ = app.Shutdown() }()
 
-	resp, err := app.Test(httptest.NewRequest("GET", "/debug/pprof/", nil))
+	req := httptest.NewRequest("GET", "/debug/pprof/", nil)
+	req.Header.Set("X-Forwarded-Proto", "https")
+	resp, err := app.Test(req)
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
 	if resp.StatusCode != fiber.StatusNotFound {
 		t.Fatalf("production: /debug/pprof/ status = %d, want 404 (pprof must be disabled)", resp.StatusCode)
+	}
+}
+
+func TestProductionRejectsNonHTTPSRequests(t *testing.T) {
+	app := NewFiberApp(&Config{App: App{Env: "production"}}, noopRouter{})
+	defer func() { _ = app.Shutdown() }()
+
+	resp, err := app.Test(httptest.NewRequest("GET", "/", nil))
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != fiber.StatusUpgradeRequired {
+		t.Fatalf("HTTP status = %d, want 426", resp.StatusCode)
+	}
+}
+
+func TestProductionAddsBrowserSecurityHeaders(t *testing.T) {
+	app := NewFiberApp(&Config{App: App{Env: "production"}}, noopRouter{})
+	defer func() { _ = app.Shutdown() }()
+
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("X-Forwarded-Proto", "https")
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	for header, want := range map[string]string{
+		"Content-Security-Policy":   "default-src 'self'",
+		"Strict-Transport-Security": "max-age=31536000",
+		"X-Frame-Options":           "DENY",
+		"X-Content-Type-Options":    "nosniff",
+		"Referrer-Policy":           "no-referrer",
+		"Permissions-Policy":        "camera=()",
+	} {
+		if got := resp.Header.Get(header); !strings.Contains(got, want) {
+			t.Fatalf("%s = %q, want substring %q", header, got, want)
+		}
 	}
 }
 
@@ -41,5 +84,18 @@ func TestPprofEnabledInDevelopment(t *testing.T) {
 	// pprof index 返回 200；只要不是 404 即说明已挂载。
 	if resp.StatusCode == fiber.StatusNotFound {
 		t.Fatal("development: /debug/pprof/ returned 404, expected pprof to be mounted")
+	}
+}
+
+func TestPprofDisabledWhenEnvironmentIsUnset(t *testing.T) {
+	app := NewFiberApp(&Config{}, noopRouter{})
+	defer func() { _ = app.Shutdown() }()
+
+	resp, err := app.Test(httptest.NewRequest("GET", "/debug/pprof/", nil))
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != fiber.StatusNotFound {
+		t.Fatalf("unset env: /debug/pprof/ status = %d, want 404", resp.StatusCode)
 	}
 }

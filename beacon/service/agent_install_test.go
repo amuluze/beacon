@@ -44,17 +44,26 @@ func TestSafeJoinRejectsEscapes(t *testing.T) {
 }
 
 func TestBuildAgentInstallScriptUsesInstallTokenHeader(t *testing.T) {
-	script := buildAgentInstallScript("http://127.0.0.1:1443", "1", false)
+	script := buildAgentInstallScript("https://beacon.example.com", "1", false)
 	if !strings.Contains(script, `X-Install-Token: $TOKEN`) {
 		t.Fatal("expected script downloads to use X-Install-Token header")
 	}
 	if !strings.Contains(script, `/api/v1/host/install/package?arch=$ARCH`) {
 		t.Fatal("expected script to download collia binary selected by arch")
 	}
+	if strings.Contains(script, "curl -k") || strings.Contains(script, "--insecure") {
+		t.Fatal("install script must not disable TLS certificate verification")
+	}
+	if !strings.Contains(script, "umask 077") {
+		t.Fatal("install script must use an owner-only umask")
+	}
+	if !strings.Contains(script, `install -m 0600 "$WORKDIR/config.yml" /etc/collia/config.yml`) {
+		t.Fatal("install script must install the collia config with owner-only permissions")
+	}
 }
 
 func TestBuildAgentInstallScriptDownloadsCertsWhenTLSEnabled(t *testing.T) {
-	script := buildAgentInstallScript("http://127.0.0.1:1443", "agent-a", true)
+	script := buildAgentInstallScript("https://beacon.example.com", "agent-a", true)
 	if !strings.Contains(script, `/api/v1/host/install/certs?node=$NODE`) {
 		t.Fatal("expected script to download collia cert package when TLS is enabled")
 	}
@@ -170,6 +179,22 @@ func TestCommonAuthSkipperAllowsAgentReport(t *testing.T) {
 	}
 	if !skipped {
 		t.Fatal("agent report endpoint must bypass user JWT middleware and use its install-token authentication")
+	}
+}
+
+func TestAgentInstallRejectsQueryTokenFallback(t *testing.T) {
+	router := &Router{config: &Config{AgentInstall: AgentInstall{Enable: true, Token: "install-secret"}}}
+	app := fiber.New()
+	app.Get("/api/v1/host/install/config", router.AgentInstallConfig)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/host/install/config?node=node-01&token=install-secret", nil)
+	resp, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("query token status = %d, want 401", resp.StatusCode)
 	}
 }
 

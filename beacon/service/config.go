@@ -49,6 +49,9 @@ func NewConfig(configFile string) (*Config, error) {
 	// 部署期 env 覆盖，优先级高于 BindEnv。
 	overrideFromEnv(config)
 	warnInsecureDefaults(config)
+	if err := validateTransportSecurity(config); err != nil {
+		return nil, err
+	}
 
 	return config, nil
 }
@@ -57,6 +60,7 @@ func NewConfig(configFile string) (*Config, error) {
 // viper.BindEnv 单次只支持一个 env key；历史多命名兼容由 overrideFromEnv 处理。
 func bindEnvs() {
 	bindings := map[string]string{
+		"app.env":                    "BEACON_APP_ENV",
 		"db.dbname":                  "BEACON_DB_NAME",
 		"auth.signingkey":            "BEACON_AUTH_SIGNING_KEY",
 		"control.jointoken":          "BEACON_CONTROL_JOIN_TOKEN",
@@ -78,6 +82,9 @@ func bindEnvs() {
 // overrideFromEnv overrides sensitive config values from environment variables
 // to prevent hard-coded secrets in production deployments.
 func overrideFromEnv(config *Config) {
+	if v := firstEnv("BEACON_APP_ENV"); v != "" {
+		config.App.Env = v
+	}
 	if v := firstEnv("BEACON_AUTH_SIGNING_KEY", "BEACON_AUTH_SIGNINGKEY"); v != "" {
 		config.Auth.SigningKey = v
 	}
@@ -90,7 +97,7 @@ func overrideFromEnv(config *Config) {
 }
 
 func warnInsecureDefaults(config *Config) {
-	if config.Auth.Enable && config.Auth.SigningKey == "beacon" {
+	if config.Auth.Enable && isWeakDefaultSigningKey(config.Auth.SigningKey) {
 		slog.Warn("auth signing key uses default development value; set BEACON_AUTH_SIGNING_KEY to override")
 	}
 	if config.AgentInstall.Enable && config.AgentInstall.Token == "change-me" {

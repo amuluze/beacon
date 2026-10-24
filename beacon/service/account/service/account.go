@@ -5,6 +5,8 @@
 package service
 
 import (
+	"beacon/pkg/auth"
+	"beacon/pkg/errors"
 	"beacon/service/account/repository"
 	"beacon/service/schema"
 	"context"
@@ -76,6 +78,9 @@ func (a *AccountService) UserQuery(ctx context.Context, args schema.UserQueryArg
 }
 
 func (a *AccountService) UserCreate(ctx context.Context, args schema.UserCreateArgs) error {
+	if err := auth.ValidatePassword(args.Password); err != nil {
+		return errors.New400Error(err.Error())
+	}
 	user, err := a.AccountRepository.UserCreate(ctx, args)
 	if err != nil {
 		return err
@@ -95,7 +100,7 @@ func (a *AccountService) UserUpdate(ctx context.Context, args schema.UserUpdateA
 		slog.Error("Error updating user", "error", err)
 		return err
 	}
-	slog.Info("User updated", "User", user)
+	slog.Info("user updated", "user_id", user.ID.String(), "username", user.Username)
 	for _, roleID := range args.RoleIDs {
 		_, err := a.Enforcer.RemoveNamedGroupingPolicy("g", user.ID.String(), roleID)
 		if err != nil {
