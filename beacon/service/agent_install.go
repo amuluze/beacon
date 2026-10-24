@@ -263,7 +263,9 @@ install -m 0600 "$WORKDIR/config.yml" /etc/collia/config.yml
 
 # 无 systemd 的环境（容器 / 微虚机）无法把探针注册为系统服务，
 # 提前给出可定位指引，避免后面只看到 [FAILED] 而无从下手。
-if [ ! -d /run/systemd/system ] && ! command -v systemctl >/dev/null 2>&1; then
+# 判定依据是 systemd 运行时目录是否存在：有 systemctl 命令但无 /run/systemd/system
+# 同样意味着没有可用的 systemd。
+if [ ! -d /run/systemd/system ]; then
   echo "提示：未检测到 systemd，探针无法注册为系统服务。" >&2
   echo "  若本机没有其它服务管理器，可改用前台常驻：" >&2
   echo "  setsid nohup collia run >/var/log/collia.log 2>&1 &" >&2
