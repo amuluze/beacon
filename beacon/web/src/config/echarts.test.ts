@@ -73,6 +73,16 @@ describe('host monitoring chart axes', () => {
         })
     })
 
+    it.each([
+        ['container CPU', containerCpuOption],
+        ['container memory', containerMemOption],
+    ])('hides the internal legend for %s because the card renders it', (_name, option) => {
+        expect(option.legend).toMatchObject({
+            show: false,
+            data: [],
+        })
+    })
+
     it('formats tuple series values in percentage and byte tooltips', () => {
         const cpuFormatter = (cpuTrendingOption.tooltip as any).formatter as (items: any[]) => string
         const memFormatter = (containerMemOption.tooltip as any).formatter as (items: any[]) => string

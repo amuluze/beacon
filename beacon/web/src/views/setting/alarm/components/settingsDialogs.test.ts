@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
     updateDingTalk: vi.fn(),
     success: vi.fn(),
     info: vi.fn(),
+    warning: vi.fn(),
 }))
 
 vi.mock('@/api/alarm', () => ({
@@ -29,6 +30,7 @@ vi.mock('@/api/dingtalk', () => ({
 vi.mock('@/components/Message/message.ts', () => ({
     success: mocks.success,
     info: mocks.info,
+    warning: mocks.warning,
 }))
 vi.mock('vue-i18n', () => ({
     useI18n: () => ({ t: (key: string) => key }),
@@ -113,6 +115,7 @@ describe('setting dialogs', () => {
     })
 
     it('keeps stored DingTalk credentials when credential inputs are blank', async () => {
+        const plainWebhook = 'https://oapi.dingtalk.com/robot/send?access_token=very-secret-token'
         const setting: DingTalkSetting = {
             id: 1,
             enabled: true,
@@ -125,6 +128,11 @@ describe('setting dialogs', () => {
             props: { visible: true, setting },
             global: { stubs },
         })
+
+        const webhookInput = wrapper.findAllComponents({ name: 'ElInput' })[0]
+        expect(webhookInput.props('modelValue')).toBe('')
+        expect(wrapper.get('[data-testid="dingtalk-webhook-mask"]').text()).toBe(setting.webhook_masked)
+        expect(wrapper.html()).not.toContain(plainWebhook)
 
         await wrapper.findAll('button').at(-1)?.trigger('click')
         await flushPromises()

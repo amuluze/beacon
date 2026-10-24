@@ -52,7 +52,13 @@ const dingTalkTesting = shallowRef(false)
 
 async function loadDingTalkSetting() {
   const response = await queryDingTalk()
-  Object.assign(dingTalkSetting, response.data)
+  const setting = response.data
+  dingTalkSetting.id = setting.id
+  dingTalkSetting.enabled = setting.enabled
+  dingTalkSetting.webhook_masked = setting.webhook_masked
+  dingTalkSetting.webhook_configured = setting.webhook_configured
+  dingTalkSetting.secret_configured = setting.secret_configured
+  dingTalkSetting.at_all = setting.at_all
 }
 
 async function dingTalkTest() {
@@ -211,7 +217,13 @@ const editDiskThreshold = useCommandComponent(EditDiskThreshold)
             <div class="settings-card__value-row">
                 <div class="settings-card__meta">
                     <span class="settings-card__label">{{ t('setting.dingTalkWebhook') }}</span>
-                    <span class="settings-card__value">{{ dingTalkSetting.webhook_masked || t('setting.notConfigured') }}</span>
+                    <span
+                        class="settings-card__value settings-card__value--masked"
+                        data-testid="dingtalk-webhook-mask"
+                        :title="dingTalkSetting.webhook_masked || t('setting.notConfigured')"
+                    >
+                        {{ dingTalkSetting.webhook_masked || t('setting.notConfigured') }}
+                    </span>
                 </div>
                 <el-button
                     plain
@@ -314,5 +326,17 @@ const editDiskThreshold = useCommandComponent(EditDiskThreshold)
 <style scoped lang="scss">
 .settings-grid--alarm {
   align-items: stretch;
+}
+
+.settings-card__meta {
+  flex: 1;
+}
+
+.settings-card__value--masked {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

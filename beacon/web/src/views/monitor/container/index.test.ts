@@ -105,6 +105,16 @@ function emptyUsageData() {
     }
 }
 
+function manyContainersUsage(names: string[]) {
+    return {
+        data: {
+            names,
+            cpu_usage: Object.fromEntries(names.map((name, index) => [name, [{ timestamp: 900, value: index + 1 }]])),
+            mem_usage: Object.fromEntries(names.map((name, index) => [name, [{ timestamp: 900, value: (index + 1) * 1024 }]])),
+        },
+    }
+}
+
 const mountedWrappers: Array<{ unmount: () => void }> = []
 
 function mountContainerMonitor() {
@@ -208,6 +218,32 @@ describe('container monitor time density', () => {
                 max: 3_000_000,
             })
             expect(option.series).toEqual([])
+        })
+    })
+
+    it('keeps high-cardinality legends scrollable without duplicating them inside charts', async () => {
+        const names = Array.from({ length: 30 }, (_, index) => index === 29
+            ? 'container-with-a-very-long-production-name-that-needs-truncation'
+            : `container-${index + 1}`)
+        queryContainersUsage.mockResolvedValueOnce(manyContainersUsage(names))
+
+        const wrapper = mountContainerMonitor()
+        await flushPromises()
+
+        const legends = wrapper.findAll('.am-chart-card-legend--scrollable')
+        expect(legends).toHaveLength(2)
+        expect(legends.map(legend => legend.attributes('role'))).toEqual(['list', 'list'])
+        expect(legends.map(legend => legend.findAll('.am-legend-item').length)).toEqual([30, 30])
+
+        const items = wrapper.findAll('.am-legend-item')
+        expect(items).toHaveLength(60)
+        expect(items[29].attributes('title')).toBe(names[29])
+        expect(items[59].attributes('title')).toBe(names[29])
+
+        chartOptions(wrapper).forEach((option) => {
+            expect(option.legend).toMatchObject({ show: false, data: [] })
+            expect(option.series).toHaveLength(30)
+            expect(option.series.map((series: { name: string }) => series.name)).toEqual(names)
         })
     })
 })

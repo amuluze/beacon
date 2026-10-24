@@ -451,6 +451,7 @@ export const containerCpuOption = {
         },
     },
     legend: {
+        show: false,
         data: [],
     },
     grid: {
@@ -490,6 +491,7 @@ export const containerMemOption = {
         },
     },
     legend: {
+        show: false,
         data: [],
     },
     grid: {

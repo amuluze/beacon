@@ -42,8 +42,6 @@ let latestRenderID = 0
 
 function clearCharts(): void {
   containerNames.value = []
-  set(cpuOption, 'legend.data', [])
-  set(memOption, 'legend.data', [])
   set(cpuOption, 'series', [])
   set(memOption, 'series', [])
 }
@@ -68,10 +66,6 @@ async function render() {
 
   const cpuData = new Map<string, Usage[]>(Object.entries(data.cpu_usage))
   const memData = new Map<string, Usage[]>(Object.entries(data.mem_usage))
-
-  // Legend
-  set(cpuOption, 'legend.data', data.names.map((n: string, i: number) => ({ name: n, textStyle: { color: containerPalette[i % containerPalette.length] } })))
-  set(memOption, 'legend.data', data.names.map((n: string, i: number) => ({ name: n, textStyle: { color: containerPalette[i % containerPalette.length] } })))
 
   // Series
   const cpuSeries: any[] = []
@@ -145,8 +139,8 @@ onUnmounted(() => {
                 <div class="am-chart-card">
                     <div class="am-chart-card-header">
                         <span class="am-chart-card-title">CPU 使用率</span>
-                        <div class="am-chart-card-legend">
-                            <div v-for="(name, i) in containerNames" :key="name" class="am-legend-item">
+                        <div class="am-chart-card-legend am-chart-card-legend--scrollable" role="list" aria-label="CPU 容器图例">
+                            <div v-for="(name, i) in containerNames" :key="name" class="am-legend-item" role="listitem" :title="name">
                                 <span class="am-legend-dot" :style="{ background: containerPalette[i % containerPalette.length] }" />
                                 <span class="am-legend-label">{{ name }}</span>
                             </div>
@@ -159,8 +153,8 @@ onUnmounted(() => {
                 <div class="am-chart-card">
                     <div class="am-chart-card-header">
                         <span class="am-chart-card-title">内存使用率</span>
-                        <div class="am-chart-card-legend">
-                            <div v-for="(name, i) in containerNames" :key="name" class="am-legend-item">
+                        <div class="am-chart-card-legend am-chart-card-legend--scrollable" role="list" aria-label="内存容器图例">
+                            <div v-for="(name, i) in containerNames" :key="name" class="am-legend-item" role="listitem" :title="name">
                                 <span class="am-legend-dot" :style="{ background: containerPalette[i % containerPalette.length] }" />
                                 <span class="am-legend-label">{{ name }}</span>
                             </div>
@@ -178,22 +172,41 @@ onUnmounted(() => {
 <style scoped lang="scss">
 .am-chart-card-legend {
   display: flex;
-  gap: 14px;
   flex-wrap: wrap;
+  align-content: flex-start;
+  gap: var(--am-spacing-xs) var(--am-spacing-md);
+  min-width: 0;
 }
+
+.am-chart-card-legend--scrollable {
+  max-height: 72px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: var(--am-spacing-xs);
+  scrollbar-gutter: stable;
+}
+
 .am-legend-item {
+  min-width: 0;
+  max-width: 180px;
   display: flex;
   align-items: center;
   gap: 4px;
 }
+
 .am-legend-dot {
+  flex: 0 0 auto;
   width: 7px;
   height: 7px;
   border-radius: 50%;
   display: inline-block;
 }
 .am-legend-label {
+  min-width: 0;
+  overflow: hidden;
   color: var(--am-foreground-muted);
   font-size: var(--am-font-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

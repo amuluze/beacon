@@ -81,7 +81,12 @@ async function submit() {
                     :placeholder="setting.webhook_configured ? t('setting.credentialKeepPlaceholder') : t('setting.dingTalkWebhookPlaceholder')"
                 />
                 <p v-if="setting.webhook_configured" class="credential-hint">
-                    {{ t('setting.currentCredential') }}：{{ setting.webhook_masked }}
+                    <span>{{ t('setting.currentCredential') }}：</span>
+                    <code
+                        class="credential-mask"
+                        data-testid="dingtalk-webhook-mask"
+                        :title="setting.webhook_masked"
+                    >{{ setting.webhook_masked }}</code>
                 </p>
             </el-form-item>
             <el-form-item prop="secret" :label="t('setting.dingTalkSecret')">
@@ -117,8 +122,14 @@ async function submit() {
 <style scoped lang="scss">
 .credential-hint {
   margin: var(--am-spacing-xs) 0 0;
-  overflow-wrap: anywhere;
+  max-width: 100%;
   color: var(--am-foreground-muted);
   font-size: var(--am-font-xs);
+}
+
+.credential-mask {
+  overflow-wrap: anywhere;
+  color: inherit;
+  font-family: 'Geist Mono', 'SFMono-Regular', Consolas, monospace;
 }
 </style>
