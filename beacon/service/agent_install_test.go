@@ -62,6 +62,29 @@ func TestBuildAgentInstallScriptUsesInstallTokenHeader(t *testing.T) {
 	}
 }
 
+func TestBuildAgentInstallScriptSurvivesStopAndStartFailures(t *testing.T) {
+	script := buildAgentInstallScript("https://beacon.example.com", "1", false)
+	// 首次安装时 collia stop 返回非 0，若不忽略会在 set -e 下中断脚本，探针永远不启动。
+	if !strings.Contains(script, "collia stop >/dev/null 2>&1 || true") {
+		t.Fatal("expected script to ignore collia stop failure so installation continues")
+	}
+	if strings.Contains(script, "if collia status >/dev/null 2>&1; then") {
+		t.Fatal("expected script to stop guarding on collia status, which returns 0 even when stopped")
+	}
+	// start 失败必须给出可定位原因与修复方向（RR004）。
+	if !strings.Contains(script, "探针启动失败") || !strings.Contains(script, "collia run") {
+		t.Fatal("expected script to report actionable diagnostics when collia start fails")
+	}
+	// 无 systemd 的环境要提前提示，否则用户只看到 [FAILED]。
+	if !strings.Contains(script, "未检测到 systemd") {
+		t.Fatal("expected script to warn when systemd is unavailable")
+	}
+	// 下载失败要提示自签证书场景下的 CA 导入方式。
+	if !strings.Contains(script, "下载失败") || !strings.Contains(script, "update-ca-certificates") {
+		t.Fatal("expected script to explain download failures including self-signed CA guidance")
+	}
+}
+
 func TestBuildAgentInstallScriptDownloadsCertsWhenTLSEnabled(t *testing.T) {
 	script := buildAgentInstallScript("https://beacon.example.com", "agent-a", true)
 	if !strings.Contains(script, `/api/v1/host/install/certs?node=$NODE`) {

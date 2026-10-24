@@ -244,7 +244,12 @@ cleanup() {
 trap cleanup EXIT
 
 download() {
-  curl -fsSL -H "X-Install-Token: $TOKEN" "$1" -o "$2"
+  if ! curl -fsSL -H "X-Install-Token: $TOKEN" "$1" -o "$2"; then
+    echo "下载失败：$1" >&2
+    echo "  若服务端使用自签证书，请先把 CA 导入系统信任库" >&2
+    echo "  （/usr/local/share/ca-certificates/<ca>.crt，然后 update-ca-certificates）" >&2
+    exit 1
+  fi
 }
 
 mkdir -p /etc/collia /data/beacon/collia/storage /data/beacon/logs/collia /usr/sbin
@@ -256,12 +261,23 @@ download "$BASE_URL/api/v1/host/install/config?node=$NODE" "$WORKDIR/config.yml"
 install -m 0755 "$WORKDIR/collia" /usr/sbin/collia
 install -m 0600 "$WORKDIR/config.yml" /etc/collia/config.yml
 
-collia install || true
-# 升级场景：仅当旧实例在运行时才先停，避免首次安装时 stop 打印 [FAILED] 误报。
-if collia status >/dev/null 2>&1; then
-  collia stop
+# 无 systemd 的环境（容器 / 微虚机）无法把探针注册为系统服务，
+# 提前给出可定位指引，避免后面只看到 [FAILED] 而无从下手。
+if [ ! -d /run/systemd/system ] && ! command -v systemctl >/dev/null 2>&1; then
+  echo "提示：未检测到 systemd，探针无法注册为系统服务。" >&2
+  echo "  若本机没有其它服务管理器，可改用前台常驻：" >&2
+  echo "  setsid nohup collia run >/var/log/collia.log 2>&1 &" >&2
 fi
-collia start
+
+collia install || true
+# 升级场景先停旧实例。collia status 在服务未注册/已停止时同样返回 0，
+# 不能作为判据；stop 未运行时返回非 0 并打印 [FAILED]，这里一律忽略。
+collia stop >/dev/null 2>&1 || true
+if ! collia start; then
+  echo "探针启动失败：当前系统缺少可用的服务管理器（例如 systemd）。" >&2
+  echo "  可改用前台常驻：setsid nohup collia run >/var/log/collia.log 2>&1 &" >&2
+  exit 1
+fi
 
 echo "collia installed and started, reverse tunnel -> $BASE_URL"
 `, shellQuote(baseURL), shellQuote(node), certInstall)
