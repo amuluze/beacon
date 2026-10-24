@@ -112,23 +112,22 @@ bash -c "$(curl -fsSL https://beacon.amuluze.com/release/latest/manager.sh)" -- 
 - Node.js、pnpm 与 [Task](https://taskfile.dev/)（构建 Web 资源时需要）。
 
 ```bash
-# 克隆新仓库
-git clone https://github.com/amuluze/beacon-pro.git
-cd beacon-pro
+# 克隆仓库
+git clone https://github.com/amuluze/beacon.git
+cd beacon
 
-# 构建前端静态资源
+# 后端本地开发（SQLite + 开发配置）
+task beacon:dev
+
+# 前端开发
 task beacon-web:install
-task beacon-web:build
+task beacon-web:dev
 
-# 构建 Beacon 镜像并启动本地 Compose
-docker build -f beacon/Dockerfile -t beacon:latest .
-docker compose -f website/docker-compose.yml up -d
-
-# 验证服务
-curl http://127.0.0.1:8000/health
+# 构建完整镜像（内嵌前端产物与双架构 Collia 二进制）
+docker build -f beacon/Dockerfile -t beacon:local .
 ```
 
-本地 Compose 暴露 `8000`（HTTP）与 `17000`（Agent control）端口，仅用于开发/验证。生产部署前请生成独立的高强度密钥，并注入 `BEACON_AUTH_SIGNING_KEY`、`BEACON_AGENT_INSTALL_TOKEN`、`BEACON_CONTROL_JOIN_TOKEN`、`BEACON_DATA_ENCRYPTION_KEY`；首次建库还需设置 `BEACON_BOOTSTRAP_ADMIN_PASSWORD`。
+本地开发默认通过 `8000`（HTTP）与 `17000`（Agent control）端口访问，仅用于开发/验证。生产部署前请生成独立的高强度密钥，并注入 `BEACON_AUTH_SIGNING_KEY`、`BEACON_AGENT_INSTALL_TOKEN`、`BEACON_CONTROL_JOIN_TOKEN`、`BEACON_DATA_ENCRYPTION_KEY`；首次建库还需设置 `BEACON_BOOTSTRAP_ADMIN_PASSWORD`。
 
 Beacon 启动后，可从目标主机安装 Collia Agent（将地址、节点编号和 Token 替换为实际值）：
 
@@ -164,26 +163,12 @@ beacon/
 │   └── web/                # Vue 3 管理端
 ├── collia/                 # Agent 采集、Docker/主机操作与 tunnel service
 ├── common/                 # 共享 schema、数据库与 reverse tunnel transport
-├── website/                # Beacon 官网、安装脚本与发布产物
-│   ├── compose.yml         # 本地开发 Compose（NODE_ENV=development）
-│   ├── docker-compose.yml  # 生产 Compose（NODE_ENV=production）
-│   └── release/latest/     # 在线安装包（manager.sh / compose.yaml / SHA256SUMS）
-├── .docs/                  # 当前实现文档
-├── .specs/                 # SDD Domain / Task Specs
 └── Taskfile.yml            # 工作区开发命令入口
 ```
 
 ## 📚 项目文档
 
-| 文档 | 内容 |
-|---|---|
-| [架构设计](./.docs/architecture.md) | 模块边界、核心运行链路与依赖方向 |
-| [数据流](./.docs/concepts/data-flow.md) | 请求生命周期、数据归属与跨模块流转 |
-| [部署指南](./.docs/deployment.md) | 环境、构建、配置与发布检查 |
-| [API 路由](./.docs/api/routes.md) | 当前 HTTP 路由与处理器索引 |
-| [OpenAPI](./.docs/api/openapi.yml) | Beacon HTTP API 契约 |
-| [账户管理约束](./.specs/domain/account-administration.md) | 管理员用户维护、删除目标与失败语义 |
-| [领域约束](./.specs/domain/monitoring-platform.md) | 监控平台长期行为与不变量 |
+架构、部署与 API 契约的完整文档见[官网](https://beacon.amuluze.com)；快速上手以本 README 为准。
 
 ## 🧑‍💻 开发与贡献
 
