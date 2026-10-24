@@ -71,5 +71,5 @@ tasks:
   build:
     desc: Build and push amd64/arm64 Docker images to their respective repos
     cmds:
-      - docker buildx build --platform linux/amd64 -f Dockerfile --build-arg APK_REPOSITORY={{default "" .APK_REPOSITORY}} --build-arg BEACON_VERSION={{.BEACON_VERSION}} --build-arg COLLIA_VERSION={{.COLLIA_VERSION}} -t {{.IMAGE}}:{{.TAG}} .. --push
-      - docker buildx build --platform linux/arm64 -f Dockerfile --build-arg APK_REPOSITORY={{default "" .APK_REPOSITORY}} --build-arg BEACON_VERSION={{.BEACON_VERSION}} --build-arg COLLIA_VERSION={{.COLLIA_VERSION}} -t {{.IMAGE_ARM}}:{{.TAG}} .. --push
+      - docker buildx build --platform linux/amd64 -f Dockerfile --build-arg APK_REPOSITORY={{default "" .APK_REPOSITORY}} --build-arg BEACON_VERSION={{.BEACON_VERSION}} --build-arg COLLIA_VERSION={{.COLLIA_VERSION}} --provenance=false --sbom=0 -t {{.IMAGE}}:{{.TAG}} .. --push
+      - docker buildx build --platform linux/arm64 -f Dockerfile --build-arg APK_REPOSITORY={{default "" .APK_REPOSITORY}} --build-arg BEACON_VERSION={{.BEACON_VERSION}} --build-arg COLLIA_VERSION={{.COLLIA_VERSION}} --provenance=false --sbom=0 -t {{.IMAGE_ARM}}:{{.TAG}} .. --push
