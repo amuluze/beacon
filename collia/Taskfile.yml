@@ -27,7 +27,7 @@ tasks:
       - go build -trimpath -ldflags "-s -w -X main.version={{.VERSION}}" -o {{.TARGET}} {{.SERVER}}
 
   arm64:
-    desc: Generate Wire code and build linux/arm64 collia binary
+    desc: Build linux/arm64 collia binary (runs wire first)
     deps:
       - wire
     env:
