@@ -4,8 +4,11 @@ package service
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"time"
 
 	"collia/service/report"
@@ -60,22 +63,35 @@ func NewTimedTask(conf *Config) *TimedTask {
 	}
 }
 
-// buildReportTLSConfig builds the TLS config for the HTTPS report client from
-// the control-plane TLS settings (same CA as the reverse tunnel). It returns
-// nil when TLS is disabled, leaving the report client on the system trust
-// store for plain-HTTP deployments.
+// buildReportTLSConfig builds the TLS config for the HTTPS report client.
+// The report endpoint is the Server's public HTTPS API (authenticated by
+// X-Install-Token), so the certificate must be verified against the report
+// URL's host name and the system trust store — the control plane's mTLS
+// server_name identifies the tunnel server certificate ("beacon/collia") and
+// must not be reused here. The control-plane CA is still added so self-signed
+// deployments keep working.
 func buildReportTLSConfig(conf *Config) *tls.Config {
 	if !conf.Control.TLS.Enable {
 		return nil
 	}
-	serverName := conf.Control.TLS.ServerName
-	if serverName == "" {
-		serverName = "beacon/collia"
+	pool, err := x509.SystemCertPool()
+	if err != nil || pool == nil {
+		pool = x509.NewCertPool()
 	}
-	cfg, err := transporttls.ClientConfig(conf.Control.TLS.CertDir, serverName)
-	if err != nil {
-		slog.Error("build report tls config failed, falling back to system trust", "error", err)
-		return nil
+	if caPEM, err := os.ReadFile(filepath.Join(conf.Control.TLS.CertDir, transporttls.CACertFile)); err == nil {
+		pool.AppendCertsFromPEM(caPEM)
+	} else {
+		slog.Warn("read control plane ca for report client failed", "error", err)
+	}
+	cfg := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+		RootCAs:    pool,
+	}
+	// 客户端证书仅在存在时附带：部分部署要求上报也走 mTLS。
+	certPath := filepath.Join(conf.Control.TLS.CertDir, transporttls.TLSCertFile)
+	keyPath := filepath.Join(conf.Control.TLS.CertDir, transporttls.TLSKeyFile)
+	if cert, err := tls.LoadX509KeyPair(certPath, keyPath); err == nil {
+		cfg.Certificates = []tls.Certificate{cert}
 	}
 	return cfg
 }
