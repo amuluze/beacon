@@ -4,6 +4,7 @@ import AgentSelect from '@/layout/navbar/AgentSelect.vue'
 import InstallAgent from '@/layout/navbar/InstallAgent.vue'
 import Language from '@/layout/navbar/Language.vue'
 import ThemeChange from '@/layout/navbar/ThemeChange.vue'
+import UpgradeAgent from '@/layout/navbar/UpgradeAgent.vue'
 import { dynamicRoutes } from '@/router/dynamic.ts'
 import type { RouteRecordRaw } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -73,6 +74,7 @@ function goRoute(item: RouteRecordRaw): void {
 
         <div class="am-navbar__right">
             <AgentSelect />
+            <UpgradeAgent />
             <InstallAgent />
             <Language />
             <ThemeChange />

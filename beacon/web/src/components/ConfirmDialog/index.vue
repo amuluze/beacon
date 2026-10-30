@@ -16,60 +16,63 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = withDefaults(defineProps<{
-    visible: boolean
-    title?: string
-    // The text shown in the dialog body. May be a key into vue-i18n.
-    message?: string
-    // i18n locale key prefix for cancel/confirm labels, e.g. 'container' or 'network'.
-    // Falls back to 'common' if unset.
-    i18nPrefix?: string
-    // If true, only renders the footer confirm button as a primary action
-    // (used for risky confirmations on Start / Stop / Restart).
-    confirmation?: boolean
-    // Width override for the dialog (defaults to 500px to match existing popups).
-    width?: string
+  visible: boolean
+  title?: string
+  // The text shown in the dialog body. May be a key into vue-i18n.
+  message?: string
+  // Optional interpolation params for the message key (e.g. selected count).
+  params?: Record<string, string | number>
+  // i18n locale key prefix for cancel/confirm labels, e.g. 'container' or 'network'.
+  // Falls back to 'common' if unset.
+  i18nPrefix?: string
+  // If true, only renders the footer confirm button as a primary action
+  // (used for risky confirmations on Start / Stop / Restart).
+  confirmation?: boolean
+  // Width override for the dialog (defaults to 500px to match existing popups).
+  width?: string
 }>(), {
-    confirmation: false,
-    width: '500px',
-    i18nPrefix: 'common',
+  confirmation: false,
+  width: '500px',
+  i18nPrefix: 'common',
 })
 
 const emits = defineEmits<{
-    (e: 'update:visible', visible: boolean): void
-    (e: 'close'): void
-    (e: 'confirm'): void
+  (e: 'update:visible', visible: boolean): void
+  (e: 'close'): void
+  (e: 'confirm'): void
 }>()
 
 const dialogVisible = computed<boolean>({
-    get() {
-        return props.visible
-    },
-    set(visible) {
-        emits('update:visible', visible)
-        if (!visible) {
-            emits('close')
-        }
-    },
+  get() {
+    return props.visible
+  },
+  set(visible) {
+    emits('update:visible', visible)
+    if (!visible) {
+      emits('close')
+    }
+  },
 })
 
 const loading = ref(false)
 function onConfirm() {
-    emits('confirm')
+  emits('confirm')
 }
 
 const { t } = useI18n()
 
 const cancelLabel = computed(() => t(`${props.i18nPrefix}.cancel`))
 const confirmLabel = computed(() => t(`${props.i18nPrefix}.confirm`))
+const messageText = computed(() => (props.message ? t(props.message, props.params ?? {}) : ''))
 
 // Expose a way for callers to dismiss the dialog after their async action resolves.
 defineExpose({
-    close() {
-        dialogVisible.value = false
-    },
-    confirm() {
-        onConfirm()
-    },
+  close() {
+    dialogVisible.value = false
+  },
+  confirm() {
+    onConfirm()
+  },
 })
 </script>
 
@@ -80,7 +83,7 @@ defineExpose({
         :width="width"
         draggable
     >
-        <span>{{ message ? t(message) : '' }}</span>
+        <span>{{ messageText }}</span>
         <template #footer>
             <span class="dialog-footer">
                 <el-button :disabled="loading" @click="dialogVisible = false">

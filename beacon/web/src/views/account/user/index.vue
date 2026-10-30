@@ -8,8 +8,9 @@ import AddUser from '@/views/account/user/components/AddUser.vue'
 import DeleteUser from '@/views/account/user/components/DeleteUser.vue'
 import EditUser from '@/views/account/user/components/EditUser.vue'
 
-import { useI18n } from 'vue-i18n'
 import { useTable } from '@/hooks/useTable.ts'
+
+const props = defineProps<{ createTicket?: number }>()
 
 const tableRef = ref<TableInstance>()
 const tableSelection = ref<User[]>([])
@@ -35,17 +36,19 @@ const addUser = useCommandComponent(AddUser)
 const deleteUser = useCommandComponent(DeleteUser)
 const editUser = useCommandComponent(EditUser)
 
-const { t } = useI18n()
+function openCreate() {
+  addUser({ title: 'account.newAccount', update: search })
+}
+
+// 工具栏的新建按钮在设置工作区外层，通过票据触发同一弹层。
+watch(() => props.createTicket, (ticket) => {
+  if (ticket)
+    openCreate()
+})
 </script>
 
 <template>
     <div class="am-container">
-        <div class="am-table-operator">
-            <el-button type="primary" plain size="small" @click="addUser({ title: 'account.newAccount', update: search })">
-                <svg-icon icon-class="add" />
-                {{ t('account.newAccount') }}
-            </el-button>
-        </div>
         <div class="am-table">
             <el-table
                 ref="tableRef"

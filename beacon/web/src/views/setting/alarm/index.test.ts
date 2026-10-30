@@ -94,7 +94,7 @@ describe('alarm settings DingTalk credential display', () => {
         expect(mask.text()).toBe(firstMask)
         expect(wrapper.html()).not.toContain(firstPlainWebhook)
 
-        await wrapper.findAll('.settings-card')[1].find('button').trigger('click')
+        await wrapper.get('[data-testid="dingtalk-edit"]').trigger('click')
         const editOptions = mocks.command.mock.calls.at(-1)?.[0]
         expect(editOptions.setting).not.toHaveProperty('webhook')
 

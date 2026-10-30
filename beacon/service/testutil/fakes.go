@@ -329,6 +329,7 @@ type FakeContainerRepo struct {
 	UsageFn                    func(ctx context.Context, args rpcSchema.ContainerUsageArgs) (rpcSchema.ContainerUsageReply, error)
 	ContainersByImageFn        func(ctx context.Context, image string) (int, error)
 	ContainerCountFn           func(ctx context.Context, args rpcSchema.ContainerCountArgs) (rpcSchema.ContainerCountReply, error)
+	ContainerSummaryFn         func(ctx context.Context, args rpcSchema.ContainerSummaryArgs) (rpcSchema.ContainerSummaryReply, error)
 	ContainerCreateFn          func(ctx context.Context, args rpcSchema.ContainerCreateArgs) (rpcSchema.ContainerCreateReply, error)
 	ContainerUpdateFn          func(ctx context.Context, args rpcSchema.ContainerUpdateArgs) (rpcSchema.ContainerUpdateReply, error)
 	ContainerDeleteFn          func(ctx context.Context, args rpcSchema.ContainerDeleteArgs) error
@@ -364,6 +365,12 @@ func (f *FakeContainerRepo) ContainersByImage(ctx context.Context, image string)
 }
 func (f *FakeContainerRepo) ContainerCount(ctx context.Context, args rpcSchema.ContainerCountArgs) (rpcSchema.ContainerCountReply, error) {
 	return f.ContainerCountFn(ctx, args)
+}
+func (f *FakeContainerRepo) ContainerSummary(ctx context.Context, args rpcSchema.ContainerSummaryArgs) (rpcSchema.ContainerSummaryReply, error) {
+	if f.ContainerSummaryFn == nil {
+		return rpcSchema.ContainerSummaryReply{}, nil
+	}
+	return f.ContainerSummaryFn(ctx, args)
 }
 func (f *FakeContainerRepo) ContainerCreate(ctx context.Context, args rpcSchema.ContainerCreateArgs) (rpcSchema.ContainerCreateReply, error) {
 	return f.ContainerCreateFn(ctx, args)
