@@ -69,8 +69,10 @@ type DockerReply struct {
 }
 
 type ContainerQueryArgs struct {
-	Page int `json:"page"`
-	Size int `json:"size"`
+	Page  int    `json:"page"`
+	Size  int    `json:"size"`
+	Name  string `json:"name,omitempty"`
+	State string `json:"state,omitempty"`
 }
 
 type ContainerQueryReply struct {
@@ -78,15 +80,19 @@ type ContainerQueryReply struct {
 	Freshness Freshness   `json:"freshness"`
 }
 
-type ContainerCountArgs struct{}
+type ContainerCountArgs struct {
+	Name  string `json:"name,omitempty"`
+	State string `json:"state,omitempty"`
+}
 
 type ContainerCountReply struct {
 	Count int `json:"count"`
 }
 
 type ImageQueryArgs struct {
-	Page int `json:"page"`
-	Size int `json:"size"`
+	Page int    `json:"page"`
+	Size int    `json:"size"`
+	Name string `json:"name,omitempty"`
 }
 
 type ImageQueryReply struct {
@@ -94,15 +100,19 @@ type ImageQueryReply struct {
 	Freshness Freshness `json:"freshness"`
 }
 
-type ImageCountArgs struct{}
+type ImageCountArgs struct {
+	Name string `json:"name,omitempty"`
+}
 
 type ImageCountReply struct {
 	Count int `json:"count"`
 }
 
 type NetworkQueryArgs struct {
-	Page int `json:"page"`
-	Size int `json:"size"`
+	Page   int    `json:"page"`
+	Size   int    `json:"size"`
+	Name   string `json:"name,omitempty"`
+	Driver string `json:"driver,omitempty"`
 }
 
 type NetworkQueryReply struct {
@@ -110,7 +120,21 @@ type NetworkQueryReply struct {
 	Freshness Freshness `json:"freshness"`
 }
 
-type NetworkCountArgs struct{}
+type NetworkCountArgs struct {
+	Name   string `json:"name,omitempty"`
+	Driver string `json:"driver,omitempty"`
+}
+
+// ContainerSummaryArgs 汇总当前 Agent 的容器 / 镜像 / 网络概览。
+type ContainerSummaryArgs struct{}
+
+type ContainerSummaryReply struct {
+	Containers        int   `json:"containers"`
+	ContainersRunning int   `json:"containers_running"`
+	Images            int   `json:"images"`
+	ImageBytes        int64 `json:"image_bytes"`
+	Networks          int   `json:"networks"`
+}
 
 type NetworkCountReply struct {
 	Count int `json:"count"`

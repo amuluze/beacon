@@ -1,16 +1,20 @@
 import request from '@/api'
 import type {
+    ContainerListParams,
     ContainerQueryResult,
+    ContainerSummary,
     ContainerTrending,
     ContainerTrendingArgs,
     CreateContainerArgs,
     CreateContainerResult,
     GetDockerRegistryMirrorsResult,
+    ImageListParams,
     ImageQueryResult,
     NetworkCreateArgs,
     NetworkCreateResult,
     NetworkDeleteArgs,
     NetworkDeleteResult,
+    NetworkListParams,
     NetworkQueryResult,
     PullImageArgs,
     PullImageResult,
@@ -23,12 +27,15 @@ import type {
     UpdateContainerArgs,
     UpdateContainerResult,
 } from '@/interface/container.ts'
-import type { Pagination } from '@/interface/pagination'
 
 export { queryAgentList } from '@/api/agent'
 
-export async function queryContainers(params: Pagination) {
+export async function queryContainers(params: ContainerListParams) {
     return request.get<ContainerQueryResult>('/api/v1/container/containers', params)
+}
+
+export async function queryContainerSummary() {
+    return request.get<ContainerSummary>('/api/v1/container/summary', {})
 }
 
 export async function queryContainersUsage(param: ContainerTrendingArgs) {
@@ -67,7 +74,7 @@ export async function pruneImages() {
     return request.post('/api/v1/container/images_prune', {})
 }
 
-export async function queryImages(params: Pagination) {
+export async function queryImages(params: ImageListParams) {
     return request.get<ImageQueryResult>('/api/v1/container/images', params)
 }
 
@@ -75,7 +82,7 @@ export async function pullImage(params: PullImageArgs) {
     return request.post<PullImageResult>('/api/v1/container/image_pull', params)
 }
 
-export async function queryNetworks(params: Pagination) {
+export async function queryNetworks(params: NetworkListParams) {
     return request.get<NetworkQueryResult>('/api/v1/container/networks', params)
 }
 

@@ -23,6 +23,8 @@ import { createVNode, getCurrentInstance, render } from 'vue'
 export interface ConfirmCommandOptions {
     title?: string
     message?: string
+    // Optional interpolation params for the message key.
+    params?: Record<string, string | number>
     i18nPrefix?: string
     action: (id?: string) => Promise<unknown> | unknown
     // Optional progress callback. Triggered after action resolves.
@@ -56,6 +58,7 @@ export function useConfirmCommand(options: ConfirmCommandOptions) {
             'visible': true,
             'title': options.title,
             'message': options.message,
+            'params': options.params,
             'i18nPrefix': options.i18nPrefix || 'common',
             'confirmation': true,
             'width': '500px',

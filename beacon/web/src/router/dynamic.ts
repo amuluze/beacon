@@ -31,22 +31,19 @@ export const dynamicRoutes: RouteRecordRaw[] = [
             show: true,
         },
     },
+    // 设置工作区改为一级 Tab 后，旧深链仍指向同一工作区的对应 Tab。
     {
         path: '/setting/alarm',
-        name: 'alarm',
-        component: async () => import('@/views/setting/alarm/index.vue'),
-        meta: { title: 'menu.alarmSetting', show: false },
+        redirect: { path: '/setting', query: { tab: 'config' } },
     },
     {
         path: '/setting/container',
-        name: 'docker',
-        component: async () => import('@/views/setting/docker/index.vue'),
-        meta: { title: 'menu.systemDocker', show: false },
+        redirect: { path: '/setting', query: { tab: 'config' } },
     },
     {
         path: '/account',
         name: 'account',
-        redirect: '/account/user',
+        redirect: { path: '/setting', query: { tab: 'users' } },
         meta: {
             title: 'menu.account',
             icon: 'users',
@@ -56,7 +53,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
             {
                 path: '/account/user',
                 name: 'userManager',
-                component: async () => import('@/views/account/user/index.vue'),
+                redirect: { path: '/setting', query: { tab: 'users' } },
                 meta: {
                     title: 'menu.userManager',
                 },
@@ -64,7 +61,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
             {
                 path: '/account/role',
                 name: 'roleManager',
-                component: async () => import('@/views/account/role/index.vue'),
+                redirect: { path: '/setting', query: { tab: 'users' } },
                 meta: {
                     title: 'menu.roleManager',
                 },
@@ -72,7 +69,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
             {
                 path: '/account/api',
                 name: 'apiManager',
-                component: async () => import('@/views/account/api/index.vue'),
+                redirect: { path: '/setting', query: { tab: 'users' } },
                 meta: {
                     title: 'menu.apiManager',
                 },

@@ -7,7 +7,7 @@
 // * 主题配置
 export const themeConfig: Record<Theme.ThemeType, { [ key: string ]: string }> = {
     light: {
-        // Design tokens from .pen/beacon.pen
+        // Design tokens from .pen/beacon.ax
         '--am-surface-primary': '#fbfcfe',
         '--am-surface-secondary': '#f0f2f5',
         '--am-surface-card': '#f7f8fa',

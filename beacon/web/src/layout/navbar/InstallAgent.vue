@@ -12,10 +12,10 @@ function openInstall() {
 </script>
 
 <template>
-  <button class="am-install-trigger" type="button" :title="t('agent.installTitle')" @click="openInstall">
-    <svg-icon icon-class="download" size="14px" />
-    <span class="am-install-trigger__label">{{ t('agent.installAction') }}</span>
-  </button>
+    <button class="am-install-trigger" type="button" :title="t('agent.installTitle')" @click="openInstall">
+        <svg-icon icon-class="download" size="14px" />
+        <span class="am-install-trigger__label">{{ t('agent.installAction') }}</span>
+    </button>
 </template>
 
 <style scoped lang="scss">

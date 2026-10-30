@@ -26,6 +26,7 @@ type IContainerService interface {
 	Version(ctx context.Context) (schema.Docker, error)
 
 	ContainerList(ctx context.Context, args schema.ContainerQueryArgs) (schema.ContainerQueryRely, error)
+	ContainerSummary(ctx context.Context, args schema.ContainerSummaryArgs) (schema.ContainerSummaryReply, error)
 	Usage(ctx context.Context, args schema.ContainerUsageArgs) (schema.ContainerUsageReply, error)
 	ContainerCreate(ctx context.Context, args schema.ContainerCreateArgs) (schema.ContainerCreateReply, error)
 	ContainerUpdate(ctx context.Context, args schema.ContainerUpdateArgs) (schema.ContainerUpdateReply, error)
@@ -87,8 +88,10 @@ func (a *ContainerService) Version(ctx context.Context) (schema.Docker, error) {
 func (a *ContainerService) ContainerList(ctx context.Context, args schema.ContainerQueryArgs) (schema.ContainerQueryRely, error) {
 	var reply schema.ContainerQueryRely
 	rpcArgs := rpcSchema.ContainerQueryArgs{
-		Page: args.Page,
-		Size: args.Size,
+		Page:  args.Page,
+		Size:  args.Size,
+		Name:  args.Name,
+		State: args.State,
 	}
 	rpcReply, err := a.ContainerRepo.ContainerList(ctx, rpcArgs)
 	if err != nil {
@@ -118,7 +121,7 @@ func (a *ContainerService) ContainerList(ctx context.Context, args schema.Contai
 			Labels:        labels,
 		})
 	}
-	countReply, err := a.ContainerRepo.ContainerCount(ctx, rpcSchema.ContainerCountArgs{})
+	countReply, err := a.ContainerRepo.ContainerCount(ctx, rpcSchema.ContainerCountArgs{Name: args.Name, State: args.State})
 	if err != nil {
 		return reply, err
 	}
@@ -127,6 +130,20 @@ func (a *ContainerService) ContainerList(ctx context.Context, args schema.Contai
 	reply.Page = args.Page
 	reply.Size = args.Size
 	reply.Freshness = mapFreshness(rpcReply.Freshness)
+	return reply, nil
+}
+
+func (a *ContainerService) ContainerSummary(ctx context.Context, args schema.ContainerSummaryArgs) (schema.ContainerSummaryReply, error) {
+	var reply schema.ContainerSummaryReply
+	summary, err := a.ContainerRepo.ContainerSummary(ctx, rpcSchema.ContainerSummaryArgs{})
+	if err != nil {
+		return reply, err
+	}
+	reply.Containers = summary.Containers
+	reply.ContainersRunning = summary.ContainersRunning
+	reply.Images = summary.Images
+	reply.ImageBytes = summary.ImageBytes
+	reply.Networks = summary.Networks
 	return reply, nil
 }
 
@@ -245,6 +262,7 @@ func (a *ContainerService) ImageList(ctx context.Context, args schema.ImageQuery
 	rpcArgs := rpcSchema.ImageQueryArgs{
 		Page: args.Page,
 		Size: args.Size,
+		Name: args.Name,
 	}
 	listReply, err := a.ContainerRepo.ImageList(ctx, rpcArgs)
 	if err != nil {
@@ -265,7 +283,7 @@ func (a *ContainerService) ImageList(ctx context.Context, args schema.ImageQuery
 			Number:  num,
 		})
 	}
-	countReply, err := a.ContainerRepo.ImageCount(ctx, rpcSchema.ImageCountArgs{})
+	countReply, err := a.ContainerRepo.ImageCount(ctx, rpcSchema.ImageCountArgs{Name: args.Name})
 	if err != nil {
 		return reply, err
 	}
@@ -314,8 +332,10 @@ func (a *ContainerService) ImagesPrune(ctx context.Context) error {
 func (a *ContainerService) NetworkList(ctx context.Context, args schema.NetworkQueryArgs) (schema.NetworkQueryReply, error) {
 	reply := schema.NetworkQueryReply{}
 	rpcArgs := rpcSchema.NetworkQueryArgs{
-		Page: args.Page,
-		Size: args.Size,
+		Page:   args.Page,
+		Size:   args.Size,
+		Name:   args.Name,
+		Driver: args.Driver,
 	}
 	rpcReply, err := a.ContainerRepo.NetworkList(ctx, rpcArgs)
 	if err != nil {
@@ -338,7 +358,7 @@ func (a *ContainerService) NetworkList(ctx context.Context, args schema.NetworkQ
 			Labels:  labels,
 		})
 	}
-	countReply, err := a.ContainerRepo.NetworkCount(ctx, rpcSchema.NetworkCountArgs{})
+	countReply, err := a.ContainerRepo.NetworkCount(ctx, rpcSchema.NetworkCountArgs{Name: args.Name, Driver: args.Driver})
 	if err != nil {
 		return reply, err
 	}
