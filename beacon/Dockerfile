@@ -22,6 +22,8 @@ COPY go.work ./
 COPY common ./common
 COPY beacon ./beacon
 COPY collia ./collia
+# go.work 的 use 列表包含 website/server，缺失该目录会导致 workspace 加载失败。
+COPY website/server ./website/server
 COPY --from=beacon-web-builder /src/beacon/web/dist ./beacon/web/dist
 WORKDIR /src/beacon
 # 依赖下载单独成层，使 amd64/arm64 Beacon 构建复用同一模块缓存。
@@ -48,6 +50,8 @@ COPY go.work ./
 COPY common ./common
 COPY beacon ./beacon
 COPY collia ./collia
+# 同上：go.work 引用了 website/server，缺失会导致 workspace 加载失败。
+COPY website/server ./website/server
 WORKDIR /src/collia
 RUN for attempt in 1 2 3 4 5; do \
         if go mod download; then break; fi; \

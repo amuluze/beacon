@@ -11,13 +11,21 @@ import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
-vi.mock('vue-i18n', () => ({
-    useI18n: () => ({ t: (key: string) => key }),
-}))
-
 import ConfirmDialog from '@/components/ConfirmDialog/index.vue'
 
-describe('ConfirmDialog', () => {
+const { tMock } = vi.hoisted(() => ({
+    tMock: vi.fn((key: string, params?: Record<string, unknown>) => {
+        if (params && Object.keys(params).length > 0)
+            return `${key}:${JSON.stringify(params)}`
+        return key
+    }),
+}))
+
+vi.mock('vue-i18n', () => ({
+    useI18n: () => ({ t: tMock }),
+}))
+
+describe('confirmDialog', () => {
     beforeEach(() => {
         vi.clearAllMocks()
     })
@@ -48,6 +56,32 @@ describe('ConfirmDialog', () => {
         expect(wrapper.find('.el-dialog__title').text()).toBe('container.deleteContainer')
     })
 
+    it('interpolates message params for batch confirmations', async () => {
+        tMock.mockClear()
+        const wrapper = mount(ConfirmDialog, {
+            props: {
+                visible: true,
+                title: 'container.batchDelete',
+                message: 'container.confirmBatchDelete',
+                params: { count: 3 },
+                i18nPrefix: 'container',
+            },
+            global: {
+                stubs: {
+                    'el-dialog': {
+                        template: '<div class="el-dialog-stub"><slot /></div>',
+                        props: ['title', 'modelValue', 'width', 'draggable'],
+                    },
+                },
+                mocks: { $t: (k: string) => k },
+            },
+        })
+        await nextTick()
+
+        expect(tMock).toHaveBeenCalledWith('container.confirmBatchDelete', { count: 3 })
+        expect(wrapper.text()).toContain('container.confirmBatchDelete:{"count":3}')
+    })
+
     it('emits update:visible(false) when close() is invoked', async () => {
         const wrapper = mount(ConfirmDialog, {
             props: { visible: true },
@@ -58,8 +92,7 @@ describe('ConfirmDialog', () => {
                 mocks: { $t: (k: string) => k },
             },
         })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const inst = wrapper.vm as any
+        const inst = wrapper.vm
         inst.close()
         await nextTick()
         const events = wrapper.emitted('update:visible')
@@ -87,8 +120,7 @@ describe('ConfirmDialog', () => {
             },
         })
         await nextTick()
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const inst = wrapper.vm as any
+        const inst = wrapper.vm
         expect(typeof inst.confirm).toBe('function')
         inst.confirm()
         await nextTick()

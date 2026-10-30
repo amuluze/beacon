@@ -62,10 +62,10 @@ describe('container form serialization', () => {
             ports: '8080:80',
             state: 'running',
             uptime: '2026-07-10 10:00:00',
-            cpu_percent: 0,
-            memory_percent: 0,
-            memory_usage: 0,
-            memory_limit: 0,
+            cpu_percent: '0.00 %',
+            memory_percent: '0.00 %',
+            memory_usage: '0.00 B',
+            memory_limit: '0.00 B',
         } satisfies Container
 
         const payload = serializeContainerUpdate(container.id, containerToForm(container))

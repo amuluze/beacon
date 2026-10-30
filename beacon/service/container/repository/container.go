@@ -3,6 +3,8 @@ package repository
 
 import (
 	"context"
+	"strconv"
+	"strings"
 	"time"
 
 	"beacon/pkg/contextx"
@@ -26,6 +28,7 @@ type IContainerRepo interface {
 	Usage(ctx context.Context, args rpcSchema.ContainerUsageArgs) (rpcSchema.ContainerUsageReply, error)
 	ContainersByImage(ctx context.Context, image string) (num int, err error)
 	ContainerCount(ctx context.Context, args rpcSchema.ContainerCountArgs) (rpcSchema.ContainerCountReply, error)
+	ContainerSummary(ctx context.Context, args rpcSchema.ContainerSummaryArgs) (rpcSchema.ContainerSummaryReply, error)
 	ContainerCreate(ctx context.Context, args rpcSchema.ContainerCreateArgs) (rpcSchema.ContainerCreateReply, error)
 	ContainerUpdate(ctx context.Context, args rpcSchema.ContainerUpdateArgs) (rpcSchema.ContainerUpdateReply, error)
 	ContainerDelete(ctx context.Context, args rpcSchema.ContainerDeleteArgs) error
@@ -103,6 +106,7 @@ func (c *ContainerRepo) ContainerList(ctx context.Context, args rpcSchema.Contai
 	query := c.DB.Model(&model.MonitorContainer{}).
 		Where("m_container.agent_id = ?", agentID).
 		Where("m_container.timestamp = (?)", currentBatch)
+	query = applyContainerFilters(query, args.Name, args.State)
 	if err := query.
 		Order("m_container.name asc").
 		Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&containers).Error; err != nil {
@@ -192,13 +196,93 @@ func (c *ContainerRepo) ContainerCount(ctx context.Context, args rpcSchema.Conta
 	if err != nil {
 		return rpcSchema.ContainerCountReply{}, err
 	}
-	if err := c.DB.Model(&model.MonitorContainer{}).
+	query := c.DB.Model(&model.MonitorContainer{}).
 		Where("agent_id = ?", agentID).
-		Where("timestamp = (?)", c.latestContainerTimestamp(agentID)).
-		Count(&count).Error; err != nil {
+		Where("timestamp = (?)", c.latestContainerTimestamp(agentID))
+	query = applyContainerFilters(query, args.Name, args.State)
+	if err := query.Count(&count).Error; err != nil {
 		return rpcSchema.ContainerCountReply{}, err
 	}
 	return rpcSchema.ContainerCountReply{Count: int(count)}, nil
+}
+
+func applyContainerFilters(query *gorm.DB, name string, state string) *gorm.DB {
+	if name != "" {
+		like := "%" + name + "%"
+		query = query.Where("m_container.name LIKE ? OR m_container.image LIKE ?", like, like)
+	}
+	if state != "" {
+		query = query.Where("m_container.state = ?", state)
+	}
+	return query
+}
+
+func (c *ContainerRepo) ContainerSummary(ctx context.Context, args rpcSchema.ContainerSummaryArgs) (rpcSchema.ContainerSummaryReply, error) {
+	var reply rpcSchema.ContainerSummaryReply
+	agentID, err := contextx.RequireAgentID(ctx)
+	if err != nil {
+		return reply, err
+	}
+
+	latestContainer := func() *gorm.DB {
+		return c.DB.Model(&model.MonitorContainer{}).
+			Where("agent_id = ?", agentID).
+			Where("timestamp = (?)", c.latestContainerTimestamp(agentID))
+	}
+
+	var containers int64
+	if err := latestContainer().Count(&containers).Error; err != nil {
+		return reply, err
+	}
+	var running int64
+	if err := latestContainer().Where("state = ?", "running").Count(&running).Error; err != nil {
+		return reply, err
+	}
+
+	var imageSizes []string
+	if err := c.DB.Model(&model.MonitorImage{}).
+		Where("agent_id = ?", agentID).
+		Pluck("size", &imageSizes).Error; err != nil {
+		return reply, err
+	}
+	var imageBytes int64
+	for _, size := range imageSizes {
+		imageBytes += parseImageSize(size)
+	}
+
+	var networks int64
+	if err := c.DB.Model(&model.MonitorNetwork{}).Where("agent_id = ?", agentID).Count(&networks).Error; err != nil {
+		return reply, err
+	}
+
+	reply.Containers = int(containers)
+	reply.ContainersRunning = int(running)
+	reply.Images = len(imageSizes)
+	reply.ImageBytes = imageBytes
+	reply.Networks = int(networks)
+	return reply, nil
+}
+
+// parseImageSize 解析 Agent 上报的人类可读镜像体积（如 "32.92 MB"）。
+func parseImageSize(size string) int64 {
+	fields := strings.Fields(strings.TrimSpace(size))
+	if len(fields) == 0 {
+		return 0
+	}
+	value, err := strconv.ParseFloat(fields[0], 64)
+	if err != nil {
+		return 0
+	}
+	if len(fields) == 1 {
+		return int64(value)
+	}
+	multiplier, ok := map[string]float64{
+		"B": 1, "KB": 1 << 10, "MB": 1 << 20, "GB": 1 << 30, "TB": 1 << 40,
+	}[strings.ToUpper(fields[1])]
+	if !ok {
+		return int64(value)
+	}
+	return int64(value * multiplier)
 }
 
 func (c *ContainerRepo) latestContainerTimestamp(agentID string) *gorm.DB {
@@ -213,7 +297,12 @@ func (c *ContainerRepo) ImageList(ctx context.Context, args rpcSchema.ImageQuery
 	if err != nil {
 		return rpcSchema.ImageQueryReply{}, err
 	}
-	if err := db.Model(&model.MonitorImage{}).
+	query := db.Model(&model.MonitorImage{})
+	if args.Name != "" {
+		like := "%" + args.Name + "%"
+		query = query.Where("name LIKE ? OR tag LIKE ?", like, like)
+	}
+	if err := query.
 		Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&results).Error; err != nil {
 		return rpcSchema.ImageQueryReply{}, err
 	}
@@ -241,7 +330,12 @@ func (c *ContainerRepo) ImageCount(ctx context.Context, args rpcSchema.ImageCoun
 	if err != nil {
 		return rpcSchema.ImageCountReply{}, err
 	}
-	if err := db.Model(&model.MonitorImage{}).Order("created_at desc").Count(&total).Error; err != nil {
+	query := db.Model(&model.MonitorImage{})
+	if args.Name != "" {
+		like := "%" + args.Name + "%"
+		query = query.Where("name LIKE ? OR tag LIKE ?", like, like)
+	}
+	if err := query.Order("created_at desc").Count(&total).Error; err != nil {
 		return rpcSchema.ImageCountReply{}, err
 	}
 	return rpcSchema.ImageCountReply{Count: int(total)}, nil
@@ -253,7 +347,14 @@ func (c *ContainerRepo) NetworkList(ctx context.Context, args rpcSchema.NetworkQ
 	if err != nil {
 		return rpcSchema.NetworkQueryReply{}, err
 	}
-	if err := db.Model(&model.MonitorNetwork{}).
+	query := db.Model(&model.MonitorNetwork{})
+	if args.Name != "" {
+		query = query.Where("name LIKE ?", "%"+args.Name+"%")
+	}
+	if args.Driver != "" {
+		query = query.Where("driver = ?", args.Driver)
+	}
+	if err := query.
 		Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&networks).Error; err != nil {
 		return rpcSchema.NetworkQueryReply{}, err
 	}
@@ -285,7 +386,14 @@ func (c *ContainerRepo) NetworkCount(ctx context.Context, args rpcSchema.Network
 	if err != nil {
 		return rpcSchema.NetworkCountReply{}, err
 	}
-	if err := db.Model(&model.MonitorNetwork{}).Order("created_at desc").Count(&total).Error; err != nil {
+	query := db.Model(&model.MonitorNetwork{})
+	if args.Name != "" {
+		query = query.Where("name LIKE ?", "%"+args.Name+"%")
+	}
+	if args.Driver != "" {
+		query = query.Where("driver = ?", args.Driver)
+	}
+	if err := query.Order("created_at desc").Count(&total).Error; err != nil {
 		return rpcSchema.NetworkCountReply{}, err
 	}
 	return rpcSchema.NetworkCountReply{Count: int(total)}, nil

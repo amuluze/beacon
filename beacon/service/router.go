@@ -228,6 +228,7 @@ func (a *Router) registerContainerRoutes(v1 fiber.Router) {
 	g := v1.Group("container")
 	g.Get("/version", a.containerAPI.Version).Name("获取 Docker 版本信息")
 	g.Get("/containers", a.containerAPI.ContainerList).Name("获取容器列表")
+	g.Get("/summary", a.containerAPI.ContainerSummary).Name("获取容器工作区概览")
 	g.Get("/usage", a.containerAPI.Usage).Name("获取容器资源使用情况")
 	g.Post("/container_create", a.containerAPI.ContainerCreate).Name("创建容器")
 	g.Post("/container_update", a.containerAPI.ContainerUpdate).Name("编辑容器")

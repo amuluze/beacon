@@ -22,8 +22,21 @@ type Container struct {
 }
 
 type ContainerQueryArgs struct {
-	Page int `json:"page" validate:"required,gte=1"`
-	Size int `json:"size" validate:"gte=0,lte=100"`
+	Page  int    `json:"page" validate:"required,gte=1"`
+	Size  int    `json:"size" validate:"gte=0,lte=100"`
+	Name  string `json:"name,omitempty" validate:"omitempty,max=128"`
+	State string `json:"state,omitempty" validate:"omitempty,oneof=running exited created paused restarting removing dead"`
+}
+
+// ContainerSummaryArgs 汇总当前 Agent 的容器 / 镜像 / 网络概览。
+type ContainerSummaryArgs struct{}
+
+type ContainerSummaryReply struct {
+	Containers        int   `json:"containers"`
+	ContainersRunning int   `json:"containers_running"`
+	Images            int   `json:"images"`
+	ImageBytes        int64 `json:"image_bytes"`
+	Networks          int   `json:"networks"`
 }
 
 type ContainerCreateArgs struct {
@@ -99,8 +112,9 @@ type Image struct {
 }
 
 type ImageQueryArgs struct {
-	Page int `json:"page" validate:"required,gte=1"`
-	Size int `json:"size" validate:"gt=0,lte=100"`
+	Page int    `json:"page" validate:"required,gte=1"`
+	Size int    `json:"size" validate:"gt=0,lte=100"`
+	Name string `json:"name,omitempty" validate:"omitempty,max=256"`
 }
 
 type ImageQueryReply struct {
@@ -154,8 +168,10 @@ type NetworkCreateReply struct {
 }
 
 type NetworkQueryArgs struct {
-	Page int `json:"page" validate:"required,gte=1"`
-	Size int `json:"size" validate:"gte=0,lte=100"`
+	Page   int    `json:"page" validate:"required,gte=1"`
+	Size   int    `json:"size" validate:"gte=0,lte=100"`
+	Name   string `json:"name,omitempty" validate:"omitempty,max=128"`
+	Driver string `json:"driver,omitempty" validate:"omitempty,max=64"`
 }
 
 type Network struct {

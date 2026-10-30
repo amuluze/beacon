@@ -105,6 +105,21 @@ func (a *ContainerAPI) ContainerList(ctx *fiber.Ctx) error {
 	return fiberx.Success(ctx, container)
 }
 
+func (a *ContainerAPI) ContainerSummary(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+
+	var args schema.ContainerSummaryArgs
+	if err := fiberx.ParseQuery(ctx, &args); err != nil {
+		return fiberx.Failure(ctx, errors.FromError(err))
+	}
+
+	summary, err := a.ContainerService.ContainerSummary(c, args)
+	if err != nil {
+		return fiberx.Failure(ctx, errors.FromError(err))
+	}
+	return fiberx.Success(ctx, summary)
+}
+
 func (a *ContainerAPI) ContainerStart(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 	var args schema.ContainerStartArgs

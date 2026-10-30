@@ -29,13 +29,13 @@ describe('dynamic workspace routes', () => {
     })
 
     it.each([
-        ['/setting/alarm', 'alarm'],
-        ['/setting/container', 'docker'],
-    ])('keeps the legacy deep link %s resolvable', (path, name) => {
+        ['/setting/alarm'],
+        ['/setting/container'],
+    ])('redirects the legacy deep link %s into the settings workspace', (path) => {
         const route = allRoutes.find(item => item.path === path)
 
-        expect(route?.name).toBe(name)
-        expect(route?.component).toBeTypeOf('function')
+        expect(route?.component).toBeUndefined()
+        expect(route?.redirect).toEqual({ path: '/setting', query: { tab: 'config' } })
     })
 
     it('does not expose the removed system settings page', () => {
@@ -53,12 +53,15 @@ describe('dynamic workspace routes', () => {
         expect(allRoutes.find(route => route.name === 'terminal')).toBeUndefined()
     })
 
-    it('keeps account deep links without exposing account as primary navigation', () => {
+    it('redirects account deep links into the users tab without exposing account as primary navigation', () => {
         const accountRoute = allRoutes.find(route => route.name === 'account')
 
         expect(accountRoute?.meta?.show).toBe(false)
-        expect(allRoutes.find(route => route.path === '/account/user')?.component).toBeTypeOf('function')
-        expect(allRoutes.find(route => route.path === '/account/role')?.component).toBeTypeOf('function')
-        expect(allRoutes.find(route => route.path === '/account/api')?.component).toBeTypeOf('function')
+        for (const path of ['/account/user', '/account/role', '/account/api']) {
+            expect(allRoutes.find(route => route.path === path)?.redirect).toEqual({
+                path: '/setting',
+                query: { tab: 'users' },
+            })
+        }
     })
 })
