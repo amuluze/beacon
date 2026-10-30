@@ -13,10 +13,12 @@ export interface Container {
     ports: string
     state: string
     uptime: string
-    cpu_percent: number
-    memory_percent: number
-    memory_usage: number
-    memory_limit: number
+    // Server 侧（beacon/service/schema/container.go）已格式化为可展示字符串，
+    // 例如 "0.42 %"、"128.00 MB"，前端直接渲染，不再二次换算。
+    cpu_percent: string
+    memory_percent: string
+    memory_usage: string
+    memory_limit: string
     network?: string
     volumes?: string
     environments?: string
@@ -76,6 +78,36 @@ export interface ContainerQueryResult {
     total: number
     page: number
     size: number
+}
+
+// 容器 / 镜像 / 网络列表的过滤参数，服务端按同一条件计算 total。
+export interface ContainerListParams {
+    page: number
+    size: number
+    name?: string
+    state?: string
+}
+
+export interface ImageListParams {
+    page: number
+    size: number
+    name?: string
+}
+
+export interface NetworkListParams {
+    page: number
+    size: number
+    name?: string
+    driver?: string
+}
+
+// 工作区概览：容器总数 / 运行中数量、镜像数量与总体积、网络总数。
+export interface ContainerSummary {
+    containers: number
+    containers_running: number
+    images: number
+    image_bytes: number
+    networks: number
 }
 
 export interface Image {

@@ -61,25 +61,24 @@ const { t } = useI18n()
             <el-input
                 v-model="textarea"
                 class="settings-card__textarea"
-                :rows="6"
+                :rows="4"
                 type="textarea"
                 placeholder="https://docker.nju.edu.cn"
             />
 
-            <footer class="settings-card__footer">
-                <p class="settings-card__tip">
-                    {{ t('setting.mirrorRegistryTips') }}
-                </p>
+            <p class="settings-card__hint">
+                {{ t('setting.mirrorRegistryTips') }}
+            </p>
+            <div class="settings-card__actions">
                 <el-button
                     type="primary"
-                    plain
                     :disabled="!selectedAgentID"
                     @click="editDockerRegistryMirrors({ title: 'setting.mirrorRegistry', registryMirrors: textarea })"
                 >
                     <IconSlidersHorizontal />
-                    {{ t('setting.setting') }}
+                    {{ t('setting.save') }}
                 </el-button>
-            </footer>
+            </div>
         </article>
     </div>
 </template>
