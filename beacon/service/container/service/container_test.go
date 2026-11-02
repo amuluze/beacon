@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 )
 
 // newFakeContainerRepoWithDefaults returns a FakeContainerRepo where every Fn
@@ -658,4 +660,115 @@ func TestContainerService_NetworkList(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestContainerService_RejectsProtectedContainerOperations 验证受保护容器的
+// 启动、停止、重启与删除在服务端被拒绝，且请求不会下发到目标 Agent。
+func TestContainerService_RejectsProtectedContainerOperations(t *testing.T) {
+	operations := []struct {
+		name string
+		call func(*ContainerService, context.Context) error
+	}{
+		{"start", func(s *ContainerService, ctx context.Context) error {
+			return s.ContainerStart(ctx, schema.ContainerStartArgs{ContainerID: "cid"})
+		}},
+		{"stop", func(s *ContainerService, ctx context.Context) error {
+			return s.ContainerStop(ctx, schema.ContainerStopArgs{ContainerID: "cid"})
+		}},
+		{"restart", func(s *ContainerService, ctx context.Context) error {
+			return s.ContainerRestart(ctx, schema.ContainerRestartArgs{ContainerID: "cid"})
+		}},
+		{"delete", func(s *ContainerService, ctx context.Context) error {
+			return s.ContainerDelete(ctx, schema.ContainerDeleteArgs{ContainerID: "cid"})
+		}},
+	}
+
+	for _, protectedName := range []string{"beacon", "amprobe", "Beacon", " amprobe "} {
+		for _, op := range operations {
+			t.Run(protectedName+"/"+op.name, func(t *testing.T) {
+				repo := newFakeContainerRepoWithDefaults()
+				repo.ContainerNameByIDFn = func(_ context.Context, _ string) (string, error) {
+					return protectedName, nil
+				}
+				dispatched := false
+				repo.ContainerStartFn = func(_ context.Context, _ rpcSchema.ContainerStartArgs) error {
+					dispatched = true
+					return nil
+				}
+				repo.ContainerStopFn = func(_ context.Context, _ rpcSchema.ContainerStopArgs) error {
+					dispatched = true
+					return nil
+				}
+				repo.ContainerRestartFn = func(_ context.Context, _ rpcSchema.ContainerRestartArgs) error {
+					dispatched = true
+					return nil
+				}
+				repo.ContainerDeleteFn = func(_ context.Context, _ rpcSchema.ContainerDeleteArgs) error {
+					dispatched = true
+					return nil
+				}
+
+				err := op.call(NewContainerService(repo), context.Background())
+
+				require.ErrorIs(t, err, ErrProtectedContainer)
+				assert.False(t, dispatched, "受保护容器的操作不得下发到目标 Agent")
+			})
+		}
+	}
+}
+
+// TestContainerService_AllowsNonProtectedContainer 验证非受保护容器照常下发。
+func TestContainerService_AllowsNonProtectedContainer(t *testing.T) {
+	repo := newFakeContainerRepoWithDefaults()
+	repo.ContainerNameByIDFn = func(_ context.Context, _ string) (string, error) {
+		return "nginx", nil
+	}
+	dispatched := false
+	repo.ContainerDeleteFn = func(_ context.Context, _ rpcSchema.ContainerDeleteArgs) error {
+		dispatched = true
+		return nil
+	}
+
+	err := NewContainerService(repo).ContainerDelete(context.Background(), schema.ContainerDeleteArgs{ContainerID: "cid"})
+
+	require.NoError(t, err)
+	assert.True(t, dispatched)
+}
+
+// TestContainerService_SkipsProtectionWhenRecordMissing 验证记录不存在时不拦截，
+// 交由后续操作返回 not found，避免改变既有错误语义。
+func TestContainerService_SkipsProtectionWhenRecordMissing(t *testing.T) {
+	repo := newFakeContainerRepoWithDefaults()
+	repo.ContainerNameByIDFn = func(_ context.Context, _ string) (string, error) {
+		return "", gorm.ErrRecordNotFound
+	}
+	dispatched := false
+	repo.ContainerDeleteFn = func(_ context.Context, _ rpcSchema.ContainerDeleteArgs) error {
+		dispatched = true
+		return nil
+	}
+
+	err := NewContainerService(repo).ContainerDelete(context.Background(), schema.ContainerDeleteArgs{ContainerID: "cid"})
+
+	require.NoError(t, err)
+	assert.True(t, dispatched)
+}
+
+// TestContainerService_FailsClosedOnLookupError 验证容器名查询失败时拒绝操作，
+// 避免无法确认保护状态时误放行。
+func TestContainerService_FailsClosedOnLookupError(t *testing.T) {
+	repo := newFakeContainerRepoWithDefaults()
+	repo.ContainerNameByIDFn = func(_ context.Context, _ string) (string, error) {
+		return "", errors.New("db unavailable")
+	}
+	dispatched := false
+	repo.ContainerDeleteFn = func(_ context.Context, _ rpcSchema.ContainerDeleteArgs) error {
+		dispatched = true
+		return nil
+	}
+
+	err := NewContainerService(repo).ContainerDelete(context.Background(), schema.ContainerDeleteArgs{ContainerID: "cid"})
+
+	require.Error(t, err)
+	assert.False(t, dispatched, "无法确认保护状态时不得下发删除")
 }

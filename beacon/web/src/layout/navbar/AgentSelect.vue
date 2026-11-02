@@ -2,6 +2,10 @@
 import { useAgentSelection } from '@/hooks/useAgentSelection'
 import { useI18n } from 'vue-i18n'
 
+// 顶栏使用 220px 宽，工作区分组内的上下文条使用紧凑宽度。
+const props = withDefaults(defineProps<{ width?: string }>(), {
+  width: '220px',
+})
 const { agentList, selectedAgentID, loading, isAgentEmpty } = useAgentSelection({ immediate: false })
 const { t } = useI18n()
 </script>
@@ -12,7 +16,7 @@ const { t } = useI18n()
         :loading="loading"
         :disabled="isAgentEmpty"
         size="small"
-        style="width: 220px"
+        :style="{ width: props.width }"
         :placeholder="t('agent.selectAgent')"
         :no-data-text="t('agent.noData')"
         filterable

@@ -77,6 +77,8 @@ func bindEnvs() {
 		"update.enable":              "BEACON_UPDATE_ENABLE",
 		"update.url":                 "BEACON_UPDATE_URL",
 		"update.checkinterval":       "BEACON_UPDATE_CHECK_INTERVAL",
+		"retention.days":             "BEACON_RETENTION_DAYS",
+		"retention.auditdays":        "BEACON_RETENTION_AUDIT_DAYS",
 	}
 	for key, env := range bindings {
 		if err := viper.BindEnv(key, env); err != nil {
@@ -233,7 +235,9 @@ type App struct {
 }
 
 type Retention struct {
-	Days int
+	// Days 是监控时间序列数据的保留天数；AuditDays 是审计日志的保留天数。
+	Days      int
+	AuditDays int
 }
 
 type Auth struct {

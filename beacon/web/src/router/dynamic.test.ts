@@ -53,14 +53,18 @@ describe('dynamic workspace routes', () => {
         expect(allRoutes.find(route => route.name === 'terminal')).toBeUndefined()
     })
 
-    it('redirects account deep links into the users tab without exposing account as primary navigation', () => {
+    it('redirects account deep links into their own settings tab without exposing account as primary navigation', () => {
         const accountRoute = allRoutes.find(route => route.name === 'account')
 
         expect(accountRoute?.meta?.show).toBe(false)
-        for (const path of ['/account/user', '/account/role', '/account/api']) {
+        for (const [path, tab] of [
+            ['/account/user', 'users'],
+            ['/account/role', 'roles'],
+            ['/account/api', 'apis'],
+        ]) {
             expect(allRoutes.find(route => route.path === path)?.redirect).toEqual({
                 path: '/setting',
-                query: { tab: 'users' },
+                query: { tab },
             })
         }
     })

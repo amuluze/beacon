@@ -102,7 +102,7 @@ const { t } = useI18n()
 </script>
 
 <template>
-    <el-drawer v-model="drawerVisible" title="编辑用户" size="50%">
+    <el-drawer v-model="drawerVisible" title="编辑用户" size="720px">
         <el-form
             ref="userUpdateRef"
             :model="userUpdateMode"
@@ -134,14 +134,13 @@ const { t } = useI18n()
         </el-form>
 
         <div class="am-user-create__operator">
-            <el-button type="primary" size="default" plain @click="drawerVisible = false">
+            <el-button type="default" size="default" @click="drawerVisible = false">
                 {{ t('account.cancel') }}
             </el-button>
             <el-button
                 v-loading="userUpdateLoading"
                 type="primary"
                 size="default"
-                plain
                 @click="confirmUserUpdate(userUpdateRef)"
             >
                 {{ t('account.confirm') }}
@@ -151,5 +150,13 @@ const { t } = useI18n()
 </template>
 
 <style scoped lang="scss">
-
+// §11.1 抽屉底部：上边框 + 右对齐
+.am-user-create__operator {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--am-spacing-sm);
+  padding: 16px 24px;
+  border-top: 1px solid var(--am-border-subtle);
+}
 </style>

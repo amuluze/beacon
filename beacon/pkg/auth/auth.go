@@ -5,6 +5,7 @@
 package auth
 
 import (
+	"context"
 	"errors"
 )
 
@@ -20,5 +21,5 @@ type Auther interface {
 	DestroyToken(token string) error
 	ParseToken(token string, tokenType string) (string, string, error)
 	Release() error
-	RecordAudit(username string, operate string)
+	RecordAudit(ctx context.Context, username string, operate string, object string)
 }

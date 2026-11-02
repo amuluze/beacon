@@ -102,6 +102,8 @@ function mountHostMonitor() {
             stubs: {
                 AgentEmptyState: { template: '<div data-testid="agent-empty" />' },
                 DataStaleTag: { template: '<span />' },
+                // 上下文条是真实组件，密度选择器需要能被测试直接驱动
+                MonitorContextBar: false,
                 Echarts: EchartsStub,
                 echarts: EchartsStub,
                 ElOption: { template: '<span />' },

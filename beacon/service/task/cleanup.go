@@ -18,18 +18,34 @@ import (
 // Only time-series (append-strategy) models are cleaned; replace-strategy models
 // (Host, Docker, Image, Network) never accumulate beyond the latest batch.
 type CleanupTask struct {
-	db     *database.DB
-	days   int
-	dbType string
+	db        *database.DB
+	days      int
+	auditDays int
+	dbType    string
 }
+
+const (
+	// defaultRetentionDays 是未配置时的时间序列数据保留天数。
+	defaultRetentionDays = 7
+	// defaultAuditRetentionDays 是未配置时的审计日志保留天数。
+	defaultAuditRetentionDays = 90
+)
 
 // NewCleanupTask creates a cleanup task with the given retention days.
 // dbType 决定是否在清理后执行 SQLite 专属的空间回收 PRAGMA。
-func NewCleanupTask(db *database.DB, days int, dbType string) *CleanupTask {
+func NewCleanupTask(db *database.DB, days, auditDays int, dbType string) *CleanupTask {
 	if days <= 0 {
-		days = 7
+		days = defaultRetentionDays
 	}
-	return &CleanupTask{db: db, days: days, dbType: strings.ToLower(strings.TrimSpace(dbType))}
+	if auditDays <= 0 {
+		auditDays = defaultAuditRetentionDays
+	}
+	return &CleanupTask{
+		db:        db,
+		days:      days,
+		auditDays: auditDays,
+		dbType:    strings.ToLower(strings.TrimSpace(dbType)),
+	}
 }
 
 // Run deletes expired time-series records in a single pass.
@@ -62,6 +78,15 @@ func (t *CleanupTask) Run(ctx context.Context) error {
 		slog.Error("cleanup: delete sessions failed", "err", sessionResult.Error)
 	} else if sessionResult.RowsAffected > 0 {
 		slog.Info("cleanup: deleted closed sessions", "rows", sessionResult.RowsAffected)
+	}
+
+	// 审计日志使用独立保留期：审计表以 CreatedAt 记录写入时间，与其他时序表的 timestamp 不同。
+	auditCutoff := time.Now().AddDate(0, 0, -t.auditDays)
+	auditResult := t.db.Unscoped().Where("created_at < ?", auditCutoff).Delete(&model.Audit{})
+	if auditResult.Error != nil {
+		slog.Error("cleanup: delete audit failed", "err", auditResult.Error)
+	} else if auditResult.RowsAffected > 0 {
+		slog.Info("cleanup: deleted expired audit records", "rows", auditResult.RowsAffected)
 	}
 
 	// SQLite 专属：删除后页面不会自动回收，db 文件只增不减，mmap 会让 RSS 缓慢上涨。

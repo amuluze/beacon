@@ -147,10 +147,10 @@ function goRoute(item: RouteRecordRaw): void {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: var(--am-foreground-secondary);
+    color: var(--am-foreground-muted);
     background: transparent;
     border: 0;
-    border-radius: 6px;
+    border-radius: var(--am-radius-sm);
     font-size: var(--am-font-sm);
     font-weight: 500;
     white-space: nowrap;
@@ -159,10 +159,16 @@ function goRoute(item: RouteRecordRaw): void {
       color 0.2s ease,
       background-color 0.2s ease;
 
-    &:hover,
+    // §12.3 Hover：悬停走 accent-primary-hover；激活态保持 accent-primary。
+    &:hover {
+      color: var(--am-foreground-on-accent);
+      background: var(--am-accent-primary-hover);
+    }
+
     &--active {
-      color: var(--am-surface-primary);
+      color: var(--am-foreground-on-accent);
       background: var(--am-accent-primary);
+      font-weight: 600;
     }
   }
 
