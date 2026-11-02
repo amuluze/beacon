@@ -80,7 +80,7 @@ onMounted(loadToken)
 </script>
 
 <template>
-    <el-dialog v-model="dialogVisible" :title="t(props.title as string)" width="480px">
+    <el-dialog v-model="dialogVisible" :title="t(props.title as string)" width="560px">
         <div v-loading="loading" class="am-install-agent">
             <p class="am-install-agent__desc">
                 {{ t('agent.installDesc') }}

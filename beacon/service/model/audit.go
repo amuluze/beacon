@@ -21,6 +21,8 @@ type Audit struct {
 	Username string `gorm:"type:varchar(255);not null"`
 	AgentID  string `gorm:"type:varchar(128);index"`
 	Operate  string `gorm:"type:varchar(255);not null"`
+	// Object 是本次操作的目标资源标识（如容器 ID），由处理该请求的 handler 写入上下文。
+	Object string `gorm:"type:varchar(255)"`
 }
 
 func (d *Audit) TableName() string {

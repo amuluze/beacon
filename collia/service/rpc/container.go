@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"common/database"
 	rpcSchema "common/rpc/schema"
 	tunnel "common/rpc/tunnel"
 
@@ -69,14 +70,24 @@ func (s *Service) ContainerUpdate(ctx context.Context, args rpcSchema.ContainerU
 	return nil
 }
 
+// containerRuntimeDeleter 抽象运行时容器的删除能力，便于在测试中注入失败。
+type containerRuntimeDeleter interface {
+	DeleteContainer(ctx context.Context, containerID string) error
+}
+
+// deleteContainerThenRecord 保证运行时容器与其本地记录的删除顺序：
+// 先删除运行时容器，成功后才移除本地记录。运行时删除失败时本地记录保留，
+// 避免出现"记录已消失但容器仍在节点上"的不一致状态。
+// 本地记录移除失败时容器已被删除，残留记录会在下一次上报批次中被替换。
+func deleteContainerThenRecord(ctx context.Context, deleter containerRuntimeDeleter, db *database.DB, containerID string) error {
+	if err := deleter.DeleteContainer(ctx, containerID); err != nil {
+		return err
+	}
+	return db.Model(&model.Container{}).Where("container_id = ?", containerID).Delete(&model.Container{}).Error
+}
+
 func (s *Service) ContainerDelete(ctx context.Context, args rpcSchema.ContainerDeleteArgs, reply *rpcSchema.ContainerDeleteReply) error {
-	if err := s.DB.Model(&model.Container{}).Where("container_id = ?", args.ContainerID).Delete(&model.Container{}).Error; err != nil {
-		return err
-	}
-	if err := s.Manager.DeleteContainer(ctx, args.ContainerID); err != nil {
-		return err
-	}
-	return nil
+	return deleteContainerThenRecord(ctx, s.Manager, s.DB, args.ContainerID)
 }
 
 func (s *Service) ContainerStart(ctx context.Context, args rpcSchema.ContainerStartArgs, reply *rpcSchema.ContainerStartReply) error {

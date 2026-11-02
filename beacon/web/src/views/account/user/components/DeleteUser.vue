@@ -50,7 +50,7 @@ const { t } = useI18n()
 </script>
 
 <template>
-    <el-dialog v-model="dialogVisible" :title="t(props.title as string)" width="500px" draggable>
+    <el-dialog v-model="dialogVisible" :title="t(props.title as string)" width="480px" draggable>
         <span>{{ t('account.confirmDelete') }}？</span>
         <template #footer>
             <span class="dialog-footer">

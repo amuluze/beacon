@@ -17,6 +17,11 @@ import TablePagination from '@/views/container/components/TablePagination.vue'
 
 import { useI18n } from 'vue-i18n'
 
+// 父级工作区标题区的「刷新」按钮通过 refreshToken 驱动列表重新拉取。
+const props = defineProps<{
+  refreshToken?: number
+}>()
+
 // 父级工作区用总数渲染 Tab 计数徽标
 const emit = defineEmits<{
   total: [number]
@@ -36,6 +41,10 @@ watch(selectedAgentID, async () => {
   if (initialized.value && selectedAgentID.value) {
     await search()
   }
+})
+watch(() => props.refreshToken, () => {
+  if (initialized.value)
+    void search()
 })
 watch(() => pageable.value.total, (total) => {
   if (initialized.value)
@@ -146,13 +155,13 @@ const { t } = useI18n()
                 border
                 @selection-change="handleSelectionChange"
             >
-                <el-table-column type="selection" :selectable="selectable" width="48" />
-                <el-table-column prop="name" :label="t('image.imageName')" align="center" min-width="260" show-overflow-tooltip fixed sortable />
-                <el-table-column prop="number" :label="t('image.containerNum')" align="center" show-overflow-tooltip min-width="120" sortable />
-                <el-table-column prop="tag" :label="t('image.imageTag')" align="center" show-overflow-tooltip min-width="120" />
-                <el-table-column prop="created" :label="t('image.createTime')" align="center" min-width="180" />
-                <el-table-column prop="size" :label="t('image.imageSize')" align="center" min-width="120" />
-                <el-table-column :label="t('image.operator')" width="160" fixed="right" align="center">
+                <el-table-column type="selection" :selectable="selectable" width="44" />
+                <el-table-column prop="name" :label="t('image.imageName')" align="center" show-overflow-tooltip fixed sortable />
+                <el-table-column prop="number" :label="t('image.containerNum')" align="center" show-overflow-tooltip width="100" sortable />
+                <el-table-column prop="tag" :label="t('image.imageTag')" align="center" show-overflow-tooltip width="140" />
+                <el-table-column prop="created" :label="t('image.createTime')" align="center" width="200" />
+                <el-table-column prop="size" :label="t('image.imageSize')" align="center" width="120" />
+                <el-table-column :label="t('image.operator')" width="120" fixed="right" align="center">
                     <template #default="scope">
                         <el-button type="danger" size="small" text :disabled="!selectedAgentID || scope.row.number > 0" @click="deleteImage({ title: 'image.deleteImage', id: scope.row.id, update: search })">
                             <svg-icon icon-class="delete" />

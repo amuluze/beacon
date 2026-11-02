@@ -5,9 +5,11 @@
 package jwtauth
 
 import (
+	"context"
 	"time"
 
 	"beacon/pkg/auth"
+	"beacon/pkg/contextx"
 	"beacon/service/model"
 	"common/database"
 
@@ -204,6 +206,14 @@ func (a *JWTAuth) Release() error {
 	})
 }
 
-func (a *JWTAuth) RecordAudit(username string, operate string) {
-	a.db.Model(&model.Audit{}).Create(&model.Audit{Username: username, Operate: operate})
+func (a *JWTAuth) RecordAudit(ctx context.Context, username string, operate string, object string) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	a.db.Model(&model.Audit{}).Create(&model.Audit{
+		Username: username,
+		AgentID:  contextx.FromAgentID(ctx),
+		Operate:  operate,
+		Object:   object,
+	})
 }

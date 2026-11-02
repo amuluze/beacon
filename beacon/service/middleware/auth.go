@@ -110,7 +110,7 @@ func UserAuthMiddleware(a auth.Auther, manager *authcookie.Manager, checker Pass
 			var args schema.LoginArgs
 			_ = fiberx.ParseBody(c, &args)
 			if c.Path() == "/api/v1/auth/login" {
-				a.RecordAudit(args.Username, "登录")
+				a.RecordAudit(c.UserContext(), args.Username, "登录", "")
 			}
 			return c.Next()
 		}
@@ -143,7 +143,7 @@ func UserAuthMiddleware(a auth.Auther, manager *authcookie.Manager, checker Pass
 		err = c.Next()
 		if err == nil {
 			if c.Method() == "POST" {
-				a.RecordAudit(username, c.Route().Name)
+				a.RecordAudit(c.UserContext(), username, c.Route().Name, contextx.AuditObject(c.UserContext()))
 			}
 			return nil
 		}

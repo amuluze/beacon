@@ -66,7 +66,7 @@ watch(selectedAgentID, () => {
 
         <div class="am-statusbar__uptime">
             <span class="am-statusbar__label">运行时间</span>
-            <span class="am-statusbar__value am-statusbar__value--success">{{ hostInfo?.uptime || '-' }}</span>
+            <span class="am-statusbar__value">{{ hostInfo?.uptime || '-' }}</span>
         </div>
 
         <div class="am-statusbar__group">
@@ -123,7 +123,7 @@ watch(selectedAgentID, () => {
   }
 
   @include e(label) {
-    color: var(--am-foreground-muted);
+    color: var(--am-foreground-secondary);
     font-size: var(--am-font-xs);
     white-space: nowrap;
   }
@@ -137,15 +137,10 @@ watch(selectedAgentID, () => {
     font-weight: 500;
     text-overflow: ellipsis;
     white-space: nowrap;
-
-    @include m(success) {
-      color: var(--am-accent-success);
-      font-weight: 600;
-    }
   }
 
   @include e(sep) {
-    color: var(--am-foreground-muted);
+    color: var(--am-foreground-secondary);
     font-size: var(--am-font-xs);
   }
 

@@ -1,25 +1,34 @@
 :root {
-  --am-surface-primary: #fbfcfe;
-  --am-surface-secondary: #f0f2f5;
-  --am-surface-card: #f7f8fa;
-  --am-foreground-primary: #1f2329;
-  --am-foreground-secondary: #4e5969;
-  --am-foreground-muted: #86909c;
-  --am-border-primary: #dcdfe6;
-  --am-border-subtle: #e4e7ed;
-  --am-accent-primary: #409eff;
-  --am-accent-success: #569a2e;
-  --am-accent-warning: #c28014;
-  --am-accent-danger: #db5050;
-  --am-foreground-on-accent: #fbfcfe;
-  --am-overlay-scrim: rgba(15, 23, 42, 0.38);
+  --am-surface-primary: #ffffff;
+  --am-surface-secondary: #f1f5f9;
+  --am-surface-card: #f8fafc;
+  --am-surface-elevated: #ffffff;
+  --am-surface-inset: #ffffff;
+  --am-foreground-primary: #0f172a;
+  --am-foreground-secondary: #475569;
+  --am-foreground-muted: #7c8ca3;
+  --am-foreground-placeholder: #94a3b8;
+  --am-border-primary: #e2e8f0;
+  --am-border-subtle: #eef2f6;
+  --am-accent-primary: #0a7c79;
+  --am-accent-primary-hover: #0c918d;
+  --am-accent-primary-soft: #e4f6f6;
+  --am-accent-success: #047857;
+  --am-accent-success-soft: #ecfdf5;
+  --am-accent-warning: #b45309;
+  --am-accent-warning-soft: #fffbeb;
+  --am-accent-danger: #dc2626;
+  --am-accent-danger-soft: #fef2f2;
+  --am-foreground-on-accent: #ffffff;
+  --am-overlay-scrim: #0f172a66;
   --am-shadow-subtle: 0 1px 2px rgba(15, 23, 42, 0.04);
   --am-shadow-raised: 0 10px 28px rgba(15, 23, 42, 0.08);
   --am-topbar-height: 56px;
   --am-statusbar-height: 44px;
-  --am-radius-sm: 4px;
+  --am-radius-xs: 4px;
+  --am-radius-sm: 6px;
   --am-radius-md: 8px;
-  --am-radius-lg: 12px;
+  --am-radius-lg: 10px;
   --am-spacing-xs: 4px;
   --am-spacing-sm: 8px;
   --am-spacing-md: 16px;
@@ -31,7 +40,22 @@
   --am-font-lg: 18px;
   --am-font-xl: 24px;
   --am-font-2xl: 32px;
+  --am-font-sans: Inter;
+  --am-font-mono: Geist Mono;
+  --am-chart-1: #0a7c79;
+  --am-chart-2: #4fb8b4;
+  --am-chart-3: #7c5ce0;
+  --am-chart-3-soft: #f1ecfe;
+  --am-chart-4: #b45309;
+  --am-chart-5: #047857;
+  --am-chart-6: #e11d48;
   --el-color-primary: var(--am-accent-primary);
+  --el-color-primary-light-3: #54a3a1;
+  --el-color-primary-light-5: #84bebc;
+  --el-color-primary-light-7: #b6d8d7;
+  --el-color-primary-light-8: #cee5e4;
+  --el-color-primary-light-9: #e6f2f2;
+  --el-color-primary-dark-2: #086361;
 }
 
 body {
@@ -39,21 +63,52 @@ body {
   background: var(--am-surface-primary);
 }
 
+// 键盘焦点环（DESIGN.md §12.3 / §15）：只在键盘导航时呈现，鼠标点击不出环。
+// 跟随元素圆角，offset 2px 保证不被相邻元素压住。
+:focus-visible {
+  outline: 2px solid var(--am-accent-primary);
+  outline-offset: 2px;
+}
+
+// 弹层内的滚动容器可能裁切 outline，用内阴影兜底一层。
+.el-dialog__body :focus-visible,
+.el-drawer__body :focus-visible {
+  outline: 2px solid var(--am-accent-primary);
+  outline-offset: 2px;
+  border-radius: var(--am-radius-sm);
+}
+
 html.dark,
 .dark {
-  --am-surface-primary: #141414;
-  --am-surface-secondary: #262727;
-  --am-surface-card: #1d1e1f;
-  --am-foreground-primary: #f5f7fa;
-  --am-foreground-secondary: #cfd3dc;
-  --am-foreground-muted: #909399;
-  --am-border-primary: #414243;
-  --am-border-subtle: #363637;
-  --am-accent-success: #67c23a;
-  --am-accent-warning: #e6a23c;
-  --am-accent-danger: #f56c6c;
-  --am-foreground-on-accent: #f5f7fa;
-  --am-overlay-scrim: rgba(10, 10, 10, 0.6);
+  --am-surface-primary: #0d0d0e;
+  --am-surface-secondary: #1c1c20;
+  --am-surface-card: #131316;
+  --am-surface-elevated: #131316;
+  --am-surface-inset: #1c1c20;
+  --am-foreground-primary: #f8fafc;
+  --am-foreground-secondary: #cbd5e1;
+  --am-foreground-muted: #94a3b8;
+  --am-foreground-placeholder: #7c8ca3;
+  --am-border-primary: #27272a;
+  --am-border-subtle: #1e293b;
+  --am-accent-primary: #0fc6c2;
+  --am-accent-primary-hover: #3dd2cf;
+  --am-accent-primary-soft: #0f3a39;
+  --am-accent-success: #34d399;
+  --am-accent-success-soft: #052e24;
+  --am-accent-warning: #fbbf24;
+  --am-accent-warning-soft: #3a2e10;
+  --am-accent-danger: #ef4444;
+  --am-accent-danger-soft: #3b1416;
+  --am-foreground-on-accent: #0f172a;
+  --am-chart-1: #0fc6c2;
+  --am-chart-2: #5fe0dd;
+  --am-chart-3: #a78bfa;
+  --am-chart-3-soft: #2b2140;
+  --am-chart-4: #fbbf24;
+  --am-chart-5: #34d399;
+  --am-chart-6: #fb7185;
+  --am-overlay-scrim: #000000b3;
   --am-shadow-subtle: none;
   --am-shadow-raised: 0 12px 32px rgba(0, 0, 0, 0.28);
 }
@@ -142,10 +197,17 @@ button {
     transition: all 0.3s cubic-bezier(0.895, 0.03, 0.685, 0.22);
   }
 
+  /* §12.3 Hover：导航项悬停用 accent-primary-hover，激活态保持 accent-primary。 */
   .el-menu-item:hover,
-  .el-menu-item.is-active,
   .el-sub-menu__title:hover,
-  .el-sub-menu .el-menu-item:hover,
+  .el-sub-menu .el-menu-item:hover {
+    background: var(--am-accent-primary-hover);
+    color: var(--el-menu-active-color);
+    border-radius: 8px;
+    transition: all 0.3s cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
+
+  .el-menu-item.is-active,
   .el-sub-menu .el-menu-item.is-active {
     background: var(--am-accent-primary);
     color: var(--el-menu-active-color);
@@ -161,6 +223,8 @@ button {
   --el-table-text-color: var(--am-foreground-secondary);
   --el-table-header-text-color: var(--am-foreground-primary);
   --el-table-border-color: var(--am-border-subtle);
+  /* §12.3 Hover：表格行悬停用 accent-primary-soft 浅底。 */
+  --el-table-row-hover-bg-color: var(--am-accent-primary-soft);
 
   background-color: var(--am-surface-card) !important;
   color: var(--am-foreground-secondary);
@@ -227,6 +291,25 @@ button {
   font-weight: 500;
 }
 
+/* §12.3 Hover：primary 按钮悬停用 accent-primary-hover（替代 Element 的 light-3 派生色）。 */
+.el-button--primary:hover,
+.el-button--primary:focus-visible {
+  background-color: var(--am-accent-primary-hover);
+  border-color: var(--am-accent-primary-hover);
+}
+
+/* §12.3 Hover：链接悬停用 accent-primary-hover。 */
+.el-link:hover {
+  color: var(--am-accent-primary-hover);
+}
+
+/* §11.2 弹层底部按钮：Ghost 在左（surface-inset 底 + border-primary），Primary 在右。 */
+.el-dialog__footer .el-button:not(.el-button--primary),
+.el-drawer__footer .el-button:not(.el-button--primary) {
+  background: var(--am-surface-inset);
+  border-color: var(--am-border-primary);
+}
+
 .el-button.is-plain {
   background: var(--am-surface-card);
 }
@@ -242,7 +325,7 @@ button {
 .el-pagination {
   --el-pagination-bg-color: transparent;
   --el-pagination-button-bg-color: transparent;
-  --el-pagination-hover-color: var(--am-accent-primary);
+  --el-pagination-hover-color: var(--am-accent-primary-hover);
 }
 
 .el-dropdown-menu {
@@ -259,7 +342,7 @@ button {
 
 .el-dropdown-menu__item:not(.is-disabled):focus,
 .el-dropdown-menu__item:not(.is-disabled):hover {
-  color: var(--am-accent-primary);
+  color: var(--am-accent-primary-hover);
   background: var(--am-surface-secondary);
 }
 
@@ -270,9 +353,9 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--am-foreground-primary);
+  color: var(--am-foreground-secondary);
   background: var(--am-surface-card);
-  border: 1px solid var(--am-border-subtle);
+  border: 1px solid var(--am-border-primary);
   border-radius: var(--am-radius-sm);
   cursor: pointer;
   transition:
@@ -284,8 +367,8 @@ button {
 .am-topbar-action:hover,
 .am-topbar-action:focus-visible {
   color: var(--am-foreground-on-accent);
-  background: var(--am-accent-primary);
-  border-color: var(--am-accent-primary);
+  background: var(--am-accent-primary-hover);
+  border-color: var(--am-accent-primary-hover);
   outline: none;
 }
 
@@ -415,6 +498,50 @@ button {
 .am-chart-card-header {
   min-height: 48px;
   display: flex;
+  align-items: center;
+  gap: var(--am-spacing-sm);
+  flex-wrap: wrap;
+}
+
+// §7.1 图卡图标块：28×28 soft 色底 + 15px 图标
+.am-chart-card-icon {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--am-radius-sm);
+
+  svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  &--primary {
+    color: var(--am-accent-primary);
+    background: var(--am-accent-primary-soft);
+  }
+
+  &--warning {
+    color: var(--am-accent-warning);
+    background: var(--am-accent-warning-soft);
+  }
+
+  &--success {
+    color: var(--am-accent-success);
+    background: var(--am-accent-success-soft);
+  }
+
+  &--network {
+    color: var(--am-chart-3);
+    background: var(--am-chart-3-soft);
+  }
+}
+
+.am-chart-card-title-group {
+  min-width: 0;
+  display: flex;
   flex-direction: column;
   gap: var(--am-spacing-xs);
 }
@@ -450,7 +577,7 @@ button {
   min-height: 240px;
   max-height: 320px;
   overflow: hidden;
-  background: var(--am-surface-primary);
+  background: var(--am-surface-inset);
   border: 1px solid var(--am-border-subtle);
   border-radius: var(--am-radius-sm);
 }
