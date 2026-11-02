@@ -20,6 +20,11 @@ import TablePagination from '@/views/container/components/TablePagination.vue'
 
 import { useI18n } from 'vue-i18n'
 
+// 父级工作区标题区的「刷新」按钮通过 refreshToken 驱动列表重新拉取。
+const props = defineProps<{
+  refreshToken?: number
+}>()
+
 // 父级工作区用总数渲染 Tab 计数徽标
 const emit = defineEmits<{
   total: [number]
@@ -39,6 +44,10 @@ watch(selectedAgentID, async () => {
   if (initialized.value && selectedAgentID.value) {
     await search()
   }
+})
+watch(() => props.refreshToken, () => {
+  if (initialized.value)
+    void search()
 })
 watch(() => pageable.value.total, (total) => {
   if (initialized.value)
@@ -169,14 +178,14 @@ const { t } = useI18n()
                 border
                 @selection-change="handleSelectionChange"
             >
-                <el-table-column type="selection" :selectable="selectable" width="48" />
-                <el-table-column prop="name" :label="t('container.containerName')" align="center" min-width="180" show-overflow-tooltip sortable fixed />
-                <el-table-column prop="image" :label="t('container.imageName')" align="center" min-width="180" show-overflow-tooltip sortable />
-                <el-table-column prop="cpu_percent" :label="t('container.cpuPercent')" align="center" min-width="110" show-overflow-tooltip />
-                <el-table-column prop="memory_usage" :label="t('container.memUsed')" align="center" min-width="120" show-overflow-tooltip />
-                <el-table-column prop="ip" :label="t('container.containerIP')" align="center" min-width="120" show-overflow-tooltip />
-                <el-table-column prop="ports" :label="t('container.containerPort')" align="center" min-width="140" show-overflow-tooltip />
-                <el-table-column prop="state" :label="t('container.state')" align="center" min-width="110" show-overflow-tooltip>
+                <el-table-column type="selection" :selectable="selectable" width="44" />
+                <el-table-column prop="name" :label="t('container.containerName')" align="center" show-overflow-tooltip sortable fixed />
+                <el-table-column prop="image" :label="t('container.imageName')" align="center" width="180" show-overflow-tooltip sortable />
+                <el-table-column prop="cpu_percent" :label="t('container.cpuPercent')" align="center" width="80" show-overflow-tooltip />
+                <el-table-column prop="memory_usage" :label="t('container.memUsed')" align="center" width="96" show-overflow-tooltip />
+                <el-table-column prop="ip" :label="t('container.containerIP')" align="center" width="120" show-overflow-tooltip />
+                <el-table-column prop="ports" :label="t('container.containerPort')" align="center" width="120" show-overflow-tooltip />
+                <el-table-column prop="state" :label="t('container.state')" align="center" width="96" show-overflow-tooltip>
                     <template #default="scope">
                         <el-tag v-if="scope.row.state === 'running'" type="success">
                             {{ t('container.enable') }}
@@ -186,8 +195,8 @@ const { t } = useI18n()
                         </el-tag>
                     </template>
                 </el-table-column>
-                <el-table-column prop="uptime" :label="t('container.uptime')" align="center" min-width="150" show-overflow-tooltip />
-                <el-table-column :label="t('container.operator')" width="190" fixed="right" align="center">
+                <el-table-column prop="uptime" :label="t('container.uptime')" align="center" width="116" show-overflow-tooltip />
+                <el-table-column :label="t('container.operator')" width="180" fixed="right" align="center">
                     <template #default="scope">
                         <span v-if="isProtectedContainerName(scope.row.name)" class="am-row-note">
                             {{ t('container.protected') }}

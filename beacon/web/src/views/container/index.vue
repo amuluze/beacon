@@ -18,6 +18,13 @@ const tabs: { name: ContainerTab, label: string }[] = [
   { name: 'networks', label: 'container.tabNetworks' },
 ]
 
+// §8.5 无 Agent 时三段各自渲染空态卡片，不做整页拦截
+const emptySections = [
+  { title: 'container.tabContainers', description: 'container.emptyContainersDesc' },
+  { title: 'container.tabImages', description: 'container.emptyImagesDesc' },
+  { title: 'container.tabNetworks', description: 'container.emptyNetworksDesc' },
+]
+
 const route = useRoute()
 const router = useRouter()
 
@@ -44,6 +51,9 @@ const { isAgentEmpty, loadAgents, selectedAgentID } = useAgentSelection({ immedi
 
 const summary = ref<ContainerSummary | null>(null)
 
+// 标题区的「刷新」按钮驱动三个 Tab 的列表重新拉取，并同步刷新概览统计。
+const refreshToken = ref(0)
+
 async function loadSummary() {
   if (!selectedAgentID.value) {
     summary.value = null
@@ -66,40 +76,65 @@ async function refreshAgents() {
   // Agent 列表刷新后由各 Tab 自身的 selectedAgentID 监听触发重新查询。
   await loadAgents()
 }
+
+function refreshWorkspace() {
+  refreshToken.value += 1
+  void loadSummary()
+}
 </script>
 
 <template>
     <main class="container-workspace">
         <header class="container-workspace__header">
-            <p class="container-workspace__eyebrow">
-                RUNTIME
-            </p>
-            <h1 class="container-workspace__title">
-                {{ $t('menu.container') }}
-            </h1>
-            <p class="container-workspace__description">
-                {{ $t('container.workspaceDescription') }}
-            </p>
-            <div v-if="summary" class="container-workspace__summary">
-                <span class="container-workspace__metric">
-                    {{ $t('container.tabContainers') }}
-                    <strong>{{ summary.containers }}</strong>
-                    · {{ $t('container.enable') }}
-                    <strong>{{ summary.containers_running }}</strong>
-                </span>
-                <span class="container-workspace__metric">
-                    {{ $t('container.tabImages') }}
-                    <strong>{{ summary.images }}</strong>
-                    · {{ convertBytesToReadable(summary.image_bytes) }}
-                </span>
-                <span class="container-workspace__metric">
-                    {{ $t('container.tabNetworks') }}
-                    <strong>{{ summary.networks }}</strong>
-                </span>
+            <div class="container-workspace__intro">
+                <p class="container-workspace__eyebrow">
+                    RUNTIME
+                </p>
+                <h1 class="container-workspace__title">
+                    {{ $t('menu.container') }}
+                </h1>
+                <p class="container-workspace__description">
+                    {{ $t('container.workspaceDescription') }}
+                </p>
+            </div>
+            <div class="container-workspace__aside">
+                <div v-if="summary" class="container-workspace__summary">
+                    <span class="container-workspace__metric">
+                        {{ $t('container.tabContainers') }}
+                        <strong>{{ summary.containers }}</strong>
+                        · {{ $t('container.enable') }}
+                        <strong>{{ summary.containers_running }}</strong>
+                    </span>
+                    <span class="container-workspace__metric">
+                        {{ $t('container.tabImages') }}
+                        <strong>{{ summary.images }}</strong>
+                        · {{ convertBytesToReadable(summary.image_bytes) }}
+                    </span>
+                    <span class="container-workspace__metric">
+                        {{ $t('container.tabNetworks') }}
+                        <strong>{{ summary.networks }}</strong>
+                    </span>
+                </div>
+                <button class="container-workspace__refresh" type="button" @click="refreshWorkspace">
+                    <svg-icon icon-class="update" />
+                    {{ $t('agent.refresh') }}
+                </button>
             </div>
         </header>
-        <!-- 无可用 Agent 时整页一个空态，不再为三段各渲染一张空态卡 -->
-        <AgentEmptyState v-if="isAgentEmpty" @refresh="refreshAgents" />
+        <!-- §8.5 无可用 Agent 时容器 / 镜像 / 网络三段各自渲染空态卡片与刷新入口 -->
+        <div v-if="isAgentEmpty" class="container-workspace__empty">
+            <section v-for="section in emptySections" :key="section.title" class="container-workspace__empty-section">
+                <h2 class="container-workspace__empty-title">
+                    {{ $t(section.title) }}
+                </h2>
+                <AgentEmptyState
+                    :description="$t(section.description)"
+                    min-height="240px"
+                    :show-install="false"
+                    @refresh="refreshAgents"
+                />
+            </section>
+        </div>
         <el-tabs v-else v-model="activeTab" class="container-workspace__tabs">
             <el-tab-pane v-for="tab in tabs" :key="tab.name" :name="tab.name" lazy>
                 <template #label>
@@ -111,14 +146,17 @@ async function refreshAgents() {
                 <div class="container-workspace__panel">
                     <ContainerManager
                         v-if="tab.name === 'containers'"
+                        :refresh-token="refreshToken"
                         @total="counts.containers = $event"
                     />
                     <ImageManager
                         v-else-if="tab.name === 'images'"
+                        :refresh-token="refreshToken"
                         @total="counts.images = $event"
                     />
                     <NetworkManager
                         v-else
+                        :refresh-token="refreshToken"
                         @total="counts.networks = $event"
                     />
                 </div>
@@ -138,6 +176,28 @@ async function refreshAgents() {
   padding: var(--am-spacing-lg);
 }
 
+.container-workspace__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--am-spacing-lg);
+}
+
+.container-workspace__intro {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--am-spacing-xs);
+}
+
+.container-workspace__aside {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--am-spacing-sm);
+  flex-wrap: wrap;
+}
+
 .container-workspace__eyebrow,
 .container-workspace__title,
 .container-workspace__description {
@@ -148,40 +208,89 @@ async function refreshAgents() {
   color: var(--am-accent-primary);
   font-size: var(--am-font-xs);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 2px;
 }
 
 .container-workspace__title {
-  margin-top: var(--am-spacing-xs);
-  font-size: var(--am-font-xl);
+  font-size: var(--am-font-2xl);
+  font-weight: 700;
 }
 
 .container-workspace__description {
-  margin-top: var(--am-spacing-xs);
+  max-width: 620px;
   color: var(--am-foreground-muted);
   font-size: var(--am-font-sm);
-  line-height: 1.6;
+  line-height: 1.55;
 }
 
 .container-workspace__summary {
   display: flex;
   flex-wrap: wrap;
   gap: var(--am-spacing-sm);
-  margin-top: var(--am-spacing-sm);
 }
 
 .container-workspace__metric {
-  padding: 2px 10px;
+  height: 28px;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
   color: var(--am-foreground-secondary);
+  font-family: 'Geist Mono', 'SFMono-Regular', Consolas, monospace;
   font-size: var(--am-font-xs);
-  background: var(--am-surface-secondary);
-  border: 1px solid var(--am-border-subtle);
+  background: var(--am-surface-inset);
+  border: 1px solid var(--am-border-primary);
   border-radius: var(--am-radius-sm);
+}
+
+.container-workspace__refresh {
+  height: 32px;
+  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--am-spacing-sm);
+  color: var(--am-accent-primary);
+  font-family: inherit;
+  font-size: var(--am-font-sm);
+  font-weight: 500;
+  background: var(--am-surface-card);
+  border: 1px solid var(--am-border-primary);
+  border-radius: var(--am-radius-sm);
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--am-accent-primary-hover);
+    border-color: var(--am-accent-primary-hover);
+  }
 }
 
 .container-workspace__metric strong {
   color: var(--am-foreground-primary);
   font-family: 'Geist Mono', 'SFMono-Regular', Consolas, monospace;
+  font-weight: 600;
+}
+
+.container-workspace__empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--am-spacing-sm);
+}
+
+.container-workspace__empty-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--am-spacing-sm);
+}
+
+.container-workspace__empty-title {
+  margin: 0;
+  color: var(--am-foreground-primary);
+  font-size: var(--am-font-md);
   font-weight: 600;
 }
 

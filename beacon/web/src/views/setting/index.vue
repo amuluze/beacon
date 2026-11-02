@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import AlarmSettings from './alarm/index.vue'
 import AuditLog from './components/AuditLog.vue'
-import UserSettings from './components/UserSettings.vue'
 import DockerSettings from './docker/index.vue'
+import ApiManager from '@/views/account/api/index.vue'
+import RoleManager from '@/views/account/role/index.vue'
+import UserManager from '@/views/account/user/index.vue'
 
 import useStore from '@/store'
 
-type SettingTab = 'config' | 'users' | 'audit'
+type SettingTab = 'config' | 'users' | 'roles' | 'apis' | 'audit'
 
 const store = useStore()
 const route = useRoute()
@@ -14,19 +16,26 @@ const router = useRouter()
 
 const isAdmin = computed(() => store.user.userInfo.name === 'admin')
 
-// 一级 Tab 与设计稿一致：设置 / 用户管理 / 审计日志，用户管理仅管理员可见。
+// 一级 Tab 与设计稿一致：设置 / 用户管理 / 角色管理 / 接口管理 / 审计日志。
+// 用户、角色、接口三块都涉及权限编排，统一仅管理员可见。
+const ADMIN_TABS: SettingTab[] = ['users', 'roles', 'apis']
+
 const tabs = computed<{ name: SettingTab, label: string }[]>(() => {
   const items: { name: SettingTab, label: string }[] = [
     { name: 'config', label: 'menu.setting' },
   ]
-  if (isAdmin.value)
+  if (isAdmin.value) {
     items.push({ name: 'users', label: 'menu.userManager' })
+    items.push({ name: 'roles', label: 'menu.roleManager' })
+    items.push({ name: 'apis', label: 'menu.apiManager' })
+  }
   items.push({ name: 'audit', label: 'audit.title' })
   return items
 })
 
 function resolveInitialTab(): SettingTab {
   const requested = route?.query.tab
+  // 无权访问的 Tab 不出现在 tabs 里，天然回落到 config。
   return tabs.value.some(tab => tab.name === requested) ? requested as SettingTab : 'config'
 }
 
@@ -40,9 +49,16 @@ watch(activeTab, (tab) => {
 
 // 账号权限变化后回落到当前账号仍可访问的 Tab。
 watch(isAdmin, (admin) => {
-  if (!admin && activeTab.value === 'users')
+  if (!admin && ADMIN_TABS.includes(activeTab.value))
     activeTab.value = 'config'
 })
+
+// 用户列表的新建弹层由工具栏按钮的票据驱动，避免把弹层状态提进工作区。
+const createTicket = ref(0)
+
+function openCreate() {
+  createTicket.value += 1
+}
 </script>
 
 <template>
@@ -106,7 +122,54 @@ watch(isAdmin, (admin) => {
             </section>
         </template>
         <section v-else-if="activeTab === 'users'" class="workspace__section">
-            <UserSettings />
+            <header class="workspace__section-header">
+                <span class="workspace__section-bar" />
+                <h2 class="workspace__section-title">
+                    {{ $t('menu.userManager') }}
+                </h2>
+                <p class="workspace__section-note">
+                    {{ $t('setting.userNote') }}
+                </p>
+                <el-button
+                    type="primary"
+                    class="workspace__action"
+                    data-testid="create-user"
+                    @click="openCreate"
+                >
+                    {{ $t('account.newAccount') }}
+                </el-button>
+            </header>
+            <div class="workspace__table-host">
+                <UserManager :create-ticket="createTicket" />
+            </div>
+        </section>
+        <section v-else-if="activeTab === 'roles'" class="workspace__section">
+            <header class="workspace__section-header">
+                <span class="workspace__section-bar" />
+                <h2 class="workspace__section-title">
+                    {{ $t('menu.roleManager') }}
+                </h2>
+                <p class="workspace__section-note">
+                    {{ $t('setting.roleNote') }}
+                </p>
+            </header>
+            <div class="workspace__table-host">
+                <RoleManager />
+            </div>
+        </section>
+        <section v-else-if="activeTab === 'apis'" class="workspace__section">
+            <header class="workspace__section-header">
+                <span class="workspace__section-bar" />
+                <h2 class="workspace__section-title">
+                    {{ $t('menu.apiManager') }}
+                </h2>
+                <p class="workspace__section-note">
+                    {{ $t('setting.apiNote') }}
+                </p>
+            </header>
+            <div class="workspace__table-host">
+                <ApiManager />
+            </div>
         </section>
         <section v-else class="workspace__section">
             <header class="workspace__section-header">
@@ -157,11 +220,11 @@ watch(isAdmin, (admin) => {
   color: var(--am-accent-primary);
   font-size: var(--am-font-xs);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 2px;
 }
 
 .workspace__title {
-  font-size: var(--am-font-xl);
+  font-size: var(--am-font-2xl);
   font-weight: 700;
 }
 
@@ -173,11 +236,14 @@ watch(isAdmin, (admin) => {
 }
 
 .workspace__hint {
+  height: 28px;
   padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
   color: var(--am-foreground-secondary);
   font-family: 'Geist Mono', 'SFMono-Regular', Consolas, monospace;
   font-size: var(--am-font-xs);
-  background: var(--am-surface-primary);
+  background: var(--am-surface-inset);
   border: 1px solid var(--am-border-primary);
   border-radius: var(--am-radius-sm);
 }
@@ -249,11 +315,29 @@ watch(isAdmin, (admin) => {
 }
 
 .workspace__section-note {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   color: var(--am-foreground-muted);
   font-size: var(--am-font-xs);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.workspace__action {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+// 列表页沿用固定高度宿主，让 el-table 的 height="100%" 有确定参照。
+.workspace__table-host {
+  height: 560px;
+  min-height: 0;
+}
+
+.workspace__table-host :deep(.am-container) {
+  padding: var(--am-spacing-md) 0 0;
+  background: transparent;
 }
 
 :deep(.settings-grid) {

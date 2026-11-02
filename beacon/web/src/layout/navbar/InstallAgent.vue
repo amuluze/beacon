@@ -30,14 +30,18 @@ function openInstall() {
   color: var(--am-foreground-on-accent);
   background: var(--am-accent-primary);
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--am-radius-sm);
   font-size: var(--am-font-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
 
-  &:hover {
-    opacity: 0.9;
+  &:hover,
+  &:focus-visible {
+    color: var(--am-foreground-on-accent);
+    background: var(--am-accent-primary-hover);
   }
 
   &__label {

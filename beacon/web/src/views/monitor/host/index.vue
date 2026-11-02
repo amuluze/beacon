@@ -5,12 +5,18 @@ import type { DiskIO, DiskUsage, NetIO, NetUsage } from '@/interface/host.ts'
 import { queryCPUInfo, queryCPUUsage, queryDiskInfo, queryDiskUsage, queryMemInfo, queryMemUsage, queryNetworkUsage } from '@/api/host'
 import AgentEmptyState from '@/components/Agent/AgentEmptyState.vue'
 import DataStaleTag from '@/components/Agent/DataStaleTag.vue'
+import MonitorContextBar from '@/components/Agent/MonitorContextBar.vue'
+import AgentSelect from '@/layout/navbar/AgentSelect.vue'
 import { cpuTrendingOption, diskTrendingOption, formatBytesPerSecond, memTrendingOption, netTrendingOption } from '@/config/echarts.ts'
 import { convertBytesToReadable } from '@/utils/convert.ts'
 import { dayjs } from 'element-plus'
 import { cloneDeep, set } from 'lodash-es'
 import { useAgentSelection } from '@/hooks/useAgentSelection'
 import { useI18n } from 'vue-i18n'
+import IconCpu from '~icons/lucide/cpu'
+import IconHardDrive from '~icons/lucide/hard-drive'
+import IconMemoryStick from '~icons/lucide/memory-stick'
+import IconNetwork from '~icons/lucide/network'
 import { applyMonitorTimeRange, toMonitorSeriesPoint } from '@/utils/monitorChart'
 import type { MonitorTimeRange } from '@/utils/monitorChart'
 
@@ -22,6 +28,7 @@ watch(currentAgent, () => {
 
 // Time density
 const timeDensity = ref(600)
+const lastUpdated = ref(0)
 const options = [
   { value: 120, label: '2分钟' },
   { value: 300, label: '5分钟' },
@@ -99,6 +106,7 @@ async function renderMem(param: MonitorTimeRange, refreshID: number) {
 
 // Disk
 const diskInfo = ref<{ device: string, total: string, used: string, percent: string, stale?: boolean, timestamp?: number }[]>([])
+const diskIo = ref({ read: '-', write: '-' })
 const diskStale = computed(() => diskInfo.value.some(item => item.stale))
 const diskTimestamp = computed(() => diskInfo.value.find(item => item.stale)?.timestamp || diskInfo.value[0]?.timestamp || 0)
 const diskOption = reactive<EChartsOption>(cloneDeep(diskTrendingOption))
@@ -129,8 +137,13 @@ async function renderDisk(param: MonitorTimeRange, refreshID: number) {
     return
   if (!data.usage || data.usage.length === 0) {
     set(diskOption, 'series', [])
+    diskIo.value = { read: '-', write: '-' }
     return
   }
+  const lastIo = data.usage[0]?.data?.[data.usage[0].data.length - 1]
+  diskIo.value = lastIo
+    ? { read: formatBytesPerSecond(lastIo.io_read), write: formatBytesPerSecond(lastIo.io_write) }
+    : { read: '-', write: '-' }
   set(diskOption, 'series', generateDiskSeriesData(data.usage))
 }
 
@@ -182,6 +195,7 @@ async function refreshAll(): Promise<void> {
     renderDisk(param, refreshID),
     renderNet(param, refreshID),
   ])
+  lastUpdated.value = Date.now()
 }
 
 async function refreshAgents() {
@@ -200,6 +214,18 @@ onUnmounted(() => {
 })
 
 const { t } = useI18n()
+
+// §7.1 图卡指标行：标题下方的 mono 指标值（语义色）
+const cpuMetric = computed(() => `当前 ${cpuPercent.value}`)
+const memMetric = computed(() => `${memInfo.value.used} / ${memInfo.value.total} · ${memInfo.value.percent}`)
+const diskMaxPercent = computed(() => {
+  if (!diskInfo.value.length)
+    return '-'
+  const max = Math.max(...diskInfo.value.map(item => Number.parseFloat(item.percent) || 0))
+  return `${max.toFixed(1)}%`
+})
+const diskMetric = computed(() => `读 ${diskIo.value.read} / 写 ${diskIo.value.write} · 最高 ${diskMaxPercent.value}`)
+const netMetric = computed(() => `接收 ${netInfo.value[0]?.read ?? '-'} · 发送 ${netInfo.value[0]?.write ?? '-'}`)
 </script>
 
 <template>
@@ -208,13 +234,9 @@ const { t } = useI18n()
         <div class="am-section-header">
             <div class="am-section-title-group">
                 <span class="am-section-title">{{ t('menu.hostMonitor') }}</span>
+                <AgentSelect width="180px" />
             </div>
-            <div class="am-density-group">
-                <span class="am-density-label">{{ t('monitor.timeDensity') }}：</span>
-                <el-select v-model="timeDensity" size="small" style="width: 110px">
-                    <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
-                </el-select>
-            </div>
+            <MonitorContextBar v-model:density="timeDensity" :density-options="options" :last-updated="lastUpdated" />
         </div>
 
         <AgentEmptyState v-if="isAgentEmpty" @refresh="refreshAgents" />
@@ -222,11 +244,14 @@ const { t } = useI18n()
             <div class="am-chart-row">
                 <div class="am-chart-card">
                     <div class="am-chart-card-header">
-                        <div class="am-chart-card-title-row">
+                        <span class="am-chart-card-icon am-chart-card-icon--primary">
+                            <IconCpu />
+                        </span>
+                        <div class="am-chart-card-title-group">
                             <span class="am-chart-card-title">CPU 使用率</span>
-                            <DataStaleTag :stale="cpuStale" :timestamp="cpuTimestamp" />
+                            <span class="am-chart-card-percent accent-primary">{{ cpuMetric }}</span>
                         </div>
-                        <span class="am-chart-card-percent accent-primary">{{ cpuPercent }}</span>
+                        <DataStaleTag :stale="cpuStale" :timestamp="cpuTimestamp" />
                     </div>
                     <div class="am-chart-area">
                         <echarts :option="cpuOption" />
@@ -234,11 +259,14 @@ const { t } = useI18n()
                 </div>
                 <div class="am-chart-card">
                     <div class="am-chart-card-header">
-                        <div class="am-chart-card-title-row">
+                        <span class="am-chart-card-icon am-chart-card-icon--warning">
+                            <IconMemoryStick />
+                        </span>
+                        <div class="am-chart-card-title-group">
                             <span class="am-chart-card-title">内存使用率</span>
-                            <DataStaleTag :stale="memInfo.stale" :timestamp="memInfo.timestamp" />
+                            <span class="am-chart-card-percent accent-warning">{{ memMetric }}</span>
                         </div>
-                        <span class="am-chart-card-percent accent-warning">{{ memInfo.percent }}</span>
+                        <DataStaleTag :stale="memInfo.stale" :timestamp="memInfo.timestamp" />
                     </div>
                     <div class="am-chart-area">
                         <echarts :option="memOption" />
@@ -248,11 +276,14 @@ const { t } = useI18n()
             <div class="am-chart-row">
                 <div class="am-chart-card">
                     <div class="am-chart-card-header">
-                        <div class="am-chart-card-title-row">
+                        <span class="am-chart-card-icon am-chart-card-icon--success">
+                            <IconHardDrive />
+                        </span>
+                        <div class="am-chart-card-title-group">
                             <span class="am-chart-card-title">磁盘 IO</span>
-                            <DataStaleTag :stale="diskStale" :timestamp="diskTimestamp" />
+                            <span class="am-chart-card-percent accent-success">{{ diskMetric }}</span>
                         </div>
-                        <span v-if="diskInfo.length > 0" class="am-chart-card-percent accent-success">{{ diskInfo[0].percent }}</span>
+                        <DataStaleTag :stale="diskStale" :timestamp="diskTimestamp" />
                     </div>
                     <div class="am-chart-area">
                         <echarts :option="diskOption" />
@@ -260,8 +291,13 @@ const { t } = useI18n()
                 </div>
                 <div class="am-chart-card">
                     <div class="am-chart-card-header">
-                        <span class="am-chart-card-title">网络流量</span>
-                        <span v-if="netInfo.length > 0" class="am-chart-card-percent accent-primary">{{ netInfo[0].read }} / {{ netInfo[0].write }}</span>
+                        <span class="am-chart-card-icon am-chart-card-icon--network">
+                            <IconNetwork />
+                        </span>
+                        <div class="am-chart-card-title-group">
+                            <span class="am-chart-card-title">网络流量</span>
+                            <span class="am-chart-card-percent accent-chart-3">{{ netMetric }}</span>
+                        </div>
                     </div>
                     <div class="am-chart-area">
                         <echarts :option="netOption" />
@@ -284,5 +320,9 @@ const { t } = useI18n()
 }
 .accent-success {
   color: var(--am-accent-success);
+}
+
+.accent-chart-3 {
+  color: var(--am-chart-3);
 }
 </style>

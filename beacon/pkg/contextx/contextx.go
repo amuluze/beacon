@@ -75,6 +75,25 @@ func FromUsername(ctx context.Context) string {
 	return ""
 }
 
+// auditObjectCtx 承载本次请求的审计操作对象。
+type auditObjectCtx struct{}
+
+// NewAuditObject 把本次请求的操作对象写入上下文，供审计中间件记录。
+func NewAuditObject(ctx context.Context, object string) context.Context {
+	return context.WithValue(ctx, auditObjectCtx{}, object)
+}
+
+// AuditObject 读取本次请求的操作对象；未设置时返回空字符串。
+func AuditObject(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+	if v, ok := ctx.Value(auditObjectCtx{}).(string); ok {
+		return v
+	}
+	return ""
+}
+
 func NewAgentID(ctx context.Context, agentID string) context.Context {
 	return context.WithValue(ctx, agentIDCtx{}, agentID)
 }

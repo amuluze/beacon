@@ -26,6 +26,8 @@ const dialogVisible = computed({
 })
 const form = reactive<AlarmThreshold>({ ...props.threshold, type: 'disk' })
 const loading = shallowRef(false)
+// 与 CPU/内存一致：磁盘告警同样按「连续时长 + 阈值」判定（monitoring-platform I013）。
+const durationOptions = Array.from({ length: 9 }, (_, index) => index + 2)
 const { t } = useI18n()
 
 async function submit() {
@@ -51,6 +53,10 @@ async function submit() {
             <el-form-item :label="t('setting.diskAlarmThreshold')">
                 <div class="threshold-row">
                     <span>{{ t('setting.diskUsage') }}</span>
+                    <el-select v-model="form.duration">
+                        <el-option v-for="duration in durationOptions" :key="duration" :value="duration" :label="`${duration} 分钟`" />
+                    </el-select>
+                    <span>{{ t('setting.over') }}</span>
                     <el-input v-model="form.threshold">
                         <template #append>
                             %
@@ -73,8 +79,15 @@ async function submit() {
 <style scoped lang="scss">
 .threshold-row {
   display: grid;
-  grid-template-columns: auto minmax(120px, 1fr);
+  grid-template-columns: auto 110px auto minmax(120px, 1fr);
   gap: var(--am-spacing-sm);
   align-items: center;
+  width: 100%;
+}
+
+@media (max-width: 520px) {
+  .threshold-row {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

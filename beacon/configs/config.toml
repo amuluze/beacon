@@ -93,3 +93,7 @@ Timeout = 5
 Enable = true                                    # 启用版本轮询；关闭则仅在启动时检查一次
 URL = "https://beacon.amuluze.com"               # beacon-help 版本清单基础 URL
 CheckInterval = 21600                            # 轮询间隔（秒），默认 6h，最低 1h（version_check.go 兜底）
+
+[Retention]
+Days = 7        # 监控时间序列数据（CPU/内存/磁盘/网络/容器）保留天数
+AuditDays = 90  # 审计日志保留天数

@@ -15,6 +15,11 @@ import TablePagination from '@/views/container/components/TablePagination.vue'
 
 import { useI18n } from 'vue-i18n'
 
+// 父级工作区标题区的「刷新」按钮通过 refreshToken 驱动列表重新拉取。
+const props = defineProps<{
+  refreshToken?: number
+}>()
+
 // 父级工作区用总数渲染 Tab 计数徽标
 const emit = defineEmits<{
   total: [number]
@@ -39,6 +44,10 @@ watch(selectedAgentID, async () => {
   if (initialized.value && selectedAgentID.value) {
     await search()
   }
+})
+watch(() => props.refreshToken, () => {
+  if (initialized.value)
+    void search()
 })
 watch(() => pageable.value.total, (total) => {
   if (initialized.value)

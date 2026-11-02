@@ -131,10 +131,10 @@ const { t } = useI18n()
             </el-form>
         </div>
         <div class="am-network-create__operator">
-            <el-button type="default" size="default" plain @click="dialogVisible = false">
+            <el-button type="default" size="default" @click="dialogVisible = false">
                 {{ t('network.cancel') }}
             </el-button>
-            <el-button v-loading="createNetworkLoading" type="primary" size="default" plain @click="confirmCreateNetwork(networkCreateRef)">
+            <el-button v-loading="createNetworkLoading" type="primary" size="default" @click="confirmCreateNetwork(networkCreateRef)">
                 {{ t('network.confirm') }}
             </el-button>
         </div>

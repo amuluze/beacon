@@ -61,7 +61,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
             {
                 path: '/account/role',
                 name: 'roleManager',
-                redirect: { path: '/setting', query: { tab: 'users' } },
+                redirect: { path: '/setting', query: { tab: 'roles' } },
                 meta: {
                     title: 'menu.roleManager',
                 },
@@ -69,7 +69,7 @@ export const dynamicRoutes: RouteRecordRaw[] = [
             {
                 path: '/account/api',
                 name: 'apiManager',
-                redirect: { path: '/setting', query: { tab: 'users' } },
+                redirect: { path: '/setting', query: { tab: 'apis' } },
                 meta: {
                     title: 'menu.apiManager',
                 },

@@ -86,7 +86,7 @@ const { t } = useI18n()
     <el-drawer
         v-model="drawerVisible"
         :title="t('account.updatePassword')"
-        size="30%"
+        size="480px"
         :close-on-click-modal="!props.mandatory"
         :close-on-press-escape="!props.mandatory"
         :show-close="!props.mandatory"
@@ -110,7 +110,7 @@ const { t } = useI18n()
         </el-form>
 
         <template #footer>
-            <el-button v-if="!props.mandatory" type="primary" plain @click="drawerVisible = false">
+            <el-button v-if="!props.mandatory" @click="drawerVisible = false">
                 {{ t('account.cancel') }}
             </el-button>
             <el-button

@@ -7,8 +7,10 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
+	"strings"
 
 	"beacon/pkg/utils"
 	"beacon/service/container/repository"
@@ -16,6 +18,7 @@ import (
 	rpcSchema "common/rpc/schema"
 
 	"github.com/google/wire"
+	"gorm.io/gorm"
 )
 
 var ContainerServiceSet = wire.NewSet(NewContainerService, wire.Bind(new(IContainerService), new(*ContainerService)))
@@ -47,6 +50,32 @@ type IContainerService interface {
 
 	GetDockerRegistryMirrors(ctx context.Context, args schema.GetDockerRegistryMirrorsArgs) (schema.GetDockerRegistryMirrorsReply, error)
 	SetDockerRegistryMirrors(ctx context.Context, args schema.SetDockerRegistryMirrorsArgs) error
+}
+
+// ErrProtectedContainer 表示操作目标属于系统保留容器，禁止通过控制接口变更。
+var ErrProtectedContainer = errors.New("container is protected")
+
+// protectedContainerNames 是禁止启动、停止、重启与删除的系统容器名。
+// 判定为服务端约束，前端禁用按钮只是呈现层保护。
+var protectedContainerNames = map[string]struct{}{
+	"beacon":  {},
+	"amprobe": {},
+}
+
+// assertNotProtected 拒绝针对受保护容器的控制操作。
+// 容器记录不存在时放行，由后续操作返回 not found，避免改变既有错误语义。
+func (a *ContainerService) assertNotProtected(ctx context.Context, containerID string) error {
+	name, err := a.ContainerRepo.ContainerNameByID(ctx, containerID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+	if _, protected := protectedContainerNames[strings.ToLower(strings.TrimSpace(name))]; protected {
+		return fmt.Errorf("%w: %s", ErrProtectedContainer, name)
+	}
+	return nil
 }
 
 type ContainerService struct {
@@ -230,6 +259,9 @@ func (a *ContainerService) ContainerUpdate(ctx context.Context, args schema.Cont
 }
 
 func (a *ContainerService) ContainerDelete(ctx context.Context, args schema.ContainerDeleteArgs) error {
+	if err := a.assertNotProtected(ctx, args.ContainerID); err != nil {
+		return err
+	}
 	rpcArgs := rpcSchema.ContainerDeleteArgs{
 		ContainerID: args.ContainerID,
 	}
@@ -237,6 +269,9 @@ func (a *ContainerService) ContainerDelete(ctx context.Context, args schema.Cont
 }
 
 func (a *ContainerService) ContainerStart(ctx context.Context, args schema.ContainerStartArgs) error {
+	if err := a.assertNotProtected(ctx, args.ContainerID); err != nil {
+		return err
+	}
 	rpcArgs := rpcSchema.ContainerStartArgs{
 		ContainerID: args.ContainerID,
 	}
@@ -244,6 +279,9 @@ func (a *ContainerService) ContainerStart(ctx context.Context, args schema.Conta
 }
 
 func (a *ContainerService) ContainerStop(ctx context.Context, args schema.ContainerStopArgs) error {
+	if err := a.assertNotProtected(ctx, args.ContainerID); err != nil {
+		return err
+	}
 	rpcArgs := rpcSchema.ContainerStopArgs{
 		ContainerID: args.ContainerID,
 	}
@@ -251,6 +289,9 @@ func (a *ContainerService) ContainerStop(ctx context.Context, args schema.Contai
 }
 
 func (a *ContainerService) ContainerRestart(ctx context.Context, args schema.ContainerRestartArgs) error {
+	if err := a.assertNotProtected(ctx, args.ContainerID); err != nil {
+		return err
+	}
 	rpcArgs := rpcSchema.ContainerRestartArgs{
 		ContainerID: args.ContainerID,
 	}
