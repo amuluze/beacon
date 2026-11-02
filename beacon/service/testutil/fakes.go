@@ -29,7 +29,7 @@ type FakeAuther struct {
 	ParseTokenFn    func(token, tokenType string) (string, string, error)
 	DestroyTokenFn  func(token string) error
 	ReleaseFn       func() error
-	RecordAuditFn   func(username, operate string)
+	RecordAuditFn   func(ctx context.Context, username, operate, object string)
 }
 
 func NewFakeAuther() *FakeAuther {
@@ -42,7 +42,7 @@ func NewFakeAuther() *FakeAuther {
 		},
 		DestroyTokenFn: func(token string) error { return nil },
 		ReleaseFn:      func() error { return nil },
-		RecordAuditFn:  func(string, string) {},
+		RecordAuditFn:  func(context.Context, string, string, string) {},
 	}
 }
 
@@ -52,9 +52,11 @@ func (f *FakeAuther) GenerateToken(userID, username string) (auth.TokenInfo, err
 func (f *FakeAuther) ParseToken(token, tokenType string) (string, string, error) {
 	return f.ParseTokenFn(token, tokenType)
 }
-func (f *FakeAuther) DestroyToken(token string) error      { return f.DestroyTokenFn(token) }
-func (f *FakeAuther) Release() error                       { return f.ReleaseFn() }
-func (f *FakeAuther) RecordAudit(username, operate string) { f.RecordAuditFn(username, operate) }
+func (f *FakeAuther) DestroyToken(token string) error { return f.DestroyTokenFn(token) }
+func (f *FakeAuther) Release() error                  { return f.ReleaseFn() }
+func (f *FakeAuther) RecordAudit(ctx context.Context, username, operate, object string) {
+	f.RecordAuditFn(ctx, username, operate, object)
+}
 
 type fakeTokenInfo struct {
 	accessToken  string
@@ -326,6 +328,7 @@ func (f *FakeHostRepo) FolderCreate(ctx context.Context, args rpcSchema.FolderCr
 type FakeContainerRepo struct {
 	VersionFn                  func(ctx context.Context, args rpcSchema.DockerArgs) (rpcSchema.DockerReply, error)
 	ContainerListFn            func(ctx context.Context, args rpcSchema.ContainerQueryArgs) (rpcSchema.ContainerQueryReply, error)
+	ContainerNameByIDFn        func(ctx context.Context, containerID string) (string, error)
 	UsageFn                    func(ctx context.Context, args rpcSchema.ContainerUsageArgs) (rpcSchema.ContainerUsageReply, error)
 	ContainersByImageFn        func(ctx context.Context, image string) (int, error)
 	ContainerCountFn           func(ctx context.Context, args rpcSchema.ContainerCountArgs) (rpcSchema.ContainerCountReply, error)
@@ -377,6 +380,12 @@ func (f *FakeContainerRepo) ContainerCreate(ctx context.Context, args rpcSchema.
 }
 func (f *FakeContainerRepo) ContainerUpdate(ctx context.Context, args rpcSchema.ContainerUpdateArgs) (rpcSchema.ContainerUpdateReply, error) {
 	return f.ContainerUpdateFn(ctx, args)
+}
+func (f *FakeContainerRepo) ContainerNameByID(ctx context.Context, containerID string) (string, error) {
+	if f.ContainerNameByIDFn == nil {
+		return "", gorm.ErrRecordNotFound
+	}
+	return f.ContainerNameByIDFn(ctx, containerID)
 }
 func (f *FakeContainerRepo) ContainerDelete(ctx context.Context, args rpcSchema.ContainerDeleteArgs) error {
 	return f.ContainerDeleteFn(ctx, args)

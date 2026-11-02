@@ -5,6 +5,7 @@
 package api
 
 import (
+	"beacon/pkg/contextx"
 	"beacon/pkg/errors"
 	"beacon/pkg/fiberx"
 	"beacon/pkg/validatex"
@@ -130,7 +131,7 @@ func (a *ContainerAPI) ContainerStart(ctx *fiber.Ctx) error {
 	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.FromError(err))
 	}
-	err := a.ContainerService.ContainerStart(c, args)
+	err := a.ContainerService.ContainerStart(contextx.NewAuditObject(c, args.ContainerID), args)
 	if err != nil {
 		return fiberx.Failure(ctx, errors.FromError(err))
 	}
@@ -148,7 +149,7 @@ func (a *ContainerAPI) ContainerStop(ctx *fiber.Ctx) error {
 	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.FromError(err))
 	}
-	err := a.ContainerService.ContainerStop(c, args)
+	err := a.ContainerService.ContainerStop(contextx.NewAuditObject(c, args.ContainerID), args)
 	if err != nil {
 		return fiberx.Failure(ctx, errors.FromError(err))
 	}
@@ -165,7 +166,7 @@ func (a *ContainerAPI) ContainerRemove(ctx *fiber.Ctx) error {
 	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.FromError(err))
 	}
-	err := a.ContainerService.ContainerDelete(c, args)
+	err := a.ContainerService.ContainerDelete(contextx.NewAuditObject(c, args.ContainerID), args)
 	if err != nil {
 		return fiberx.Failure(ctx, errors.FromError(err))
 	}
@@ -182,7 +183,7 @@ func (a *ContainerAPI) ContainerRestart(ctx *fiber.Ctx) error {
 	if err := validatex.ValidateStruct(&args); err != nil {
 		return fiberx.Failure(ctx, errors.FromError(err))
 	}
-	err := a.ContainerService.ContainerRestart(c, args)
+	err := a.ContainerService.ContainerRestart(contextx.NewAuditObject(c, args.ContainerID), args)
 	if err != nil {
 		return fiberx.Failure(ctx, errors.FromError(err))
 	}

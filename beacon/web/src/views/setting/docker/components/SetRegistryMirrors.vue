@@ -59,10 +59,10 @@ const { t } = useI18n()
                 <el-input v-model="textarea" :rows="6" type="textarea" />
             </el-form-item>
         </el-form>
-        <el-button type="primary" size="default" plain @click="drawerVisible = false">
+        <el-button type="default" size="default" @click="drawerVisible = false">
             {{ t('setting.cancel') }}
         </el-button>
-        <el-button :loading="loading" type="primary" size="default" plain @click="confirmEditDockerRegistryMirrors">
+        <el-button :loading="loading" type="primary" size="default" @click="confirmEditDockerRegistryMirrors">
             {{ t('setting.confirm') }}
         </el-button>
     </el-drawer>

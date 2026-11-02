@@ -5,11 +5,16 @@
 package jwtauth
 
 import (
+	"context"
+	"path/filepath"
 	"sync"
 	"testing"
 	"time"
 
 	"beacon/pkg/auth"
+	"beacon/pkg/contextx"
+	"beacon/service/model"
+	"common/database"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -313,5 +318,56 @@ func TestCallStore_NilStore(t *testing.T) {
 	}
 	if username != "nilstore" {
 		t.Errorf("username = %q, want %q", username, "nilstore")
+	}
+}
+
+// TestRecordAuditCarriesObjectAndAgentID 验证审计记录同时携带操作对象与目标
+// Agent 标识，且登录等非 Agent 作用域的操作允许 Agent 字段为空。
+func TestRecordAuditCarriesObjectAndAgentID(t *testing.T) {
+	db, err := database.NewDB(database.WithDBName(filepath.Join(t.TempDir(), "audit")))
+	if err != nil {
+		t.Fatalf("new db: %v", err)
+	}
+	t.Cleanup(db.Close)
+	if err := db.AutoMigrate(new(model.Audit)); err != nil {
+		t.Fatalf("auto migrate: %v", err)
+	}
+
+	a := New(&fakeStore{}, db)
+
+	// 1) 容器作用域操作：对象与 Agent 都必须落库
+	ctx := contextx.NewAgentID(context.Background(), "ag_7f2a91c4")
+	ctx = contextx.NewAuditObject(ctx, "container-abc")
+	a.RecordAudit(ctx, "admin", "删除容器", contextx.AuditObject(ctx))
+
+	// 2) 登录：无 Agent、无对象
+	a.RecordAudit(context.Background(), "admin", "登录", "")
+
+	var rows []model.Audit
+	if err := db.Order("id asc").Find(&rows).Error; err != nil {
+		t.Fatalf("query audit: %v", err)
+	}
+	if len(rows) != 2 {
+		t.Fatalf("audit rows = %d, want 2", len(rows))
+	}
+
+	if rows[0].Operate != "删除容器" {
+		t.Errorf("Operate = %q, want 删除容器", rows[0].Operate)
+	}
+	if rows[0].Object != "container-abc" {
+		t.Errorf("Object = %q, want container-abc", rows[0].Object)
+	}
+	if rows[0].AgentID != "ag_7f2a91c4" {
+		t.Errorf("AgentID = %q, want ag_7f2a91c4", rows[0].AgentID)
+	}
+	if rows[0].Username != "admin" {
+		t.Errorf("Username = %q, want admin", rows[0].Username)
+	}
+
+	if rows[1].Object != "" {
+		t.Errorf("login Object = %q, want empty", rows[1].Object)
+	}
+	if rows[1].AgentID != "" {
+		t.Errorf("login AgentID = %q, want empty", rows[1].AgentID)
 	}
 }

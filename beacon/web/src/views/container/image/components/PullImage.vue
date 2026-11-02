@@ -51,7 +51,7 @@ const { t } = useI18n()
     <el-dialog v-model="dialogVisible" :title="t(props.title as string)" width="480px">
         <div class="am-image-pull">
             <el-input v-model="imageNameForPull" style="margin-right: 8px" :placeholder="t('image.pullImagePlaceholder')" />
-            <el-button :loading="imagePullLoading" size="default" type="primary" plain @click="confirmImagePull">
+            <el-button :loading="imagePullLoading" size="default" type="primary" @click="confirmImagePull">
                 {{ t('image.confirm') }}
             </el-button>
         </div>

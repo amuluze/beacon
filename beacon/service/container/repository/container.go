@@ -25,6 +25,7 @@ type IContainerRepo interface {
 	Version(ctx context.Context, args rpcSchema.DockerArgs) (rpcSchema.DockerReply, error)
 
 	ContainerList(ctx context.Context, args rpcSchema.ContainerQueryArgs) (rpcSchema.ContainerQueryReply, error)
+	ContainerNameByID(ctx context.Context, containerID string) (string, error)
 	Usage(ctx context.Context, args rpcSchema.ContainerUsageArgs) (rpcSchema.ContainerUsageReply, error)
 	ContainersByImage(ctx context.Context, image string) (num int, err error)
 	ContainerCount(ctx context.Context, args rpcSchema.ContainerCountArgs) (rpcSchema.ContainerCountReply, error)
@@ -135,6 +136,25 @@ func (c *ContainerRepo) ContainerList(ctx context.Context, args rpcSchema.Contai
 		})
 	}
 	return rpcSchema.ContainerQueryReply{Data: results, Freshness: rpcSchema.ComputeFreshness(latestTimestamp)}, nil
+}
+
+// ContainerNameByID 返回目标 Agent 最新批次中指定容器 ID 对应的容器名。
+// 记录不存在时返回 gorm.ErrRecordNotFound，由调用方决定如何处理。
+func (c *ContainerRepo) ContainerNameByID(ctx context.Context, containerID string) (string, error) {
+	agentID, err := contextx.RequireAgentID(ctx)
+	if err != nil {
+		return "", err
+	}
+	var container model.MonitorContainer
+	err = c.DB.Model(&model.MonitorContainer{}).
+		Where("agent_id = ?", agentID).
+		Where("container_id = ?", containerID).
+		Where("timestamp = (?)", c.latestContainerTimestamp(agentID)).
+		Take(&container).Error
+	if err != nil {
+		return "", err
+	}
+	return container.Name, nil
 }
 
 func (c *ContainerRepo) Usage(ctx context.Context, args rpcSchema.ContainerUsageArgs) (rpcSchema.ContainerUsageReply, error) {

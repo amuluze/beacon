@@ -43,7 +43,7 @@ func (a *websocketTestAuth) ParseToken(token, tokenType string) (string, string,
 	return "user-1", "admin", nil
 }
 func (a *websocketTestAuth) Release() error             { return nil }
-func (a *websocketTestAuth) RecordAudit(string, string) {}
+func (a *websocketTestAuth) RecordAudit(context.Context, string, string, string) {}
 
 func TestWebSocketUserAuthMiddlewareUsesCookieAndCarriesIdentity(t *testing.T) {
 	auther := &websocketTestAuth{}

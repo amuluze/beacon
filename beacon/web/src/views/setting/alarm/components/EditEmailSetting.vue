@@ -82,7 +82,7 @@ async function submit() {
 </script>
 
 <template>
-    <el-dialog v-model="dialogVisible" width="480px" :title="t(props.title ?? 'setting.mailServerSetting')">
+    <el-dialog v-model="dialogVisible" width="560px" :title="t(props.title ?? 'setting.mailServerSetting')">
         <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
             <el-form-item prop="server" :label="t('setting.mailServerHost')">
                 <el-input v-model="form.server" :placeholder="t('setting.hostPlaceholder')" />

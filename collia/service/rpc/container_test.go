@@ -3,10 +3,14 @@ package rpc
 import (
 	"context"
 	"errors"
+	"path/filepath"
 	"reflect"
 	"testing"
 
+	"common/database"
 	rpcSchema "common/rpc/schema"
+
+	"collia/service/model"
 
 	"github.com/amuluze/docker"
 )
@@ -204,5 +208,104 @@ func TestContainerUpdatePreservesOmittedRuntimeConfiguration(t *testing.T) {
 	}
 	if !reflect.DeepEqual(manager.createArgs.Labels, old.Labels) {
 		t.Fatalf("labels = %#v, want %#v", manager.createArgs.Labels, old.Labels)
+	}
+}
+
+type fakeContainerRuntimeDeleter struct {
+	err     error
+	deleted []string
+	// onDelete 在删除执行时回调，用于验证"记录此时尚未移除"。
+	onDelete func()
+}
+
+func (f *fakeContainerRuntimeDeleter) DeleteContainer(_ context.Context, containerID string) error {
+	f.deleted = append(f.deleted, containerID)
+	if f.onDelete != nil {
+		f.onDelete()
+	}
+	if f.err != nil {
+		return f.err
+	}
+	return nil
+}
+
+func newContainerDeleteTestDB(t *testing.T) *database.DB {
+	t.Helper()
+	db, err := database.NewDB(database.WithDBName(filepath.Join(t.TempDir(), "container")))
+	if err != nil {
+		t.Fatalf("new db: %v", err)
+	}
+	t.Cleanup(db.Close)
+	if err := db.AutoMigrate(new(model.Container)); err != nil {
+		t.Fatalf("auto migrate: %v", err)
+	}
+	return db
+}
+
+func seedContainerRecord(t *testing.T, db *database.DB, containerID string) {
+	t.Helper()
+	if err := db.Create(&model.Container{ContainerID: containerID, Name: "seed"}).Error; err != nil {
+		t.Fatalf("seed container: %v", err)
+	}
+}
+
+func containerRecordCount(t *testing.T, db *database.DB, containerID string) int64 {
+	t.Helper()
+	var count int64
+	if err := db.Model(&model.Container{}).Where("container_id = ?", containerID).Count(&count).Error; err != nil {
+		t.Fatalf("count container: %v", err)
+	}
+	return count
+}
+
+// TestContainerDeleteKeepsRecordWhenRuntimeDeleteFails 覆盖运行时删除失败的场景：
+// 本地记录必须保留，避免记录消失但容器仍在节点上。
+func TestContainerDeleteKeepsRecordWhenRuntimeDeleteFails(t *testing.T) {
+	db := newContainerDeleteTestDB(t)
+	seedContainerRecord(t, db, "c-fail")
+
+	deleter := &fakeContainerRuntimeDeleter{err: errContainerMutation}
+	err := deleteContainerThenRecord(context.Background(), deleter, db, "c-fail")
+	if err == nil {
+		t.Fatal("expected runtime delete failure to be propagated")
+	}
+	if got := containerRecordCount(t, db, "c-fail"); got != 1 {
+		t.Fatalf("record count = %d, want 1 (record must survive failed delete)", got)
+	}
+}
+
+// TestContainerDeleteRemovesRecordAfterRuntimeDelete 覆盖正常删除：
+// 运行时删除成功后本地记录必须被移除。
+func TestContainerDeleteRemovesRecordAfterRuntimeDelete(t *testing.T) {
+	db := newContainerDeleteTestDB(t)
+	seedContainerRecord(t, db, "c-ok")
+
+	deleter := &fakeContainerRuntimeDeleter{}
+	if err := deleteContainerThenRecord(context.Background(), deleter, db, "c-ok"); err != nil {
+		t.Fatalf("delete: %v", err)
+	}
+	if got := containerRecordCount(t, db, "c-ok"); got != 0 {
+		t.Fatalf("record count = %d, want 0", got)
+	}
+	if len(deleter.deleted) != 1 || deleter.deleted[0] != "c-ok" {
+		t.Fatalf("runtime delete calls = %v, want [c-ok]", deleter.deleted)
+	}
+}
+
+// TestContainerDeleteRunsRuntimeBeforeRecordRemoval 锁定删除顺序：
+// 运行时删除执行时本地记录必须仍然在库。
+func TestContainerDeleteRunsRuntimeBeforeRecordRemoval(t *testing.T) {
+	db := newContainerDeleteTestDB(t)
+	seedContainerRecord(t, db, "c-order")
+
+	deleter := &fakeContainerRuntimeDeleter{}
+	deleter.onDelete = func() {
+		if got := containerRecordCount(t, db, "c-order"); got != 1 {
+			t.Fatalf("record count during runtime delete = %d, want 1 (runtime must be deleted first)", got)
+		}
+	}
+
+	if err := deleteContainerThenRecord(context.Background(), deleter, db, "c-order"); err != nil {
+		t.Fatalf("delete: %v", err)
 	}
 }

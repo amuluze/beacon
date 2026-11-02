@@ -6,13 +6,16 @@ import HostMonitor from './host/index.vue'
 <template>
     <main class="workspace">
         <header class="workspace__header">
-            <div>
+            <div class="workspace__intro">
                 <p class="workspace__eyebrow">
                     OBSERVABILITY
                 </p>
                 <h1 class="workspace__title">
                     {{ $t('menu.monitor') }}
                 </h1>
+                <p class="workspace__description">
+                    {{ $t('monitor.workspaceDescription') }}
+                </p>
             </div>
             <span class="workspace__hint">Host & Container</span>
         </header>
@@ -46,22 +49,43 @@ import HostMonitor from './host/index.vue'
   margin: 0;
 }
 
+.workspace__intro {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--am-spacing-xs);
+}
+
 .workspace__eyebrow {
   color: var(--am-accent-primary);
   font-size: var(--am-font-xs);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 2px;
 }
 
 .workspace__title {
-  margin-top: var(--am-spacing-xs);
-  font-size: var(--am-font-xl);
+  font-size: var(--am-font-2xl);
+  font-weight: 700;
+}
+
+.workspace__description {
+  max-width: 620px;
+  color: var(--am-foreground-muted);
+  font-size: var(--am-font-sm);
+  line-height: 1.55;
 }
 
 .workspace__hint {
-  color: var(--am-foreground-muted);
+  height: 28px;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--am-foreground-secondary);
   font-family: 'Geist Mono', 'SFMono-Regular', Consolas, monospace;
   font-size: var(--am-font-xs);
+  background: var(--am-surface-inset);
+  border: 1px solid var(--am-border-primary);
+  border-radius: var(--am-radius-sm);
 }
 
 .workspace__panel {

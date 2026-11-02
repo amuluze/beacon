@@ -93,3 +93,7 @@ Timeout = 5
 Enable = false                                   # 本地开发关闭，避免每 6h 触发远程请求
 URL = "https://beacon.amuluze.com"
 CheckInterval = 21600
+
+[Retention]
+Days = 7        # 监控时间序列数据（CPU/内存/磁盘/网络/容器）保留天数
+AuditDays = 90  # 审计日志保留天数

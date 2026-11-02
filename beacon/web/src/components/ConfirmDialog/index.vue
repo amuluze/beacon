@@ -28,11 +28,11 @@ const props = withDefaults(defineProps<{
   // If true, only renders the footer confirm button as a primary action
   // (used for risky confirmations on Start / Stop / Restart).
   confirmation?: boolean
-  // Width override for the dialog (defaults to 500px to match existing popups).
+  // Width override for the dialog (defaults to the 480 ladder rung from DESIGN §11.1).
   width?: string
 }>(), {
   confirmation: false,
-  width: '500px',
+  width: '480px',
   i18nPrefix: 'common',
 })
 
@@ -89,7 +89,7 @@ defineExpose({
                 <el-button :disabled="loading" @click="dialogVisible = false">
                     {{ cancelLabel }}
                 </el-button>
-                <el-button v-if="confirmation" type="primary" :loading="loading" @click="onConfirm">
+                <el-button v-if="confirmation" type="danger" :loading="loading" @click="onConfirm">
                     {{ confirmLabel }}
                 </el-button>
             </span>

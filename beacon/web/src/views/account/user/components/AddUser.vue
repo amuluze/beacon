@@ -87,7 +87,7 @@ const { t } = useI18n()
 </script>
 
 <template>
-    <el-drawer v-model="drawerVisible" title="创建用户" size="50%">
+    <el-drawer v-model="drawerVisible" title="创建用户" size="720px">
         <el-form ref="userCreateRef" :model="userCreateMode" :rules="rules" label-width="120px" label-position="left">
             <el-form-item label="用户名" prop="username">
                 <el-input v-model="userCreateMode.username" placeholder="请输入用户名" />
