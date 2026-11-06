@@ -14,7 +14,7 @@
 
 - 先读本文件确认模块边界，再读对应 `.docs/modules/` 文档获取当前实现事实；导出符号只作为入口线索，不自动等同跨模块公开 API。
 - 涉及长期行为、不变量、状态或错误语义时，必须回到下方相关 Domain Spec；若现有 Domain Spec 不覆盖，应先补可验证约束。
-- 代码变更后按本文件“开发命令”执行最小验证；跨模块、配置、接口或副作用变更还要运行项目级质量门禁或 `task sdd:refs`。
+- 代码变更后按本文件“开发命令”执行最小验证；跨模块、配置、接口或副作用变更还要运行项目级质量门禁或 `task doc:check`。
 - 更新公开 API、配置键、事件、持久化格式或用户可见工作流时，同步维护相关项目文档并检查 `AGENTS.md` / `CLAUDE.md` 一致性。
 - 前端相关修改优先检查 API client、store 状态、组件交互和构建/测试脚本。
 
@@ -29,7 +29,7 @@
 | `beacon/web/` | frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互 |
 | `beacon/web/public/` | static assets or embedded resources |
 | `beacon/web/src/` | application source code |
-| `beacon/web/types/` | supporting project directory |
+| `beacon/web/types/` | unplugin-auto-import 与 unplugin-vue-components 生成的类型声明（`auto-imports.d.ts`、`components.d.ts` 等） |
 
 ## 依赖
 
@@ -86,12 +86,12 @@
 ## 开发命令
 
 ```bash
-cd beacon/web && npm run build
-cd beacon/web && npm run dev
-cd beacon/web && npm run lint
-cd beacon/web && npm run preview
-cd beacon/web && npm run test
-cd beacon/web && npm run test:coverage
-cd beacon/web && npm run test:run
-cd beacon/web && npm run ts
+cd beacon/web && pnpm run build
+cd beacon/web && pnpm run dev
+cd beacon/web && pnpm run lint
+cd beacon/web && pnpm run preview
+cd beacon/web && pnpm run test
+cd beacon/web && pnpm run test:coverage
+cd beacon/web && pnpm run test:run
+cd beacon/web && pnpm run ts
 ```

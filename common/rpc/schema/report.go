@@ -22,6 +22,7 @@ type HostReport struct {
 type CPUReport struct {
 	Timestamp  time.Time `json:"timestamp"`
 	CPUPercent float64   `json:"cpu_percent"`
+	CPUCount   int       `json:"cpu_count"`
 }
 
 // ── Memory report ──
@@ -74,6 +75,7 @@ type ContainerReport struct {
 	ContainerID string    `json:"container_id"`
 	Name        string    `json:"name"`
 	Image       string    `json:"image"`
+	Network     string    `json:"network"`
 	IP          string    `json:"ip"`
 	Ports       string    `json:"ports"`
 	State       string    `json:"state"`
@@ -115,7 +117,7 @@ type NetworkReport struct {
 // ── Batch push args / reply (all at once for efficiency) ──
 
 type MonitorReportArgs struct {
-	AgentID    string            `json:"agent_id"`
+	AgentID    string            `json:"agent_id" validate:"required,min=1,max=128" pattern:"^[a-zA-Z0-9._-]+$" description:"必填目标Agent标识，仅允许ASCII字母、数字、点、下划线和连字符，最多128字符"`
 	Host       HostReport        `json:"host"`
 	CPU        CPUReport         `json:"cpu"`
 	Memory     MemoryReport      `json:"memory"`

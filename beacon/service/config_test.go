@@ -1,6 +1,8 @@
 package service
 
 import (
+	"beacon/service/model"
+	"common/database"
 	"errors"
 	"os"
 	"path/filepath"
@@ -331,5 +333,128 @@ func TestResolveInstallToken_NonProductionPreserves(t *testing.T) {
 	}
 	if got != "change-me" {
 		t.Fatalf("expected weak default preserved, got %q", got)
+	}
+}
+
+func TestDatabaseInitializationSkipsNonSQLiteDrivers(t *testing.T) {
+	// A nil connection would panic on any Exec: non-SQLite initialization must
+	// issue no PRAGMA and must not touch SQLite file permissions.
+	for _, kind := range []string{"postgres", "mysql", "POSTGRES"} {
+		if err := initializeDatabase(nil, kind, "unused"); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestDatabaseInitializationKeepsSQLitePragmas(t *testing.T) {
+	for _, kind := range []string{"sqlite", ""} {
+		name := filepath.Join(t.TempDir(), "beacon")
+		db, err := database.NewDB(database.WithDBName(name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer db.Close()
+		if err := initializeDatabase(db, kind, name); err != nil {
+			t.Fatal(err)
+		}
+		var journal string
+		if err := db.Raw("PRAGMA journal_mode").Scan(&journal).Error; err != nil {
+			t.Fatal(err)
+		}
+		if journal != "wal" {
+			t.Fatalf("journal mode = %s", journal)
+		}
+		for query, want := range map[string]int{"PRAGMA auto_vacuum": 2, "PRAGMA synchronous": 1} {
+			var got int
+			if err := db.Raw(query).Scan(&got).Error; err != nil {
+				t.Fatal(err)
+			}
+			if got != want {
+				t.Fatalf("%s = %d, want %d", query, got, want)
+			}
+		}
+		info, err := os.Stat(name + ".db")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if info.Mode().Perm() != 0600 {
+			t.Fatal("sqlite owner-only permissions lost")
+		}
+	}
+}
+
+// Opt-in integration against a disposable PostgreSQL instance. No production
+// address is accepted by this test; the caller supplies a loopback mapped port.
+func TestNewDBPostgresIntegration(t *testing.T) {
+	port := os.Getenv("BEACON_TEST_POSTGRES_PORT")
+	if port == "" {
+		t.Skip("set BEACON_TEST_POSTGRES_PORT for disposable PostgreSQL integration")
+	}
+	config := &Config{
+		Gorm: Gorm{DBType: "postgres", EnableAutoMigrate: true, MaxOpenConns: 2, MaxIdleConns: 1},
+		DB:   DB{Host: "127.0.0.1", Port: port, User: "beacon_contract", Password: os.Getenv("BEACON_TEST_POSTGRES_PASSWORD"), DBName: "beacon_contract", SSLMode: "disable"},
+	}
+	db, err := NewDB(config, model.NewModels())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if db.Dialector.Name() != "postgres" {
+		t.Fatal("unexpected database driver")
+	}
+	if !db.Migrator().HasTable(&model.Agent{}) {
+		t.Fatal("PostgreSQL AutoMigrate did not create Agent table")
+	}
+	var one int
+	if err := db.Raw("SELECT 1").Scan(&one).Error; err != nil || one != 1 {
+		t.Fatal("PostgreSQL query failed")
+	}
+	// The disposable instance uses ssl=off. Requiring TLS must fail, not fall back
+	// to plaintext (also proves Beacon passes SSLMode through to the driver).
+	config.DB.SSLMode = "require"
+	rejected, err := NewDB(config, model.NewModels())
+	if rejected != nil {
+		rejected.Close()
+	}
+	if err == nil {
+		t.Fatal("TLS requirement was ignored for a plaintext server")
+	}
+}
+
+func TestNewDBPostgresTLSIntegration(t *testing.T) {
+	port := os.Getenv("BEACON_TEST_POSTGRES_PORT")
+	root := os.Getenv("BEACON_TEST_POSTGRES_ROOT_CERT")
+	if port == "" || root == "" {
+		t.Skip("requires disposable TLS PostgreSQL and its test root certificate")
+	}
+	t.Setenv("PGSSLROOTCERT", root)
+	for _, mode := range []string{"require", "verify-full"} {
+		t.Run(mode, func(t *testing.T) {
+			config := &Config{Gorm: Gorm{DBType: "postgres", MaxOpenConns: 1, MaxIdleConns: 1}, DB: DB{Host: "127.0.0.1", Port: port, User: "beacon_contract", Password: os.Getenv("BEACON_TEST_POSTGRES_PASSWORD"), DBName: "beacon_contract", SSLMode: mode}}
+			db, err := NewDB(config, model.NewModels())
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer db.Close()
+			var encrypted bool
+			if err := db.Raw("SELECT ssl FROM pg_stat_ssl WHERE pid = pg_backend_pid()").Scan(&encrypted).Error; err != nil {
+				t.Fatal(err)
+			}
+			if !encrypted {
+				t.Fatal("PostgreSQL connection is not encrypted")
+			}
+		})
+	}
+	// A valid but unrelated trust root must fail verify-full.
+	if other := os.Getenv("BEACON_TEST_POSTGRES_WRONG_ROOT_CERT"); other != "" {
+		t.Setenv("PGSSLROOTCERT", other)
+		config := &Config{Gorm: Gorm{DBType: "postgres", MaxOpenConns: 1}, DB: DB{Host: "127.0.0.1", Port: port, User: "beacon_contract", Password: os.Getenv("BEACON_TEST_POSTGRES_PASSWORD"), DBName: "beacon_contract", SSLMode: "verify-full"}}
+		db, err := NewDB(config, model.NewModels())
+		if db != nil {
+			db.Close()
+		}
+		if err == nil {
+			t.Fatal("verify-full accepted an unrelated trust root")
+		}
 	}
 }

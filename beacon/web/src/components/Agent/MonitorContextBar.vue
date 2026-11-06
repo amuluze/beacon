@@ -8,12 +8,15 @@ interface DensityOption {
 }
 
 // §7.3 Agent 上下文条：主机分组与容器分组必须使用同一组件，保证呈现完全一致。
+// 过期态不得继续显示「实时」（domain I002）：点与文案切到 accent-warning「数据过期」。
 const props = withDefaults(defineProps<{
   density: number
   densityOptions: DensityOption[]
   lastUpdated?: number
+  stale?: boolean
 }>(), {
   lastUpdated: 0,
+  stale: false,
 })
 
 const emit = defineEmits<{
@@ -26,9 +29,9 @@ const updatedAt = computed(() => (props.lastUpdated ? dayjs(props.lastUpdated).f
 
 <template>
     <div class="am-monitor-context">
-        <span class="am-monitor-context__live">
+        <span class="am-monitor-context__live" :class="{ 'am-monitor-context__live--stale': stale }">
             <span class="am-monitor-context__dot" />
-            {{ t('monitor.realtime') }}
+            {{ stale ? t('agent.stale') : t('monitor.realtime') }}
         </span>
         <span class="am-monitor-context__sep">·</span>
         <span class="am-monitor-context__time">{{ t('monitor.lastUpdated', { time: updatedAt }) }}</span>
@@ -67,6 +70,15 @@ const updatedAt = computed(() => (props.lastUpdated ? dayjs(props.lastUpdated).f
   height: 6px;
   background: var(--am-accent-success);
   border-radius: 50%;
+}
+
+// 过期态：状态点与文案改用 warning 语义色，避免把停更数据表达成实时。
+.am-monitor-context__live--stale {
+  color: var(--am-accent-warning);
+
+  .am-monitor-context__dot {
+    background: var(--am-accent-warning);
+  }
 }
 
 .am-monitor-context__sep {

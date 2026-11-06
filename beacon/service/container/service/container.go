@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 
+	apperrors "beacon/pkg/errors"
 	"beacon/pkg/utils"
 	"beacon/service/container/repository"
 	"beacon/service/schema"
@@ -53,13 +54,13 @@ type IContainerService interface {
 }
 
 // ErrProtectedContainer 表示操作目标属于系统保留容器，禁止通过控制接口变更。
-var ErrProtectedContainer = errors.New("container is protected")
+// 哨兵来自公共错误包，使 HTTP 映射层可以直接将其转为拒绝响应而不是内部故障。
+var ErrProtectedContainer = apperrors.ErrProtectedContainer
 
 // protectedContainerNames 是禁止启动、停止、重启与删除的系统容器名。
 // 判定为服务端约束，前端禁用按钮只是呈现层保护。
 var protectedContainerNames = map[string]struct{}{
-	"beacon":  {},
-	"amprobe": {},
+	"beacon": {},
 }
 
 // assertNotProtected 拒绝针对受保护容器的控制操作。
@@ -117,10 +118,11 @@ func (a *ContainerService) Version(ctx context.Context) (schema.Docker, error) {
 func (a *ContainerService) ContainerList(ctx context.Context, args schema.ContainerQueryArgs) (schema.ContainerQueryRely, error) {
 	var reply schema.ContainerQueryRely
 	rpcArgs := rpcSchema.ContainerQueryArgs{
-		Page:  args.Page,
-		Size:  args.Size,
-		Name:  args.Name,
-		State: args.State,
+		Page:    args.Page,
+		Size:    args.Size,
+		Name:    args.Name,
+		State:   args.State,
+		Network: args.Network,
 	}
 	rpcReply, err := a.ContainerRepo.ContainerList(ctx, rpcArgs)
 	if err != nil {
@@ -150,7 +152,7 @@ func (a *ContainerService) ContainerList(ctx context.Context, args schema.Contai
 			Labels:        labels,
 		})
 	}
-	countReply, err := a.ContainerRepo.ContainerCount(ctx, rpcSchema.ContainerCountArgs{Name: args.Name, State: args.State})
+	countReply, err := a.ContainerRepo.ContainerCount(ctx, rpcSchema.ContainerCountArgs{Name: args.Name, State: args.State, Network: args.Network})
 	if err != nil {
 		return reply, err
 	}
@@ -181,6 +183,7 @@ func (a *ContainerService) Usage(ctx context.Context, args schema.ContainerUsage
 	reply.Names = make([]string, 0)
 	reply.CPUUsage = make(map[string][]schema.Usage)
 	reply.MemUsage = make(map[string][]schema.Usage)
+	reply.MemPercent = make(map[string][]schema.Usage)
 	rpcReply, err := a.ContainerRepo.Usage(ctx, rpcSchema.ContainerUsageArgs{
 		StartTime: args.StartTime,
 		EndTime:   args.EndTime,
@@ -206,6 +209,17 @@ func (a *ContainerService) Usage(ctx context.Context, args schema.ContainerUsage
 		}
 		for _, item := range value {
 			reply.MemUsage[key] = append(reply.MemUsage[key], schema.Usage{
+				Timestamp: item.Timestamp,
+				Value:     item.Value,
+			})
+		}
+	}
+	for key, value := range rpcReply.MemPercent {
+		if _, ok := reply.MemPercent[key]; !ok {
+			reply.MemPercent[key] = make([]schema.Usage, 0)
+		}
+		for _, item := range value {
+			reply.MemPercent[key] = append(reply.MemPercent[key], schema.Usage{
 				Timestamp: item.Timestamp,
 				Value:     item.Value,
 			})
@@ -301,9 +315,10 @@ func (a *ContainerService) ContainerRestart(ctx context.Context, args schema.Con
 func (a *ContainerService) ImageList(ctx context.Context, args schema.ImageQueryArgs) (schema.ImageQueryReply, error) {
 	var reply schema.ImageQueryReply
 	rpcArgs := rpcSchema.ImageQueryArgs{
-		Page: args.Page,
-		Size: args.Size,
-		Name: args.Name,
+		Page:  args.Page,
+		Size:  args.Size,
+		Name:  args.Name,
+		InUse: args.InUse,
 	}
 	listReply, err := a.ContainerRepo.ImageList(ctx, rpcArgs)
 	if err != nil {
@@ -324,7 +339,7 @@ func (a *ContainerService) ImageList(ctx context.Context, args schema.ImageQuery
 			Number:  num,
 		})
 	}
-	countReply, err := a.ContainerRepo.ImageCount(ctx, rpcSchema.ImageCountArgs{Name: args.Name})
+	countReply, err := a.ContainerRepo.ImageCount(ctx, rpcSchema.ImageCountArgs{Name: args.Name, InUse: args.InUse})
 	if err != nil {
 		return reply, err
 	}

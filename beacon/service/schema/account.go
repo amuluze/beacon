@@ -46,9 +46,9 @@ type UserQueryReply struct {
 
 type UserCreateArgs struct {
 	Username string   `json:"username" validate:"required,alphanum,gte=1,lte=64"`
-	Password string   `json:"password" validate:"required,gte=12,lte=128"`
+	Password string   `json:"password" validate:"required,gte=12,lte=128" description:"至少12字符，且Unicode小写、大写、数字、其他字符至少三类"`
 	Remark   string   `json:"remark,omitempty" validate:"lte=256"`
-	Status   int      `json:"status" validate:"required,oneof=0 1"`
+	Status   int      `json:"status" validate:"required,oneof=1 2" description:"状态：1启用，2停用"`
 	RoleIDs  []string `json:"role_ids" validate:"required,min=1,max=32"`
 }
 
@@ -56,7 +56,7 @@ type UserUpdateArgs struct {
 	ID       string   `json:"id" validate:"required,len=36"`
 	Username string   `json:"username,omitempty" validate:"omitempty,alphanum,lte=64"`
 	Remark   string   `json:"remark,omitempty" validate:"lte=256"`
-	Status   int      `json:"status,omitempty" validate:"omitempty,oneof=0 1"`
+	Status   int      `json:"status,omitempty" validate:"omitempty,oneof=0 1 2" description:"状态：1启用，2停用；0或省略表示不修改"`
 	RoleIDs  []string `json:"role_ids,omitempty" validate:"max=32"`
 }
 
@@ -80,7 +80,7 @@ type RoleQueryReply struct {
 type RoleCreateArgs struct {
 	Name        string   `json:"name" validate:"required,gte=1,lte=64"`
 	Remark      string   `json:"remark,omitempty" validate:"lte=256"`
-	Status      int      `json:"status" validate:"required,oneof=0 1"`
+	Status      int      `json:"status" validate:"required,oneof=1 2" description:"状态：1启用，2停用"`
 	ResourceIDs []string `json:"resource_ids,omitempty" validate:"max=64"`
 }
 
@@ -88,7 +88,7 @@ type RoleUpdateArgs struct {
 	ID          string   `json:"id" validate:"required,len=36"`
 	Name        string   `json:"name,omitempty" validate:"lte=64"`
 	Remark      string   `json:"remark,omitempty" validate:"lte=256"`
-	Status      int      `json:"status,omitempty" validate:"omitempty,oneof=0 1"`
+	Status      int      `json:"status,omitempty" validate:"omitempty,oneof=0 1 2" description:"状态：1启用，2停用；0或省略表示不修改"`
 	ResourceIDs []string `json:"resource_ids,omitempty" validate:"max=64"`
 }
 

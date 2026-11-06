@@ -2,8 +2,12 @@
 import { queryRole } from '@/api/account'
 import type { Resource } from '@/interface/account'
 import type { TableInstance } from 'element-plus'
+import useCommandComponent from '@/hooks/useCommandComponent.ts'
 import { useTable } from '@/hooks/useTable.ts'
+import CreateRole from '@/views/account/role/components/CreateRole.vue'
 import { useI18n } from 'vue-i18n'
+
+const props = defineProps<{ createTicket?: number }>()
 
 const tableRef = ref<TableInstance>()
 const defaultProps = {
@@ -42,6 +46,14 @@ onMounted(async () => {
   await search()
 })
 const { t } = useI18n()
+
+const createRole = useCommandComponent(CreateRole)
+
+// 工具栏的「新建角色」按钮在设置工作区外层，通过票据触发同一个弹层。
+watch(() => props.createTicket, (ticket) => {
+  if (ticket)
+    createRole({ title: t('account.roleCreateTitle'), update: search })
+})
 </script>
 
 <template>

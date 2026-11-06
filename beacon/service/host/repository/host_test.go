@@ -75,7 +75,7 @@ func TestCPUAndMemInfoReturnLatestSampleTimestampForSelectedAgent(t *testing.T) 
 	older := latest.Add(-time.Minute)
 	if err := db.Create(&[]model.MonitorCPU{
 		{AgentID: "agent-a", Timestamp: older, CPUPercent: 10},
-		{AgentID: "agent-a", Timestamp: latest, CPUPercent: 20},
+		{AgentID: "agent-a", Timestamp: latest, CPUPercent: 20, CPUCount: 16},
 		{AgentID: "agent-b", Timestamp: latest.Add(time.Minute), CPUPercent: 90},
 	}).Error; err != nil {
 		t.Fatalf("create CPU samples: %v", err)
@@ -96,6 +96,9 @@ func TestCPUAndMemInfoReturnLatestSampleTimestampForSelectedAgent(t *testing.T) 
 	}
 	if cpuReply.Timestamp != latest.Unix() || cpuReply.Freshness.CollectedAt != latest.Unix() {
 		t.Fatalf("CPU timestamps = (%d, %d), want %d", cpuReply.Timestamp, cpuReply.Freshness.CollectedAt, latest.Unix())
+	}
+	if cpuReply.CPUCount != 16 {
+		t.Fatalf("CPU count = %d, want 16", cpuReply.CPUCount)
 	}
 
 	memReply, err := repo.MemInfo(ctx, rpcSchema.MemoryInfoArgs{})

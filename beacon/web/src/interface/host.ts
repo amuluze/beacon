@@ -67,6 +67,7 @@ export interface CPUInfo {
     timestamp: number
     stale?: boolean
     percent: number
+    cores: number
     freshness: Freshness
 }
 

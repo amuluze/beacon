@@ -93,6 +93,7 @@ func (s *Service) Store(args rpcSchema.MonitorReportArgs) error {
 			AgentID:    agentID,
 			Timestamp:  args.CPU.Timestamp,
 			CPUPercent: args.CPU.CPUPercent,
+			CPUCount:   args.CPU.CPUCount,
 		}).Error; err != nil {
 			return fmt.Errorf("create cpu report: %w", err)
 		}
@@ -173,6 +174,7 @@ func (s *Service) Store(args rpcSchema.MonitorReportArgs) error {
 					ContainerID: c.ContainerID,
 					Name:        c.Name,
 					Image:       c.Image,
+					Network:     c.Network,
 					IP:          c.IP,
 					Ports:       c.Ports,
 					State:       c.State,
@@ -190,12 +192,25 @@ func (s *Service) Store(args rpcSchema.MonitorReportArgs) error {
 		}
 
 		// Image - replace all for this agent when the batch includes image data.
+		// 「使用中」数量按本批容器的镜像引用计算（collia 不上报该字段），
+		// 供列表展示与「使用中」筛选使用；引用无法解析时记 0。
 		if len(args.Images) > 0 {
 			if err := tx.Unscoped().Where("agent_id = ?", agentID).Delete(&model.MonitorImage{}).Error; err != nil {
 				return fmt.Errorf("delete image reports: %w", err)
 			}
+			imageRefs := make(map[string]int, len(args.Containers))
+			for _, c := range args.Containers {
+				if c.Image == "" {
+					continue
+				}
+				imageRefs[c.Image]++
+			}
 			var images []model.MonitorImage
 			for _, im := range args.Images {
+				number := imageRefs[im.Name+":"+im.Tag]
+				if number == 0 {
+					number = imageRefs[im.Name]
+				}
 				images = append(images, model.MonitorImage{
 					AgentID:   agentID,
 					Timestamp: im.Timestamp,
@@ -204,7 +219,7 @@ func (s *Service) Store(args rpcSchema.MonitorReportArgs) error {
 					Tag:       im.Tag,
 					Created:   im.Created,
 					Size:      im.Size,
-					Number:    im.Number,
+					Number:    number,
 				})
 			}
 			if err := tx.Model(&model.MonitorImage{}).Create(&images).Error; err != nil {

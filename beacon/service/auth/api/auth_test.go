@@ -10,6 +10,7 @@ import (
 
 	"beacon/pkg/authcookie"
 	authservice "beacon/service/auth/service"
+	"beacon/service/middleware"
 	"beacon/service/testutil"
 
 	"github.com/gofiber/fiber/v2"
@@ -118,5 +119,49 @@ func TestLogoutClearsCookiesAndInvalidatesBothTokens(t *testing.T) {
 				t.Fatalf("cookie %s was not expired: value=%q expires=%v", cookie.Name, cookie.Value, cookie.Expires)
 			}
 		}
+	}
+}
+
+func TestRefreshWithoutAccessCookieStillRequiresCSRF(t *testing.T) {
+	for _, tc := range []struct {
+		name, cookie, header string
+		want                 int
+	}{
+		{"matching", "csrf-test", "csrf-test", http.StatusNoContent},
+		{"missing header", "csrf-test", "", http.StatusForbidden},
+		{"missing cookie", "", "csrf-test", http.StatusForbidden},
+		{"mismatch", "csrf-test", "different", http.StatusForbidden},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			api, auther := newTestAPI()
+			calls := 0
+			auther.ParseTokenFn = func(token, typ string) (string, string, error) {
+				calls++
+				if token != "refresh-test" || typ != "refresh_token" {
+					t.Errorf("unexpected credential type")
+				}
+				return "user-1", "admin", nil
+			}
+			app := fiber.New()
+			app.Use(middleware.CSRFMiddleware(api.CookieManager))
+			app.Post("/api/v1/auth/token_update", api.TokenUpdate)
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/token_update", nil)
+			req.AddCookie(&http.Cookie{Name: authcookie.RefreshCookieName, Value: "refresh-test"})
+			if tc.cookie != "" {
+				req.AddCookie(&http.Cookie{Name: authcookie.CSRFCookieName, Value: tc.cookie})
+			}
+			req.Header.Set(authcookie.CSRFHeaderName, tc.header)
+			resp, err := app.Test(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode != tc.want {
+				t.Fatalf("status=%d want=%d", resp.StatusCode, tc.want)
+			}
+			if (calls == 1) != (tc.want == http.StatusNoContent) {
+				t.Fatalf("unexpected refresh calls: %d", calls)
+			}
+		})
 	}
 }

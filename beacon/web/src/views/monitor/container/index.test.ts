@@ -115,13 +115,19 @@ function manyContainersUsage(names: string[]) {
     }
 }
 
+const AgentEmptyStateStub = defineComponent({
+    name: 'AgentEmptyState',
+    emits: ['refresh'],
+    template: '<div data-testid="agent-empty" />',
+})
+
 const mountedWrappers: Array<{ unmount: () => void }> = []
 
-function mountContainerMonitor() {
+function mountContainerMonitor(options: { track?: boolean } = {}) {
     const wrapper = shallowMount(ContainerMonitor, {
         global: {
             stubs: {
-                AgentEmptyState: { template: '<div data-testid="agent-empty" />' },
+                AgentEmptyState: AgentEmptyStateStub,
                 // 上下文条是真实组件，密度选择器需要能被测试直接驱动
                 MonitorContextBar: false,
                 Echarts: EchartsStub,
@@ -131,7 +137,8 @@ function mountContainerMonitor() {
             },
         },
     })
-    mountedWrappers.push(wrapper)
+    if (options.track !== false)
+        mountedWrappers.push(wrapper)
     return wrapper
 }
 
@@ -247,5 +254,72 @@ describe('container monitor time density', () => {
             expect(option.series).toHaveLength(30)
             expect(option.series.map((series: { name: string }) => series.name)).toEqual(names)
         })
+    })
+})
+
+describe('container monitor metric chips', () => {
+    it('shows the latest cpu and memory percentage per container', async () => {
+        queryContainersUsage.mockResolvedValueOnce({
+            data: {
+                names: ['app'],
+                cpu_usage: { app: [{ timestamp: 900, value: 12.3 }] },
+                mem_usage: { app: [{ timestamp: 900, value: 2_048 }] },
+                mem_percent: { app: [{ timestamp: 900, value: 10.04 }, { timestamp: 960, value: 42.36 }] },
+            },
+        })
+
+        const wrapper = mountContainerMonitor()
+        await flushPromises()
+
+        const values = wrapper.findAll('.am-legend-value').map(value => value.text())
+        expect(values).toEqual(['12.3%', '42.4%'])
+    })
+})
+
+describe('container monitor empty state and polling', () => {
+    it('replaces the chart card with the agent empty state when no agent is available', async () => {
+        selectionState.isAgentEmpty = true
+
+        const wrapper = mountContainerMonitor()
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agent-empty"]').exists()).toBe(true)
+        expect(wrapper.findAll('.am-chart-grid')).toHaveLength(0)
+    })
+
+    it('reloads agents and re-renders from the empty state action', async () => {
+        selectionState.isAgentEmpty = true
+
+        const wrapper = mountContainerMonitor()
+        await flushPromises()
+        queryContainersUsage.mockClear()
+
+        wrapper.findComponent(AgentEmptyStateStub).vm.$emit('refresh')
+        await flushPromises()
+
+        expect(selectionState.loadAgents).toHaveBeenCalled()
+        expect(queryContainersUsage).toHaveBeenCalledTimes(1)
+    })
+
+    it('polls every ten seconds and stops polling on unmount', async () => {
+        const setIntervalSpy = vi.spyOn(globalThis, 'setInterval')
+        const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval')
+
+        const wrapper = mountContainerMonitor({ track: false })
+        await flushPromises()
+
+        const [poll, interval] = setIntervalSpy.mock.calls.at(-1) as [() => void, number]
+        expect(interval).toBe(10_000)
+
+        queryContainersUsage.mockClear()
+        poll()
+        await flushPromises()
+        expect(queryContainersUsage).toHaveBeenCalledTimes(1)
+
+        wrapper.unmount()
+        expect(clearIntervalSpy).toHaveBeenCalled()
+
+        setIntervalSpy.mockRestore()
+        clearIntervalSpy.mockRestore()
     })
 })

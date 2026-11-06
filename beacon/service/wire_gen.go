@@ -35,6 +35,7 @@ import (
 	repository6 "beacon/service/mail/repository"
 	service6 "beacon/service/mail/service"
 	"beacon/service/model"
+	systemapi "beacon/service/system/api"
 	"beacon/service/terminal"
 )
 
@@ -112,6 +113,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	alarmService := service8.NewAlarmService(alarmRepository)
 	alarmAPI := api8.NewAlarmAPI(alarmService)
 	agentAPI := agent.NewAgentAPI(agentService)
+	systemAPI := systemapi.NewSystemAPI(ProvideSystemVersion())
 	reportService, err := NewReportService(config, db)
 	if err != nil {
 		cleanup3()
@@ -137,6 +139,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		dingTalkAPI:     dingTalkAPI,
 		alarmAPI:        alarmAPI,
 		agentAPI:        agentAPI,
+		systemAPI:       systemAPI,
 		reportSvc:       reportService,
 		loggerHandler:   loggerHandler,
 		terminalHandler: handler,

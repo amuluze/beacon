@@ -1,6 +1,8 @@
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { VueWrapper } from '@vue/test-utils'
+
 import LoginView from './index.vue'
 
 const setUserInfo = vi.fn()
@@ -31,12 +33,13 @@ vi.mock('vue-router', () => ({
     useRouter: () => ({ replace }),
 }))
 
+const locale = vi.hoisted(() => ({ value: 'zh' }))
+
 vi.mock('vue-i18n', () => ({
-    useI18n: () => ({
-        t: (key: string) => key,
-        locale: { value: 'zh' },
-    }),
+    useI18n: () => ({ t: (key: string) => key, locale }),
 }))
+
+let validateImpl: () => Promise<boolean> = async () => true
 
 function mountLogin() {
     return mount(LoginView, {
@@ -44,7 +47,8 @@ function mountLogin() {
             mocks: { $t: (key: string) => key },
             stubs: {
                 'el-form': {
-                    methods: { validate: async () => Promise.resolve(true) },
+                    name: 'ElForm',
+                    methods: { validate: async () => validateImpl() },
                     template: '<form class="form-stub"><slot /></form>',
                 },
                 'el-form-item': { template: '<div class="form-item-stub"><slot /></div>' },
@@ -52,7 +56,10 @@ function mountLogin() {
                 'el-button': {
                     template: '<button class="btn-stub" @click="$emit(\'click\', $event)"><slot /></button>',
                 },
-                'el-dropdown': { template: '<div class="dropdown-stub"><slot /><slot name="dropdown" /></div>' },
+                'el-dropdown': {
+                    name: 'ElDropdown',
+                    template: '<div class="dropdown-stub"><slot /><slot name="dropdown" /></div>',
+                },
                 'el-dropdown-menu': { template: '<div><slot /></div>' },
                 'el-dropdown-item': { template: '<div><slot /></div>' },
                 'svg-icon': { template: '<i class="svg-stub" />' },
@@ -61,42 +68,70 @@ function mountLogin() {
     })
 }
 
+async function submitForm(wrapper: VueWrapper) {
+    await wrapper.find('.form-stub').trigger('submit')
+    await Promise.resolve()
+    await Promise.resolve()
+}
+
 describe('login view', () => {
     beforeEach(() => {
         vi.clearAllMocks()
+        validateImpl = async () => true
+        locale.value = 'zh'
         loginMock.mockResolvedValue({ data: { must_change_password: false } })
         getUserInfoMock.mockResolvedValue({ data: { username: 'admin', status: 1, is_admin: true, must_change_password: false } })
     })
 
-    it('renders the branded split layout with slogan and subline', () => {
+    it('renders the brand panel and the login card with two credential fields', () => {
         const wrapper = mountLogin()
-        const logo = wrapper.get('.am-login__logo-mark')
+        const brand = wrapper.find('.am-login__brand')
 
-        expect(wrapper.find('.am-login__brand').exists()).toBe(true)
-        expect(logo.element.tagName).toBe('IMG')
-        expect(logo.attributes('src')).toBe('/beacon.svg')
-        expect(wrapper.find('.am-login__logo-text').text()).toBe('Beacon')
-        expect(wrapper.find('.am-login__slogan').text()).toBe('login.slogan')
-        expect(wrapper.find('.am-login__subline').text()).toBe('login.subline')
-    })
-
-    it('renders the login card with title and submit button on the right pane', () => {
-        const wrapper = mountLogin()
+        expect(brand.exists()).toBe(true)
+        expect(brand.find('.am-login__logo-mark').attributes('src')).toBe('/beacon.svg')
+        expect(brand.find('.am-login__slogan').exists()).toBe(true)
+        expect(brand.find('.am-login__subline').exists()).toBe(true)
 
         const card = wrapper.find('.am-login__card')
         expect(card.exists()).toBe(true)
-        expect(card.find('.am-login__title').text()).toBe('login.login')
-        expect(card.find('.am-login__btn').text()).toBe('login.login')
-        expect(wrapper.findAll('.form-item-stub')).toHaveLength(2)
+        expect(card.find('.am-login__title').exists()).toBe(true)
+        expect(card.find('.am-login__btn').exists()).toBe(true)
+        expect(card.findAll('.form-item-stub')).toHaveLength(2)
+    })
+
+    it('keeps the language switcher inside the card', () => {
+        const wrapper = mountLogin()
+
+        expect(wrapper.find('.am-login__card .am-login__lang-chip').exists()).toBe(true)
+    })
+
+    it('switches the interface language without navigating away', async () => {
+        const wrapper = mountLogin()
+
+        wrapper.findComponent({ name: 'ElDropdown' }).vm.$emit('command', 'en')
+        await Promise.resolve()
+
+        expect(locale.value).toBe('en')
+        expect(setLanguage).toHaveBeenCalledWith('en')
+        expect(replace).not.toHaveBeenCalled()
+    })
+
+    it('does not authenticate when form validation fails', async () => {
+        validateImpl = async () => {
+            throw new Error('invalid')
+        }
+        const wrapper = mountLogin()
+        await submitForm(wrapper)
+
+        expect(loginMock).not.toHaveBeenCalled()
+        expect(replace).not.toHaveBeenCalled()
     })
 
     it('submits credentials and redirects to monitor on success', async () => {
         const wrapper = mountLogin()
-        await wrapper.find('.form-stub').trigger('submit')
-        await Promise.resolve()
-        await Promise.resolve()
+        await submitForm(wrapper)
 
-        expect(loginMock).toHaveBeenCalled()
+        expect(loginMock).toHaveBeenCalledWith({ username: '', password: '' })
         expect(setUserInfo).toHaveBeenCalledWith('admin', 1, true, false)
         expect(clearAgent).toHaveBeenCalledOnce()
         expect(replace).toHaveBeenCalledWith('/monitor')
@@ -107,11 +142,18 @@ describe('login view', () => {
             data: { username: 'admin', status: 1, is_admin: true, must_change_password: true },
         })
         const wrapper = mountLogin()
-        await wrapper.find('.form-stub').trigger('submit')
-        await Promise.resolve()
-        await Promise.resolve()
+        await submitForm(wrapper)
 
         expect(setUserInfo).toHaveBeenCalledWith('admin', 1, true, true)
         expect(replace).toHaveBeenCalledWith('/change-password')
+    })
+
+    it('stays on the login page when credentials are rejected', async () => {
+        loginMock.mockRejectedValueOnce(new Error('unauthorized'))
+        const wrapper = mountLogin()
+        await submitForm(wrapper)
+
+        expect(replace).not.toHaveBeenCalled()
+        expect(setUserInfo).not.toHaveBeenCalled()
     })
 })

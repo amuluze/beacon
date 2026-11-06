@@ -92,6 +92,7 @@ func (h *HostRepo) CPUInfo(ctx context.Context, args rpcSchema.CPUInfoArgs) (rpc
 	}
 	return rpcSchema.CPUInfoReply{
 		Percent:   info.CPUPercent,
+		CPUCount:  info.CPUCount,
 		Timestamp: info.Timestamp.Unix(),
 		Freshness: rpcSchema.ComputeFreshness(info.Timestamp),
 	}, nil

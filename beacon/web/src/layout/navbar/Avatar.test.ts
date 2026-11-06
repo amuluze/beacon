@@ -85,7 +85,6 @@ describe('navbar avatar', () => {
         await wrapper.get('[data-testid="avatar-menu"] button').trigger('click')
 
         expect(openUpdatePassword).toHaveBeenCalledWith({
-            title: '更新密码',
             username: 'admin',
         })
     })

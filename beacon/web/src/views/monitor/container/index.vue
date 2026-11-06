@@ -14,6 +14,7 @@ import IconCpu from '~icons/lucide/cpu'
 import IconMemoryStick from '~icons/lucide/memory-stick'
 import { applyMonitorTimeRange, toMonitorSeriesPoint } from '@/utils/monitorChart'
 import type { MonitorTimeRange } from '@/utils/monitorChart'
+import { resolveChartPalette } from '@/utils/chartTokens'
 
 // Agent switcher
 const { selectedAgentID: currentAgent, isAgentEmpty, agentParams, ensureSelectedAgent, loadAgents } = useAgentSelection({ immediate: false })
@@ -25,6 +26,7 @@ watch(currentAgent, () => {
 // Time density
 const timeDensity = ref(600)
 const lastUpdated = ref(0)
+const containerFreshness = ref<{ stale: boolean }>({ stale: false })
 const options = [
   { value: 300, label: '5分钟' },
   { value: 600, label: '10分钟' },
@@ -46,15 +48,7 @@ const containerCpuMetrics = ref<{ name: string, percent: number }[]>([])
 const containerMemMetrics = ref<{ name: string, percent: number }[]>([])
 
 // §5.1 图表序列色取自 chart-1..chart-6 token，不写死色值
-const CHART_SERIES_TOKENS = ['--am-chart-1', '--am-chart-2', '--am-chart-3', '--am-chart-4', '--am-chart-5', '--am-chart-6']
 const containerPalette = ref<string[]>([])
-
-function resolveChartPalette(): string[] {
-  if (typeof window === 'undefined')
-    return CHART_SERIES_TOKENS.map(() => '')
-  const styles = getComputedStyle(document.documentElement)
-  return CHART_SERIES_TOKENS.map(token => styles.getPropertyValue(token).trim())
-}
 
 let latestRenderID = 0
 
@@ -77,6 +71,8 @@ async function render() {
   const { data } = await queryContainersUsage(param as any)
   if (renderID !== latestRenderID)
     return
+  // 容器分组同样按 freshness 判断过期：过期时上下文条不得继续表达「实时」。
+  containerFreshness.value = { stale: Boolean(data.freshness?.stale) }
   if (!data.names || data.names.length === 0) {
     clearCharts()
     return
@@ -84,6 +80,8 @@ async function render() {
 
   const cpuData = new Map<string, Usage[]>(Object.entries(data.cpu_usage))
   const memData = new Map<string, Usage[]>(Object.entries(data.mem_usage))
+  // §7.2 chip 百分比取 0–100 使用率序列，mem_usage 的字节数只用于纵轴刻度
+  const memPercentData = new Map<string, Usage[]>(Object.entries(data.mem_percent || {}))
   const containerPaletteColors = resolveChartPalette()
   containerPalette.value = containerPaletteColors
 
@@ -93,7 +91,7 @@ async function render() {
     return last ? Number(last.value.toFixed(1)) : 0
   }
   containerCpuMetrics.value = data.names.map(name => ({ name, percent: lastPercent(cpuData.get(name)) }))
-  containerMemMetrics.value = data.names.map(name => ({ name, percent: lastPercent(memData.get(name)) }))
+  containerMemMetrics.value = data.names.map(name => ({ name, percent: lastPercent(memPercentData.get(name)) }))
 
   // Series
   const cpuSeries: any[] = []
@@ -155,7 +153,7 @@ onUnmounted(() => {
                 <span class="am-section-title">{{ t('menu.containerMonitor') }}</span>
                 <AgentSelect width="180px" />
             </div>
-            <MonitorContextBar v-model:density="timeDensity" :density-options="options" :last-updated="lastUpdated" />
+            <MonitorContextBar v-model:density="timeDensity" :density-options="options" :last-updated="lastUpdated" :stale="containerFreshness.stale" />
         </div>
 
         <AgentEmptyState v-if="isAgentEmpty" @refresh="refreshAgents" />

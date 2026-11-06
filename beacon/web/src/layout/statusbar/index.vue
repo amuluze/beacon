@@ -3,12 +3,15 @@ import type { DockerInfo } from '@/interface/container.ts'
 import type { HostInfo } from '@/interface/host.ts'
 import { queryDockerInfo } from '@/api/container'
 import { queryHostInfo } from '@/api/host'
+import { querySystemVersion } from '@/api/system'
 import { useAgentSelection } from '@/hooks/useAgentSelection'
 
 const { agentList, selectedAgentID, ensureSelectedAgent } = useAgentSelection({ immediate: false })
 
 const hostInfo = shallowRef<HostInfo>()
 const dockerInfo = shallowRef<DockerInfo>()
+// §6.3 右组末项固定展示 Beacon 服务端构建版本，不随 Agent 切换变化
+const serverVersion = shallowRef('-')
 const loading = shallowRef(false)
 
 const selectedAgent = computed(() => agentList.value.find(item => item.agent_id === selectedAgentID.value))
@@ -24,6 +27,7 @@ const dockerItems = computed(() => [
   { label: 'Docker', value: dockerInfo.value?.docker_version || '-' },
   { label: 'API', value: dockerInfo.value ? `${dockerInfo.value.min_api_version}-${dockerInfo.value.api_version}` : '-' },
   { label: 'OS', value: dockerInfo.value ? `${dockerInfo.value.os}/${dockerInfo.value.arch}` : '-' },
+  { label: 'Beacon', value: serverVersion.value || '-' },
 ])
 
 async function refreshStatus() {
@@ -33,14 +37,17 @@ async function refreshStatus() {
 
   loading.value = true
   try {
-    const [hostResult, dockerResult] = await Promise.allSettled([
+    const [hostResult, dockerResult, versionResult] = await Promise.allSettled([
       queryHostInfo(),
       queryDockerInfo(),
+      querySystemVersion(),
     ])
     if (hostResult.status === 'fulfilled')
       hostInfo.value = hostResult.value.data
     if (dockerResult.status === 'fulfilled')
       dockerInfo.value = dockerResult.value.data
+    if (versionResult.status === 'fulfilled')
+      serverVersion.value = versionResult.value.data?.version || '-'
   }
   finally {
     loading.value = false

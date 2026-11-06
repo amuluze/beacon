@@ -56,6 +56,7 @@ type HostReport struct {
 
 type CPUReport struct {
 	CPUPercent float64
+	CPUCount   int
 }
 
 type MemoryReport struct {
@@ -93,6 +94,7 @@ type ContainerReport struct {
 	ContainerID string
 	Name        string
 	Image       string
+	Network     string
 	IP          string
 	Ports       string
 	State       string

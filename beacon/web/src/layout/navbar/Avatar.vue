@@ -27,7 +27,6 @@ const updatePasswordDraw = useCommandComponent(UpdatePassword)
 
 function openPasswordDrawer() {
   updatePasswordDraw({
-    title: '更新密码',
     username: displayName.value,
   })
 }

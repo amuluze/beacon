@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { createUser, queryRole } from '@/api/account'
+import DialogHeader from '@/components/DialogHeader/index.vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { Role } from '@/interface/account.ts'
 import { useI18n } from 'vue-i18n'
+import IconUser from '~icons/lucide/user'
 
 const props = defineProps<{
   visible: boolean
@@ -87,16 +89,19 @@ const { t } = useI18n()
 </script>
 
 <template>
-    <el-drawer v-model="drawerVisible" title="创建用户" size="720px">
-        <el-form ref="userCreateRef" :model="userCreateMode" :rules="rules" label-width="120px" label-position="left">
-            <el-form-item label="用户名" prop="username">
-                <el-input v-model="userCreateMode.username" placeholder="请输入用户名" />
+    <el-drawer v-model="drawerVisible" :title="t('account.createUser')" size="720px">
+        <template #header>
+            <DialogHeader :title="t('account.createUser')" :icon="IconUser" />
+        </template>
+        <el-form ref="userCreateRef" :model="userCreateMode" :rules="rules" label-position="top">
+            <el-form-item :label="t('account.userName')" prop="username">
+                <el-input v-model="userCreateMode.username" :placeholder="t('account.inputUserName')" />
             </el-form-item>
-            <el-form-item label="密码" prop="password">
-                <el-input v-model="userCreateMode.password" placeholder="请输入密码" />
+            <el-form-item :label="t('account.password')" prop="password">
+                <el-input v-model="userCreateMode.password" :placeholder="t('account.inputPassword')" />
             </el-form-item>
-            <el-form-item label="角色" prop="role_ids">
-                <el-select v-model="userCreateMode.role_ids" multiple placeholder="请选择角色">
+            <el-form-item :label="t('account.roleName')" prop="role_ids">
+                <el-select v-model="userCreateMode.role_ids" multiple :placeholder="t('account.selectRole')">
                     <el-option
                         v-for="item in roleData"
                         :key="item.id"
@@ -105,11 +110,11 @@ const { t } = useI18n()
                     />
                 </el-select>
             </el-form-item>
-            <el-form-item label="备注" prop="remark">
-                <el-input v-model="userCreateMode.remark" placeholder="请输入备注" />
+            <el-form-item :label="t('account.remark')" prop="remark">
+                <el-input v-model="userCreateMode.remark" :placeholder="t('account.inputRemark')" />
             </el-form-item>
-            <el-form-item label="状态" prop="status">
-                <el-tooltip content="用户状态，1为正常，2为禁用" placement="top">
+            <el-form-item :label="t('account.status')" prop="status">
+                <el-tooltip :content="t('account.statusHint')" placement="top">
                     <el-switch v-model="userCreateMode.status" active-value="1" inactive-value="2" />
                 </el-tooltip>
             </el-form-item>

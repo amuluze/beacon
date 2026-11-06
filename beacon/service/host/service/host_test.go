@@ -14,7 +14,7 @@ func TestHostServiceComputesInfoStalenessFromTimestamp(t *testing.T) {
 	staleTime := now.Add(-10 * time.Minute)
 	repo := &testutil.FakeHostRepo{
 		CPUInfoFn: func(context.Context, rpcSchema.CPUInfoArgs) (rpcSchema.CPUInfoReply, error) {
-			return rpcSchema.CPUInfoReply{Timestamp: now.Unix(), Percent: 0.42}, nil
+			return rpcSchema.CPUInfoReply{Timestamp: now.Unix(), Percent: 0.42, CPUCount: 12}, nil
 		},
 		MemInfoFn: func(context.Context, rpcSchema.MemoryInfoArgs) (rpcSchema.MemoryInfoReply, error) {
 			return rpcSchema.MemoryInfoReply{Timestamp: staleTime.Unix(), Percent: 0.70, Total: 100, Used: 70}, nil
@@ -34,6 +34,9 @@ func TestHostServiceComputesInfoStalenessFromTimestamp(t *testing.T) {
 	}
 	if cpu.Timestamp != now.Unix() || cpu.Stale {
 		t.Fatalf("CPUInfo timestamp/stale = (%d, %v), want (%d, false)", cpu.Timestamp, cpu.Stale, now.Unix())
+	}
+	if cpu.Cores != 12 {
+		t.Fatalf("CPUInfo cores = %d, want 12", cpu.Cores)
 	}
 
 	mem, err := svc.MemInfo(context.Background())

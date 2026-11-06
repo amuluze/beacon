@@ -16,7 +16,7 @@ type LoginResult struct {
 type PasswordUpdateArgs struct {
 	Username    string `json:"username" validate:"required,gte=1,lte=64" description:"用户名"`
 	OldPassword string `json:"old_password" validate:"required,gte=1,lte=128"  description:"旧密码"`
-	NewPassword string `json:"new_password" validate:"required,gte=1,lte=128"  description:"新密码"`
+	NewPassword string `json:"new_password" validate:"required,gte=12,lte=128" description:"新密码至少12字符，且Unicode小写、大写、数字、其他字符至少三类；必须与旧密码不同"`
 }
 
 type UserInfo struct {

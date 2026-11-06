@@ -14,10 +14,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import DialogHeader from '@/components/DialogHeader/index.vue'
+import type { Component } from 'vue'
 
 const props = withDefaults(defineProps<{
   visible: boolean
   title?: string
+  // Optional header badge icon (draft `Prune Image Modal` carries a `delete` badge).
+  badge?: Component
   // The text shown in the dialog body. May be a key into vue-i18n.
   message?: string
   // Optional interpolation params for the message key (e.g. selected count).
@@ -83,6 +87,9 @@ defineExpose({
         :width="width"
         draggable
     >
+        <template v-if="badge" #header>
+            <DialogHeader :title="title ? t(title) : ''" :icon="badge" />
+        </template>
         <span>{{ messageText }}</span>
         <template #footer>
             <span class="dialog-footer">

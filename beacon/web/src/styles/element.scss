@@ -13,6 +13,8 @@
   --am-accent-primary: #0a7c79;
   --am-accent-primary-hover: #0c918d;
   --am-accent-primary-soft: #e4f6f6;
+  --am-accent-primary-bright: #7fc9c6;
+  --am-brand-deep: #0f3a39;
   --am-accent-success: #047857;
   --am-accent-success-soft: #ecfdf5;
   --am-accent-warning: #b45309;
@@ -94,6 +96,8 @@ html.dark,
   --am-accent-primary: #0fc6c2;
   --am-accent-primary-hover: #3dd2cf;
   --am-accent-primary-soft: #0f3a39;
+  --am-accent-primary-bright: #5fe0dd;
+  --am-brand-deep: #0b3b3a;
   --am-accent-success: #34d399;
   --am-accent-success-soft: #052e24;
   --am-accent-warning: #fbbf24;
@@ -123,41 +127,107 @@ button {
 }
 
 /* el-drawer */
+// 壳体规格见 DESIGN.md §11.1：surface-elevated 底、border-subtle 描边、头部 16/24、主体 16/24、底部 16/24。
 .el-drawer {
+  background: var(--am-surface-elevated);
+  border-left: 1px solid var(--am-border-subtle);
+  box-shadow: none;
+
   .el-drawer__header {
-    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--am-spacing-md);
+    padding: 16px 24px;
     margin-bottom: 0;
-    border-bottom: 1px solid var(--el-border-color-lighter);
+    border-bottom: 1px solid var(--am-border-subtle);
 
     span {
-      font-size: 17px;
-      line-height: 17px;
-      color: var(--el-text-color-primary) !important;
+      font-size: var(--am-font-md);
+      font-weight: 600;
+      line-height: 20px;
+      color: var(--am-foreground-primary) !important;
     }
   }
 
+  .el-drawer__close-btn {
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    margin-left: auto;
+    color: var(--am-foreground-muted);
+    font-size: 16px;
+    border-radius: var(--am-radius-xs);
+
+    &:hover {
+      color: var(--am-foreground-primary);
+    }
+  }
+
+  .el-drawer__body {
+    padding: 16px 24px;
+  }
+
   .el-drawer__footer {
-    border-top: 1px solid var(--el-border-color-lighter);
+    padding: 16px 24px;
+    border-top: 1px solid var(--am-border-subtle);
   }
 }
 
 /* el-dialog */
+// 壳体规格见 DESIGN.md §11.1：surface-elevated 底、border-subtle + radius-md、header 16/24、body 24、footer 16/24。
 .el-dialog {
   padding: 0;
+  background: var(--am-surface-elevated);
+  border: 1px solid var(--am-border-subtle);
+  border-radius: var(--am-radius-md);
+  box-shadow: 0 8px 24px #00000066;
 
   .el-dialog__header {
-    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--am-spacing-md);
+    padding: 16px 24px;
     margin: 0;
-    border-bottom: 1px solid var(--el-border-color-lighter);
+    border-bottom: 1px solid var(--am-border-subtle);
 
     .el-dialog__title {
-      font-size: 17px;
+      font-size: var(--am-font-md);
+      font-weight: 600;
+      color: var(--am-foreground-primary);
     }
   }
 
-  .el-dialog__body,
+  .el-dialog__headerbtn {
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    margin-left: auto;
+    color: var(--am-foreground-muted);
+
+    .el-dialog__close {
+      font-size: 16px;
+    }
+
+    &:hover {
+      color: var(--am-foreground-primary);
+    }
+  }
+
+  .el-dialog__body {
+    padding: 24px;
+  }
+
   .el-dialog__footer {
-    padding: 15px 20px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--am-border-subtle);
   }
 }
 
@@ -397,7 +467,15 @@ button {
   display: flex;
   align-items: center;
   gap: var(--am-spacing-sm);
-  flex-wrap: wrap;
+  // 工具栏固定单行（§8.2）：搜索框让位收缩，避免多一个筛选下拉就折行。
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.am-table-operator__search {
+  flex: 0 1 260px;
+  width: auto;
+  min-width: 160px;
 }
 
 .am-table {

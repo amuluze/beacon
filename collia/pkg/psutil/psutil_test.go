@@ -11,6 +11,16 @@ func TestGetCPUPercent(t *testing.T) {
 	t.Log(cpuPercent, err)
 }
 
+func TestGetCPUCount(t *testing.T) {
+	count, err := GetCPUCount()
+	if err != nil {
+		t.Fatalf("GetCPUCount: %v", err)
+	}
+	if count <= 0 {
+		t.Fatalf("GetCPUCount = %d, want > 0", count)
+	}
+}
+
 func TestGetMemInfo(t *testing.T) {
 	memPercent, total, used, err := GetMemInfo()
 	t.Log(memPercent, total, used, err)

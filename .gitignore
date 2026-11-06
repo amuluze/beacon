@@ -26,6 +26,7 @@
 */amprobe
 */collia
 */amvector
+/scripts/doc-schema/schema
 
 .claude/
 .zcode/
@@ -34,3 +35,11 @@
 .pnpm-store/
 .agents/
 .omo/
+.plans/
+.specs/tasks/
+
+# 本地开发容器（compose.dev.yaml）的运行时状态
+.dev-data/
+.dev-logs/
+.dev-control-certs/
+.dev-agent/

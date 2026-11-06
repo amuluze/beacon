@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { pullImage } from '@/api/container'
+import DialogHeader from '@/components/DialogHeader/index.vue'
 import type { PullImageArgs } from '@/interface/container.ts'
 import { useI18n } from 'vue-i18n'
+import IconDownload from '~icons/lucide/download'
 
 const props = defineProps<{
   visible: boolean
@@ -49,20 +51,41 @@ const { t } = useI18n()
 
 <template>
     <el-dialog v-model="dialogVisible" :title="t(props.title as string)" width="480px">
+        <template #header>
+            <DialogHeader :title="t(props.title as string)" :icon="IconDownload" />
+        </template>
         <div class="am-image-pull">
-            <el-input v-model="imageNameForPull" style="margin-right: 8px" :placeholder="t('image.pullImagePlaceholder')" />
-            <el-button :loading="imagePullLoading" size="default" type="primary" @click="confirmImagePull">
-                {{ t('image.confirm') }}
-            </el-button>
+            <el-form label-position="top">
+                <el-form-item :label="t('image.imageName')">
+                    <el-input v-model="imageNameForPull" :placeholder="t('image.pullImagePlaceholder')" />
+                </el-form-item>
+            </el-form>
+            <p class="am-image-pull__hint">
+                {{ t('image.pullImageHint') }}
+            </p>
         </div>
+        <template #footer>
+            <el-button @click="dialogVisible = false">
+                {{ t('common.cancel') }}
+            </el-button>
+            <el-button type="primary" :loading="imagePullLoading" @click="confirmImagePull">
+                {{ t('image.pullImage') }}
+            </el-button>
+        </template>
     </el-dialog>
 </template>
 
 <style scoped lang="scss">
 @include b(image-pull) {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-start;
+  flex-direction: column;
+  gap: var(--am-spacing-sm);
+
+  @include e(hint) {
+    margin: 0;
+    color: var(--am-foreground-muted);
+    font-size: var(--am-font-xs);
+    line-height: 1.55;
+  }
 }
 </style>

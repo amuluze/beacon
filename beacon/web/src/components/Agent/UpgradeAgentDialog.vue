@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { upgradeAgent } from '@/api/agent'
+import DialogHeader from '@/components/DialogHeader/index.vue'
 import { success } from '@/components/Message/message'
 import type { AgentUpgradeResult } from '@/interface/agent.ts'
 import { useI18n } from 'vue-i18n'
+import IconCircleArrowUp from '~icons/lucide/circle-arrow-up'
 
 const props = defineProps<{
   visible: boolean
@@ -68,6 +70,9 @@ async function submit() {
 
 <template>
     <el-dialog v-model="dialogVisible" :title="t(props.title as string)" width="560px">
+        <template #header>
+            <DialogHeader :title="t(props.title as string)" :icon="IconCircleArrowUp" />
+        </template>
         <div class="am-upgrade-agent">
             <p class="am-upgrade-agent__desc">
                 {{ t('agent.upgradeDesc') }}

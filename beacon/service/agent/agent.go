@@ -47,8 +47,18 @@ func (r *Repository) Get(ctx context.Context, agentID string) (model.Agent, erro
 	return agent, err
 }
 
+// Upsert persists the registration snapshot. Assign must carry a map: with a
+// struct, FirstOrCreate skips the UPDATE for an existing row entirely (gorm
+// silently no-ops), which would freeze the agent's version/os/arch forever.
 func (r *Repository) Upsert(agent *model.Agent) error {
-	return r.DB.Where("agent_id = ?", agent.AgentID).Assign(agent).FirstOrCreate(agent).Error
+	return r.DB.Where("agent_id = ?", agent.AgentID).Assign(map[string]any{
+		"hostname":  agent.Hostname,
+		"os":        agent.OS,
+		"arch":      agent.Arch,
+		"version":   agent.Version,
+		"status":    agent.Status,
+		"last_seen": agent.LastSeen,
+	}).FirstOrCreate(agent).Error
 }
 
 func (r *Repository) UpdateStatus(agentID string, status string) error {

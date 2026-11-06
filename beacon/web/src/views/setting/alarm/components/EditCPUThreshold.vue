@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { updateAlarmThreshold } from '@/api/alarm'
+import DialogHeader from '@/components/DialogHeader/index.vue'
 import { success } from '@/components/Message/message.ts'
 import type { AlarmThreshold } from '@/interface/alarm.ts'
 import { useI18n } from 'vue-i18n'
+import IconGauge from '~icons/lucide/gauge'
 
 const props = defineProps<{
   visible: boolean
@@ -48,6 +50,9 @@ async function submit() {
 
 <template>
     <el-dialog v-model="dialogVisible" width="480px" :title="t(props.title ?? 'setting.cpuAlarmThreshold')">
+        <template #header>
+            <DialogHeader :title="t(props.title ?? 'setting.cpuAlarmThreshold')" :icon="IconGauge" />
+        </template>
         <el-form :model="form" label-position="top">
             <el-form-item :label="t('setting.cpuAlarmThreshold')">
                 <div class="threshold-row">

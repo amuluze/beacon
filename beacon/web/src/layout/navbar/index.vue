@@ -4,7 +4,7 @@ import AgentSelect from '@/layout/navbar/AgentSelect.vue'
 import InstallAgent from '@/layout/navbar/InstallAgent.vue'
 import Language from '@/layout/navbar/Language.vue'
 import ThemeChange from '@/layout/navbar/ThemeChange.vue'
-import UpgradeAgent from '@/layout/navbar/UpgradeAgent.vue'
+import BeaconVersion from '@/layout/navbar/BeaconVersion.vue'
 import { dynamicRoutes } from '@/router/dynamic.ts'
 import type { RouteRecordRaw } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -74,7 +74,7 @@ function goRoute(item: RouteRecordRaw): void {
 
         <div class="am-navbar__right">
             <AgentSelect />
-            <UpgradeAgent />
+            <BeaconVersion />
             <InstallAgent />
             <Language />
             <ThemeChange />
@@ -94,8 +94,8 @@ function goRoute(item: RouteRecordRaw): void {
   padding: 0 var(--am-spacing-lg);
   gap: var(--am-spacing-md);
   color: var(--am-foreground-primary);
-  background-color: var(--am-surface-secondary);
-  border-bottom: 1px solid var(--am-border-primary);
+  background-color: var(--am-surface-elevated);
+  border-bottom: 1px solid var(--am-border-subtle);
 
   @include e(brand) {
     min-width: 180px;
