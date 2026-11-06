@@ -13,8 +13,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/amuluze/beacon/stargazers"><img src="https://img.shields.io/github/stars/amuluze/beacon?style=flat-square" alt="GitHub Stars" /></a>
-  <a href="https://github.com/amuluze/beacon/releases"><img src="https://img.shields.io/github/v/release/amuluze/beacon?display_name=tag&sort=semver&style=flat-square" alt="GitHub Release" /></a>
+  <a href="https://github.com/amuluze/beacon-pro/stargazers"><img src="https://img.shields.io/github/stars/amuluze/beacon-pro?style=flat-square" alt="GitHub Stars" /></a>
+  <a href="https://github.com/amuluze/beacon-pro/releases"><img src="https://img.shields.io/github/v/release/amuluze/beacon-pro?display_name=tag&sort=semver&style=flat-square" alt="GitHub Release" /></a>
   <img src="https://img.shields.io/badge/Go-1.25-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go 1.25" />
   <img src="https://img.shields.io/badge/Vue-3-42B883?style=flat-square&logo=vuedotjs&logoColor=white" alt="Vue 3" />
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-2EA44F?style=flat-square" alt="MIT License" /></a>
@@ -46,7 +46,7 @@
 - **Collia Agent** collects host and Docker metrics, reports monitoring batches over HTTP, and opens a reverse gRPC tunnel for Server-initiated control calls.
 - Query and control requests must explicitly select an Agent, preventing implicit fallback or cross-node reads.
 
-Website: [beacon.amuluze.com](https://beacon.amuluze.com) · Repository: [github.com/amuluze/beacon](https://github.com/amuluze/beacon)
+Website: [beacon.amuluze.com](https://beacon.amuluze.com) · Repository: [github.com/amuluze/beacon-pro](https://github.com/amuluze/beacon-pro)
 
 ## ✨ Features
 
@@ -125,13 +125,15 @@ task beacon-web:build
 
 # Build the Beacon image and start the local Compose stack
 docker build -f beacon/Dockerfile -t beacon:latest .
-docker compose -f website/docker-compose.yml up -d
+cp website/release/latest/.env.example website/release/latest/.env
+# Edit .env: set BEACON_IMAGE=beacon:latest (locally built image) and fill in the four required secrets
+docker compose -f website/release/latest/compose.yaml up -d
 
 # Verify
-curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:1443/health
 ```
 
-The local Compose stack exposes `8000` for HTTP and `17000` for Agent control and is intended for development and verification. Before production deployment, generate unique high-entropy secrets and inject `BEACON_AUTH_SIGNING_KEY`, `BEACON_AGENT_INSTALL_TOKEN`, `BEACON_CONTROL_JOIN_TOKEN`, and `BEACON_DATA_ENCRYPTION_KEY`; a new database also requires `BEACON_BOOTSTRAP_ADMIN_PASSWORD`.
+The local Compose stack (`website/release/latest/compose.yaml`) exposes `1443` for HTTP (override with `BEACON_HTTP_PORT`) and `17000` for Agent control (override with `BEACON_CONTROL_PORT`) and is intended for development and verification. `BEACON_AGENT_INSTALL_TOKEN`, `BEACON_AUTH_SIGNING_KEY`, `BEACON_CONTROL_JOIN_TOKEN`, and `BEACON_DATA_ENCRYPTION_KEY` are required (Compose fails to start without them); for production, generate unique high-entropy secrets. A new database also requires `BEACON_BOOTSTRAP_ADMIN_PASSWORD`.
 
 After Beacon starts, install Collia on a target host (replace the address, node number, and token with real values):
 
@@ -155,12 +157,12 @@ The payload contains only `install_id`, `image`, `version`, `public_base_url`, `
 | Control channel | Agent-initiated reverse gRPC tunnel |
 | Monitoring channel | HTTP batch reporting and Server-side persistence |
 | Storage | SQLite, with other databases available through GORM |
-| Deployment | Docker, Docker Compose, Kubernetes |
+| Deployment | Docker, Docker Compose |
 
 ## 📁 Project Structure
 
 ```text
-beacon/
+beacon-pro/
 ├── beacon/                 # Server, Web UI, HTTP/WS API, and tunnel client
 │   ├── cmd/beacon/         # Server process entrypoint
 │   ├── service/            # Business services, routing, auth, and persistence
@@ -186,6 +188,7 @@ beacon/
 | [API Routes](./.docs/api/routes.md) | Current HTTP route and handler index |
 | [OpenAPI](./.docs/api/openapi.yml) | Beacon HTTP API contract |
 | [Domain Constraints](./.specs/domain/monitoring-platform.md) | Durable monitoring behavior and invariants |
+| [Account Administration Constraints](./.specs/domain/account-administration.md) | Admin user maintenance, deletion targets, and failure semantics |
 
 ## 🧑‍💻 Development and Contributing
 
@@ -204,7 +207,7 @@ cd beacon/web && pnpm test:run && pnpm ts && pnpm build
 
 Issues and pull requests are welcome:
 
-1. Fork [this repository](https://github.com/amuluze/beacon).
+1. Fork [this repository](https://github.com/amuluze/beacon-pro).
 2. Create a focused branch and run the relevant checks.
 3. Commit a clear, reviewable change.
 4. Push the branch and open a Pull Request.

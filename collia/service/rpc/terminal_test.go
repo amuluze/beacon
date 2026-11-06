@@ -2,12 +2,39 @@ package rpc
 
 import (
 	"context"
+	"errors"
+	"io"
+	"os"
+	"syscall"
 	"testing"
 	"time"
 
 	rpcSchema "common/rpc/schema"
 	"common/rpc/tunnel"
 )
+
+// TestIsPTYSessionEnd 固化 pty 会话结束判定：Linux 的 ptmx 在从属端关闭后
+// 返回 EIO（而非 EOF），两者都必须按会话正常结束处理，否则 Web 终端在
+// Linux 上会以 "pty read error" 结束而不是干净的 EOS。
+func TestIsPTYSessionEnd(t *testing.T) {
+	cases := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{"nil", nil, false},
+		{"eof", io.EOF, true},
+		{"eio", syscall.EIO, true},
+		{"wrapped eio", &os.PathError{Op: "read", Path: "/dev/ptmx", Err: syscall.EIO}, true},
+		{"closed", os.ErrClosed, false},
+		{"other", errors.New("boom"), false},
+	}
+	for _, tc := range cases {
+		if got := isPTYSessionEnd(tc.err); got != tc.want {
+			t.Errorf("%s: isPTYSessionEnd = %v, want %v", tc.name, got, tc.want)
+		}
+	}
+}
 
 func TestResizeTerminal_SessionNotFound(t *testing.T) {
 	svc := &Service{}

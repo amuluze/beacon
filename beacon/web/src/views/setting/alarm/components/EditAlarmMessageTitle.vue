@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { updateAlarmMessageSetting } from '@/api/alarm'
+import DialogHeader from '@/components/DialogHeader/index.vue'
 import { success } from '@/components/Message/message.ts'
 import type { AlarmMessageSetting } from '@/interface/alarm'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useI18n } from 'vue-i18n'
+import IconBellRing from '~icons/lucide/bell-ring'
 
 const props = defineProps<{
   visible: boolean
@@ -82,6 +84,9 @@ async function submit() {
 
 <template>
     <el-dialog v-model="dialogVisible" width="480px" :title="t(props.title ?? 'setting.alarmMessageTitle')">
+        <template #header>
+            <DialogHeader :title="t(props.title ?? 'setting.alarmMessageTitle')" :icon="IconBellRing" />
+        </template>
         <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
             <el-form-item prop="message_title" :label="t('setting.alarmMessageTitle')">
                 <el-input

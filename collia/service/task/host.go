@@ -29,7 +29,12 @@ func (a *Task) CPUTask() (*CPUReport, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &CPUReport{CPUPercent: cpuPercent}, nil
+	// 核数只作为指标值的上下文补充，采集失败不影响百分比上报。
+	cpuCount, countErr := psutil.GetCPUCount()
+	if countErr != nil {
+		cpuCount = 0
+	}
+	return &CPUReport{CPUPercent: cpuPercent, CPUCount: cpuCount}, nil
 }
 
 func (a *Task) MemoryTask() (*MemoryReport, error) {

@@ -107,7 +107,7 @@ func (c *ContainerRepo) ContainerList(ctx context.Context, args rpcSchema.Contai
 	query := c.DB.Model(&model.MonitorContainer{}).
 		Where("m_container.agent_id = ?", agentID).
 		Where("m_container.timestamp = (?)", currentBatch)
-	query = applyContainerFilters(query, args.Name, args.State)
+	query = applyContainerFilters(query, args.Name, args.State, args.Network)
 	if err := query.
 		Order("m_container.name asc").
 		Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&containers).Error; err != nil {
@@ -124,6 +124,7 @@ func (c *ContainerRepo) ContainerList(ctx context.Context, args rpcSchema.Contai
 			ContainerID: container.ContainerID,
 			Name:        container.Name,
 			Image:       container.Image,
+			Network:     container.Network,
 			IP:          container.IP,
 			Ports:       container.Ports,
 			State:       container.State,
@@ -169,9 +170,10 @@ func (c *ContainerRepo) Usage(ctx context.Context, args rpcSchema.ContainerUsage
 		return rpcSchema.ContainerUsageReply{}, err
 	}
 	reply := rpcSchema.ContainerUsageReply{
-		Names:    make([]string, 0),
-		CPUUsage: make(map[string][]rpcSchema.Usage),
-		MemUsage: make(map[string][]rpcSchema.Usage),
+		Names:      make([]string, 0),
+		CPUUsage:   make(map[string][]rpcSchema.Usage),
+		MemUsage:   make(map[string][]rpcSchema.Usage),
+		MemPercent: make(map[string][]rpcSchema.Usage),
 	}
 	var latestTimestamp time.Time
 	for _, item := range containers {
@@ -182,12 +184,17 @@ func (c *ContainerRepo) Usage(ctx context.Context, args rpcSchema.ContainerUsage
 			reply.Names = append(reply.Names, item.Name)
 			reply.CPUUsage[item.Name] = make([]rpcSchema.Usage, 0)
 			reply.MemUsage[item.Name] = make([]rpcSchema.Usage, 0)
+			reply.MemPercent[item.Name] = make([]rpcSchema.Usage, 0)
 		}
 		reply.CPUUsage[item.Name] = append(reply.CPUUsage[item.Name], rpcSchema.Usage{
 			Timestamp: item.Timestamp.Unix(), Value: item.CPUPercent,
 		})
 		reply.MemUsage[item.Name] = append(reply.MemUsage[item.Name], rpcSchema.Usage{
 			Timestamp: item.Timestamp.Unix(), Value: item.MemUsage,
+		})
+		// §7.2 图例 chip 需要 0–100 使用率，字节数只用于纵轴刻度
+		reply.MemPercent[item.Name] = append(reply.MemPercent[item.Name], rpcSchema.Usage{
+			Timestamp: item.Timestamp.Unix(), Value: item.MemPercent,
 		})
 	}
 	reply.Freshness = rpcSchema.ComputeFreshness(latestTimestamp)
@@ -219,20 +226,39 @@ func (c *ContainerRepo) ContainerCount(ctx context.Context, args rpcSchema.Conta
 	query := c.DB.Model(&model.MonitorContainer{}).
 		Where("agent_id = ?", agentID).
 		Where("timestamp = (?)", c.latestContainerTimestamp(agentID))
-	query = applyContainerFilters(query, args.Name, args.State)
+	query = applyContainerFilters(query, args.Name, args.State, args.Network)
 	if err := query.Count(&count).Error; err != nil {
 		return rpcSchema.ContainerCountReply{}, err
 	}
 	return rpcSchema.ContainerCountReply{Count: int(count)}, nil
 }
 
-func applyContainerFilters(query *gorm.DB, name string, state string) *gorm.DB {
+// applyImageFilters 应用镜像搜索与「使用中」筛选；
+// 使用中数量由上报批次按容器镜像引用计算并落库（m_image.number）。
+func applyImageFilters(query *gorm.DB, name string, inUse string) *gorm.DB {
+	if name != "" {
+		like := "%" + name + "%"
+		query = query.Where("name LIKE ? OR tag LIKE ?", like, like)
+	}
+	switch inUse {
+	case "in_use":
+		query = query.Where("number > 0")
+	case "unused":
+		query = query.Where("number = 0")
+	}
+	return query
+}
+
+func applyContainerFilters(query *gorm.DB, name string, state string, network string) *gorm.DB {
 	if name != "" {
 		like := "%" + name + "%"
 		query = query.Where("m_container.name LIKE ? OR m_container.image LIKE ?", like, like)
 	}
 	if state != "" {
 		query = query.Where("m_container.state = ?", state)
+	}
+	if network != "" {
+		query = query.Where("m_container.network = ?", network)
 	}
 	return query
 }
@@ -317,11 +343,7 @@ func (c *ContainerRepo) ImageList(ctx context.Context, args rpcSchema.ImageQuery
 	if err != nil {
 		return rpcSchema.ImageQueryReply{}, err
 	}
-	query := db.Model(&model.MonitorImage{})
-	if args.Name != "" {
-		like := "%" + args.Name + "%"
-		query = query.Where("name LIKE ? OR tag LIKE ?", like, like)
-	}
+	query := applyImageFilters(db.Model(&model.MonitorImage{}), args.Name, args.InUse)
 	if err := query.
 		Order("created_at desc").Offset((args.Page - 1) * args.Size).Limit(args.Size).Find(&results).Error; err != nil {
 		return rpcSchema.ImageQueryReply{}, err
@@ -350,11 +372,7 @@ func (c *ContainerRepo) ImageCount(ctx context.Context, args rpcSchema.ImageCoun
 	if err != nil {
 		return rpcSchema.ImageCountReply{}, err
 	}
-	query := db.Model(&model.MonitorImage{})
-	if args.Name != "" {
-		like := "%" + args.Name + "%"
-		query = query.Where("name LIKE ? OR tag LIKE ?", like, like)
-	}
+	query := applyImageFilters(db.Model(&model.MonitorImage{}), args.Name, args.InUse)
 	if err := query.Order("created_at desc").Count(&total).Error; err != nil {
 		return rpcSchema.ImageCountReply{}, err
 	}

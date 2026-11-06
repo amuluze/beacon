@@ -3,6 +3,8 @@ package database
 
 import (
 	"errors"
+	"github.com/jackc/pgx/v5"
+	"gorm.io/driver/postgres"
 	"testing"
 
 	"github.com/glebarez/sqlite"
@@ -48,3 +50,36 @@ func errorIsNotInitialized(err error) bool {
 
 // Silence unused errors import when only used via errors.New in db.go for nil-check.
 var _ = errors.Is
+
+// Parse with the same pgx driver as GORM: verify TLS modes and ensure password
+// characters cannot inject a second connection option.
+func TestPostgresSSLModeAndQuotedSettings(t *testing.T) {
+	for _, mode := range []string{"", "disable", "require", "verify-full"} {
+		t.Run(mode, func(t *testing.T) {
+			opt := &option{Type: "postgres", Host: "127.0.0.1", Port: "5432", UserName: "test-user", Password: "space ' slash\\ sslmode=disable", DBName: "test db"}
+			WithSSLMode(mode)(opt)
+			driver := dial(opt).(*postgres.Dialector)
+			config, err := pgx.ParseConfig(driver.Config.DSN)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if config.Password != opt.Password || config.Database != opt.DBName {
+				t.Fatal("connection values were not preserved")
+			}
+			if mode == "" || mode == "disable" {
+				if config.TLSConfig != nil {
+					t.Fatal("default/disable must preserve historical behavior")
+				}
+			} else if config.TLSConfig == nil {
+				t.Fatal("explicit TLS mode was lost")
+			}
+			if mode == "verify-full" && config.TLSConfig.InsecureSkipVerify {
+				t.Fatal("verify-full must verify the server")
+			}
+		})
+	}
+	opt := &option{Type: "postgres", Host: "127.0.0.1", Port: "5432", UserName: "test", DBName: "test", SSLMode: "require user=injected"}
+	if _, err := pgx.ParseConfig(dial(opt).(*postgres.Dialector).Config.DSN); err == nil {
+		t.Fatal("invalid SSL mode should fail, never become extra DSN settings")
+	}
+}

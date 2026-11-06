@@ -14,6 +14,7 @@ import (
 	healthapi "beacon/service/health/api"
 	"beacon/service/middleware"
 	"beacon/service/report"
+	systemapi "beacon/service/system/api"
 	"beacon/service/terminal"
 
 	"github.com/casbin/casbin/v2"
@@ -58,6 +59,7 @@ type Router struct {
 	dingTalkAPI  *dingTalkAPI.DingTalkAPI
 	alarmAPI     *alarmAPI.AlarmAPI
 	agentAPI     *agent.API
+	systemAPI    *systemapi.SystemAPI
 	reportSvc    *report.Service
 
 	loggerHandler   *LoggerHandler
@@ -175,6 +177,7 @@ func (a *Router) registerAPIRoutes(api fiber.Router) {
 	a.registerIndexRoutes(v1)
 	a.registerAccountRoutes(v1)
 	a.registerAgentListRoute(v1)
+	a.registerSystemRoutes(v1)
 	a.registerAuthRoutes(v1)
 	a.registerContainerRoutes(v1)
 	a.registerHostRoutes(v1)
@@ -212,6 +215,11 @@ func (a *Router) registerAgentListRoute(v1 fiber.Router) {
 	g := v1.Group("agent")
 	g.Get("/list", a.agentAPI.List).Name("查询 Agent 列表")
 	g.Post("/upgrade", a.agentAPI.Upgrade).Name("升级 Collia")
+}
+
+func (a *Router) registerSystemRoutes(v1 fiber.Router) {
+	g := v1.Group("system")
+	g.Get("/version", a.systemAPI.Version).Name("查询 Beacon 版本与更新状态")
 }
 
 func (a *Router) registerAuthRoutes(v1 fiber.Router) {

@@ -683,7 +683,7 @@ func TestContainerService_RejectsProtectedContainerOperations(t *testing.T) {
 		}},
 	}
 
-	for _, protectedName := range []string{"beacon", "amprobe", "Beacon", " amprobe "} {
+	for _, protectedName := range []string{"beacon", "Beacon", " beacon "} {
 		for _, op := range operations {
 			t.Run(protectedName+"/"+op.name, func(t *testing.T) {
 				repo := newFakeContainerRepoWithDefaults()

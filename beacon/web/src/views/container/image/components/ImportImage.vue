@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { success } from '@/components/Message/message.ts'
+import DialogHeader from '@/components/DialogHeader/index.vue'
 import useStore from '@/store'
 import { getCSRFHeaders } from '@/utils/csrf'
 import { useI18n } from 'vue-i18n'
+import IconUpload from '~icons/lucide/upload'
 
 const props = defineProps<{
   visible: boolean
@@ -59,8 +61,10 @@ const { t } = useI18n()
 
 <template>
     <el-dialog v-model="dialogVisible" :title="t(props.title as string)" width="480px">
+        <template #header>
+            <DialogHeader :title="t(props.title as string)" :icon="IconUpload" />
+        </template>
         <el-upload
-
             action="/api/v1/container/image_import"
             :headers="uploadHeaders"
             :before-upload="refreshUploadHeaders"

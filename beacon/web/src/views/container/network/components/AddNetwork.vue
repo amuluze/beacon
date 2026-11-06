@@ -2,8 +2,10 @@
 import type { FormInstance, FormRules } from 'element-plus'
 import type { NetworkCreateArgs } from '@/interface/container.ts'
 import { createNetwork } from '@/api/container'
+import DialogHeader from '@/components/DialogHeader/index.vue'
 import { error, success } from '@/components/Message/message.ts'
 import { useI18n } from 'vue-i18n'
+import IconNetwork from '~icons/lucide/network'
 
 const props = defineProps<{
   visible: boolean
@@ -109,8 +111,11 @@ const { t } = useI18n()
 
 <template>
     <el-dialog v-model="dialogVisible" :title="t(props.title as string)" width="480px">
+        <template #header>
+            <DialogHeader :title="t(props.title as string)" :icon="IconNetwork" />
+        </template>
         <div class="am-network-create__content">
-            <el-form ref="networkCreateRef" :model="networkCreateMode" :rules="rules" label-width="160px" label-position="left">
+            <el-form ref="networkCreateRef" :model="networkCreateMode" :rules="rules" label-position="top">
                 <el-form-item :label="t('network.networkName')" prop="networkName">
                     <el-input v-model="networkCreateMode.networkName" :placeholder="t('network.networkPlaceholder')" />
                 </el-form-item>
@@ -130,14 +135,14 @@ const { t } = useI18n()
                 </el-form-item>
             </el-form>
         </div>
-        <div class="am-network-create__operator">
-            <el-button type="default" size="default" @click="dialogVisible = false">
+        <template #footer>
+            <el-button @click="dialogVisible = false">
                 {{ t('network.cancel') }}
             </el-button>
-            <el-button v-loading="createNetworkLoading" type="primary" size="default" @click="confirmCreateNetwork(networkCreateRef)">
+            <el-button v-loading="createNetworkLoading" type="primary" @click="confirmCreateNetwork(networkCreateRef)">
                 {{ t('network.confirm') }}
             </el-button>
-        </div>
+        </template>
     </el-dialog>
 </template>
 

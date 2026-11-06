@@ -331,7 +331,7 @@ export const diskTrendingOption = {
         },
     },
     legend: {
-        data: ['Read', 'Write'],
+        data: ['读', '写'],
         left: 'right',
     },
     grid: {
@@ -391,7 +391,7 @@ export const netTrendingOption = {
         },
     },
     legend: {
-        data: ['Receive', 'Send'],
+        data: ['接收', '发送'],
         left: 'right',
     },
     grid: {

@@ -84,6 +84,7 @@ func (h *HostService) CPUInfo(ctx context.Context) (schema.CPUInfoReply, error) 
 		return reply, err
 	}
 	reply.Percent = cpuInfo.Percent
+	reply.Cores = cpuInfo.CPUCount
 	reply.Timestamp = cpuInfo.Timestamp
 	reply.Stale = isStale(cpuInfo.Timestamp, h.stalenessSeconds)
 	reply.Freshness = mapFreshness(cpuInfo.Freshness)

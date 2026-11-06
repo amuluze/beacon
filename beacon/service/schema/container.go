@@ -22,10 +22,11 @@ type Container struct {
 }
 
 type ContainerQueryArgs struct {
-	Page  int    `json:"page" validate:"required,gte=1"`
-	Size  int    `json:"size" validate:"gte=0,lte=100"`
-	Name  string `json:"name,omitempty" validate:"omitempty,max=128"`
-	State string `json:"state,omitempty" validate:"omitempty,oneof=running exited created paused restarting removing dead"`
+	Page    int    `json:"page" validate:"required,gte=1"`
+	Size    int    `json:"size" validate:"gte=0,lte=100"`
+	Name    string `json:"name,omitempty" validate:"omitempty,max=128"`
+	State   string `json:"state,omitempty" validate:"omitempty,oneof=running exited created paused restarting removing dead"`
+	Network string `json:"network,omitempty" validate:"omitempty,max=128"`
 }
 
 // ContainerSummaryArgs 汇总当前 Agent 的容器 / 镜像 / 网络概览。
@@ -112,9 +113,10 @@ type Image struct {
 }
 
 type ImageQueryArgs struct {
-	Page int    `json:"page" validate:"required,gte=1"`
-	Size int    `json:"size" validate:"gt=0,lte=100"`
-	Name string `json:"name,omitempty" validate:"omitempty,max=256"`
+	Page  int    `json:"page" validate:"required,gte=1"`
+	Size  int    `json:"size" validate:"gt=0,lte=100"`
+	Name  string `json:"name,omitempty" validate:"omitempty,max=256"`
+	InUse string `json:"in_use,omitempty" validate:"omitempty,oneof=in_use unused"`
 }
 
 type ImageQueryReply struct {
@@ -236,8 +238,9 @@ type ContainerUsageArgs struct {
 }
 
 type ContainerUsageReply struct {
-	Names     []string           `json:"names"`
-	CPUUsage  map[string][]Usage `json:"cpu_usage"`
-	MemUsage  map[string][]Usage `json:"mem_usage"`
-	Freshness Freshness          `json:"freshness"`
+	Names      []string           `json:"names"`
+	CPUUsage   map[string][]Usage `json:"cpu_usage"`
+	MemUsage   map[string][]Usage `json:"mem_usage"`
+	MemPercent map[string][]Usage `json:"mem_percent"`
+	Freshness  Freshness          `json:"freshness"`
 }

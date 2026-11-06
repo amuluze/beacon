@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { SetDockerRegistryMirrorsArgs } from '@/interface/container.ts'
 import { SetDockerRegistryMirrors } from '@/api/container'
+import DialogHeader from '@/components/DialogHeader/index.vue'
 import { useI18n } from 'vue-i18n'
+import IconServer from '~icons/lucide/server'
 
 const props = defineProps<{
   visible: boolean
@@ -54,20 +56,33 @@ const { t } = useI18n()
 
 <template>
     <el-drawer v-model="drawerVisible" size="540px" :title="t(props.title as string)">
-        <el-form>
+        <template #header>
+            <DialogHeader :title="t(props.title as string)" :icon="IconServer" />
+        </template>
+        <p class="am-registry-mirrors__hint">
+            {{ t('setting.mirrorRegistryDescription') }}
+        </p>
+        <el-form label-position="top">
             <el-form-item>
                 <el-input v-model="textarea" :rows="6" type="textarea" />
             </el-form-item>
         </el-form>
-        <el-button type="default" size="default" @click="drawerVisible = false">
-            {{ t('setting.cancel') }}
-        </el-button>
-        <el-button :loading="loading" type="primary" size="default" @click="confirmEditDockerRegistryMirrors">
-            {{ t('setting.confirm') }}
-        </el-button>
+        <template #footer>
+            <el-button @click="drawerVisible = false">
+                {{ t('setting.cancel') }}
+            </el-button>
+            <el-button :loading="loading" type="primary" @click="confirmEditDockerRegistryMirrors">
+                {{ t('setting.confirm') }}
+            </el-button>
+        </template>
     </el-drawer>
 </template>
 
 <style scoped lang="scss">
-
+.am-registry-mirrors__hint {
+  margin: 0 0 var(--am-spacing-md);
+  color: var(--am-foreground-muted);
+  font-size: var(--am-font-sm);
+  line-height: 1.55;
+}
 </style>

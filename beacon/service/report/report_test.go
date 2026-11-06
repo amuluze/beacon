@@ -73,6 +73,7 @@ func TestStorePersistsReportBatch(t *testing.T) {
 		CPU: rpcSchema.CPUReport{
 			Timestamp:  now,
 			CPUPercent: 12.5,
+			CPUCount:   8,
 		},
 		Memory: rpcSchema.MemoryReport{
 			Timestamp:  now,
@@ -96,11 +97,14 @@ func TestStorePersistsReportBatch(t *testing.T) {
 			Timestamp:   now,
 			ContainerID: "abc123",
 			Name:        "app",
+			Image:       "nginx:1.25",
+			Network:     "bridge",
 		}},
 		Images: []rpcSchema.ImageReport{{
 			Timestamp: now,
 			ImageID:   "img123",
 			Name:      "nginx",
+			Tag:       "1.25",
 		}},
 		Networks: []rpcSchema.NetworkReport{{
 			Timestamp: now,
@@ -134,5 +138,29 @@ func TestStorePersistsReportBatch(t *testing.T) {
 		if got != tc.want {
 			t.Fatalf("count %s = %d, want %d", name, got, tc.want)
 		}
+	}
+
+	var storedCPU model.MonitorCPU
+	if err := db.Where("agent_id = ?", "agent-a").First(&storedCPU).Error; err != nil {
+		t.Fatalf("load stored cpu: %v", err)
+	}
+	if storedCPU.CPUCount != 8 {
+		t.Fatalf("stored cpu count = %d, want 8", storedCPU.CPUCount)
+	}
+
+	// 容器网络落库，镜像「使用中」数量按本批容器引用计算。
+	var storedContainer model.MonitorContainer
+	if err := db.Where("agent_id = ?", "agent-a").First(&storedContainer).Error; err != nil {
+		t.Fatalf("load stored container: %v", err)
+	}
+	if storedContainer.Network != "bridge" {
+		t.Fatalf("stored container network = %q, want bridge", storedContainer.Network)
+	}
+	var storedImage model.MonitorImage
+	if err := db.Where("agent_id = ?", "agent-a").First(&storedImage).Error; err != nil {
+		t.Fatalf("load stored image: %v", err)
+	}
+	if storedImage.Number != 1 {
+		t.Fatalf("stored image number = %d, want 1", storedImage.Number)
 	}
 }

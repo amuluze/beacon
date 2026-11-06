@@ -39,6 +39,7 @@ type CPUArgs struct{}
 
 type CPUInfoReply struct {
 	Percent   float64   `json:"percent"`
+	Cores     int       `json:"cores"`
 	Timestamp int64     `json:"timestamp"`
 	Stale     bool      `json:"stale"`
 	Freshness Freshness `json:"freshness"`

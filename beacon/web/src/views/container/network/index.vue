@@ -56,13 +56,14 @@ watch(() => pageable.value.total, (total) => {
 
 // 搜索与驱动筛选在服务端生效：total 与列表使用同一组过滤条件
 const keyword = ref('')
-const driverFilter = ref('')
+// 「全部」用显式值 `all`：Element 会把空字符串当作未选择并回落到「请选择」占位符。
+const driverFilter = ref('all')
 
 async function applyFilters() {
   pageable.value.page = 1
   await updateTotalParam({
     name: keyword.value.trim() || undefined,
-    driver: driverFilter.value || undefined,
+    driver: driverFilter.value === 'all' ? undefined : driverFilter.value,
   })
 }
 
@@ -135,7 +136,7 @@ const { t } = useI18n()
                     </template>
                 </el-input>
                 <el-select v-model="driverFilter" class="am-table-operator__select" size="small" @change="applyFilters">
-                    <el-option :label="t('network.driverAll')" value="" />
+                    <el-option :label="t('network.driverAll')" value="all" />
                     <el-option label="bridge" value="bridge" />
                     <el-option label="host" value="host" />
                     <el-option label="none" value="none" />
@@ -159,7 +160,7 @@ const { t } = useI18n()
             >
                 <el-table-column type="selection" :selectable="selectable" width="48" />
                 <el-table-column prop="name" :label="t('network.networkName')" align="center" min-width="160" fixed />
-                <el-table-column prop="driver" :label="t('network.networkMode')" align="center" min-width="120" />
+                <el-table-column prop="driver" :label="t('network.columnDriver')" align="center" min-width="120" />
                 <el-table-column prop="subnet" :label="t('network.subNetwork')" align="center" show-overflow-tooltip min-width="140" />
                 <el-table-column prop="gateway" :label="t('network.networkGateway')" align="center" show-overflow-tooltip min-width="160" />
                 <el-table-column prop="created" :label="t('network.createTime')" align="center" min-width="200" />

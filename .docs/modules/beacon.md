@@ -1,12 +1,10 @@
 # Beacon 模块
 
-<!-- beaver:managed-project-doc -->
-
 ## 模块职责
 
 `beacon` 的主要角色是：HTTP/API service module: Web/API 接入、路由注册、请求校验和服务协调。
 
-- 相关源码包：`beacon/cmd/beacon`, `beacon/pkg/auth`, `beacon/pkg/auth/jwtauth`, `beacon/pkg/contextx`, `beacon/pkg/errors`, `beacon/pkg/fiberx`。
+- 相关源码包：`beacon/cmd/beacon`, `beacon/pkg/auth`, `beacon/pkg/auth/jwtauth`, `beacon/pkg/contextx`, `beacon/pkg/errors`, `beacon/pkg/fiberx`, `beacon/service/system/api`。
 
 ## 职责边界
 
@@ -20,8 +18,8 @@
 
 - 模块路径：`beacon`
 - Go 版本：`1.25.0`
-- Go 源码文件：194
-- Go 测试文件：60
+- Go 源码文件：138（非测试 `.go`，不含 `web/`）
+- Go 测试文件：66
 - 包名：`account`, `agent`, `alarm`, `api`, `audit`, `auth`, `authcookie`, `client`, `container`, `contextx`, `dingtalk`, `errors`, `fiberx`, `hash`, `health`, `host`, `jwtauth`, `mail`, `main`, `middleware`, `model`, `report`, `repository`, `rpc`, `schema`, `secret`, `service`, `task`, `terminal`, `testutil`, `title`, `utils`, `uuid`, `validatex`, `web`
 - 推断角色：HTTP/API service module: Web/API 接入、路由注册、请求校验和服务协调
 
@@ -73,51 +71,55 @@
 
 ## 配置与入口信号
 
-- 配置：`BASE_URL` at `beacon/service/agent_install.go:255`
-- 配置：`BEACON_AGENT_INSTALL_TOKEN` at `beacon/service/auth.go:148`
-- 配置：`BEACON_AGENT_INSTALL_TOKEN` at `beacon/service/config.go:84`
-- 配置：`BEACON_AUTH_SIGNING_KEY` at `beacon/service/auth.go:93`
-- 配置：`BEACON_AUTH_SIGNING_KEY` at `beacon/service/config.go:81`
+- 配置：`BASE_URL` at `beacon/service/agent_install.go:216`
+- 配置：`BEACON_AGENT_INSTALL_TOKEN` at `beacon/service/auth.go:146`
+- 配置：`BEACON_AGENT_INSTALL_TOKEN` at `beacon/service/config.go:99`
+- 配置：`BEACON_AUTH_SIGNING_KEY` at `beacon/service/auth.go:83`
+- 配置：`BEACON_AUTH_SIGNING_KEY` at `beacon/service/config.go:96`
 - 配置：`BEACON_BOOTSTRAP_ADMIN_PASSWORD` at `beacon/service/prepare.go`
 - 配置：`BEACON_DATA_ENCRYPTION_KEY` at `beacon/service/data_encryption.go`
 - 配置：`BEACON_CONTAINER_NAME` at `beacon/service/install_report.go:97`
-- 配置：`BEACON_CONTROL_JOIN_TOKEN` at `beacon/service/auth.go:123`
-- 配置：`BEACON_CONTROL_JOIN_TOKEN` at `beacon/service/config.go:87`
+- 配置：`BEACON_CONTROL_JOIN_TOKEN` at `beacon/service/auth.go:121`
+- 配置：`BEACON_CONTROL_JOIN_TOKEN` at `beacon/service/config.go:102`
+- 配置：`BEACON_RETENTION_DAYS` at `beacon/service/config.go:80`
+- 配置：`BEACON_RETENTION_AUDIT_DAYS` at `beacon/service/config.go:81`
 - 配置：`BEACON_CONTROL_PORT` at `beacon/service/install_report.go:96`
 - 配置：`BEACON_HTTP_PORT` at `beacon/service/install_report.go:95`
 - 配置：`BEACON_IMAGE` at `beacon/service/install_report.go:91`
 - 配置：`BEACON_PUBLIC_BASE_URL` at `beacon/service/install_report.go:93`
 - 配置：`BEACON_VERSION` at `beacon/service/install_report.go:92`
-- 配置：`CORS` at `beacon/service/app.go:32`
-- 配置：`CORS` at `beacon/service/app.go:75`
+- 配置：`CORS` at `beacon/service/app.go:47`
+- 配置：`CORS` at `beacon/service/config.go:223`
 - 配置：`Config` in `beacon/service/config.go`
 - 配置：`Option` in `beacon/pkg/auth/jwtauth/options.go`
-- 入口：`api := app.Group("/api")` at `beacon/service/router.go:70`
-- 入口：`app.Get("/health", a.healthProbe.Liveness)` at `beacon/service/router.go:76`
-- 入口：`app.Get("/ready", a.healthProbe.Readiness)` at `beacon/service/router.go:77`
-- 入口：`app.Get("/ws/terminal", webSocketAuth, websocket.New(a.terminalHandler.Handle))` at `beacon/service/router.go:154`
-- 入口：`app.Get("/ws/:id", webSocketAuth, websocket.New(a.loggerHandler.Handler))` at `beacon/service/router.go:155`
-- 入口：`app.Use("/", filesystem.New(filesystem.Config{` at `beacon/service/app.go:46`
-- 入口：`app.Use("/api/v1/auth/login", limiter.New(limiter.Config{` at `beacon/service/router.go:87`
-- 入口：`app.Use("/api/v1/host/report", limiter.New(limiter.Config{` at `beacon/service/router.go:97`
-- 入口：`app.Use("/ws", func(c *fiber.Ctx) error {` at `beacon/service/router.go:144`
-- 入口：`app.Use(func(c *fiber.Ctx) error {` at `beacon/service/router.go:115`
-- 入口：`app.Use(middleware.CasbinMiddleware(` at `beacon/service/router.go:136`
-- 入口：`app.Use(middleware.GlobalRateLimitMiddleware(config.RateLimit.GlobalMax))` at `beacon/service/app.go:35`
-- 入口：`app.Use(middleware.PanicMiddleware())` at `beacon/service/app.go:43`
-- 入口：`app.Use(middleware.StackMiddleware)` at `beacon/service/app.go:44`
-- 入口：`app.Use(middleware.UserAuthMiddleware(` at `beacon/service/router.go:129`
-- 入口：`g.Get("/alarm_query", a.alarmAPI.AlarmQuery).Name("查询告警阈值")` at `beacon/service/router.go:294`
-- 入口：`g.Get("/message_setting", a.alarmAPI.AlarmMessageSettingQuery).Name("查询告警消息标题")` at `beacon/service/router.go:295`
-- 入口：`g.Post("/message_setting_update", a.alarmAPI.AlarmMessageSettingUpdate).Name("更新告警消息标题")` at `beacon/service/router.go:296`
-- 入口：`g.Get("/query", a.dingTalkAPI.Query).Name("查询钉钉告警配置")` at `beacon/service/router.go:286`
-- 入口：`g.Post("/update", a.dingTalkAPI.Update).Name("更新钉钉告警配置")` at `beacon/service/router.go:287`
-- 入口：`g.Post("/test", a.dingTalkAPI.Test).Name("测试钉钉告警")` at `beacon/service/router.go:288`
+- 入口：`api := app.Group("/api")` at `beacon/service/router.go:74`
+- 入口：`app.Get("/health", a.healthProbe.Liveness)` at `beacon/service/router.go:80`
+- 入口：`app.Get("/ready", a.healthProbe.Readiness)` at `beacon/service/router.go:81`
+- 入口：`app.Get("/ws/terminal", webSocketAuth, websocket.New(a.terminalHandler.Handle))` at `beacon/service/router.go:163`
+- 入口：`app.Get("/ws/:id", webSocketAuth, websocket.New(a.loggerHandler.Handler))` at `beacon/service/router.go:164`
+- 入口：`app.Use("/", filesystem.New(filesystem.Config{` at `beacon/service/app.go:69`
+- 入口：`app.Use("/api/v1/auth/login", limiter.New(limiter.Config{` at `beacon/service/router.go:91`
+- 入口：`app.Use("/api/v1/host/report", limiter.New(limiter.Config{` at `beacon/service/router.go:101`
+- 入口：`app.Use("/ws", func(c *fiber.Ctx) error {` at `beacon/service/router.go:153`
+- 入口：`app.Use(func(c *fiber.Ctx) error {` at `beacon/service/router.go:119`
+- 入口：`app.Use(middleware.CasbinMiddleware(` at `beacon/service/router.go:145`
+- 入口：`app.Use(middleware.GlobalRateLimitMiddleware(config.RateLimit.GlobalMax))` at `beacon/service/app.go:58`
+- 入口：`app.Use(middleware.PanicMiddleware())` at `beacon/service/app.go:66`
+- 入口：`app.Use(middleware.StackMiddleware)` at `beacon/service/app.go:67`
+- 入口：`app.Use(middleware.UserAuthMiddleware(` at `beacon/service/router.go:136`
+- 入口：`g.Get("/alarm_query", a.alarmAPI.AlarmQuery).Name("查询告警阈值")` at `beacon/service/router.go:297`
+- 入口：`g.Get("/message_setting", a.alarmAPI.AlarmMessageSettingQuery).Name("查询告警消息标题")` at `beacon/service/router.go:298`
+- 入口：`g.Post("/message_setting_update", a.alarmAPI.AlarmMessageSettingUpdate).Name("更新告警消息标题")` at `beacon/service/router.go:299`
+- 入口：`g.Get("/query", a.dingTalkAPI.Query).Name("查询钉钉告警配置")` at `beacon/service/router.go:289`
+- 入口：`g.Post("/update", a.dingTalkAPI.Update).Name("更新钉钉告警配置")` at `beacon/service/router.go:290`
+- 入口：`g.Post("/test", a.dingTalkAPI.Test).Name("测试钉钉告警")` at `beacon/service/router.go:291`
 
 ## 数据模型与状态
 
-- 数据模型以源码结构、导出类型信号和测试断言为准；本节只记录静态发现结果。
+- 本节记录当前实现事实，可追溯到源码与测试断言；长期行为约束以 `.specs/domain/` 为准，本节的「必须 / 禁止」表述不构成约束来源。
 - `MonitorCPU.CPUPercent`、`MonitorMemory.MemPercent` 和 `MonitorDisk.DiskPercent` 均沿用 Collia/gopsutil 的 `0–100` 百分数单位，不做二次乘以 100 的换算。
+- `MonitorCPU.CPUCount` 保存 Collia 上报的逻辑核数（批次字段 `cpu_count`，历史行为 0），`GET /api/v1/host/cpu_info` 以 `cores` 返回，供前端把 CPU 指标渲染为「当前 X% · N 核」；核数缺失时返回 0，由前端省略后缀。
+- 容器列表来自 `m_container` 最新批次，支持 `name`（名称或镜像模糊）、`state`（精确）与 `network`（精确，Collia 上报的容器首个网络名）三个服务端筛选；镜像列表支持 `name`（名称或 Tag 模糊）与 `in_use`（`in_use` / `unused`，按 `m_image.number` 判断）。列表与 `total` 使用同一组过滤条件。`m_image.number` 由上报批次按容器镜像引用计算写入（Collia 不上报该字段）。`m_container.network` 与 `m_image.number` 都是升级后由 AutoMigrate 建列/回填：历史行 network 为空、number 为 0，升级后首个上报批次即补齐。
 - CPU、内存和磁盘告警使用 GORM `CreatedAt` 作为 Server 接收时间。正持续时间要求样本覆盖完整窗口、最新样本足够新、相邻样本间隔不超过 90 秒且所有样本严格超过阈值；窗口不完整、陈旧或间断时保持未知态。磁盘按 Agent + 设备独立应用同一窗口。
 - 资源告警按 Agent（磁盘额外按设备）构造状态与去重键；首次触发立即通知，持续异常每 10 分钟最多重复一次，获得正常证据后写一次恢复审计/通知并清除去重状态。告警检查、审计写入和缓存更新由互斥区保护，避免重叠定时任务重复发送。
 - 容器状态任务只读取最近 2 分钟内写入的每容器最新记录，陈旧历史状态不触发变化告警。
@@ -148,6 +150,10 @@
 - 清理任务除 5 张时序表（CPU/内存/磁盘/网络/容器）外，还删除已关闭（`ended_at` 非空）且超过保留期的 `s_session` 记录，保留活跃与异常会话供排查。
 - Collia 自动更新的 `failedAt` 冷却表在每次 Agent 注册（`Schedule`）时清理超过 24 小时的过期条目，避免长期离线 Agent 的 entry 在内存 map 中永久累积。
 - 镜像删除先通过反向 tunnel 调用目标 Agent；Agent 返回成功后，Server 按 Agent ID 与镜像 ID 失效 `m_image` 缓存，使同一请求后的镜像列表刷新立即反映删除结果。RPC 失败时保留缓存。
+- 容器删除与镜像删除不同：Agent 侧先调用 Docker Engine 删除容器，成功后才删除本地容器记录（`deleteContainerThenRecord`），避免「记录已消失但容器仍在节点上」的错位；运行时删除失败时本地记录保留，记录移除失败的残留会在下一次上报批次中被替换。
+- 受保护容器名单（`beacon`）在 Server 侧强制执行：`assertNotProtected` 对命中名单的 start/stop/restart/remove 目标返回 `ErrProtectedContainer` 拒绝执行（`beacon/service/container/service/container.go`）；该哨兵定义在 `beacon/pkg/errors`，由 `errors.FromError` 映射为 403 Forbidden，不会被当成内部故障返回 500。
+- 请求参数校验失败（`validatex.ValidateStruct` 返回的 validator 错误）统一由 `errors.FromError` 映射为 400 Bad Request，`err` 字段携带首条字段错误详情，不再落入 500 兜底分支。
+- 审计写入入口是 `JWTAuth.RecordAudit(ctx, username, operate, object)`，落库 Username、AgentID、Operate 与 Object 四个字段（`beacon/pkg/auth/jwtauth/auth.go`）；容器操作等 handler 会显式注入目标 Agent 标识与操作对象，Collia 升级任务与告警任务以 `system` 用户直接写入带 Agent 标识的系统审计。
 - `interface IMailRepository (beacon/service/mail/repository/mail.go)`
 - `interface IMailService (beacon/service/mail/service/mail.go)`
 - `interface IDingTalkRepository (beacon/service/dingtalk/repository/dingtalk.go)`
@@ -162,6 +168,8 @@
 - `struct API (beacon/service/agent/agent.go)`
 - `struct AccountAPI (beacon/service/account/api/account.go)`
 - 另有其他导出模型/接口符号未展开；完整清单以源码为准。
+
+- 数据库初始化向共享层传递 `[DB] SSLMode`；SQLite专属PRAGMA和文件权限只在SQLite分支执行，自动迁移失败会关闭连接。
 
 ## 使用注意事项
 
@@ -212,3 +220,5 @@ go vet ./...
 - `task website`
 - `task website-server`
 - `task website-web`
+
+用户与角色状态约定：1启用、2停用；创建请求必须显式传入其中之一，编辑请求省略status或传0保持原状态，其他值拒绝。校验、持久化和OpenAPI枚举须同步维护。

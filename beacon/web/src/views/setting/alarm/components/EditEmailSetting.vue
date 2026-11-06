@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { createMail, updateMail } from '@/api/mail'
+import DialogHeader from '@/components/DialogHeader/index.vue'
 import { info } from '@/components/Message/message.ts'
 import type { EmailSetting } from '@/interface/alarm.ts'
 import type { MailCreateArgs, MailUpdateArgs } from '@/interface/mail.ts'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useI18n } from 'vue-i18n'
+import IconMailCheck from '~icons/lucide/mail-check'
 
 const props = defineProps<{
   visible: boolean
@@ -83,6 +85,9 @@ async function submit() {
 
 <template>
     <el-dialog v-model="dialogVisible" width="560px" :title="t(props.title ?? 'setting.mailServerSetting')">
+        <template #header>
+            <DialogHeader :title="t(props.title ?? 'setting.mailServerSetting')" :icon="IconMailCheck" />
+        </template>
         <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
             <el-form-item prop="server" :label="t('setting.mailServerHost')">
                 <el-input v-model="form.server" :placeholder="t('setting.hostPlaceholder')" />

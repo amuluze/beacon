@@ -261,7 +261,7 @@ func TestContainerUsageRespectsClosedTimeWindow(t *testing.T) {
 	for index, timestamp := range []time.Time{start, middle, end, after} {
 		if err := db.Create(&model.MonitorContainer{
 			AgentID: "agent-a", Timestamp: timestamp, Name: "app",
-			CPUPercent: float64(index), MemUsage: float64(index),
+			CPUPercent: float64(index), MemUsage: float64(index), MemPercent: float64(index) * 10,
 		}).Error; err != nil {
 			t.Fatalf("create container sample: %v", err)
 		}
@@ -276,6 +276,14 @@ func TestContainerUsageRespectsClosedTimeWindow(t *testing.T) {
 	want := []int64{start.Unix(), middle.Unix(), end.Unix()}
 	assertContainerUsageTimestamps(t, "CPU", want, reply.CPUUsage["app"])
 	assertContainerUsageTimestamps(t, "memory", want, reply.MemUsage["app"])
+	// 图例 chip 百分比来自 mem_percent（0–100），与字节口径的 mem_usage 同时存在
+	assertContainerUsageTimestamps(t, "memory percent", want, reply.MemPercent["app"])
+	for index, item := range reply.MemPercent["app"] {
+		wantPercent := float64(index) * 10
+		if item.Value != wantPercent {
+			t.Fatalf("memory percent value at %d = %f, want %f", item.Timestamp, item.Value, wantPercent)
+		}
+	}
 }
 
 func assertContainerUsageTimestamps(t *testing.T, metric string, want []int64, items []rpcSchema.Usage) {
@@ -291,5 +299,100 @@ func assertContainerUsageTimestamps(t *testing.T, metric string, want []int64, i
 		if got[index] != want[index] {
 			t.Fatalf("%s timestamps = %v, want %v", metric, got, want)
 		}
+	}
+}
+
+func TestContainerFiltersByNetwork(t *testing.T) {
+	db, err := database.NewDB(database.WithDBName(filepath.Join(t.TempDir(), "probe")))
+	if err != nil {
+		t.Fatalf("new db: %v", err)
+	}
+	t.Cleanup(db.Close)
+	if err := db.AutoMigrate(new(model.MonitorContainer)); err != nil {
+		t.Fatalf("auto migrate: %v", err)
+	}
+
+	now := time.Now()
+	rows := []model.MonitorContainer{
+		{AgentID: "agent-a", Name: "web", ContainerID: "web", Timestamp: now, Network: "bridge", State: "running"},
+		{AgentID: "agent-a", Name: "host-agent", ContainerID: "host", Timestamp: now, Network: "host", State: "running"},
+	}
+	if err := db.Create(&rows).Error; err != nil {
+		t.Fatalf("create containers: %v", err)
+	}
+
+	repo := &ContainerRepo{DB: db}
+	ctx := contextx.NewAgentID(context.Background(), "agent-a")
+	reply, err := repo.ContainerList(ctx, rpcSchema.ContainerQueryArgs{Page: 1, Size: 10, Network: "bridge"})
+	if err != nil {
+		t.Fatalf("ContainerList returned error: %v", err)
+	}
+	if len(reply.Data) != 1 || reply.Data[0].Name != "web" {
+		t.Fatalf("reply data = %+v, want只有 bridge 网络容器", reply.Data)
+	}
+	if reply.Data[0].Network != "bridge" {
+		t.Fatalf("container network = %q, want bridge", reply.Data[0].Network)
+	}
+
+	count, err := repo.ContainerCount(ctx, rpcSchema.ContainerCountArgs{Network: "bridge"})
+	if err != nil {
+		t.Fatalf("ContainerCount returned error: %v", err)
+	}
+	if count.Count != 1 {
+		t.Fatalf("container count = %d, want 1", count.Count)
+	}
+
+	all, err := repo.ContainerList(ctx, rpcSchema.ContainerQueryArgs{Page: 1, Size: 10})
+	if err != nil {
+		t.Fatalf("ContainerList without filter returned error: %v", err)
+	}
+	if len(all.Data) != 2 {
+		t.Fatalf("len(all.Data) = %d, want 2", len(all.Data))
+	}
+}
+
+func TestImageFiltersByInUse(t *testing.T) {
+	db, err := database.NewDB(database.WithDBName(filepath.Join(t.TempDir(), "probe")))
+	if err != nil {
+		t.Fatalf("new db: %v", err)
+	}
+	t.Cleanup(db.Close)
+	if err := db.AutoMigrate(new(model.MonitorImage)); err != nil {
+		t.Fatalf("auto migrate: %v", err)
+	}
+
+	now := time.Now()
+	rows := []model.MonitorImage{
+		{AgentID: "agent-a", ImageID: "used", Name: "nginx", Tag: "1.25", Timestamp: now, Number: 2},
+		{AgentID: "agent-a", ImageID: "unused", Name: "redis", Tag: "7", Timestamp: now, Number: 0},
+	}
+	if err := db.Create(&rows).Error; err != nil {
+		t.Fatalf("create images: %v", err)
+	}
+
+	repo := &ContainerRepo{DB: db}
+	ctx := contextx.NewAgentID(context.Background(), "agent-a")
+
+	used, err := repo.ImageList(ctx, rpcSchema.ImageQueryArgs{Page: 1, Size: 10, InUse: "in_use"})
+	if err != nil {
+		t.Fatalf("ImageList(in_use) returned error: %v", err)
+	}
+	if len(used.Data) != 1 || used.Data[0].Name != "nginx" {
+		t.Fatalf("used images = %+v, want only nginx", used.Data)
+	}
+	usedCount, err := repo.ImageCount(ctx, rpcSchema.ImageCountArgs{InUse: "in_use"})
+	if err != nil {
+		t.Fatalf("ImageCount(in_use) returned error: %v", err)
+	}
+	if usedCount.Count != 1 {
+		t.Fatalf("used image count = %d, want 1", usedCount.Count)
+	}
+
+	unused, err := repo.ImageList(ctx, rpcSchema.ImageQueryArgs{Page: 1, Size: 10, InUse: "unused"})
+	if err != nil {
+		t.Fatalf("ImageList(unused) returned error: %v", err)
+	}
+	if len(unused.Data) != 1 || unused.Data[0].Name != "redis" {
+		t.Fatalf("unused images = %+v, want only redis", unused.Data)
 	}
 }

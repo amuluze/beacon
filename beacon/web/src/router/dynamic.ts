@@ -33,6 +33,10 @@ export const dynamicRoutes: RouteRecordRaw[] = [
     },
     // 设置工作区改为一级 Tab 后，旧深链仍指向同一工作区的对应 Tab。
     {
+        path: '/setting/probe',
+        redirect: { path: '/setting', query: { tab: 'probe' } },
+    },
+    {
         path: '/setting/alarm',
         redirect: { path: '/setting', query: { tab: 'config' } },
     },

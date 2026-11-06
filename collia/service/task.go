@@ -134,7 +134,7 @@ func (a *TimedTask) buildReportArgs(ts time.Time, r *task.MonitorReport) rpcSche
 
 	// CPU
 	if r.CPU != nil {
-		args.CPU = rpcSchema.CPUReport{Timestamp: ts, CPUPercent: r.CPU.CPUPercent}
+		args.CPU = rpcSchema.CPUReport{Timestamp: ts, CPUPercent: r.CPU.CPUPercent, CPUCount: r.CPU.CPUCount}
 	}
 
 	// Memory
@@ -191,6 +191,7 @@ func (a *TimedTask) buildReportArgs(ts time.Time, r *task.MonitorReport) rpcSche
 			ContainerID: c.ContainerID,
 			Name:        c.Name,
 			Image:       c.Image,
+			Network:     c.Network,
 			IP:          c.IP,
 			Ports:       c.Ports,
 			State:       c.State,

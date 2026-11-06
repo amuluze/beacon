@@ -16,6 +16,7 @@ type option struct {
 	UserName     string
 	Password     string
 	DBName       string
+	SSLMode      string
 	MaxLifetime  int
 	MaxOpenConns int
 	MaxIdleConns int
@@ -71,6 +72,12 @@ func WithDBName(name string) Option {
 	return func(o *option) {
 		o.DBName = name
 	}
+}
+
+// WithSSLMode selects PostgreSQL transport verification. Empty preserves the
+// historical "disable" default; remote deployments should set an explicit mode.
+func WithSSLMode(mode string) Option {
+	return func(o *option) { o.SSLMode = mode }
 }
 
 func WithMaxLifetime(lifetime int) Option {

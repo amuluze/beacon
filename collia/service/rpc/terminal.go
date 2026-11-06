@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+	"syscall"
 
 	rpcSchema "common/rpc/schema"
 	"common/rpc/tunnel"
@@ -188,7 +189,7 @@ func (s *Service) TerminalSessionStream(ctx context.Context, args rpcSchema.Term
 				streamSender(&tunnel.Frame{Payload: payload})
 			}
 			if err != nil {
-				if errors.Is(err, io.EOF) {
+				if isPTYSessionEnd(err) {
 					streamSender(&tunnel.Frame{Eos: true})
 					return nil
 				}
@@ -199,6 +200,13 @@ func (s *Service) TerminalSessionStream(ctx context.Context, args rpcSchema.Term
 	}
 }
 
+// isPTYSessionEnd 判断一次 pty 读取错误是否表示会话正常结束：
+// BSD/macOS 在从属端关闭后返回 EOF，Linux 的 ptmx 返回 EIO，两者等价。
+func isPTYSessionEnd(err error) bool {
+	return errors.Is(err, io.EOF) || errors.Is(err, syscall.EIO)
+}
+
+// drainPTY drains remaining pty output after the shell process exits.
 func drainPTY(ptty *os.File, streamSender func(*tunnel.Frame)) error {
 	buf := make([]byte, 4096)
 	for {

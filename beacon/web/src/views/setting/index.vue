@@ -2,13 +2,14 @@
 import AlarmSettings from './alarm/index.vue'
 import AuditLog from './components/AuditLog.vue'
 import DockerSettings from './docker/index.vue'
+import ProbeManager from './probe/index.vue'
 import ApiManager from '@/views/account/api/index.vue'
 import RoleManager from '@/views/account/role/index.vue'
 import UserManager from '@/views/account/user/index.vue'
 
 import useStore from '@/store'
 
-type SettingTab = 'config' | 'users' | 'roles' | 'apis' | 'audit'
+type SettingTab = 'config' | 'probe' | 'users' | 'roles' | 'apis' | 'audit'
 
 const store = useStore()
 const route = useRoute()
@@ -16,13 +17,15 @@ const router = useRouter()
 
 const isAdmin = computed(() => store.user.userInfo.name === 'admin')
 
-// 一级 Tab 与设计稿一致：设置 / 用户管理 / 角色管理 / 接口管理 / 审计日志。
+// 一级 Tab 与设计稿一致：设置 / 探针管理 / 用户管理 / 角色管理 / 接口管理 / 审计日志。
+// 探针管理对所有用户可见（Agent 列表本身是只读资源），升级入口仍限管理员。
 // 用户、角色、接口三块都涉及权限编排，统一仅管理员可见。
 const ADMIN_TABS: SettingTab[] = ['users', 'roles', 'apis']
 
 const tabs = computed<{ name: SettingTab, label: string }[]>(() => {
   const items: { name: SettingTab, label: string }[] = [
     { name: 'config', label: 'menu.setting' },
+    { name: 'probe', label: 'menu.probeManager' },
   ]
   if (isAdmin.value) {
     items.push({ name: 'users', label: 'menu.userManager' })
@@ -58,6 +61,12 @@ const createTicket = ref(0)
 
 function openCreate() {
   createTicket.value += 1
+}
+
+const roleCreateTicket = ref(0)
+
+function openRoleCreate() {
+  roleCreateTicket.value += 1
 }
 </script>
 
@@ -121,6 +130,20 @@ function openCreate() {
                 <DockerSettings />
             </section>
         </template>
+        <section v-else-if="activeTab === 'probe'" class="workspace__section">
+            <header class="workspace__section-header">
+                <span class="workspace__section-bar" />
+                <h2 class="workspace__section-title">
+                    {{ $t('menu.probeManager') }}
+                </h2>
+                <p class="workspace__section-note">
+                    {{ $t('probe.note') }}
+                </p>
+            </header>
+            <div class="workspace__table-host">
+                <ProbeManager />
+            </div>
+        </section>
         <section v-else-if="activeTab === 'users'" class="workspace__section">
             <header class="workspace__section-header">
                 <span class="workspace__section-bar" />
@@ -152,9 +175,17 @@ function openCreate() {
                 <p class="workspace__section-note">
                     {{ $t('setting.roleNote') }}
                 </p>
+                <el-button
+                    type="primary"
+                    class="workspace__action"
+                    data-testid="create-role"
+                    @click="openRoleCreate"
+                >
+                    {{ $t('account.newRole') }}
+                </el-button>
             </header>
             <div class="workspace__table-host">
-                <RoleManager />
+                <RoleManager :create-ticket="roleCreateTicket" />
             </div>
         </section>
         <section v-else-if="activeTab === 'apis'" class="workspace__section">

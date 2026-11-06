@@ -12,6 +12,7 @@ import (
 	"beacon/pkg/contextx"
 	tunnel "common/rpc/tunnel"
 
+	"github.com/go-playground/validator/v10"
 	pkgerrors "github.com/pkg/errors"
 	"gorm.io/gorm"
 )
@@ -24,6 +25,7 @@ const (
 	TooManyRequests     = "too many requests"
 	Forbidden           = "forbidden"
 	BadRequest          = "bad request"
+	InvalidParameter    = "invalid request parameter"
 )
 
 var (
@@ -41,6 +43,10 @@ var (
 	MethodNotAllowError  = newError(405, MethodNotAllow)
 	TooManyRequestsError = newError(429, TooManyRequests)
 )
+
+// ErrProtectedContainer 表示目标是系统保留容器，控制面操作必须由服务端拒绝。
+// 该哨兵定义在公共错误包中，使错误映射层无需反向依赖业务包即可识别拒绝语义。
+var ErrProtectedContainer = stderrors.New("container is protected")
 
 type Error struct {
 	Err    string // service 层错误消息
@@ -97,6 +103,28 @@ func New503Error(error string) Error {
 func FromError(err error) Error {
 	if err == nil {
 		return Error{}
+	}
+
+	// 请求参数校验失败属于调用方输入错误，必须作为 400 返回而不是内部故障。
+	var validationErrors validator.ValidationErrors
+	if stderrors.As(err, &validationErrors) {
+		e := newError(http.StatusBadRequest, InvalidParameter)
+		e.Err = validationErrors.Error()
+		return e
+	}
+
+	var fieldError validator.FieldError
+	if stderrors.As(err, &fieldError) {
+		e := newError(http.StatusBadRequest, InvalidParameter)
+		e.Err = fieldError.Error()
+		return e
+	}
+
+	// 受保护容器的控制操作是明确的拒绝语义，不能与内部故障混同为 500。
+	if stderrors.Is(err, ErrProtectedContainer) {
+		e := newError(http.StatusForbidden, Forbidden)
+		e.Err = err.Error()
+		return e
 	}
 
 	if stderrors.Is(err, contextx.ErrAgentIDRequired) {

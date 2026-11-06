@@ -112,7 +112,7 @@ describe('update password drawer', () => {
             old_password: 'old-pass',
             new_password: 'New-Secure-Password9!',
         })
-        expect(mocks.success).toHaveBeenCalledWith('更新成功')
+        expect(mocks.success).toHaveBeenCalledOnce()
         expect(mocks.clearSession).toHaveBeenCalledOnce()
         expect(mocks.replace).toHaveBeenCalledWith('/login')
         expect(wrapper.emitted('update:visible')).toEqual([[false]])

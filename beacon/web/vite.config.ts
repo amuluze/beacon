@@ -1,6 +1,7 @@
 import vue from '@vitejs/plugin-vue'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 
 import AutoImport from 'unplugin-auto-import/vite'
 import IconsResolver from 'unplugin-icons/resolver'
@@ -11,10 +12,28 @@ import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 
 import UnoCSS from 'unocss/vite'
 
+// beacon/web/web.go 通过 //go:embed dist/* dist/*/* 嵌入前端产物，两个模式都要求
+// 至少命中一个文件。Vite 每次构建会清空 dist（emptyOutDir），构建结束后必须补回
+// 两个占位文件（与仓库中已提交内容保持字节一致），否则全新克隆无法直接编译 beacon。
+const EMBED_PLACEHOLDER_CONTENT =
+    'go:embed 占位文件：保证全新克隆无需前端构建即可编译 beacon，请勿删除。\n'
+
+function keepEmbedPlaceholders(): Plugin {
+    return {
+        name: 'beacon-embed-placeholders',
+        closeBundle() {
+            writeFileSync(resolve(__dirname, 'dist/keep.txt'), EMBED_PLACEHOLDER_CONTENT)
+            mkdirSync(resolve(__dirname, 'dist/assets'), { recursive: true })
+            writeFileSync(resolve(__dirname, 'dist/assets/keep.txt'), EMBED_PLACEHOLDER_CONTENT)
+        },
+    }
+}
+
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [
         vue(),
+        keepEmbedPlaceholders(),
         UnoCSS(),
         AutoImport({
             // 自动导入 Vue 相关函数，如：ref, reactive, toRef 等

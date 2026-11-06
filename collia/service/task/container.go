@@ -59,6 +59,7 @@ func (a *Task) ContainerTask() []*ContainerReport {
 			Name:        info.Name,
 			State:       info.State,
 			Image:       info.Image,
+			Network:     info.Network,
 			Uptime:      info.Uptime,
 			IP:          info.IP,
 			Ports:       strings.Join(info.Ports, ","),

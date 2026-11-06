@@ -39,6 +39,7 @@ function mountWorkspace() {
                 'AlarmSettings': { template: '<div data-testid="alarm-settings" />' },
                 'AuditLog': { template: '<div data-testid="audit-log" />' },
                 'DockerSettings': { template: '<div data-testid="docker-settings" />' },
+                'ProbeManager': { template: '<div data-testid="probe-manager" />' },
                 'UserManager': {
                     props: ['createTicket'],
                     template: '<div data-testid="user-manager" :data-ticket="createTicket" />',
@@ -73,6 +74,7 @@ describe('setting workspace', () => {
     it('exposes account, role and API management as first-level tabs', () => {
         expect(tabLabels(mountWorkspace())).toEqual([
             'menu.setting',
+            'menu.probeManager',
             'menu.userManager',
             'menu.roleManager',
             'menu.apiManager',
@@ -83,17 +85,17 @@ describe('setting workspace', () => {
     it('switches each account tab and syncs the query', async () => {
         const wrapper = mountWorkspace()
 
-        await wrapper.findAll('.workspace__tab')[2].trigger('click')
+        await wrapper.findAll('.workspace__tab')[3].trigger('click')
         expect(wrapper.find('[data-testid="role-manager"]').exists()).toBe(true)
         expect(wrapper.find('[data-testid="alarm-settings"]').exists()).toBe(false)
         expect(routerReplace).toHaveBeenLastCalledWith({ query: { tab: 'roles' } })
 
-        await wrapper.findAll('.workspace__tab')[3].trigger('click')
+        await wrapper.findAll('.workspace__tab')[4].trigger('click')
         expect(wrapper.find('[data-testid="api-manager"]').exists()).toBe(true)
         expect(wrapper.find('[data-testid="role-manager"]').exists()).toBe(false)
         expect(routerReplace).toHaveBeenLastCalledWith({ query: { tab: 'apis' } })
 
-        await wrapper.findAll('.workspace__tab')[4].trigger('click')
+        await wrapper.findAll('.workspace__tab')[5].trigger('click')
         expect(wrapper.find('[data-testid="audit-log"]').exists()).toBe(true)
         expect(routerReplace).toHaveBeenLastCalledWith({ query: { tab: 'audit' } })
     })
@@ -101,7 +103,7 @@ describe('setting workspace', () => {
     it('opens the user create dialog from the toolbar ticket', async () => {
         const wrapper = mountWorkspace()
 
-        await wrapper.findAll('.workspace__tab')[1].trigger('click')
+        await wrapper.findAll('.workspace__tab')[2].trigger('click')
 
         expect(wrapper.get('[data-testid="user-manager"]').attributes('data-ticket')).toBe('0')
 
@@ -124,7 +126,7 @@ describe('setting workspace', () => {
 
         const wrapper = mountWorkspace()
 
-        expect(tabLabels(wrapper)).toEqual(['menu.setting', 'audit.title'])
+        expect(tabLabels(wrapper)).toEqual(['menu.setting', 'menu.probeManager', 'audit.title'])
         expect(wrapper.find('[data-testid="user-manager"]').exists()).toBe(false)
     })
 

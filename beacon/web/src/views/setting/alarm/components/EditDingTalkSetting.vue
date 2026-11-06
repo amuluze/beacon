@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { updateDingTalk } from '@/api/dingtalk'
+import DialogHeader from '@/components/DialogHeader/index.vue'
 import { info, warning } from '@/components/Message/message.ts'
 import type { DingTalkSetting, DingTalkUpdateArgs } from '@/interface/dingtalk'
 import type { FormInstance } from 'element-plus'
 import { useI18n } from 'vue-i18n'
+import IconWebhook from '~icons/lucide/webhook'
 
 const props = defineProps<{
   visible: boolean
@@ -68,6 +70,9 @@ async function submit() {
 
 <template>
     <el-dialog v-model="dialogVisible" width="520px" :title="t(props.title ?? 'setting.dingTalkSetting')">
+        <template #header>
+            <DialogHeader :title="t(props.title ?? 'setting.dingTalkSetting')" :icon="IconWebhook" />
+        </template>
         <el-form ref="formRef" :model="form" label-position="top">
             <el-form-item :label="t('setting.dingTalkEnabled')">
                 <el-switch v-model="form.enabled" />

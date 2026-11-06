@@ -139,12 +139,19 @@ func dial(opt *option) gorm.Dialector {
 			SkipInitializeWithVersion: false, // auto configure based on currently MySQL version
 		})
 	case "postgres":
-		dsn = fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=disable TimeZone=Asia/Shanghai",
-			opt.Host,
-			opt.Port,
-			opt.UserName,
-			opt.DBName,
-			opt.Password,
+		mode := opt.SSLMode
+		if mode == "" {
+			mode = "disable"
+		}
+		// Quote every libpq value so spaces, quotes and backslashes in connection
+		// settings cannot be interpreted as additional DSN options.
+		dsn = fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=%s TimeZone=Asia/Shanghai",
+			quotePostgresValue(opt.Host),
+			quotePostgresValue(opt.Port),
+			quotePostgresValue(opt.UserName),
+			quotePostgresValue(opt.DBName),
+			quotePostgresValue(opt.Password),
+			quotePostgresValue(mode),
 		)
 		dialector = postgres.New(postgres.Config{
 			DSN:                  dsn,
@@ -165,6 +172,10 @@ func dial(opt *option) gorm.Dialector {
 	}
 
 	return dialector
+}
+
+func quotePostgresValue(value string) string {
+	return "'" + strings.NewReplacer("\\", "\\\\", "'", "\\'").Replace(value) + "'"
 }
 
 func (db *DB) Close() {

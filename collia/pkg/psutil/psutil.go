@@ -67,6 +67,19 @@ func GetCPUPercent() (float64, error) {
 	return totalPercent[0], nil
 }
 
+// GetCPUCount 返回逻辑核数（含超线程），用于指标值补足「· N 核」上下文。
+func GetCPUCount() (int, error) {
+	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{})
+	count, err := cpu.CountsWithContext(ctx, true)
+	if err != nil {
+		return 0, err
+	}
+	if count <= 0 {
+		return 0, fmt.Errorf("cpu count result is empty")
+	}
+	return count, nil
+}
+
 func GetDiskInfo(devices map[string]struct{}) (map[string]DiskInfo, error) {
 	ctx := context.WithValue(context.Background(), common.EnvKey, common.EnvMap{})
 	diskMap := make(map[string]DiskInfo)

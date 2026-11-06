@@ -32,6 +32,7 @@ type MonitorCPU struct {
 	AgentID    string    `gorm:"index;index:idx_m_cpu_agent_time,priority:1"`
 	Timestamp  time.Time `gorm:"index:idx_m_cpu_agent_time,priority:2"`
 	CPUPercent float64
+	CPUCount   int
 }
 
 func (MonitorCPU) TableName() string { return "m_cpu" }
@@ -104,6 +105,7 @@ type MonitorContainer struct {
 	ContainerID string
 	Name        string
 	Image       string
+	Network     string
 	IP          string
 	Ports       string
 	State       string

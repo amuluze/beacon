@@ -2,7 +2,7 @@
 import type { Container } from '@/interface/container.ts'
 import type { TableInstance } from 'element-plus'
 
-import { queryContainers, removeContainer, startContainer, stopContainer } from '@/api/container'
+import { queryContainers, queryNetworks, removeContainer, startContainer, stopContainer } from '@/api/container'
 import { useAgentSelection } from '@/hooks/useAgentSelection'
 import { useConfirmCommand } from '@/hooks/useConfirmCommand'
 
@@ -32,16 +32,51 @@ const emit = defineEmits<{
 
 const { tableData, pageable, loading, search, handleSizeChange, handleCurrentChange, updateTotalParam } = useTable(queryContainers)
 const { selectedAgentID, ensureSelectedAgent } = useAgentSelection({ immediate: false })
+// 搜索与筛选在服务端生效：total 与列表使用同一组过滤条件
+// 「全部」用显式值 `all`：Element 会把空字符串当作未选择并回落到「请选择」占位符。
+const keyword = ref('')
+const stateFilter = ref('all')
+const networkFilter = ref('all')
+// 网络筛选项来自当前 Agent 的网络清单，避免用户手输网络名。
+const networkOptions = ref<string[]>([])
+
+async function loadNetworkOptions() {
+  if (!selectedAgentID.value) {
+    networkOptions.value = []
+    return
+  }
+  try {
+    const { data } = await queryNetworks({ page: 1, size: 100 })
+    networkOptions.value = (data?.data ?? []).map((item: { name: string }) => item.name).filter(Boolean)
+  }
+  catch {
+    networkOptions.value = []
+  }
+}
+
+async function applyFilters() {
+  pageable.value.page = 1
+  await updateTotalParam({
+    name: keyword.value.trim() || undefined,
+    state: stateFilter.value === 'all' ? undefined : stateFilter.value,
+    network: networkFilter.value === 'all' ? undefined : networkFilter.value,
+  })
+}
+
 const initialized = ref(false)
 onMounted(async () => {
-  if (await ensureSelectedAgent())
+  if (await ensureSelectedAgent()) {
+    await loadNetworkOptions()
     await search()
+  }
   initialized.value = true
   // 首次加载完成后才回填 Tab 计数，避免未查询时先报 0
   emit('total', pageable.value.total)
 })
 watch(selectedAgentID, async () => {
   if (initialized.value && selectedAgentID.value) {
+    networkFilter.value = 'all'
+    await loadNetworkOptions()
     await search()
   }
 })
@@ -54,21 +89,9 @@ watch(() => pageable.value.total, (total) => {
     emit('total', total)
 })
 
-// 搜索与筛选在服务端生效：total 与列表使用同一组过滤条件
-const keyword = ref('')
-const stateFilter = ref('')
-
-async function applyFilters() {
-  pageable.value.page = 1
-  await updateTotalParam({
-    name: keyword.value.trim() || undefined,
-    state: stateFilter.value || undefined,
-  })
-}
-
 const tableRef = ref<TableInstance>()
 const tableSelection = ref<Container[]>([])
-// 受保护容器（beacon / amprobe）不允许批量操作，也不进入勾选集合
+// 受保护容器（beacon）不允许批量操作，也不进入勾选集合
 const selectable = (row: Container) => !isProtectedContainerName(row.name)
 
 function handleSelectionChange(val: Container[]) {
@@ -156,9 +179,13 @@ const { t } = useI18n()
                     </template>
                 </el-input>
                 <el-select v-model="stateFilter" class="am-table-operator__select" size="small" @change="applyFilters">
-                    <el-option :label="t('container.stateAll')" value="" />
+                    <el-option :label="t('container.stateAll')" value="all" />
                     <el-option :label="t('container.enable')" value="running" />
                     <el-option :label="t('container.disable')" value="exited" />
+                </el-select>
+                <el-select v-model="networkFilter" class="am-table-operator__select" size="small" @change="applyFilters">
+                    <el-option :label="t('container.networkAll')" value="all" />
+                    <el-option v-for="name in networkOptions" :key="name" :label="name" :value="name" />
                 </el-select>
             </div>
             <BatchActionBar
@@ -180,11 +207,11 @@ const { t } = useI18n()
             >
                 <el-table-column type="selection" :selectable="selectable" width="44" />
                 <el-table-column prop="name" :label="t('container.containerName')" align="center" show-overflow-tooltip sortable fixed />
-                <el-table-column prop="image" :label="t('container.imageName')" align="center" width="180" show-overflow-tooltip sortable />
-                <el-table-column prop="cpu_percent" :label="t('container.cpuPercent')" align="center" width="80" show-overflow-tooltip />
-                <el-table-column prop="memory_usage" :label="t('container.memUsed')" align="center" width="96" show-overflow-tooltip />
+                <el-table-column prop="image" :label="t('container.columnImage')" align="center" width="180" show-overflow-tooltip sortable />
+                <el-table-column prop="cpu_percent" :label="t('container.columnCPU')" align="center" width="80" show-overflow-tooltip />
+                <el-table-column prop="memory_usage" :label="t('container.columnMem')" align="center" width="96" show-overflow-tooltip />
                 <el-table-column prop="ip" :label="t('container.containerIP')" align="center" width="120" show-overflow-tooltip />
-                <el-table-column prop="ports" :label="t('container.containerPort')" align="center" width="120" show-overflow-tooltip />
+                <el-table-column prop="ports" :label="t('container.columnPort')" align="center" width="120" show-overflow-tooltip />
                 <el-table-column prop="state" :label="t('container.state')" align="center" width="96" show-overflow-tooltip>
                     <template #default="scope">
                         <el-tag v-if="scope.row.state === 'running'" type="success">

@@ -8,7 +8,6 @@ import { useI18n } from 'vue-i18n'
 const props = withDefaults(defineProps<{
   visible: boolean
   username: string
-  title?: string
   mandatory?: boolean
 }>(), {
   mandatory: false,
@@ -17,6 +16,8 @@ const emits = defineEmits<{
   (e: 'update:visible', visible: boolean): void
   (e: 'close'): void
 }>()
+
+const { t } = useI18n()
 
 const drawerVisible = computed<boolean>({
   get() {
@@ -43,18 +44,39 @@ const passwordUpdateMode = ref<RuleForm>({
   new_password: '',
 })
 const passwordUpdateLoading = shallowRef(false)
-const rules = ref({
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-  ],
 
+// 与 beacon/pkg/auth/password.go 的 ValidatePassword 同源：≥12 位且至少三类字符。
+const MIN_PASSWORD_LENGTH = 12
+const PASSWORD_CLASS_PATTERNS = [/[a-z]/, /[A-Z]/, /\d/, /[^a-z0-9]/i]
+
+function validateNewPassword(_: unknown, value: string, callback: (error?: Error) => void) {
+  if (!value) {
+    callback(new Error(t('account.inputNewPassword')))
+    return
+  }
+  if ([...value].length < MIN_PASSWORD_LENGTH) {
+    callback(new Error(t('account.passwordTooShort')))
+    return
+  }
+  const classes = PASSWORD_CLASS_PATTERNS.filter(pattern => pattern.test(value)).length
+  if (classes < 3) {
+    callback(new Error(t('account.passwordTooWeak')))
+    return
+  }
+  callback()
+}
+
+const rules = computed(() => ({
+  username: [
+    { required: true, message: t('account.usernameRequired'), trigger: 'blur' },
+  ],
   old_password: [
-    { required: true, message: '请输入旧密码', trigger: 'blur' },
+    { required: true, message: t('account.oldPasswordRequired'), trigger: 'blur' },
   ],
   new_password: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { required: true, validator: validateNewPassword, trigger: 'blur' },
   ],
-})
+}))
 
 const store = useStore()
 const router = useRouter()
@@ -69,7 +91,7 @@ async function confirmPasswordUpdate(formEl: FormInstance | undefined) {
   try {
     await updatePassword(passwordUpdateMode.value)
     drawerVisible.value = false
-    success('更新成功')
+    success(t('account.passwordUpdated'))
     store.user.clearSession()
     await router.replace('/login')
   }
@@ -79,24 +101,26 @@ async function confirmPasswordUpdate(formEl: FormInstance | undefined) {
     passwordUpdateLoading.value = false
   }
 }
-const { t } = useI18n()
 </script>
 
 <template>
     <el-drawer
         v-model="drawerVisible"
-        :title="t('account.updatePassword')"
+        :title="t('account.changePassword')"
         size="480px"
         :close-on-click-modal="!props.mandatory"
         :close-on-press-escape="!props.mandatory"
         :show-close="!props.mandatory"
     >
+        <p class="am-password-hint">
+            {{ props.mandatory ? t('account.passwordPolicyMandatory') : t('account.passwordPolicy') }}
+        </p>
         <el-form
             ref="passwordUpdateRef"
             :model="passwordUpdateMode"
             :rules="rules"
-            label-width="120px"
-            label-position="left"
+            label-position="top"
+            class="am-password-form"
         >
             <el-form-item :label="t('account.userName')" prop="username">
                 <el-input v-model="passwordUpdateMode.username" disabled :placeholder="t('account.inputUserName')" />
@@ -116,7 +140,6 @@ const { t } = useI18n()
             <el-button
                 v-loading="passwordUpdateLoading"
                 type="primary"
-                plain
                 @click="confirmPasswordUpdate(passwordUpdateRef)"
             >
                 {{ t('account.confirm') }}
@@ -126,5 +149,26 @@ const { t } = useI18n()
 </template>
 
 <style scoped lang="scss">
+.am-password-hint {
+  margin: 0 0 var(--am-spacing-lg);
+  color: var(--am-foreground-muted);
+  font-size: var(--am-font-sm);
+  line-height: 1.55;
+}
 
+.am-password-form {
+  :deep(.el-form-item) {
+    margin-bottom: var(--am-spacing-md);
+  }
+
+  :deep(.el-form-item__label) {
+    padding-bottom: 4px;
+    color: var(--am-foreground-secondary);
+    font-size: var(--am-font-sm);
+  }
+
+  :deep(.el-input__wrapper) {
+    min-height: 36px;
+  }
+}
 </style>

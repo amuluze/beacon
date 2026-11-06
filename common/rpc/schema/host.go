@@ -24,6 +24,7 @@ type Host struct {
 type CPU struct {
 	Timestamp  time.Time `json:"timestamp"`
 	CPUPercent float64   `json:"cpu_percent"`
+	CPUCount   int       `json:"cpu_count,omitempty"`
 }
 
 type Memory struct {
@@ -91,6 +92,7 @@ type HostInfoReply struct {
 type CPUInfoArgs struct{}
 type CPUInfoReply struct {
 	Percent   float64   `json:"percent"`
+	CPUCount  int       `json:"cpu_count"`
 	Timestamp int64     `json:"timestamp"`
 	Stale     bool      `json:"stale"`
 	Freshness Freshness `json:"freshness"`
@@ -149,8 +151,9 @@ type ContainerUsageArgs struct {
 	EndTime   int64 `json:"end_time"`
 }
 type ContainerUsageReply struct {
-	Names     []string           `json:"names"`
-	CPUUsage  map[string][]Usage `json:"cpu_usage"`
-	MemUsage  map[string][]Usage `json:"mem_usage"`
-	Freshness Freshness          `json:"freshness"`
+	Names      []string           `json:"names"`
+	CPUUsage   map[string][]Usage `json:"cpu_usage"`
+	MemUsage   map[string][]Usage `json:"mem_usage"`
+	MemPercent map[string][]Usage `json:"mem_percent"`
+	Freshness  Freshness          `json:"freshness"`
 }

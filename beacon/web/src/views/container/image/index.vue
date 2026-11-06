@@ -51,12 +51,16 @@ watch(() => pageable.value.total, (total) => {
     emit('total', total)
 })
 
-// 搜索在服务端生效：total 与列表使用同一组过滤条件
+// 搜索与「使用中」筛选在服务端生效：total 与列表使用同一组过滤条件
 const keyword = ref('')
+const inUseFilter = ref<'all' | 'in_use' | 'unused'>('all')
 
 async function applyFilters() {
   pageable.value.page = 1
-  await updateTotalParam({ name: keyword.value.trim() || undefined })
+  await updateTotalParam({
+    name: keyword.value.trim() || undefined,
+    in_use: inUseFilter.value === 'all' ? undefined : inUseFilter.value,
+  })
 }
 
 const tableRef = ref<TableInstance>()
@@ -138,6 +142,11 @@ const { t } = useI18n()
                         <svg-icon icon-class="search" />
                     </template>
                 </el-input>
+                <el-select v-model="inUseFilter" class="am-table-operator__select" size="small" @change="applyFilters">
+                    <el-option :label="t('image.inUseAll')" value="all" />
+                    <el-option :label="t('image.inUseOnly')" value="in_use" />
+                    <el-option :label="t('image.unused')" value="unused" />
+                </el-select>
             </div>
             <BatchActionBar
                 :count="selectedIDs.length"

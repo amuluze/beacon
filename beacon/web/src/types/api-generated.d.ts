@@ -381,6 +381,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/system/version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description 查询 Beacon 版本与更新状态
+         * @description 返回当前 Beacon Server 的构建版本与最近一次更新检查结果。
+         *     Server 自身不执行升级：update_available 只表示存在更新的 Beacon 版本，
+         *     是否升级由管理员手动执行 manager.sh update 决定。
+         */
+        get: operations["getSystemVersion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/container/version": {
         parameters: {
             query?: never;
@@ -2020,6 +2042,26 @@ export interface operations {
             };
         };
     };
+    getSystemVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemVersion"];
+                };
+            };
+        };
+    };
     containerVersion: {
         parameters: {
             query?: never;
@@ -3377,6 +3419,13 @@ export interface operations {
             content: {
                 "application/json": components["schemas"]["AlarmMessageSettingUpdateArgs"];
             };
+        };
+        SystemVersion: {
+            version: string;
+            update_available: boolean;
+            latest_version?: string;
+            release_notes?: string;
+            checked_at?: string;
         };
         responses: {
             /** @description Updated */

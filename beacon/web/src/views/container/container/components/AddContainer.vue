@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { createContainer, queryImages, queryNetworks } from '@/api/container'
+import DialogHeader from '@/components/DialogHeader/index.vue'
 import { error, success } from '@/components/Message/message'
 import type { Image, Network } from '@/interface/container'
 import {
@@ -9,6 +10,7 @@ import {
 } from '@/views/container/container/containerForm'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useI18n } from 'vue-i18n'
+import IconPackagePlus from '~icons/lucide/package-plus'
 
 const props = defineProps<{
   visible: boolean
@@ -82,6 +84,9 @@ onMounted(() => {
 
 <template>
     <el-drawer v-model="drawerVisible" :title="t(props.title ?? 'container.addContainer')" size="480px" destroy-on-close>
+        <template #header>
+            <DialogHeader :title="t(props.title ?? 'container.addContainer')" :icon="IconPackagePlus" />
+        </template>
         <el-form ref="formRef" class="container-form" :model="form" :rules="rules" label-position="top">
             <el-form-item :label="t('container.containerName')" prop="containerName">
                 <el-input v-model="form.containerName" :placeholder="t('container.containerCreatePlaceholder')" />

@@ -69,10 +69,11 @@ type DockerReply struct {
 }
 
 type ContainerQueryArgs struct {
-	Page  int    `json:"page"`
-	Size  int    `json:"size"`
-	Name  string `json:"name,omitempty"`
-	State string `json:"state,omitempty"`
+	Page    int    `json:"page"`
+	Size    int    `json:"size"`
+	Name    string `json:"name,omitempty"`
+	State   string `json:"state,omitempty"`
+	Network string `json:"network,omitempty"`
 }
 
 type ContainerQueryReply struct {
@@ -81,8 +82,9 @@ type ContainerQueryReply struct {
 }
 
 type ContainerCountArgs struct {
-	Name  string `json:"name,omitempty"`
-	State string `json:"state,omitempty"`
+	Name    string `json:"name,omitempty"`
+	State   string `json:"state,omitempty"`
+	Network string `json:"network,omitempty"`
 }
 
 type ContainerCountReply struct {
@@ -90,9 +92,10 @@ type ContainerCountReply struct {
 }
 
 type ImageQueryArgs struct {
-	Page int    `json:"page"`
-	Size int    `json:"size"`
-	Name string `json:"name,omitempty"`
+	Page  int    `json:"page"`
+	Size  int    `json:"size"`
+	Name  string `json:"name,omitempty"`
+	InUse string `json:"in_use,omitempty"`
 }
 
 type ImageQueryReply struct {
@@ -101,7 +104,8 @@ type ImageQueryReply struct {
 }
 
 type ImageCountArgs struct {
-	Name string `json:"name,omitempty"`
+	Name  string `json:"name,omitempty"`
+	InUse string `json:"in_use,omitempty"`
 }
 
 type ImageCountReply struct {

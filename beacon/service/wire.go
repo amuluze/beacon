@@ -15,6 +15,7 @@ import (
 	"beacon/service/host"
 	"beacon/service/mail"
 	"beacon/service/model"
+	systemapi "beacon/service/system/api"
 	"beacon/service/terminal"
 
 	"github.com/google/wire"
@@ -56,6 +57,8 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		NewLoggerHandler,
 		terminal.NewHandler,
 		NewTimedTask,
+		ProvideSystemVersion,
+		systemapi.NewSystemAPI,
 		RouterSet,
 		NewFiberApp,
 		PrepareSet,

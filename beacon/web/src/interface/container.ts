@@ -86,12 +86,14 @@ export interface ContainerListParams {
     size: number
     name?: string
     state?: string
+    network?: string
 }
 
 export interface ImageListParams {
     page: number
     size: number
     name?: string
+    in_use?: 'in_use' | 'unused'
 }
 
 export interface NetworkListParams {
@@ -198,5 +200,6 @@ export interface ContainerTrending {
     names: string[]
     cpu_usage: Map<string, Usage[]>
     mem_usage: Map<string, Usage[]>
+    mem_percent: Map<string, Usage[]>
     freshness: Freshness
 }

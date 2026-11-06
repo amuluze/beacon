@@ -19,6 +19,7 @@
  */
 import ConfirmDialog from '@/components/ConfirmDialog/index.vue'
 import { createVNode, getCurrentInstance, render } from 'vue'
+import type { Component } from 'vue'
 
 export interface ConfirmCommandOptions {
     title?: string
@@ -26,6 +27,10 @@ export interface ConfirmCommandOptions {
     // Optional interpolation params for the message key.
     params?: Record<string, string | number>
     i18nPrefix?: string
+    // Optional header badge icon; omitted for plain confirmations (draft: 删除确认无图标块).
+    badge?: Component
+    // Optional width override; defaults to the 480 rung of DESIGN.md §11.1.
+    width?: string
     action: (id?: string) => Promise<unknown> | unknown
     // Optional progress callback. Triggered after action resolves.
     onResolved?: () => void
@@ -57,11 +62,12 @@ export function useConfirmCommand(options: ConfirmCommandOptions) {
         const vnode = createVNode(ConfirmDialog, {
             'visible': true,
             'title': options.title,
+            'badge': options.badge,
             'message': options.message,
             'params': options.params,
             'i18nPrefix': options.i18nPrefix || 'common',
             'confirmation': true,
-            'width': '500px',
+            'width': options.width ?? '480px',
             id,
             'onUpdate:visible': (visible: boolean) => {
                 if (!visible)

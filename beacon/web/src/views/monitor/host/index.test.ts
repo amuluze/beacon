@@ -94,13 +94,19 @@ function trendData(value: number, timestamp = 900) {
     return { data: { data: [{ timestamp, value }] } }
 }
 
+const AgentEmptyStateStub = defineComponent({
+    name: 'AgentEmptyState',
+    emits: ['refresh'],
+    template: '<div data-testid="agent-empty" />',
+})
+
 const mountedWrappers: Array<{ unmount: () => void }> = []
 
-function mountHostMonitor() {
+function mountHostMonitor(options: { track?: boolean } = {}) {
     const wrapper = shallowMount(HostMonitor, {
         global: {
             stubs: {
-                AgentEmptyState: { template: '<div data-testid="agent-empty" />' },
+                AgentEmptyState: AgentEmptyStateStub,
                 DataStaleTag: { template: '<span />' },
                 // 上下文条是真实组件，密度选择器需要能被测试直接驱动
                 MonitorContextBar: false,
@@ -111,7 +117,8 @@ function mountHostMonitor() {
             },
         },
     })
-    mountedWrappers.push(wrapper)
+    if (options.track !== false)
+        mountedWrappers.push(wrapper)
     return wrapper
 }
 
@@ -216,5 +223,163 @@ describe('host monitor time density', () => {
         resolveOld(trendData(81))
         await flushPromises()
         expect(chartOptions(wrapper)[0].series[0].data.map((point: [number, number]) => point[1])).toEqual([22])
+    })
+})
+
+describe('host monitor chart legends and series colors', () => {
+    const tokenValues: Record<string, string> = {
+        '--am-chart-1': '#0A7C79',
+        '--am-chart-2': '#4FB8B4',
+        '--am-chart-3': '#7C5CE0',
+        '--am-chart-4': '#B45309',
+        '--am-chart-5': '#047857',
+        '--am-chart-6': '#E11D48',
+        '--am-accent-warning': '#B45309',
+        '--am-foreground-secondary': '#475569',
+    }
+
+    function stubTokenValues() {
+        const original = window.getComputedStyle.bind(window)
+        return vi.spyOn(window, 'getComputedStyle').mockImplementation((element) => {
+            const style = original(element)
+            return new Proxy(style, {
+                get(target, property) {
+                    if (property === 'getPropertyValue')
+                        return (name: string) => tokenValues[name] ?? target.getPropertyValue(name)
+                    const value = Reflect.get(target, property)
+                    return typeof value === 'function' ? value.bind(target) : value
+                },
+            })
+        })
+    }
+
+    it('names multi-series legends per design wording and colors them by chart tokens', async () => {
+        const spy = stubTokenValues()
+        const wrapper = mountHostMonitor()
+        await flushPromises()
+
+        const options = chartOptions(wrapper)
+        const [cpu, mem, disk, net] = options
+
+        // 单序列卡：CPU 取 chart-1，内存取 accent-warning
+        expect(cpu.legend.data).toEqual(['CPU 使用率'])
+        expect(cpu.series[0].lineStyle.color).toBe('#0A7C79')
+        expect(mem.legend.data).toEqual(['内存使用率'])
+        expect(mem.series[0].lineStyle.color).toBe('#B45309')
+
+        // 多序列卡：图例文案按稿成文，序列色取 chart-1 / chart-5
+        expect(disk.legend.data).toEqual(['读', '写'])
+        expect(disk.series.map((series: { name: string }) => series.name)).toEqual(['读', '写'])
+        expect(disk.series[0].lineStyle.color).toBe('#0A7C79')
+        expect(disk.series[1].lineStyle.color).toBe('#047857')
+        expect(disk.legend.textStyle.color).toBe('#475569')
+
+        expect(net.legend.data).toEqual(['接收', '发送'])
+        expect(net.series.map((series: { name: string }) => series.name)).toEqual(['接收', '发送'])
+        expect(net.series[0].lineStyle.color).toBe('#0A7C79')
+        expect(net.series[1].lineStyle.color).toBe('#047857')
+
+        spy.mockRestore()
+    })
+
+    it('prefixes legend names with the device when multiple disks are reported', async () => {
+        queryDiskUsage.mockResolvedValue({
+            data: {
+                usage: [
+                    { device: 'disk0', data: [{ timestamp: 900, io_read: 1, io_write: 2 }] },
+                    { device: 'disk1', data: [{ timestamp: 900, io_read: 3, io_write: 4 }] },
+                ],
+            },
+        })
+        const spy = stubTokenValues()
+        const wrapper = mountHostMonitor()
+        await flushPromises()
+
+        const disk = chartOptions(wrapper)[2]
+        expect(disk.legend.data).toEqual(['disk0 读', 'disk0 写', 'disk1 读', 'disk1 写'])
+        expect(disk.series.map((series: { name: string }) => series.name)).toEqual(['disk0 读', 'disk0 写', 'disk1 读', 'disk1 写'])
+
+        spy.mockRestore()
+    })
+})
+
+describe('host monitor metric summaries', () => {
+    it('summarises the latest sample under each chart title', async () => {
+        const wrapper = mountHostMonitor()
+        await flushPromises()
+
+        const metrics = wrapper.findAll('.am-chart-card-percent').map(metric => metric.text())
+        expect(metrics).toEqual([
+            '当前 12.3%',
+            '1.00 KB / 2.00 KB · 45.6%',
+            '读 1.00 KB/s / 写 2.00 KB/s · 最高 -',
+            '接收 4.00 KB/s · 发送 8.00 KB/s',
+        ])
+    })
+
+    it('clears the disk and network series when the latest window has no samples', async () => {
+        queryDiskUsage.mockResolvedValue({ data: { usage: [] } })
+        queryNetworkUsage.mockResolvedValue({ data: { usage: [] } })
+
+        const wrapper = mountHostMonitor()
+        await flushPromises()
+
+        const [, , disk, net] = chartOptions(wrapper)
+        expect(disk.series).toEqual([])
+        expect(disk.legend.data).toEqual([])
+        expect(net.series).toEqual([])
+        expect(net.legend.data).toEqual([])
+
+        const metrics = wrapper.findAll('.am-chart-card-percent').map(metric => metric.text())
+        expect(metrics[2]).toBe('读 - / 写 - · 最高 -')
+        expect(metrics[3]).toBe('接收 - · 发送 -')
+    })
+})
+
+describe('host monitor empty state and polling', () => {
+    it('replaces the chart grid with the agent empty state when no agent is available', async () => {
+        selectionState.isAgentEmpty = true
+
+        const wrapper = mountHostMonitor()
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agent-empty"]').exists()).toBe(true)
+        expect(wrapper.findAll('.am-chart-grid')).toHaveLength(0)
+    })
+
+    it('reloads agents and refreshes the charts from the empty state action', async () => {
+        selectionState.isAgentEmpty = true
+
+        const wrapper = mountHostMonitor()
+        await flushPromises()
+        queryCPUUsage.mockClear()
+
+        wrapper.findComponent(AgentEmptyStateStub).vm.$emit('refresh')
+        await flushPromises()
+
+        expect(selectionState.loadAgents).toHaveBeenCalled()
+        expect(queryCPUUsage).toHaveBeenCalledTimes(1)
+    })
+
+    it('polls the agent every ten seconds and stops polling on unmount', async () => {
+        const setIntervalSpy = vi.spyOn(globalThis, 'setInterval')
+        const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval')
+
+        const wrapper = mountHostMonitor({ track: false })
+        await flushPromises()
+
+        const [poll, interval] = setIntervalSpy.mock.calls.at(-1) as [() => void, number]
+        expect(interval).toBe(10_000)
+
+        queryCPUUsage.mockClear()
+        poll()
+        await flushPromises()
+        expect(queryCPUUsage).toHaveBeenCalledTimes(1)
+
+        wrapper.unmount()
+        expect(clearIntervalSpy).toHaveBeenCalled()
+
+        setIntervalSpy.mockRestore()
+        clearIntervalSpy.mockRestore()
     })
 })
