@@ -182,6 +182,7 @@ func TestContainerUpdatePreservesOmittedRuntimeConfiguration(t *testing.T) {
 		Ports:        []string{"8080:80"},
 		Volumes:      []string{"/data:/app/data"},
 		Environments: []string{"TZ=Asia/Shanghai"},
+		Commands:     []string{"./server", "--listen", ":8080"},
 		Labels:       map[string]string{"owner": "platform"},
 	}
 	manager := &fakeContainerMutationManager{
@@ -205,6 +206,9 @@ func TestContainerUpdatePreservesOmittedRuntimeConfiguration(t *testing.T) {
 	}
 	if !reflect.DeepEqual(manager.createArgs.Environments, old.Environments) {
 		t.Fatalf("environments = %#v, want %#v", manager.createArgs.Environments, old.Environments)
+	}
+	if !reflect.DeepEqual(manager.createArgs.Commands, old.Commands) {
+		t.Fatalf("commands = %#v, want %#v", manager.createArgs.Commands, old.Commands)
 	}
 	if !reflect.DeepEqual(manager.createArgs.Labels, old.Labels) {
 		t.Fatalf("labels = %#v, want %#v", manager.createArgs.Labels, old.Labels)

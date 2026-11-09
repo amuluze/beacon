@@ -116,6 +116,11 @@ func recreateContainer(ctx context.Context, manager containerMutationManager, up
 	if environments == nil {
 		environments = old.Environments
 	}
+	// 未显式传入命令时沿用旧容器的 Config.Cmd，避免更新把镜像默认入口点换成默认命令。
+	commands := args.Commands
+	if commands == nil {
+		commands = old.Commands
+	}
 	labels := args.Labels
 	if labels == nil {
 		labels = old.Labels
@@ -135,7 +140,7 @@ func recreateContainer(ctx context.Context, manager containerMutationManager, up
 		return "", fmt.Errorf("rename original container: %w", err)
 	}
 
-	newID, err := manager.CreateContainer(ctx, name, image, network, ports, volumes, environments, args.Commands, labels)
+	newID, err := manager.CreateContainer(ctx, name, image, network, ports, volumes, environments, commands, labels)
 	if err != nil {
 		rollbackErr := rollbackContainer(ctx, manager, old, backupName, "", wasRunning)
 		return "", errors.Join(err, rollbackErr)
