@@ -2,23 +2,31 @@
 // Description: collia Agent CLI 入口。
 //
 // 子命令：
-//   run         前台运行（调试用）
-//   daemon      由 systemd 拉起时执行（通常无需手动调用）
-//   install     注册系统服务；执行 preflight（探测磁盘/网卡、回写 config、目录/端口预检）
-//   uninstall / remove  注销系统服务并清理二进制/配置/数据/日志
-//   start/stop/status  通过 daemon 控制 systemd 单元
-//   probe       仅执行 preflight 并打印结果（不注册服务）
-//   version     输出编译期版本
+//
+//	run         前台运行（调试用）
+//	daemon      由 systemd 拉起时执行（通常无需手动调用）
+//	install     注册系统服务；执行 preflight（探测磁盘/网卡、回写 config、目录/端口预检）
+//	uninstall / remove  注销系统服务并清理二进制/配置/数据/日志
+//	start/stop/status  通过 daemon 控制 systemd 单元
+//	probe       仅执行 preflight 并打印结果（不注册服务）
+//	version     输出编译期版本
 //
 // 设计对齐：spec agent-lifecycle-update.md（RU004 卸载清理）、agent_install.go 的调用契约。
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
+	"os/exec"
 	"os/signal"
+	"path/filepath"
+	"runtime"
+	"strconv"
+	"strings"
 	"syscall"
+	"time"
 
 	"collia/service"
 	"collia/service/rpc"
@@ -212,14 +220,20 @@ func installService(cfg string) {
 }
 
 func removeService() {
-	// 先注销 systemd 单元（失败仅警告，单元可能不存在）
+	// 先停止再注销：takama/daemon 的 Remove 只做 disable + 删除单元文件，
+	// 不 stop 正在运行的进程；直接 Remove 会让 daemon 继续以已删除的二进制运行。
 	if d, err := daemon.New(serviceName, serviceDesc, daemon.SystemDaemon); err == nil {
+		stopService(d)
 		if out, err := d.Remove(); err != nil {
 			slog.Warn("daemon remove failed (continuing file cleanup)", "err", err)
 		} else {
 			fmt.Println(out)
 		}
 	}
+	// 删除单元文件后让 systemd 丢弃内存中的旧单元，避免 status 仍显示 "bad"。
+	reloadSystemd()
+	// 兜底：旧版本 remove 可能留下未被 systemd 跟踪的 daemon 进程。
+	terminateStaleDaemons()
 	// 清理文件（spec RU004 / T3-02）
 	residuals := cleanupPaths()
 	if len(residuals) > 0 {
@@ -230,6 +244,89 @@ func removeService() {
 		os.Exit(1)
 	}
 	fmt.Println("collia removed")
+}
+
+// stopService 在注销前停止已安装的服务；未安装或已停止不视为错误。
+func stopService(d daemon.Daemon) {
+	out, err := d.Stop()
+	switch {
+	case err == nil:
+		fmt.Println(out)
+	case errors.Is(err, daemon.ErrNotInstalled), errors.Is(err, daemon.ErrAlreadyStopped):
+		// 服务未安装或已停止：继续注销与文件清理。
+	default:
+		slog.Warn("stop daemon before removal failed (continuing)", "err", err)
+	}
+}
+
+// reloadSystemd 让 systemd 丢弃已删除单元的缓存状态。
+func reloadSystemd() {
+	if runtime.GOOS != "linux" {
+		return
+	}
+	if err := exec.Command("systemctl", "daemon-reload").Run(); err != nil {
+		slog.Warn("systemctl daemon-reload after removal failed", "err", err)
+	}
+}
+
+// terminateStaleDaemons 兜底终止未被 systemd 跟踪的 collia daemon 进程，
+// 例如旧版本 remove 删除了单元文件但没有停止进程时遗留的实例。
+func terminateStaleDaemons() {
+	if runtime.GOOS != "linux" {
+		return
+	}
+	for _, pid := range staleColliaDaemonPIDs() {
+		_ = syscall.Kill(pid, syscall.SIGTERM)
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		if len(staleColliaDaemonPIDs()) == 0 {
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	for _, pid := range staleColliaDaemonPIDs() {
+		_ = syscall.Kill(pid, syscall.SIGKILL)
+	}
+}
+
+// staleColliaDaemonPIDs 扫描 /proc，返回运行 collia daemon 子命令的进程 PID。
+func staleColliaDaemonPIDs() []int {
+	self := os.Getpid()
+	entries, err := os.ReadDir("/proc")
+	if err != nil {
+		return nil
+	}
+	var pids []int
+	for _, entry := range entries {
+		pid, err := strconv.Atoi(entry.Name())
+		if err != nil || pid == self {
+			continue
+		}
+		raw, err := os.ReadFile(filepath.Join("/proc", entry.Name(), "cmdline"))
+		if err != nil || len(raw) == 0 {
+			continue
+		}
+		argv := strings.Split(strings.TrimRight(string(raw), "\x00"), "\x00")
+		if isColliaDaemonCommand(argv) {
+			pids = append(pids, pid)
+		}
+	}
+	return pids
+}
+
+// isColliaDaemonCommand 判断 argv 是否为 collia 的 daemon 子命令，
+// 要求 argv[0] 的 basename 为 collia，避免误杀包含相同字样的 shell 包装进程。
+func isColliaDaemonCommand(argv []string) bool {
+	if len(argv) < 2 || filepath.Base(argv[0]) != "collia" {
+		return false
+	}
+	for _, arg := range argv[1:] {
+		if arg == "daemon" {
+			return true
+		}
+	}
+	return false
 }
 
 func control(action string) {

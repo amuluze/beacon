@@ -45,4 +45,4 @@ collia version
 
 - 默认文件位置：二进制 `/usr/sbin/collia`、配置 `/etc/collia/config.yml`、日志 `/data/beacon/logs/collia/collia.log`、本地数据 `/data/beacon/collia/storage/`。
 - 本机 Agent 由 Beacon Server 经反向隧道触发升级；是否自动升级由 Server 控制台开关决定（默认开启），Agent 侧校验 SHA-256 后原子替换二进制。
-- `remove`（别名 `uninstall`）会同时清理二进制、配置、本地数据、日志与系统服务注册。
+- `remove`（别名 `uninstall`）先停止服务再清理二进制、配置、本地数据、日志与系统服务注册；未被 systemd 跟踪的残留 daemon 进程也会被终止。
