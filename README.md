@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/amuluze/beacon/stargazers"><img src="https://img.shields.io/github/stars/amuluze/beacon?style=flat-square" alt="GitHub Stars" /></a>
-  <a href="https://github.com/amuluze/beacon/releases"><img src="https://img.shields.io/github/v/release/amuluze/beacon?display_name=tag&sort=semver&style=flat-square" alt="GitHub Release" /></a>
+  <a href="https://github.com/amuluze/beacon-pro/stargazers"><img src="https://img.shields.io/github/stars/amuluze/beacon-pro?style=flat-square" alt="GitHub Stars" /></a>
+  <a href="https://github.com/amuluze/beacon-pro/releases"><img src="https://img.shields.io/github/v/release/amuluze/beacon-pro?display_name=tag&sort=semver&style=flat-square" alt="GitHub Release" /></a>
   <img src="https://img.shields.io/badge/Go-1.25-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go 1.25" />
   <img src="https://img.shields.io/badge/Vue-3-42B883?style=flat-square&logo=vuedotjs&logoColor=white" alt="Vue 3" />
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-2EA44F?style=flat-square" alt="MIT License" /></a>
@@ -43,7 +43,7 @@
 - **Collia Agent** 采集主机和 Docker 指标，通过 HTTP 上报监控批次，并主动建立反向 gRPC tunnel 接收 Server 控制调用。
 - 查询与控制请求必须显式指定 Agent，避免默认节点回退或跨节点读取。
 
-官网：[beacon.amuluze.com](https://beacon.amuluze.com) · 仓库：[github.com/amuluze/beacon](https://github.com/amuluze/beacon)
+官网：[beacon.amuluze.com](https://beacon.amuluze.com) · 仓库：[github.com/amuluze/beacon-pro](https://github.com/amuluze/beacon-pro)
 
 ## ✨ 功能特性
 
@@ -112,22 +112,25 @@ bash -c "$(curl -fsSL https://beacon.amuluze.com/release/latest/manager.sh)" -- 
 - Node.js、pnpm 与 [Task](https://taskfile.dev/)（构建 Web 资源时需要）。
 
 ```bash
-# 克隆仓库
-git clone https://github.com/amuluze/beacon.git
-cd beacon
+# 克隆新仓库
+git clone https://github.com/amuluze/beacon-pro.git
+cd beacon-pro
 
-# 后端本地开发（SQLite + 开发配置）
-task beacon:dev
-
-# 前端开发
+# 构建前端静态资源
 task beacon-web:install
-task beacon-web:dev
+task beacon-web:build
 
-# 构建完整镜像（内嵌前端产物与双架构 Collia 二进制）
-docker build -f beacon/Dockerfile -t beacon:local .
+# 构建 Beacon 镜像并启动本地 Compose
+docker build -f beacon/Dockerfile -t beacon:latest .
+cp website/release/latest/.env.example website/release/latest/.env
+# 编辑 .env：设置 BEACON_IMAGE=beacon:latest（本机构建镜像）并填写四个必需密钥
+docker compose -f website/release/latest/compose.yaml up -d
+
+# 验证服务
+curl http://127.0.0.1:1443/health
 ```
 
-本地开发默认通过 `8000`（HTTP）与 `17000`（Agent control）端口访问，仅用于开发/验证。生产部署前请生成独立的高强度密钥，并注入 `BEACON_AUTH_SIGNING_KEY`、`BEACON_AGENT_INSTALL_TOKEN`、`BEACON_CONTROL_JOIN_TOKEN`、`BEACON_DATA_ENCRYPTION_KEY`；首次建库还需设置 `BEACON_BOOTSTRAP_ADMIN_PASSWORD`。
+本地 Compose（`website/release/latest/compose.yaml`）默认暴露 `1443`（HTTP，可用 `BEACON_HTTP_PORT` 覆盖）与 `17000`（Agent control，可用 `BEACON_CONTROL_PORT` 覆盖）端口，仅用于开发/验证。`BEACON_AGENT_INSTALL_TOKEN`、`BEACON_AUTH_SIGNING_KEY`、`BEACON_CONTROL_JOIN_TOKEN`、`BEACON_DATA_ENCRYPTION_KEY` 为必填项（缺失时 Compose 直接启动失败），生产部署请生成独立的高强度密钥；首次建库还需设置 `BEACON_BOOTSTRAP_ADMIN_PASSWORD`。
 
 Beacon 启动后，可从目标主机安装 Collia Agent（将地址、节点编号和 Token 替换为实际值）：
 
@@ -151,24 +154,38 @@ curl -fsSL 'https://<beacon-host>/api/v1/host/install?node=1' | sudo bash -s -- 
 | 控制通道 | Agent 主动连接的反向 gRPC tunnel |
 | 监控通道 | HTTP 批次上报与 Server 本地持久化 |
 | 数据存储 | SQLite，支持通过 GORM 扩展其他数据库 |
-| 部署 | Docker、Docker Compose、Kubernetes |
+| 部署 | Docker、Docker Compose |
 
 ## 📁 项目结构
 
 ```text
-beacon/
+beacon-pro/
 ├── beacon/                 # Server、Web UI、HTTP/WS API 与 tunnel client
 │   ├── cmd/beacon/         # Server 进程入口
 │   ├── service/            # 业务服务、路由、认证与数据访问
 │   └── web/                # Vue 3 管理端
 ├── collia/                 # Agent 采集、Docker/主机操作与 tunnel service
 ├── common/                 # 共享 schema、数据库与 reverse tunnel transport
+├── website/                # Beacon 官网、安装脚本与发布产物
+│   ├── compose.yml         # 本地开发 Compose（NODE_ENV=development）
+│   ├── docker-compose.yml  # 生产 Compose（NODE_ENV=production）
+│   └── release/latest/     # 在线安装包（manager.sh / compose.yaml / SHA256SUMS）
+├── .docs/                  # 当前实现文档
+├── .specs/                 # SDD Domain / Task Specs
 └── Taskfile.yml            # 工作区开发命令入口
 ```
 
 ## 📚 项目文档
 
-架构、部署与 API 契约的完整文档见[官网](https://beacon.amuluze.com)；快速上手以本 README 为准。
+| 文档 | 内容 |
+|---|---|
+| [架构设计](./.docs/architecture.md) | 模块边界、核心运行链路与依赖方向 |
+| [数据流](./.docs/concepts/data-flow.md) | 请求生命周期、数据归属与跨模块流转 |
+| [部署指南](./.docs/deployment.md) | 环境、构建、配置与发布检查 |
+| [API 路由](./.docs/api/routes.md) | 当前 HTTP 路由与处理器索引 |
+| [OpenAPI](./.docs/api/openapi.yml) | Beacon HTTP API 契约 |
+| [账户管理约束](./.specs/domain/account-administration.md) | 管理员用户维护、删除目标与失败语义 |
+| [领域约束](./.specs/domain/monitoring-platform.md) | 监控平台长期行为与不变量 |
 
 ## 🧑‍💻 开发与贡献
 
@@ -187,7 +204,7 @@ cd beacon/web && pnpm test:run && pnpm ts && pnpm build
 
 欢迎提交 Issue 和 Pull Request：
 
-1. Fork [本仓库](https://github.com/amuluze/beacon)。
+1. Fork [本仓库](https://github.com/amuluze/beacon-pro)。
 2. 创建功能分支并完成最小验证。
 3. 提交清晰、可审查的变更。
 4. 推送分支并创建 Pull Request。

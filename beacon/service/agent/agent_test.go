@@ -192,3 +192,44 @@ func TestUpgradeAPITriggersConfiguredUpdater(t *testing.T) {
 		t.Fatalf("calls = %#v", calls)
 	}
 }
+
+func TestOnAgentConnectPersistsRegistrationMetadataOnExistingRow(t *testing.T) {
+	db := newAgentTestDB(t)
+	createAgent(t, db, model.Agent{
+		AgentID: "node-01",
+		Status:  "offline",
+	})
+
+	service := NewAgentService(NewAgentRepo(db))
+	service.OnAgentConnect(tunnelpkg.AgentInfo{
+		AgentID: "node-01",
+		Version: "v3.0.12",
+		OS:      "linux",
+		Arch:    "amd64",
+	})
+
+	var stored model.Agent
+	if err := db.Where("agent_id = ?", "node-01").First(&stored).Error; err != nil {
+		t.Fatalf("load agent: %v", err)
+	}
+	if stored.Version != "v3.0.12" || stored.OS != "linux" || stored.Arch != "amd64" {
+		t.Fatalf("metadata = version %q os %q arch %q, want v3.0.12/linux/amd64", stored.Version, stored.OS, stored.Arch)
+	}
+	if stored.Status != "online" {
+		t.Fatalf("status = %q, want online", stored.Status)
+	}
+
+	// Second registration with a newer version must keep the row updated.
+	service.OnAgentConnect(tunnelpkg.AgentInfo{
+		AgentID: "node-01",
+		Version: "v3.0.13",
+		OS:      "linux",
+		Arch:    "amd64",
+	})
+	if err := db.Where("agent_id = ?", "node-01").First(&stored).Error; err != nil {
+		t.Fatalf("reload agent: %v", err)
+	}
+	if stored.Version != "v3.0.13" {
+		t.Fatalf("version = %q, want v3.0.13", stored.Version)
+	}
+}
