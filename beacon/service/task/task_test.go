@@ -859,3 +859,25 @@ func TestNotificationChannelsDoNotBlockEachOther(t *testing.T) {
 		}
 	})
 }
+
+// TestAlarmTasksSkipWhenThresholdNotConfigured 验证告警阈值未配置时巡检静默跳过，
+// 不再每轮（15s）向日志刷一条 record not found 错误。
+func TestAlarmTasksSkipWhenThresholdNotConfigured(t *testing.T) {
+	db := newTaskTestDB(t)
+	t.Cleanup(db.Close)
+	seedTaskHost(t, db, "agent-a", "host-a")
+
+	if err := NewTask(db).CPUAlarmTask(context.Background()); err != nil {
+		t.Fatalf("CPUAlarmTask with no threshold: %v", err)
+	}
+	if err := NewTask(db).MemoryAlarmTask(context.Background()); err != nil {
+		t.Fatalf("MemoryAlarmTask with no threshold: %v", err)
+	}
+	if err := NewTask(db).DiskAlarmTask(context.Background()); err != nil {
+		t.Fatalf("DiskAlarmTask with no threshold: %v", err)
+	}
+
+	if audits := taskAudits(t, db); len(audits) != 0 {
+		t.Fatalf("audit count = %d, want 0", len(audits))
+	}
+}

@@ -5,6 +5,7 @@
 package logger
 
 import (
+	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
@@ -28,15 +29,21 @@ func getFileWriter(config *Config) zapcore.WriteSyncer {
 		logFilePath = abspath
 	}
 
-	_log, _ := rotator.New(
+	_log, err := rotator.New(
 		filepath.Join(logFilePath+config.LogFileSuffix),
 		// 生成软连接，指向最新的日志文件
 		rotator.WithLinkName(logFilePath),
-		// 保留文件期限，默认 7 天
-		rotator.WithMaxAge(time.Duration(config.LogFileMaxAge)*time.Hour*24*7),
+		// 保留文件期限，单位天
+		rotator.WithMaxAge(time.Duration(config.LogFileMaxAge)*time.Hour*24),
 		// 日志文件的切割间隔，默认 1 天分割一个文件
 		rotator.WithRotationTime(time.Duration(config.LogFileRotationTime)*time.Hour*24),
 	)
+	if err != nil {
+		// 文件 sink 初始化失败时不能静默吞掉错误，否则文件日志会无声消失；
+		// 退回仅 stdout 输出并显式告警。
+		slog.Error("logger file rotator init failed, fallback to stdout only", "path", logFilePath, "err", err)
+		return nil
+	}
 	return zapcore.AddSync(_log)
 }
 

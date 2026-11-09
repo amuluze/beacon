@@ -98,6 +98,18 @@ func (t *Task) threshold(alarmType string) (model.AlarmThreshold, error) {
 	return threshold, err
 }
 
+// errAlarmDisabled 表示该类型告警阈值尚未配置：巡检按“告警未启用”处理，
+// 由调用方静默跳过，而不是每轮都刷一条 ERROR。
+var errAlarmDisabled = errors.New("alarm threshold not configured")
+
+func (t *Task) enabledThreshold(alarmType string) (model.AlarmThreshold, error) {
+	threshold, err := t.threshold(alarmType)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return model.AlarmThreshold{}, errAlarmDisabled
+	}
+	return threshold, err
+}
+
 func (t *Task) agentIDs(ctx context.Context) ([]string, error) {
 	var agents []model.Agent
 	if err := t.db.WithContext(ctx).Model(&model.Agent{}).Order("agent_id asc").Find(&agents).Error; err != nil {
@@ -216,8 +228,11 @@ func exceededThresholdMessage(resource string, duration int, threshold int) stri
 }
 
 func (t *Task) CPUAlarmTask(ctx context.Context) error {
-	threshold, err := t.threshold("cpu")
+	threshold, err := t.enabledThreshold("cpu")
 	if err != nil {
+		if errors.Is(err, errAlarmDisabled) {
+			return nil
+		}
 		return err
 	}
 	agentIDs, err := t.agentIDs(ctx)
@@ -253,8 +268,11 @@ func (t *Task) CPUAlarmTask(ctx context.Context) error {
 }
 
 func (t *Task) MemoryAlarmTask(ctx context.Context) error {
-	threshold, err := t.threshold("memory")
+	threshold, err := t.enabledThreshold("memory")
 	if err != nil {
+		if errors.Is(err, errAlarmDisabled) {
+			return nil
+		}
 		return err
 	}
 	agentIDs, err := t.agentIDs(ctx)
@@ -290,8 +308,11 @@ func (t *Task) MemoryAlarmTask(ctx context.Context) error {
 }
 
 func (t *Task) DiskAlarmTask(ctx context.Context) error {
-	threshold, err := t.threshold("disk")
+	threshold, err := t.enabledThreshold("disk")
 	if err != nil {
+		if errors.Is(err, errAlarmDisabled) {
+			return nil
+		}
 		return err
 	}
 	agentIDs, err := t.agentIDs(ctx)
