@@ -161,6 +161,51 @@ func TestUpgradeAPIValidatesAgentID(t *testing.T) {
 	}
 }
 
+func TestUpdateSettingAPIRejectsMissingFieldAndPersistsToggle(t *testing.T) {
+	db := newUpdaterTestDB(t)
+	repo := NewAgentRepo(db)
+	service := NewAgentService(repo)
+	api := NewAgentAPI(service)
+	app := fiber.New()
+	app.Get("/update_setting", api.UpdateSetting)
+	app.Post("/update_setting", api.SetUpdateSetting)
+
+	send := func(body string) int {
+		t.Helper()
+		request := httptest.NewRequest(http.MethodPost, "/update_setting", bytes.NewBufferString(body))
+		request.Header.Set("Content-Type", "application/json")
+		response, err := app.Test(request)
+		if err != nil {
+			t.Fatalf("app.Test: %v", err)
+		}
+		return response.StatusCode
+	}
+
+	if got := send(`{}`); got != http.StatusBadRequest {
+		t.Fatalf("missing auto_update status = %d, want 400", got)
+	}
+	if got := send(`{"auto_update":false}`); got != http.StatusOK {
+		t.Fatalf("disable status = %d, want 200", got)
+	}
+	if enabled, err := repo.AutoUpdateEnabled(context.Background()); err != nil || enabled {
+		t.Fatalf("after disable = (%v, %v), want (false, nil)", enabled, err)
+	}
+	if got := send(`{"auto_update":true}`); got != http.StatusOK {
+		t.Fatalf("enable status = %d, want 200", got)
+	}
+	if enabled, err := repo.AutoUpdateEnabled(context.Background()); err != nil || !enabled {
+		t.Fatalf("after enable = (%v, %v), want (true, nil)", enabled, err)
+	}
+
+	response, err := app.Test(httptest.NewRequest(http.MethodGet, "/update_setting", nil))
+	if err != nil {
+		t.Fatalf("app.Test GET: %v", err)
+	}
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("get setting status = %d, want 200", response.StatusCode)
+	}
+}
+
 func TestUpgradeAPITriggersConfiguredUpdater(t *testing.T) {
 	db := newUpdaterTestDB(t)
 	createAgent(t, db, model.Agent{

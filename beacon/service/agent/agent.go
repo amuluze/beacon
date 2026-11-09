@@ -11,11 +11,13 @@ import (
 	"beacon/pkg/errors"
 	"beacon/pkg/fiberx"
 	"beacon/service/model"
+	"beacon/service/schema"
 	"common/database"
 	tunnelpkg "common/rpc/tunnel"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/wire"
+	"gorm.io/gorm"
 )
 
 var Set = wire.NewSet(NewAgentRepo, NewAgentService, NewAgentAPI)
@@ -84,6 +86,27 @@ func (r *Repository) Count(ctx context.Context) (int64, error) {
 	var count int64
 	err := r.DB.Model(&model.Agent{}).Count(&count).Error
 	return count, err
+}
+
+// AutoUpdateEnabled reports whether automatic Collia updates are enabled in
+// the console. A missing row means the product default: enabled.
+func (r *Repository) AutoUpdateEnabled(ctx context.Context) (bool, error) {
+	var setting model.AgentSetting
+	err := r.DB.WithContext(ctx).Where("key = ?", model.DefaultAgentAutoUpdateSettingKey).First(&setting).Error
+	if stderrors.Is(err, gorm.ErrRecordNotFound) {
+		return true, nil
+	}
+	if err != nil {
+		return true, err
+	}
+	return setting.Value, nil
+}
+
+func (r *Repository) SetAutoUpdateEnabled(ctx context.Context, enabled bool) error {
+	return r.DB.WithContext(ctx).
+		Where("key = ?", model.DefaultAgentAutoUpdateSettingKey).
+		Assign(map[string]any{"value": enabled}).
+		FirstOrCreate(&model.AgentSetting{Key: model.DefaultAgentAutoUpdateSettingKey, Value: enabled}).Error
 }
 
 // ── Service ──
@@ -172,6 +195,28 @@ func (s *Service) Count(ctx context.Context) (int64, error) {
 	return s.repo.Count(ctx)
 }
 
+// AutoUpdateSetting is the console-visible state of automatic Collia updates.
+// DeploymentEnabled mirrors the deployment-level switch (AgentUpdate.Enable);
+// the console switch cannot override a deployment that disabled scheduling.
+func (s *Service) AutoUpdateSetting(ctx context.Context) (schema.AgentAutoUpdateSetting, error) {
+	enabled, err := s.repo.AutoUpdateEnabled(ctx)
+	if err != nil {
+		return schema.AgentAutoUpdateSetting{}, err
+	}
+	setting := schema.AgentAutoUpdateSetting{AutoUpdate: enabled}
+	if s.updater != nil {
+		setting.DeploymentEnabled = s.updater.DeploymentEnabled()
+	}
+	return setting, nil
+}
+
+func (s *Service) UpdateAutoUpdateSetting(ctx context.Context, enabled bool) (schema.AgentAutoUpdateSetting, error) {
+	if err := s.repo.SetAutoUpdateEnabled(ctx, enabled); err != nil {
+		return schema.AgentAutoUpdateSetting{}, err
+	}
+	return s.AutoUpdateSetting(ctx)
+}
+
 func (s *Service) Upgrade(ctx context.Context, agentID string) (UpdateResult, error) {
 	if agentID == "" {
 		return UpdateResult{}, contextx.ErrAgentIDRequired
@@ -210,6 +255,29 @@ func (a *API) List(c *fiber.Ctx) error {
 		return fiberx.Failure(c, errors.New400Error(err.Error()))
 	}
 	return fiberx.Success(c, agents)
+}
+
+func (a *API) UpdateSetting(c *fiber.Ctx) error {
+	setting, err := a.svc.AutoUpdateSetting(c.UserContext())
+	if err != nil {
+		return fiberx.Failure(c, fiberx.ServiceError(err))
+	}
+	return fiberx.Success(c, setting)
+}
+
+func (a *API) SetUpdateSetting(c *fiber.Ctx) error {
+	var args schema.AgentAutoUpdateSettingArgs
+	if err := fiberx.ParseBody(c, &args); err != nil {
+		return fiberx.Failure(c, errors.New400Error(err.Error()))
+	}
+	if args.AutoUpdate == nil {
+		return fiberx.Failure(c, errors.New400Error("auto_update is required"))
+	}
+	setting, err := a.svc.UpdateAutoUpdateSetting(c.UserContext(), *args.AutoUpdate)
+	if err != nil {
+		return fiberx.Failure(c, fiberx.ServiceError(err))
+	}
+	return fiberx.Success(c, setting)
 }
 
 type upgradeArgs struct {

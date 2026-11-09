@@ -82,7 +82,7 @@ func newUpdaterTestDB(t *testing.T) *database.DB {
 		t.Fatalf("new db: %v", err)
 	}
 	t.Cleanup(db.Close)
-	if err := db.AutoMigrate(&model.Agent{}, &model.Audit{}, &model.MonitorHost{}, &model.MonitorDocker{}); err != nil {
+	if err := db.AutoMigrate(&model.Agent{}, &model.AgentSetting{}, &model.Audit{}, &model.MonitorHost{}, &model.MonitorDocker{}); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 	return db
@@ -313,6 +313,101 @@ func TestUpdaterRPCFailureWritesTruncatedFailureAudit(t *testing.T) {
 	}
 	if got := len([]rune(audits[1].Operate)); got > maxAuditOperateRunes {
 		t.Fatalf("failure audit length = %d", got)
+	}
+}
+
+func TestRepositoryAutoUpdateEnabledDefaultsTrueAndPersists(t *testing.T) {
+	db := newUpdaterTestDB(t)
+	repo := NewAgentRepo(db)
+	ctx := context.Background()
+
+	enabled, err := repo.AutoUpdateEnabled(ctx)
+	if err != nil || !enabled {
+		t.Fatalf("default = (%v, %v), want (true, nil)", enabled, err)
+	}
+
+	for _, want := range []bool{false, true, false} {
+		if err := repo.SetAutoUpdateEnabled(ctx, want); err != nil {
+			t.Fatalf("SetAutoUpdateEnabled(%v): %v", want, err)
+		}
+		got, err := repo.AutoUpdateEnabled(ctx)
+		if err != nil || got != want {
+			t.Fatalf("after set %v: (%v, %v)", want, got, err)
+		}
+	}
+
+	var count int64
+	if err := db.Model(&model.AgentSetting{}).Count(&count).Error; err != nil {
+		t.Fatalf("count settings: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("setting rows = %d, want 1", count)
+	}
+}
+
+func TestUpdaterScheduleHonorsConsoleAutoUpdateSetting(t *testing.T) {
+	db := newUpdaterTestDB(t)
+	repo := NewAgentRepo(db)
+	caller := &fakeUpdateCaller{}
+	updater, err := NewUpdater(newUpdaterTestConfig(t, "toggle-"), caller, db)
+	if err != nil {
+		t.Fatalf("NewUpdater: %v", err)
+	}
+	if !updater.DeploymentEnabled() {
+		t.Fatal("DeploymentEnabled = false, want true for enabled config")
+	}
+	info := tunnelpkg.AgentInfo{AgentID: "agent-toggle", Version: "v3.0.5", OS: "linux", Arch: "amd64"}
+
+	if err := repo.SetAutoUpdateEnabled(context.Background(), false); err != nil {
+		t.Fatalf("disable: %v", err)
+	}
+	updater.Schedule(info)
+	if got := len(caller.snapshot()); got != 0 {
+		t.Fatalf("calls while disabled = %d, want 0", got)
+	}
+
+	if err := repo.SetAutoUpdateEnabled(context.Background(), true); err != nil {
+		t.Fatalf("enable: %v", err)
+	}
+	updater.Schedule(info)
+	waitForUpdater(t, func() bool { return len(caller.snapshot()) == 1 })
+
+	// 手动升级不受控制台开关影响（部署级门禁仍生效）。
+	if err := repo.SetAutoUpdateEnabled(context.Background(), false); err != nil {
+		t.Fatalf("disable again: %v", err)
+	}
+	if _, err := updater.Trigger(context.Background(), info); err != nil {
+		t.Fatalf("manual Trigger with auto update off: %v", err)
+	}
+	if got := len(caller.snapshot()); got != 2 {
+		t.Fatalf("calls after manual trigger = %d, want 2", got)
+	}
+}
+
+func TestServiceAutoUpdateSettingReportsDeploymentGate(t *testing.T) {
+	db := newUpdaterTestDB(t)
+	repo := NewAgentRepo(db)
+	updater, err := NewUpdater(newUpdaterTestConfig(t, "service-toggle-"), &fakeUpdateCaller{}, db)
+	if err != nil {
+		t.Fatalf("NewUpdater: %v", err)
+	}
+	svc := NewAgentService(repo)
+	svc.SetUpdater(updater)
+
+	setting, err := svc.AutoUpdateSetting(context.Background())
+	if err != nil {
+		t.Fatalf("AutoUpdateSetting: %v", err)
+	}
+	if !setting.AutoUpdate || !setting.DeploymentEnabled {
+		t.Fatalf("initial setting = %#v, want both true", setting)
+	}
+
+	setting, err = svc.UpdateAutoUpdateSetting(context.Background(), false)
+	if err != nil {
+		t.Fatalf("UpdateAutoUpdateSetting: %v", err)
+	}
+	if setting.AutoUpdate || !setting.DeploymentEnabled {
+		t.Fatalf("updated setting = %#v, want auto_update=false deployment=true", setting)
 	}
 }
 

@@ -380,7 +380,7 @@ export default {
         operateTime: '操作时间',
     },
     probe: {
-        note: '展示已安装探针（Collia Agent）的名称、状态与版本，升级操作仅管理员可用。',
+        note: '展示已安装探针（Collia Agent）的名称、状态与版本；自动更新开关与升级操作仅管理员可用。',
         summary: '共 {total} 个探针，{online} 个在线',
         refresh: '刷新',
         online: '在线',
@@ -394,6 +394,9 @@ export default {
         filterAll: '全部',
         upgradable: '可升级',
         latest: '最新',
+        autoUpdate: '自动更新',
+        autoUpdateSaved: '自动更新设置已保存',
+        autoUpdateDeploymentDisabled: '部署配置已关闭 Agent 自动调度，需在服务器配置中开启',
     },
     system: {
         newVersion: '有新版本',

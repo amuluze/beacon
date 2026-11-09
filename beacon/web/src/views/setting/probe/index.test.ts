@@ -5,6 +5,8 @@ import ProbeManager from './index.vue'
 
 const mocks = vi.hoisted(() => ({
     queryAgentList: vi.fn(),
+    queryAgentUpdateSetting: vi.fn(),
+    updateAgentUpdateSetting: vi.fn(),
     querySystemVersion: vi.fn(),
     openUpgradeDialog: vi.fn(),
     isAdmin: 1,
@@ -12,6 +14,8 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/api/agent', () => ({
     queryAgentList: mocks.queryAgentList,
+    queryAgentUpdateSetting: mocks.queryAgentUpdateSetting,
+    updateAgentUpdateSetting: mocks.updateAgentUpdateSetting,
 }))
 
 vi.mock('@/api/system', () => ({
@@ -67,6 +71,8 @@ describe('probe management', () => {
         vi.clearAllMocks()
         mocks.isAdmin = 1
         mocks.queryAgentList.mockResolvedValue({ data: agents })
+        mocks.queryAgentUpdateSetting.mockResolvedValue({ data: { auto_update: true, deployment_enabled: true } })
+        mocks.updateAgentUpdateSetting.mockResolvedValue({ data: { auto_update: false, deployment_enabled: true } })
         mocks.querySystemVersion.mockResolvedValue({ data: { version: 'v3.0.15', update_available: false } })
     })
 
@@ -148,5 +154,46 @@ describe('probe management', () => {
 
         expect(wrapper.text()).toContain('linux/amd64')
         expect(wrapper.text()).toContain('linux/arm64')
+    })
+
+    it('renders an enabled auto-update switch for administrators', async () => {
+        const wrapper = mountProbe()
+        await vi.waitFor(() => expect(wrapper.findComponent({ name: 'ElTable' }).props('data')).toHaveLength(2))
+
+        const toggle = wrapper.findComponent({ name: 'ElSwitch' })
+        expect(toggle.exists()).toBe(true)
+        await vi.waitFor(() => expect(toggle.props('modelValue')).toBe(true))
+        expect(toggle.props('disabled')).toBe(false)
+    })
+
+    it('persists the auto-update switch when toggled off', async () => {
+        const wrapper = mountProbe()
+        await vi.waitFor(() => expect(wrapper.findComponent({ name: 'ElTable' }).props('data')).toHaveLength(2))
+
+        const toggle = wrapper.findComponent({ name: 'ElSwitch' })
+        await vi.waitFor(() => expect(toggle.props('modelValue')).toBe(true))
+        toggle.vm.$emit('change', false)
+
+        await vi.waitFor(() => expect(mocks.updateAgentUpdateSetting).toHaveBeenCalledWith(false))
+    })
+
+    it('hides the auto-update switch for non administrators', async () => {
+        mocks.isAdmin = 0
+
+        const wrapper = mountProbe()
+        await vi.waitFor(() => expect(wrapper.findComponent({ name: 'ElTable' }).props('data')).toHaveLength(2))
+
+        expect(wrapper.findComponent({ name: 'ElSwitch' }).exists()).toBe(false)
+        expect(mocks.queryAgentUpdateSetting).not.toHaveBeenCalled()
+    })
+
+    it('disables the switch when the deployment blocks auto updates', async () => {
+        mocks.queryAgentUpdateSetting.mockResolvedValue({ data: { auto_update: true, deployment_enabled: false } })
+
+        const wrapper = mountProbe()
+        await vi.waitFor(() => expect(wrapper.findComponent({ name: 'ElTable' }).props('data')).toHaveLength(2))
+
+        const toggle = wrapper.findComponent({ name: 'ElSwitch' })
+        await vi.waitFor(() => expect(toggle.props('disabled')).toBe(true))
     })
 })

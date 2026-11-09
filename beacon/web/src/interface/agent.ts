@@ -17,3 +17,10 @@ export interface AgentUpgradeResult {
     triggered: boolean
     message: string
 }
+
+// Agent 自动更新设置，与后端 /api/v1/agent/update_setting 返回结构对齐。
+// deployment_enabled 为部署级开关（AgentUpdate.Enable），关闭时控制台开关不可用。
+export interface AgentUpdateSetting {
+    auto_update: boolean
+    deployment_enabled: boolean
+}

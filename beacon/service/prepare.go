@@ -36,10 +36,11 @@ var notAdminResourcesMap = map[string]struct{}{
 }
 
 var adminOnlyResourcesMap = map[string]struct{}{
-	"查询钉钉告警配置":  {},
-	"更新钉钉告警配置":  {},
-	"测试钉钉告警":    {},
-	"升级 Collia": {},
+	"查询钉钉告警配置":        {},
+	"更新钉钉告警配置":        {},
+	"测试钉钉告警":          {},
+	"升级 Collia":       {},
+	"更新 Agent 自动更新设置": {},
 }
 
 var thresholds = []model.AlarmThreshold{

@@ -195,8 +195,11 @@ type AgentInstall struct {
 }
 
 // AgentUpdate controls Server-coordinated Collia updates. Durations are in
-// seconds; Enable only controls automatic scheduling, while manual retries use
-// the same target package and safety limits.
+// seconds; Enable is the deployment-level gate for automatic scheduling: when
+// false no automatic update is scheduled at all. When true, the console switch
+// (persisted in s_agent_setting, missing row means enabled) can still disable
+// automatic scheduling. Manual retries use the same target package and safety
+// limits and ignore the console switch.
 type AgentUpdate struct {
 	Enable        bool
 	TargetVersion string
