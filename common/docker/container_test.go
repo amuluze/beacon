@@ -7,8 +7,14 @@ package docker
 import (
 	"context"
 	"math"
+	"net/http"
+	"net/http/httptest"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
+
+	dockerclient "github.com/docker/docker/client"
 )
 
 func TestPercentageReturnsJSONSafeValue(t *testing.T) {
@@ -34,6 +40,44 @@ func TestPercentageReturnsJSONSafeValue(t *testing.T) {
 				t.Fatalf("percentage(%v, %v) returned non-finite value %v", tt.value, tt.total, got)
 			}
 		})
+	}
+}
+
+// 合成 Docker API 服务器，锁定「列表摘要携带容器配置的启动命令」这一契约。
+func TestListContainerIncludesConfiguredCommand(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/containers/json"):
+			_, _ = w.Write([]byte(`[{"Id":"synthetic-id","Names":["/synthetic"],"Image":"synthetic:latest","State":"exited","Created":1,"NetworkSettings":{"Networks":{}}}]`))
+		case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/containers/synthetic-id/json"):
+			_, _ = w.Write([]byte(`{"State":{"Status":"exited","StartedAt":"0001-01-01T00:00:00Z"},"Config":{"Env":["SYNTHETIC=1"],"Cmd":["/app/server","--synthetic"]}}`))
+		default:
+			t.Errorf("unexpected Docker API request: %s %s", r.Method, r.URL.Path)
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	client, err := dockerclient.NewClientWithOpts(dockerclient.WithHost(server.URL), dockerclient.WithVersion("1.43"))
+	if err != nil {
+		t.Fatalf("new Docker API client: %v", err)
+	}
+	defer func() { _ = client.Close() }()
+
+	manager := &Manager{client: client}
+	containers, err := manager.ListContainer(context.Background())
+	if err != nil {
+		t.Fatalf("ListContainer: %v", err)
+	}
+	if len(containers) != 1 {
+		t.Fatalf("container count = %d, want 1", len(containers))
+	}
+	want := []string{"/app/server", "--synthetic"}
+	if !reflect.DeepEqual(containers[0].Commands, want) {
+		t.Fatalf("commands = %#v, want %#v", containers[0].Commands, want)
+	}
+	if !reflect.DeepEqual(containers[0].Environments, []string{"SYNTHETIC=1"}) {
+		t.Fatalf("environments = %#v, want SYNTHETIC=1", containers[0].Environments)
 	}
 }
 

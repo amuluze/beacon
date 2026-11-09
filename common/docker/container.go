@@ -37,6 +37,7 @@ type ContainerSummary struct {
 	Ports        []string          `json:"ports"`
 	Volumes      []string          `json:"volumes"`
 	Environments []string          `json:"environments"`
+	Commands     []string          `json:"commands"` // 容器创建时配置的启动命令（Docker Config.Cmd）
 	Labels       map[string]string `json:"labels"`
 }
 
@@ -82,8 +83,9 @@ func (m *Manager) ListContainer(ctx context.Context) ([]ContainerSummary, error)
 		}
 
 		state := c.State
-		inspect, err := m.client.ContainerInspect(ctx, c.ID)
-		if err == nil {
+		// inspect 结果同时用于健康态、环境变量与启动命令，避免对同一容器重复请求 Docker API。
+		inspect, inspectErr := m.client.ContainerInspect(ctx, c.ID)
+		if inspectErr == nil && inspect.ContainerJSONBase != nil && inspect.ContainerJSONBase.State != nil {
 			if inspect.ContainerJSONBase.State.Health != nil && inspect.ContainerJSONBase.State.Health.Status == "healthy" {
 				state = "running"
 			}
@@ -99,8 +101,11 @@ func (m *Manager) ListContainer(ctx context.Context) ([]ContainerSummary, error)
 		}
 
 		var environments []string
-		inspect, _ = m.client.ContainerInspect(ctx, c.ID)
-		environments = inspect.Config.Env
+		var commands []string
+		if inspectErr == nil && inspect.Config != nil {
+			environments = inspect.Config.Env
+			commands = inspect.Config.Cmd
+		}
 
 		cs := ContainerSummary{
 			ID:           c.ID,
@@ -114,6 +119,7 @@ func (m *Manager) ListContainer(ctx context.Context) ([]ContainerSummary, error)
 			Ports:        ports,
 			Volumes:      volumes,
 			Environments: environments,
+			Commands:     commands,
 			Labels:       c.Labels,
 		}
 		containerSummaryList = append(containerSummaryList, cs)
