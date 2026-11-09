@@ -138,6 +138,12 @@ Beacon 启动后，可从目标主机安装 Collia Agent（将地址、节点编
 curl -fsSL 'https://<beacon-host>/api/v1/host/install?node=1' | sudo bash -s -- --token=<install-token>
 ```
 
+- `node` 是 Agent 标识：字母或数字开头，仅含字母、数字、点、下划线、短横线；同一主机重复安装会以新标识覆盖配置并注册。
+- 安装 Token 由管理面板「安装 Agent」对话框获取（或管理员调用 `POST /api/v1/host/get_install_token`）；脚本内部下载安装包、配置与证书的请求同样携带该 Token。
+- Beacon 使用自签控制证书时，需先把 CA 导入目标主机信任库，否则脚本内 `curl -fsSL` 会失败：将 Server 宿主机 `$BEACON_CONTROL_CERT_DIR`（默认 `/data/beacon/control-certs`）下的 `ca.pem` 复制到 `/usr/local/share/ca-certificates/beacon-ca.crt` 后执行 `sudo update-ca-certificates`。
+- 安装后默认开启 Agent 自动更新：Agent 重连时按 Server 镜像内置版本自动升级；可在「设置 → 探针管理」关闭自动更新，或在该页行内手动升级。
+- 卸载：`sudo collia remove`（同时清理二进制、配置、本地数据与系统服务注册）。
+
 ### 可选安装统计
 
 安装统计默认关闭，不会在未授权的情况下发送。只有管理员在 `beacon/configs/config.toml` 的 `[InstallReport]` 中显式设置 `Enable = true` 后，Beacon 才会向配置的 `URL`（默认 `https://beacon.amuluze.com/api/v1/install/report`）发送一次安装信息。
