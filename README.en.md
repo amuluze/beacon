@@ -145,7 +145,7 @@ curl -fsSL 'https://<beacon-host>/api/v1/host/install?node=1' | sudo bash -s -- 
 - The install token comes from the "Install Agent" dialog in the console (or the admin-only `POST /api/v1/host/get_install_token`). The script also sends it when downloading the package, config and certificates.
 - With a self-signed control certificate, import the CA into the target host trust store first, otherwise the script's `curl -fsSL` fails: copy `ca.pem` from the Server host's `$BEACON_CONTROL_CERT_DIR` (default `/data/beacon/control-certs`) to `/usr/local/share/ca-certificates/beacon-ca.crt` and run `sudo update-ca-certificates`.
 - Agent auto-update is enabled by default: agents upgrade to the version bundled in the Server image on reconnect. Disable it under Settings → Probes, where a per-row manual upgrade is also available.
-- Uninstall with `sudo collia remove` (removes the binary, config, local data and system service registration).
+- Uninstall with `sudo collia remove`: it stops the service first, then removes the systemd unit, binary, config, local data and logs; any residual `collia daemon` process not tracked by systemd is terminated as well.
 
 ### Optional installation reporting
 
