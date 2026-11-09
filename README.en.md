@@ -141,6 +141,12 @@ After Beacon starts, install Collia on a target host (replace the address, node 
 curl -fsSL 'https://<beacon-host>/api/v1/host/install?node=1' | sudo bash -s -- --token=<install-token>
 ```
 
+- `node` is the agent identity: it starts with a letter or digit and may contain letters, digits, dots, underscores and hyphens. Reinstalling on the same host overwrites the config and registers under the new identity.
+- The install token comes from the "Install Agent" dialog in the console (or the admin-only `POST /api/v1/host/get_install_token`). The script also sends it when downloading the package, config and certificates.
+- With a self-signed control certificate, import the CA into the target host trust store first, otherwise the script's `curl -fsSL` fails: copy `ca.pem` from the Server host's `$BEACON_CONTROL_CERT_DIR` (default `/data/beacon/control-certs`) to `/usr/local/share/ca-certificates/beacon-ca.crt` and run `sudo update-ca-certificates`.
+- Agent auto-update is enabled by default: agents upgrade to the version bundled in the Server image on reconnect. Disable it under Settings → Probes, where a per-row manual upgrade is also available.
+- Uninstall with `sudo collia remove` (removes the binary, config, local data and system service registration).
+
 ### Optional installation reporting
 
 Installation reporting is disabled by default and sends nothing without explicit opt-in. Beacon sends one installation report only after an administrator sets `Enable = true` under `[InstallReport]` in `beacon/configs/config.toml`. The report is sent to the configured `URL`, which defaults to `https://beacon.amuluze.com/api/v1/install/report`.
