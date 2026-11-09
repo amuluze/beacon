@@ -142,7 +142,7 @@ curl -fsSL 'https://<beacon-host>/api/v1/host/install?node=1' | sudo bash -s -- 
 - 安装 Token 由管理面板「安装 Agent」对话框获取（或管理员调用 `POST /api/v1/host/get_install_token`）；脚本内部下载安装包、配置与证书的请求同样携带该 Token。
 - Beacon 使用自签控制证书时，需先把 CA 导入目标主机信任库，否则脚本内 `curl -fsSL` 会失败：将 Server 宿主机 `$BEACON_CONTROL_CERT_DIR`（默认 `/data/beacon/control-certs`）下的 `ca.pem` 复制到 `/usr/local/share/ca-certificates/beacon-ca.crt` 后执行 `sudo update-ca-certificates`。
 - 安装后默认开启 Agent 自动更新：Agent 重连时按 Server 镜像内置版本自动升级；可在「设置 → 探针管理」关闭自动更新，或在该页行内手动升级。
-- 卸载：`sudo collia remove`（同时清理二进制、配置、本地数据与系统服务注册）。
+- 卸载：`sudo collia remove`（先停止服务，再清理二进制、配置、本地数据、日志与系统服务注册；未被 systemd 跟踪的残留 daemon 进程也会被终止）。
 
 ### 可选安装统计
 
