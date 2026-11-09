@@ -25,6 +25,7 @@ func (a *Models) GetAllModels() []interface{} {
 		new(Mail),
 		new(DingTalk),
 		new(Agent),
+		new(AgentSetting),
 		new(MonitorHost),
 		new(MonitorCPU),
 		new(MonitorMemory),

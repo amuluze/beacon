@@ -128,7 +128,11 @@ func NewUpdater(config UpdateConfig, caller updateCaller, db *database.DB) (*Upd
 // Schedule performs a non-blocking automatic update decision after tunnel
 // registration. The actual RPC always runs outside the lifecycle callback.
 func (u *Updater) Schedule(info tunnelpkg.AgentInfo) {
-	if u == nil || !u.config.Enable || info.AgentID == "" {
+	if u == nil {
+		return
+	}
+	// Deployment 级开关关闭时不调度；控制台开关再决定是否自动升级。
+	if !u.config.Enable || info.AgentID == "" || !u.autoUpdateAllowed() {
 		return
 	}
 	u.purgeStaleFailures()
@@ -144,6 +148,32 @@ func (u *Updater) Schedule(info tunnelpkg.AgentInfo) {
 			slog.Error("automatic collia upgrade failed", "agent_id", info.AgentID, "err", err)
 		}
 	}()
+}
+
+// DeploymentEnabled reports whether this deployment allows automatic Collia
+// updates at all. It is the deployment-level gate, not the console toggle.
+func (u *Updater) DeploymentEnabled() bool {
+	return u != nil && u.config.Enable
+}
+
+// autoUpdateAllowed reads the console toggle; a missing row means enabled, so
+// fresh installations auto-update by default. Read failures fall back to the
+// default to avoid silently disabling upgrades on a transient DB error.
+func (u *Updater) autoUpdateAllowed() bool {
+	if u == nil || u.db == nil {
+		return true
+	}
+	var setting model.AgentSetting
+	err := u.db.WithContext(context.Background()).
+		Where("key = ?", model.DefaultAgentAutoUpdateSettingKey).
+		First(&setting).Error
+	if err == nil {
+		return setting.Value
+	}
+	if !stderrors.Is(err, gorm.ErrRecordNotFound) {
+		slog.Warn("read agent auto update setting failed", "err", err)
+	}
+	return true
 }
 
 // Trigger manually runs the same update path while bypassing automatic failure

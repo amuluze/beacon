@@ -283,6 +283,7 @@ function openRoleCreate() {
   display: inline-flex;
   align-self: flex-start;
   gap: var(--am-spacing-xs);
+  max-width: 100%;
   padding: 4px;
   background: var(--am-surface-secondary);
   border: 1px solid var(--am-border-subtle);
@@ -290,7 +291,9 @@ function openRoleCreate() {
 }
 
 .workspace__tab {
+  min-width: 96px;
   padding: 7px 14px;
+  text-align: center;
   color: var(--am-foreground-secondary);
   font-family: inherit;
   font-size: var(--am-font-sm);

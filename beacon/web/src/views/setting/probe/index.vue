@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { queryAgentList } from '@/api/agent'
+import { queryAgentList, queryAgentUpdateSetting, updateAgentUpdateSetting } from '@/api/agent'
 import { querySystemVersion } from '@/api/system'
+import { success } from '@/components/Message/message.ts'
 import type { AgentInfo } from '@/interface/agent.ts'
 import useCommandComponent from '@/hooks/useCommandComponent.ts'
 import UpgradeAgentDialog from '@/components/Agent/UpgradeAgentDialog.vue'
 import useStore from '@/store'
+import i18n from '@/languages'
 
 const store = useStore()
 
@@ -64,8 +66,49 @@ async function loadAgents() {
   }
 }
 
+// 自动更新开关：记录缺失时后端按默认值（开启）返回；部署级门禁关闭时开关不可操作。
+const autoUpdate = ref(true)
+const deploymentEnabled = ref(true)
+const settingLoading = ref(false)
+const settingSaving = ref(false)
+
+async function loadAutoUpdateSetting() {
+  if (!isAdmin.value)
+    return
+  settingLoading.value = true
+  try {
+    const result = await queryAgentUpdateSetting()
+    autoUpdate.value = result.data?.auto_update ?? true
+    deploymentEnabled.value = result.data?.deployment_enabled ?? true
+  }
+  catch {
+    // 读取失败保留默认开启，管理员仍可重新保存开关。
+  }
+  finally {
+    settingLoading.value = false
+  }
+}
+
+async function changeAutoUpdate(value: boolean | string | number) {
+  const next = Boolean(value)
+  settingSaving.value = true
+  try {
+    const result = await updateAgentUpdateSetting(next)
+    autoUpdate.value = result.data?.auto_update ?? next
+    success(i18n.global.t('probe.autoUpdateSaved'))
+  }
+  catch {
+    // 失败时回滚开关；错误提示由全局响应拦截器负责。
+    autoUpdate.value = !next
+  }
+  finally {
+    settingSaving.value = false
+  }
+}
+
 onMounted(() => {
   void loadAgents()
+  void loadAutoUpdateSetting()
 })
 
 const upgradeAgentDialog = useCommandComponent(UpgradeAgentDialog)
@@ -112,6 +155,23 @@ function openUpgrade(row: AgentInfo) {
                 </el-radio-group>
             </div>
             <div class="am-probe-toolbar__right">
+                <el-tooltip
+                    v-if="isAdmin"
+                    placement="top"
+                    :disabled="deploymentEnabled"
+                    :content="$t('probe.autoUpdateDeploymentDisabled')"
+                >
+                    <div class="am-probe-toolbar__switch">
+                        <span class="am-probe-toolbar__switch-label">{{ $t('probe.autoUpdate') }}</span>
+                        <el-switch
+                            v-model="autoUpdate"
+                            size="small"
+                            :loading="settingLoading"
+                            :disabled="settingLoading || settingSaving || !deploymentEnabled"
+                            @change="changeAutoUpdate"
+                        />
+                    </div>
+                </el-tooltip>
                 <span class="am-probe-toolbar__summary">
                     {{ $t('probe.summary', { total: agents.length, online: onlineCount }) }}
                 </span>
@@ -196,6 +256,18 @@ function openUpgrade(row: AgentInfo) {
     display: flex;
     align-items: center;
     gap: var(--am-spacing-md);
+  }
+
+  &__switch {
+    display: flex;
+    align-items: center;
+    gap: var(--am-spacing-xs);
+  }
+
+  &__switch-label {
+    font-size: var(--am-font-xs);
+    color: var(--am-foreground-secondary);
+    white-space: nowrap;
   }
 
   &__search {

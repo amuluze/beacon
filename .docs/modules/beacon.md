@@ -136,6 +136,7 @@
 - Host HTTP API 不注册 DNS、系统时间、时区、主机重启或关机设置端点；主机监控查询、文件操作与 Docker 控制能力保持独立。
 - Agent `online/offline` 表示当前 Beacon 进程的反向控制隧道可达性：绑定新的 tunnel 管理器时先把上一进程遗留状态归零，列表响应再按实时连接注册表投影；`last_seen` 只由真实连接/心跳更新，HTTPS 监控上报新鲜度不伪装成控制通道在线。
 - Collia 注册携带 version/os/arch；Agent 持久化完成后异步进入 `Updater`。Updater 只把空版本或低版本更新到镜像注入的目标版本，按 `amd64/arm64` 选择与安装端点相同的文件并计算 SHA256；相同版本静默跳过，高版本、未知架构和显式非 Linux 目标拒绝更新。
+- Collia 自动更新由两级开关叠加：部署级门禁 `AgentUpdate.Enable` 加数据库开关 `s_agent_setting`（记录缺失视为开启，即默认开启）。管理员经 `GET/POST /api/v1/agent/update_setting` 读取/修改控制台开关，`Schedule` 在 Agent 注册时读取该值；`deployment_enabled=false` 时开关不生效，且手动 `POST /api/v1/agent/upgrade` 不受控制台开关影响。
 - Collia 自动更新使用单 Agent 执行集合、全局并发槽和失败冷却；管理员专属 `POST /api/v1/agent/upgrade` 可绕过冷却手动重试。开始审计写入失败时不执行 RPC，开始/成功/失败记录均使用 `system` 用户并携带 Agent ID；Agent 状态不复用为更新进度。
 - 用户删除 API 要求 1–32 个格式有效的明确 UUID；Service 会在持久化前确认全部目标存在，删除成功后同步移除对应 Casbin grouping policy，不存在目标返回 not found。
 - Server 启动在事务中维护 `cpu`、`memory`、`disk` 各一条活动阈值：旧 `mem` 按最早记录迁移并保留用户值，同类型重复记录软删除，缺失类型才创建默认值。阈值更新按 `id + canonical type` 定位且不允许修改类型，零值会真实写入，目标不存在返回 not found。

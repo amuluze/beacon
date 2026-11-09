@@ -69,6 +69,37 @@ func TestAgentUpgradeRouteIsAdminOnly(t *testing.T) {
 	}
 }
 
+func TestAgentUpdateSettingRouteIsAdminOnly(t *testing.T) {
+	app := fiber.New()
+	router := &Router{agentAPI: &agent.API{}}
+	router.registerAgentListRoute(app)
+
+	getFound, postFound := false, false
+	for _, route := range app.GetRoutes(true) {
+		if route.Path != "/agent/update_setting" {
+			continue
+		}
+		switch route.Method {
+		case fiber.MethodGet:
+			getFound = true
+			if route.Name != "查询 Agent 自动更新设置" {
+				t.Fatalf("GET route name = %q", route.Name)
+			}
+		case fiber.MethodPost:
+			postFound = true
+			if route.Name != "更新 Agent 自动更新设置" {
+				t.Fatalf("POST route name = %q", route.Name)
+			}
+		}
+	}
+	if !getFound || !postFound {
+		t.Fatalf("update_setting routes missing: get=%v post=%v", getFound, postFound)
+	}
+	if _, ok := adminOnlyResourcesMap["更新 Agent 自动更新设置"]; !ok {
+		t.Fatal("Agent auto-update setting route must be admin-only")
+	}
+}
+
 func TestHostRoutesExcludeRemovedSystemSettingsAPI(t *testing.T) {
 	app := fiber.New()
 	router := &Router{hostAPI: &hostAPI.HostAPI{}}

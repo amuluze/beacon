@@ -76,7 +76,7 @@ TLSEnable = true
 CertDir = "/etc/collia/certs"
 
 [AgentUpdate]
-Enable = true          # Agent 注册后自动比较并升级到镜像内置 Collia 版本
+Enable = true          # 部署级门禁：Agent 注册后自动比较并升级到镜像内置 Collia 版本；控制台「探针管理」开关可在此基础上关闭自动调度
 TargetVersion = ""     # 生产镜像通过 BEACON_COLLIA_VERSION 注入
 Timeout = 300          # 单次升级超时（秒）
 MaxConcurrent = 2      # Server 全局最大并发升级数

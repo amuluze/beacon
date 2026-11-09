@@ -380,7 +380,7 @@ export default {
         operateTime: 'Time',
     },
     probe: {
-        note: 'Lists installed probes (Collia Agents) with name, status and version. Upgrading is administrator-only.',
+        note: 'Lists installed probes (Collia Agents) with name, status and version. The auto-update switch and upgrading are administrator-only.',
         summary: '{total} probes in total, {online} online',
         refresh: 'Refresh',
         online: 'Online',
@@ -394,6 +394,9 @@ export default {
         filterAll: 'All',
         upgradable: 'Upgradable',
         latest: 'Latest',
+        autoUpdate: 'Auto update',
+        autoUpdateSaved: 'Auto-update setting saved',
+        autoUpdateDeploymentDisabled: 'Automatic agent updates are disabled by the deployment configuration',
     },
     system: {
         newVersion: 'Update available',

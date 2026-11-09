@@ -214,6 +214,8 @@ func (a *Router) registerAccountRoutes(v1 fiber.Router) {
 func (a *Router) registerAgentListRoute(v1 fiber.Router) {
 	g := v1.Group("agent")
 	g.Get("/list", a.agentAPI.List).Name("查询 Agent 列表")
+	g.Get("/update_setting", a.agentAPI.UpdateSetting).Name("查询 Agent 自动更新设置")
+	g.Post("/update_setting", a.agentAPI.SetUpdateSetting).Name("更新 Agent 自动更新设置")
 	g.Post("/upgrade", a.agentAPI.Upgrade).Name("升级 Collia")
 }
 
