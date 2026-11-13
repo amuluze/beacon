@@ -19,8 +19,16 @@ import (
 // 其余方法由嵌入的接口占位，被意外调用时会因 nil 接口而 panic，从而暴露越界调用。
 type stubContainerService struct {
 	service.IContainerService
-	deleteErr  error
-	listCalled bool
+	deleteErr   error
+	listCalled  bool
+	imageCalled bool
+	imageArgs   schema.ImageQueryArgs
+}
+
+func (s *stubContainerService) ImageList(_ context.Context, args schema.ImageQueryArgs) (schema.ImageQueryReply, error) {
+	s.imageCalled = true
+	s.imageArgs = args
+	return schema.ImageQueryReply{}, nil
 }
 
 func (s *stubContainerService) ContainerDelete(_ context.Context, _ schema.ContainerDeleteArgs) error {
@@ -128,6 +136,53 @@ func TestContainerListRejectsUnknownState(t *testing.T) {
 	}
 	if stub.listCalled {
 		t.Fatal("container list service must not be called for an unknown state")
+	}
+}
+
+// 下划线命名的 in_use 筛选必须在 ParseQuery 阶段绑定到 InUse：
+// 缺少 query 标签时字段名回退为 InUse，会与 in_use 失配，筛选被静默丢弃。
+func TestImageListBindsInUseQuery(t *testing.T) {
+	stub := &stubContainerService{}
+	app := fiber.New()
+	app.Get("/api/v1/container/images", NewContainerAPI(stub).ImageList)
+
+	resp, err := app.Test(httptest.NewRequest(fiber.MethodGet, "/api/v1/container/images?page=1&size=10&in_use=unused", nil))
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	if !stub.imageCalled {
+		t.Fatal("image list service must be called for a valid query")
+	}
+	if stub.imageArgs.InUse != "unused" {
+		t.Fatalf("InUse = %q, want %q", stub.imageArgs.InUse, "unused")
+	}
+	if stub.imageArgs.Name != "" {
+		t.Fatalf("Name = %q, want empty", stub.imageArgs.Name)
+	}
+}
+
+// in_use 绑定后，集合外取值必须由 handler 校验拒绝，且不进入 service。
+func TestImageListRejectsUnknownInUse(t *testing.T) {
+	stub := &stubContainerService{}
+	app := fiber.New()
+	app.Get("/api/v1/container/images", NewContainerAPI(stub).ImageList)
+
+	resp, err := app.Test(httptest.NewRequest(fiber.MethodGet, "/api/v1/container/images?page=1&size=10&in_use=bogus", nil))
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, http.StatusBadRequest)
+	}
+	if stub.imageCalled {
+		t.Fatal("image list service must not be called for an unknown in_use value")
 	}
 }
 
