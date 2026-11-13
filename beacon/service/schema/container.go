@@ -113,10 +113,13 @@ type Image struct {
 }
 
 type ImageQueryArgs struct {
-	Page  int    `json:"page" validate:"required,gte=1"`
-	Size  int    `json:"size" validate:"gt=0,lte=100"`
-	Name  string `json:"name,omitempty" validate:"omitempty,max=256"`
-	InUse string `json:"in_use,omitempty" validate:"omitempty,oneof=in_use unused"`
+	Page int    `json:"page" validate:"required,gte=1"`
+	Size int    `json:"size" validate:"gt=0,lte=100"`
+	Name string `json:"name,omitempty" validate:"omitempty,max=256"`
+	// InUse 是镜像的「使用中 / 未使用」筛选，取值 in_use | unused。
+	// query 标签不能省：ParseQuery 以 query 作为别名字段，缺省回退字段名 InUse，
+	// 与下划线形式 in_use 不相等，请求里的筛选会被静默丢弃。
+	InUse string `json:"in_use,omitempty" query:"in_use" validate:"omitempty,oneof=in_use unused"`
 }
 
 type ImageQueryReply struct {

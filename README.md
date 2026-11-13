@@ -103,6 +103,22 @@ bash -c "$(curl -fsSL https://beacon.amuluze.com/release/latest/manager.sh)" -- 
 
 生产模式只接受 HTTPS。请先准备将该 HTTPS 地址转发到 Beacon Web 端口的可信反向代理；安装脚本会引导配置 Web 端口、Agent 控制端口，并生成认证、数据加密和首次管理员凭据。`BEACON_DATA_ENCRYPTION_KEY` 会保存在权限为 `0600` 的 `.env` 中且必须永久保留。
 
+镜像同时发布在阿里云仓库与 Docker Hub（`registry.cn-hangzhou.aliyuncs.com/amuluze/beacon`、`docker.io/amuluze/beacon`）；安装器默认从阿里云拉取，主源不可达时自动回退 Docker Hub。
+
+### 离线安装（无外网服务器）
+
+```bash
+# 在可联网机器上下载离线包（按目标主机架构选择 amd64 / arm64）
+curl -fsSLO https://beacon.amuluze.com/release/offline/<version>/beacon-offline-<version>-amd64.tar.gz
+# 传输到目标主机后解包并安装（包内自带 manager.sh）
+tar -xzf beacon-offline-<version>-amd64.tar.gz
+sh beacon-offline-<version>-amd64/manager.sh install \
+  OFFLINE_PACKAGE=/data/beacon-offline-<version>-amd64 \
+  BEACON_PUBLIC_BASE_URL=https://beacon.example.com
+```
+
+安装器先校验包内 SHA-256 清单，再加载镜像并生成与在线安装同契约的 `.env`。
+
 ### 从源码启动
 
 环境要求：

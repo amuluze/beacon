@@ -106,6 +106,22 @@ bash -c "$(curl -fsSL https://beacon.amuluze.com/release/latest/manager.sh)" -- 
 
 Production mode accepts HTTPS only. First provide a trusted reverse proxy that forwards this HTTPS origin to Beacon's Web port. The installer then configures the ports and generates authentication, data-encryption, and bootstrap-administrator credentials. `BEACON_DATA_ENCRYPTION_KEY` is stored in the mode-`0600` `.env` file and must be retained permanently.
 
+Images are published to both the Aliyun registry and Docker Hub (`registry.cn-hangzhou.aliyuncs.com/amuluze/beacon`, `docker.io/amuluze/beacon`). The installer pulls from Aliyun by default and automatically falls back to Docker Hub when the primary source is unreachable.
+
+### Offline installation (air-gapped servers)
+
+```bash
+# On an internet-connected machine, download the offline package (amd64 / arm64 per target host)
+curl -fsSLO https://beacon.amuluze.com/release/offline/<version>/beacon-offline-<version>-amd64.tar.gz
+# Transfer to the target host, unpack and install (manager.sh is bundled in the package)
+tar -xzf beacon-offline-<version>-amd64.tar.gz
+sh beacon-offline-<version>-amd64/manager.sh install \
+  OFFLINE_PACKAGE=/data/beacon-offline-<version>-amd64 \
+  BEACON_PUBLIC_BASE_URL=https://beacon.example.com
+```
+
+The installer verifies the bundled SHA-256 manifest first, then loads the image and generates a `.env` under the same contract as online installation.
+
 ### Run from source
 
 Prerequisites:

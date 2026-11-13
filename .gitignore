@@ -43,3 +43,6 @@
 .dev-logs/
 .dev-control-certs/
 .dev-agent/
+
+# 离线安装包构建输出（发布后可整体清理）
+offline-dist/
