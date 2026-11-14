@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -26,6 +27,22 @@ type TimedTask struct {
 	ticker       timex.Ticker
 	stopCh       chan struct{}
 	reportClient *report.Client
+	dataPusher   DataPusher
+}
+
+// DataPusher pushes a monitoring batch over the tunnel data stream.
+// The tunnel data stream is the primary report channel; the HTTP client is
+// the compatibility fallback used while the stream is unavailable.
+type DataPusher interface {
+	// DataReady reports whether the data stream can accept payloads.
+	DataReady() bool
+	// PushData sends one payload to the Server over the data stream.
+	PushData(method string, payload []byte) error
+}
+
+// SetDataPusher wires the tunnel data stream as the primary report channel.
+func (a *TimedTask) SetDataPusher(pusher DataPusher) {
+	a.dataPusher = pusher
 }
 
 func NewTimedTask(conf *Config) *TimedTask {
@@ -102,14 +119,42 @@ func (a *TimedTask) Execute() {
 		slog.Error("report collection failed", "error", err)
 		return
 	}
-	if a.reportClient != nil && r != nil {
+	if (a.reportClient != nil || a.dataPusher != nil) && r != nil {
 		// Use the batch completion time so the timestamp reflects when all
 		// collected values became ready for transport, rather than when a
 		// potentially long Docker/host collection cycle started.
 		args := a.buildReportArgs(time.Now(), r)
-		if err := a.reportClient.Push(context.Background(), args); err != nil {
-			slog.Error("push report failed", "error", err)
+		a.pushReport(args)
+	}
+}
+
+// pushReport sends one monitoring batch. The tunnel data stream (same
+// connection as the control channel) is the primary channel; the deprecated
+// HTTP endpoint is the fallback while the stream is unavailable. Failures are
+// logged and dropped: batches are not queued locally, the next collection
+// cycle produces a fresh sample.
+func (a *TimedTask) pushReport(args rpcSchema.MonitorReportArgs) {
+	if a.dataPusher != nil && a.dataPusher.DataReady() {
+		payload, err := json.Marshal(args)
+		if err != nil {
+			slog.Error("marshal report failed", "error", err)
+		} else if err := a.dataPusher.PushData(rpcSchema.ReportMethod, payload); err != nil {
+			slog.Warn("tunnel report push failed, falling back to http", "agent", args.AgentID, "error", err)
+		} else {
+			slog.Info("report pushed over tunnel", "agent", args.AgentID,
+				"cpu", args.CPU.CPUPercent,
+				"mem", args.Memory.MemPercent,
+				"disks", len(args.Disks),
+				"containers", len(args.Containers),
+			)
+			return
 		}
+	}
+	if a.reportClient == nil {
+		return
+	}
+	if err := a.reportClient.Push(context.Background(), args); err != nil {
+		slog.Error("push report failed", "error", err)
 	}
 }
 

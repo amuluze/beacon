@@ -7,6 +7,8 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log/slog"
 	"sync"
 	"sync/atomic"
@@ -17,6 +19,10 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 )
+
+// ErrDataStreamNotReady is returned when a payload is pushed before the data
+// stream is established (or after it was lost).
+var ErrDataStreamNotReady = errors.New("tunnel data stream not ready")
 
 // Handler is the callback type for processing incoming RPC calls.
 // The handler receives JSON-encoded args and returns JSON-encoded reply.
@@ -35,14 +41,18 @@ type AgentTunnel struct {
 	conn       *grpc.ClientConn
 	client     ReverseTunnelClient
 	stream     grpc.BidiStreamingClient[Frame, Frame]
+	dataStream grpc.BidiStreamingClient[Frame, Frame]
 	tlsConfig  *tls.Config
 
 	mu          sync.Mutex
 	sendMu      sync.Mutex
+	dataSendMu  sync.Mutex
 	handler     Handler
 	closed      bool
 	reconnect   bool
 	heartbeatCh chan struct{}
+	dataReady   atomic.Bool
+	dataSeq     atomic.Uint64
 }
 
 // NewAgentTunnel creates a new Agent-side tunnel connection.
@@ -77,6 +87,85 @@ func (a *AgentTunnel) registrationPayload() RegistrationPayload {
 		Arch:      a.arch,
 		JoinToken: a.joinToken,
 	}
+}
+
+// dataRegistrationPayload builds the registration payload for the data stream.
+// The data stream shares the connection (and thus the client certificate
+// identity) with the control stream but is registered with the data role so
+// the Server does not register a second online session for this agent.
+func (a *AgentTunnel) dataRegistrationPayload() RegistrationPayload {
+	payload := a.registrationPayload()
+	payload.Role = RoleData
+	return payload
+}
+
+// DataReady reports whether the data stream is established and usable.
+func (a *AgentTunnel) DataReady() bool {
+	return a.dataReady.Load()
+}
+
+// PushData sends a payload to the Server over the data stream.
+// It returns an error when the data stream is not available or the send
+// failed; callers may fall back to another transport. Payloads are fire and
+// forget: no queueing is performed, so a disconnected stream drops the
+// payload instead of buffering it.
+func (a *AgentTunnel) PushData(method string, payload []byte) error {
+	if !a.dataReady.Load() {
+		return ErrDataStreamNotReady
+	}
+	a.dataSendMu.Lock()
+	defer a.dataSendMu.Unlock()
+	if a.dataStream == nil {
+		return ErrDataStreamNotReady
+	}
+	frame := &Frame{
+		Id:        fmt.Sprintf("d%d", a.dataSeq.Add(1)),
+		FrameType: FrameType_FRAME_STREAM_DATA,
+		Method:    method,
+		Payload:   payload,
+	}
+	if err := a.dataStream.Send(frame); err != nil {
+		a.dataReady.Store(false)
+		return fmt.Errorf("send data frame: %w", err)
+	}
+	return nil
+}
+
+// openDataStream opens the push-only stream on the already established
+// connection. The Server multiplexes both streams over the same HTTP/2
+// connection, so the node certificate identity is shared and control calls
+// are not blocked by monitoring payloads.
+func (a *AgentTunnel) openDataStream(ctx context.Context, client ReverseTunnelClient) error {
+	stream, err := client.Tunnel(ctx)
+	if err != nil {
+		return fmt.Errorf("create data stream: %w", err)
+	}
+	regPayload, _ := json.Marshal(a.dataRegistrationPayload())
+	regFrame := &Frame{
+		FrameType: FrameType_FRAME_REGISTER,
+		Method:    a.agentID,
+		Payload:   regPayload,
+	}
+	if err := stream.Send(regFrame); err != nil {
+		return fmt.Errorf("send data registration: %w", err)
+	}
+	a.dataStream = stream
+	a.dataReady.Store(true)
+
+	// Drain server acknowledgements so the server's writes never stall.
+	go func() {
+		for {
+			frame, err := stream.Recv()
+			if err != nil {
+				a.dataReady.Store(false)
+				return
+			}
+			if frame.FrameType == FrameType_FRAME_REPLY && frame.Error != "" {
+				slog.Error("agent tunnel: data payload rejected by server", "agent_id", a.agentID, "error", frame.Error)
+			}
+		}
+	}()
+	return nil
 }
 
 // SetTLSConfig configures optional TLS credentials for the gRPC client.
@@ -128,6 +217,7 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 		}
 		a.conn = conn
 		a.client = NewReverseTunnelClient(conn)
+		a.dataReady.Store(false)
 
 		stream, err := a.client.Tunnel(ctx)
 		if err != nil {
@@ -163,6 +253,13 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 			continue
 		}
 		slog.Info("agent tunnel: registered as", "agent_id", a.agentID)
+
+		// Open the push-only data stream on the same connection. Failures are
+		// not fatal: the agent keeps working and falls back to the legacy
+		// HTTP report channel until the data stream is available.
+		if err := a.openDataStream(ctx, a.client); err != nil {
+			slog.Warn("agent tunnel: data stream unavailable, falling back to http report", "agent_id", a.agentID, "err", err)
+		}
 
 		// Start heartbeat goroutine
 		heartbeatCtx, heartbeatCancel := context.WithCancel(ctx)
@@ -291,6 +388,7 @@ func (a *AgentTunnel) Close() error {
 	defer a.mu.Unlock()
 	a.reconnect = false
 	a.closed = true
+	a.dataReady.Store(false)
 	if a.conn != nil {
 		return a.conn.Close()
 	}

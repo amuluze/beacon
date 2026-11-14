@@ -34,6 +34,10 @@ func NewService(db *database.DB, token string) *Service {
 }
 
 // HandleReport is the HTTP POST handler for Agent monitoring data reports.
+//
+// Deprecated: monitoring batches are now pushed over the control connection's
+// data stream (17000). This endpoint stays for compatibility with Agents that
+// cannot open the data stream yet and will be removed in a later release.
 func (s *Service) HandleReport(c *fiber.Ctx) error {
 	if s.Token == "" {
 		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{"error": "report token not configured"})

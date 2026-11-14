@@ -19,6 +19,11 @@ type Injector struct {
 }
 
 func NewInjector(config *Config, task *TimedTask, rpcServer *Server, logx *logger.Logger) (*Injector, error) {
+	// The tunnel data stream is the primary monitoring report channel; the
+	// HTTP report endpoint stays as the compatibility fallback.
+	if rpcServer != nil {
+		task.SetDataPusher(rpcServer.DataPusher())
+	}
 	return &Injector{
 		Config:    config,
 		Task:      task,

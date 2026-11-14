@@ -81,6 +81,12 @@ func (s *Server) Start() error {
 	return s.tunnel.Start(context.Background())
 }
 
+// DataPusher exposes the tunnel data stream so the monitoring task can push
+// batches over the same connection as the control channel.
+func (s *Server) DataPusher() DataPusher {
+	return s.tunnel
+}
+
 func (s *Server) Stop() error {
 	return s.tunnel.Close()
 }

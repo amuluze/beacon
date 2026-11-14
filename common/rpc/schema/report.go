@@ -116,6 +116,10 @@ type NetworkReport struct {
 
 // ── Batch push args / reply (all at once for efficiency) ──
 
+// ReportMethod is the tunnel method name used by Agents to push monitoring
+// batches over the data stream.
+const ReportMethod = "MonitorReport"
+
 type MonitorReportArgs struct {
 	AgentID    string            `json:"agent_id" validate:"required,min=1,max=128" pattern:"^[a-zA-Z0-9._-]+$" description:"必填目标Agent标识，仅允许ASCII字母、数字、点、下划线和连字符，最多128字符"`
 	Host       HostReport        `json:"host"`
