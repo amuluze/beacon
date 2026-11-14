@@ -89,6 +89,34 @@ func TestInitAccountRejectsWeakBootstrapPassword(t *testing.T) {
 	}
 }
 
+func TestInitAccountRefusesRebootstrapWhenAdministratorMissing(t *testing.T) {
+	db := newPrepareTestDB(t)
+	prepare := &Prepare{db: db}
+	t.Setenv(bootstrapAdminPasswordEnv, "Bootstrap-Secure-9!")
+
+	if err := prepare.InitAccount(fiber.New()); err != nil {
+		t.Fatalf("first InitAccount() error = %v", err)
+	}
+
+	// 模拟既有实例的用户数据丢失：路由/角色/资源仍在，admin 行消失。
+	if err := db.Where("username = ?", "admin").Delete(&model.User{}).Error; err != nil {
+		t.Fatalf("delete administrator: %v", err)
+	}
+
+	err := prepare.InitAccount(fiber.New())
+	if !errors.Is(err, ErrAdministratorMissingFromInitializedInstance) {
+		t.Fatalf("InitAccount() error = %v, want ErrAdministratorMissingFromInitializedInstance", err)
+	}
+
+	var count int64
+	if err := db.Model(&model.User{}).Where("username = ?", "admin").Count(&count).Error; err != nil {
+		t.Fatalf("count administrator: %v", err)
+	}
+	if count != 0 {
+		t.Fatal("administrator must not be silently re-created on an initialized instance")
+	}
+}
+
 func TestInitAccountCreatesOnlyMandatoryChangeAdministrator(t *testing.T) {
 	db := newPrepareTestDB(t)
 	prepare := &Prepare{db: db}
