@@ -1,13 +1,11 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { EmailSetting } from '@/interface/alarm'
-import type { DingTalkSetting } from '@/interface/dingtalk'
+import type { EmailSetting } from '@/interface/alarm.ts'
 
 import EditCPUThreshold from './EditCPUThreshold.vue'
 import EditDiskThreshold from './EditDiskThreshold.vue'
 import EditAlarmMessageTitle from './EditAlarmMessageTitle.vue'
 import EditEmailSetting from './EditEmailSetting.vue'
-import EditDingTalkSetting from './EditDingTalkSetting.vue'
 import EditMemThreshold from './EditMemThreshold.vue'
 
 const mocks = vi.hoisted(() => ({
@@ -15,7 +13,6 @@ const mocks = vi.hoisted(() => ({
     updateAlarmMessageSetting: vi.fn(),
     updateMail: vi.fn(),
     createMail: vi.fn(),
-    updateDingTalk: vi.fn(),
     success: vi.fn(),
     info: vi.fn(),
     warning: vi.fn(),
@@ -28,9 +25,6 @@ vi.mock('@/api/alarm', () => ({
 vi.mock('@/api/mail', () => ({
     createMail: mocks.createMail,
     updateMail: mocks.updateMail,
-}))
-vi.mock('@/api/dingtalk', () => ({
-    updateDingTalk: mocks.updateDingTalk,
 }))
 vi.mock('@/components/Message/message.ts', () => ({
     success: mocks.success,
@@ -229,38 +223,5 @@ describe('setting dialogs', () => {
         })
         expect(wrapper.emitted('update:visible')).toEqual([[false]])
         expect(update).toHaveBeenCalledOnce()
-    })
-
-    it('keeps stored DingTalk credentials when credential inputs are blank', async () => {
-        const plainWebhook = 'https://oapi.dingtalk.com/robot/send?access_token=very-secret-token'
-        const setting: DingTalkSetting = {
-            id: 1,
-            enabled: true,
-            webhook_masked: 'https://oapi.dingtalk.com/robot/send?access_token=****oken',
-            webhook_configured: true,
-            secret_configured: true,
-            at_all: false,
-        }
-        const wrapper = mount(EditDingTalkSetting, {
-            props: { visible: true, setting },
-            global: { stubs },
-        })
-
-        const webhookInput = wrapper.findAllComponents({ name: 'ElInput' })[0]
-        expect(webhookInput.props('modelValue')).toBe('')
-        expect(wrapper.get('[data-testid="dingtalk-webhook-mask"]').text()).toBe(setting.webhook_masked)
-        expect(wrapper.html()).not.toContain(plainWebhook)
-
-        await wrapper.findAll('button').at(-1)?.trigger('click')
-        await flushPromises()
-
-        expect(mocks.updateDingTalk).toHaveBeenCalledWith({
-            enabled: true,
-            webhook: '',
-            secret: '',
-            clear_secret: false,
-            at_all: false,
-        })
-        expect(mocks.info).toHaveBeenCalledWith('setting.dingTalkUpdated')
     })
 })

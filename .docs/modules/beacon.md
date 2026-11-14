@@ -18,9 +18,9 @@
 
 - 模块路径：`beacon`
 - Go 版本：`1.25.0`
-- Go 源码文件：138（非测试 `.go`，不含 `web/`）
-- Go 测试文件：67
-- 包名：`account`, `agent`, `alarm`, `api`, `audit`, `auth`, `authcookie`, `client`, `container`, `contextx`, `dingtalk`, `errors`, `fiberx`, `hash`, `health`, `host`, `jwtauth`, `mail`, `main`, `middleware`, `model`, `report`, `repository`, `rpc`, `schema`, `secret`, `service`, `task`, `terminal`, `testutil`, `title`, `utils`, `uuid`, `validatex`, `web`
+- Go 源码文件：158（非测试 `.go`，不含 `web/`）
+- Go 测试文件：73
+- 包名：`account`, `agent`, `alarm`, `api`, `audit`, `auth`, `authcookie`, `client`, `container`, `contextx`, `dingtalk`, `errors`, `feishu`, `fiberx`, `hash`, `health`, `host`, `jwtauth`, `mail`, `main`, `middleware`, `model`, `report`, `repository`, `rpc`, `schema`, `secret`, `service`, `task`, `terminal`, `testutil`, `title`, `utils`, `uuid`, `validatex`, `wecom`, `web`
 - 推断角色：HTTP/API service module: Web/API 接入、路由注册、请求校验和服务协调
 
 ## 接口与符号信号
@@ -43,8 +43,12 @@
 - `interface IContainerService (beacon/service/container/service/container.go)`
 - `interface IDingTalkRepository (beacon/service/dingtalk/repository/dingtalk.go)`
 - `interface IDingTalkService (beacon/service/dingtalk/service/dingtalk.go)`
+- `interface IFeishuRepository (beacon/service/feishu/repository/feishu.go)`
+- `interface IFeishuService (beacon/service/feishu/service/feishu.go)`
 - `interface IHostRepo (beacon/service/host/repository/host.go)`
 - `interface IHostService (beacon/service/host/service/host.go)`
+- `interface IWeComRepository (beacon/service/wecom/repository/wecom.go)`
+- `interface IWeComService (beacon/service/wecom/service/wecom.go)`
 - 另有其他导出符号未展开；请用 `rg`、codegraph 或 IDE 按需查看完整清单。
 
 ## 依赖关系
@@ -110,9 +114,15 @@
 - 入口：`g.Get("/alarm_query", a.alarmAPI.AlarmQuery).Name("查询告警阈值")` at `beacon/service/router.go:297`
 - 入口：`g.Get("/message_setting", a.alarmAPI.AlarmMessageSettingQuery).Name("查询告警消息标题")` at `beacon/service/router.go:298`
 - 入口：`g.Post("/message_setting_update", a.alarmAPI.AlarmMessageSettingUpdate).Name("更新告警消息标题")` at `beacon/service/router.go:299`
-- 入口：`g.Get("/query", a.dingTalkAPI.Query).Name("查询钉钉告警配置")` at `beacon/service/router.go:289`
-- 入口：`g.Post("/update", a.dingTalkAPI.Update).Name("更新钉钉告警配置")` at `beacon/service/router.go:290`
-- 入口：`g.Post("/test", a.dingTalkAPI.Test).Name("测试钉钉告警")` at `beacon/service/router.go:291`
+- 入口：`g.Get("/query", a.dingTalkAPI.Query).Name("查询钉钉告警配置")` at `beacon/service/router.go:305`
+- 入口：`g.Post("/update", a.dingTalkAPI.Update).Name("更新钉钉告警配置")` at `beacon/service/router.go:306`
+- 入口：`g.Post("/test", a.dingTalkAPI.Test).Name("测试钉钉告警")` at `beacon/service/router.go:307`
+- 入口：`g.Get("/query", a.feishuAPI.Query).Name("查询飞书告警配置")` at `beacon/service/router.go:312`
+- 入口：`g.Post("/update", a.feishuAPI.Update).Name("更新飞书告警配置")` at `beacon/service/router.go:313`
+- 入口：`g.Post("/test", a.feishuAPI.Test).Name("测试飞书告警")` at `beacon/service/router.go:314`
+- 入口：`g.Get("/query", a.weComAPI.Query).Name("查询企业微信告警配置")` at `beacon/service/router.go:319`
+- 入口：`g.Post("/update", a.weComAPI.Update).Name("更新企业微信告警配置")` at `beacon/service/router.go:320`
+- 入口：`g.Post("/test", a.weComAPI.Test).Name("测试企业微信告警")` at `beacon/service/router.go:321`
 
 ## 数据模型与状态
 

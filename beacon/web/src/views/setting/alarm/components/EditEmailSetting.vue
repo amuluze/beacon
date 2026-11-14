@@ -103,6 +103,7 @@ async function submit() {
             </el-form-item>
             <el-form-item prop="receiver" :label="t('setting.mailReceiver')">
                 <el-input v-model="form.receiver" :placeholder="t('setting.receiverPlaceholder')" />
+                <p class="email-form__hint">{{ t('setting.mailReceiverHint') }}</p>
             </el-form-item>
         </el-form>
         <template #footer>
@@ -116,4 +117,10 @@ async function submit() {
     </el-dialog>
 </template>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.email-form__hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--am-foreground-muted);
+}
+</style>

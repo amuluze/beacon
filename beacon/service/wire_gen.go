@@ -11,9 +11,9 @@ import (
 	repository5 "beacon/service/account/repository"
 	service5 "beacon/service/account/service"
 	"beacon/service/agent"
-	api8 "beacon/service/alarm/api"
+	api10 "beacon/service/alarm/api"
 	repository7 "beacon/service/alarm/repository"
-	service8 "beacon/service/alarm/service"
+	service10 "beacon/service/alarm/service"
 	api4 "beacon/service/audit/api"
 	repository4 "beacon/service/audit/repository"
 	service4 "beacon/service/audit/service"
@@ -27,6 +27,10 @@ import (
 	"beacon/service/dingtalk/client"
 	repository8 "beacon/service/dingtalk/repository"
 	service7 "beacon/service/dingtalk/service"
+	api8 "beacon/service/feishu/api"
+	client2 "beacon/service/feishu/client"
+	repository9 "beacon/service/feishu/repository"
+	service8 "beacon/service/feishu/service"
 	"beacon/service/health/api"
 	api2 "beacon/service/host/api"
 	repository2 "beacon/service/host/repository"
@@ -35,8 +39,12 @@ import (
 	repository6 "beacon/service/mail/repository"
 	service6 "beacon/service/mail/service"
 	"beacon/service/model"
-	systemapi "beacon/service/system/api"
+	api11 "beacon/service/system/api"
 	"beacon/service/terminal"
+	api9 "beacon/service/wecom/api"
+	client3 "beacon/service/wecom/client"
+	repository10 "beacon/service/wecom/repository"
+	service9 "beacon/service/wecom/service"
 )
 
 // Injectors from wire.go:
@@ -110,10 +118,19 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	sender := client.NewSender()
 	dingTalkService := service7.NewDingTalkService(dingTalkRepository, alarmRepository, sender)
 	dingTalkAPI := api7.NewDingTalkAPI(dingTalkService)
-	alarmService := service8.NewAlarmService(alarmRepository)
-	alarmAPI := api8.NewAlarmAPI(alarmService)
+	feishuRepository := repository9.NewFeishuRepository(db, cipher)
+	clientSender := client2.NewSender()
+	feishuService := service8.NewFeishuService(feishuRepository, alarmRepository, clientSender)
+	feishuAPI := api8.NewFeishuAPI(feishuService)
+	weComRepository := repository10.NewWeComRepository(db, cipher)
+	sender2 := client3.NewSender()
+	weComService := service9.NewWeComService(weComRepository, alarmRepository, sender2)
+	weComAPI := api9.NewWeComAPI(weComService)
+	alarmService := service10.NewAlarmService(alarmRepository)
+	alarmAPI := api10.NewAlarmAPI(alarmService)
 	agentAPI := agent.NewAgentAPI(agentService)
-	systemAPI := systemapi.NewSystemAPI(ProvideSystemVersion())
+	v2 := ProvideSystemVersion()
+	systemAPI := api11.NewSystemAPI(v2)
 	reportService, err := NewReportService(config, db)
 	if err != nil {
 		cleanup3()
@@ -137,6 +154,8 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		accountAPI:      accountAPI,
 		mailAPI:         mailAPI,
 		dingTalkAPI:     dingTalkAPI,
+		feishuAPI:       feishuAPI,
+		wecomAPI:        weComAPI,
 		alarmAPI:        alarmAPI,
 		agentAPI:        agentAPI,
 		systemAPI:       systemAPI,
