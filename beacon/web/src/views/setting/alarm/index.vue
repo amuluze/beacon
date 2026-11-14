@@ -7,9 +7,9 @@ import { info, warning } from '@/components/Message/message.ts'
 
 import type { AlarmMessageSetting, AlarmThreshold, EmailSetting } from '@/interface/alarm.ts'
 import type { DingTalkSetting } from '@/interface/dingtalk'
-import type { FeishuSetting } from '@/interface/feishu'
+import type { FeishuSetting, FeishuUpdateArgs } from '@/interface/feishu'
 import type { MailTestArgs } from '@/interface/mail.ts'
-import type { WeComSetting } from '@/interface/wecom'
+import type { WeComSetting, WeComUpdateArgs } from '@/interface/wecom'
 
 import useCommandComponent from '@/hooks/useCommandComponent.ts'
 import EditEmailSetting from '@/views/setting/alarm/components/EditEmailSetting.vue'
