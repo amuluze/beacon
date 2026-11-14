@@ -66,6 +66,11 @@ const bootstrapAdminPasswordEnv = "BEACON_BOOTSTRAP_ADMIN_PASSWORD"
 var (
 	ErrBootstrapAdminPasswordRequired = errors.New("bootstrap administrator password is required")
 	ErrBootstrapAdminPasswordWeak     = errors.New("bootstrap administrator password does not satisfy password policy")
+	// ErrAdministratorMissingFromInitializedInstance 表示数据库保留了既有实例的
+	// 路由/角色数据但管理员账号缺失：这是数据损坏或数据目录被部分清空的信号，
+	// 必须显式失败让运维介入，禁止用 .env 的 bootstrap 密码静默重建管理员
+	// （否则强制改密流程会在意料之外的时刻再次出现，且数据丢失被掩盖）。
+	ErrAdministratorMissingFromInitializedInstance = errors.New("administrator account is missing from an already-initialized database")
 )
 
 // Historical public defaults are retained only as one-way hashes so existing
@@ -115,6 +120,25 @@ func (a *Prepare) Init(app *fiber.App) error {
 }
 
 func (a *Prepare) InitAccount(app *fiber.App) error {
+	// 数据目录完整性守卫（在路由资源同步之前取预状态）：resource/role 任一表
+	// 已有数据而 admin 账号缺失，说明这是已初始化实例发生了用户数据丢失，而不
+	// 是全新安装。全新安装时这些表由本次事务首填，预状态计数必然为 0。
+	var initializedResourceCount, initializedRoleCount int64
+	if err := a.db.Model(&model.Resource{}).Count(&initializedResourceCount).Error; err != nil {
+		return fmt.Errorf("count existing resources: %w", err)
+	}
+	if err := a.db.Model(&model.Role{}).Count(&initializedRoleCount).Error; err != nil {
+		return fmt.Errorf("count existing roles: %w", err)
+	}
+	var existingAdmin model.User
+	adminErr := a.db.Where("username = ?", "admin").First(&existingAdmin).Error
+	if adminErr != nil && !errors.Is(adminErr, gorm.ErrRecordNotFound) {
+		return fmt.Errorf("query administrator account: %w", adminErr)
+	}
+	if adminErr != nil && (initializedResourceCount > 0 || initializedRoleCount > 0) {
+		return fmt.Errorf("%w: data directory still holds routes/roles of an initialized instance; restore it from backup, or wipe it deliberately to re-run first-install bootstrap", ErrAdministratorMissingFromInitializedInstance)
+	}
+
 	var notAdminResources []*model.Resource
 	var adminResources []*model.Resource
 

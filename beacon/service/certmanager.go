@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 
@@ -110,10 +111,17 @@ func (m *CertManager) serverNames() (dnsNames, ipAddresses []string) {
 	if base := m.config.AgentInstall.PublicBaseURL; base != "" {
 		host := extractHost(base)
 		if host != "" && host != "127.0.0.1" {
-			dnsNames = append(dnsNames, host)
+			// IP 主机名必须写入 IPAddresses SAN：按 IP 访问的客户端（curl、
+			// openssl、浏览器）在 RFC 6125 校验中只匹配 IP 条目，DNS 条目里
+			// 的 IP 字符串不会被匹配（10.9.35.5 离线部署实测回归）。
+			if net.ParseIP(host) != nil {
+				ipAddresses = append(ipAddresses, host)
+			} else {
+				dnsNames = append(dnsNames, host)
+			}
 		}
 	}
-	return append(dnsNames, controlServerName()), []string{"127.0.0.1"}
+	return append(dnsNames, controlServerName()), append(ipAddresses, "127.0.0.1")
 }
 
 func controlServerName() string {

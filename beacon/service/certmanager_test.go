@@ -1,6 +1,8 @@
 package service
 
 import (
+	"crypto/x509"
+	"encoding/pem"
 	"os"
 	"path/filepath"
 	"testing"
@@ -22,6 +24,78 @@ func TestCertManagerEnsureControlCertsGeneratesMissing(t *testing.T) {
 		if _, err := os.Stat(filepath.Join(certDir, name)); err != nil {
 			t.Fatalf("missing %s: %v", name, err)
 		}
+	}
+}
+
+func TestCertManagerLeafCoversPublicBaseURLHostSAN(t *testing.T) {
+	cases := []struct {
+		name string
+		base string
+		ip   string // 期望出现的 IP SAN（空则断言不存在）
+		dns  string // 期望出现的 DNS SAN（空则断言不存在）
+	}{
+		{name: "ip-host-uses-ip-san", base: "https://10.9.35.5:1443", ip: "10.9.35.5", dns: "beacon/collia"},
+		{name: "domain-host-uses-dns-san", base: "https://beacon.example.com", dns: "beacon.example.com", ip: "127.0.0.1"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			certDir := t.TempDir()
+			cm := NewCertManager(&Config{
+				Control:      Control{TLS: ControlTLS{Enable: true, CertDir: certDir}},
+				AgentInstall: AgentInstall{PublicBaseURL: tc.base},
+			})
+
+			if err := cm.EnsureControlCerts(); err != nil {
+				t.Fatalf("EnsureControlCerts failed: %v", err)
+			}
+
+			raw, err := os.ReadFile(filepath.Join(certDir, transporttls.TLSCertFile))
+			if err != nil {
+				t.Fatalf("read server cert: %v", err)
+			}
+			block, _ := pem.Decode(raw)
+			if block == nil {
+				t.Fatal("server cert is not PEM")
+			}
+			cert, err := x509.ParseCertificate(block.Bytes)
+			if err != nil {
+				t.Fatalf("parse server cert: %v", err)
+			}
+
+			hasDNS := func(want string) bool {
+				for _, dns := range cert.DNSNames {
+					if dns == want {
+						return true
+					}
+				}
+				return false
+			}
+			hasIP := func(want string) bool {
+				for _, ip := range cert.IPAddresses {
+					if ip.String() == want {
+						return true
+					}
+				}
+				return false
+			}
+
+			if tc.ip != "" && !hasIP(tc.ip) {
+				t.Fatalf("missing IP SAN %s (dns=%v ip=%v)", tc.ip, cert.DNSNames, cert.IPAddresses)
+			}
+			if tc.ip != "" && hasDNS(tc.ip) {
+				t.Fatalf("IP host must not be emitted as DNS SAN (dns=%v)", cert.DNSNames)
+			}
+			if tc.dns != "" && !hasDNS(tc.dns) {
+				t.Fatalf("missing DNS SAN %s (dns=%v ip=%v)", tc.dns, cert.DNSNames, cert.IPAddresses)
+			}
+			if tc.ip == "" && !hasDNS("beacon/collia") {
+				t.Fatalf("missing control server name beacon/collia (dns=%v)", cert.DNSNames)
+			}
+			if !hasIP("127.0.0.1") {
+				t.Fatalf("missing loopback IP SAN (ip=%v)", cert.IPAddresses)
+			}
+		})
 	}
 }
 
