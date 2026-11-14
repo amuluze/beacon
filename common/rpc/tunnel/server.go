@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"strconv"
@@ -35,7 +36,26 @@ type RegistrationPayload struct {
 	OS        string `json:"os"`
 	Arch      string `json:"arch"`
 	JoinToken string `json:"join_token"`
+	// Role selects the stream role: "control" (default, legacy behaviour) or
+	// "data" (a push-only channel on the same connection used for monitoring
+	// batches). An empty value means control for backward compatibility.
+	Role string `json:"role,omitempty"`
 }
+
+// Stream roles carried in RegistrationPayload.Role.
+const (
+	// RoleControl is the default stream role: the Server dispatches RPC calls
+	// over it and the agent is registered in the online registry.
+	RoleControl = "control"
+	// RoleData is a push-only stream on the same connection. It is
+	// authenticated like a control stream but never registers the agent in
+	// the online registry.
+	RoleData = "data"
+)
+
+// DataHandler processes a payload pushed by an Agent over a data stream.
+// The handler returns an error to reject that payload; the stream stays open.
+type DataHandler func(ctx context.Context, agentID string, method string, payload []byte) error
 
 // AgentLifecycle is called when an agent connects or disconnects.
 type AgentLifecycle interface {
@@ -59,16 +79,17 @@ type pendingStream struct {
 // It accepts Agent connections and provides a Call interface for dispatching RPCs.
 type ServerTunnel struct {
 	UnimplementedReverseTunnelServer
-	grpcServer *grpc.Server
-	listener   net.Listener
-	agents     sync.Map // map[string]*agentStream
-	pending    sync.Map // map[string]*pendingCall   (call_id -> pendingCall)
-	streams    sync.Map // map[string]*pendingStream (stream_id -> pendingStream)
-	callID     atomic.Uint64
-	lifecycle       AgentLifecycle
-	joinToken       string
-	allowAnonymous  bool
-	tlsConfig       *tls.Config
+	grpcServer     *grpc.Server
+	listener       net.Listener
+	agents         sync.Map // map[string]*agentStream
+	pending        sync.Map // map[string]*pendingCall   (call_id -> pendingCall)
+	streams        sync.Map // map[string]*pendingStream (stream_id -> pendingStream)
+	callID         atomic.Uint64
+	lifecycle      AgentLifecycle
+	joinToken      string
+	allowAnonymous bool
+	tlsConfig      *tls.Config
+	dataHandler    DataHandler
 }
 
 type agentStream struct {
@@ -205,6 +226,15 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 		return err
 	}
 
+	// Data streams share the connection (and therefore the node certificate
+	// identity) with the control stream, but must not register the agent in
+	// the online registry: that would shadow the control session and emit
+	// spurious connect/disconnect lifecycle events.
+	if regPayload.Role == RoleData {
+		slog.Info("server tunnel: data stream registered", "agent_id", agentID)
+		return s.serveDataStream(stream, agentID)
+	}
+
 	as := &agentStream{
 		agentID: agentID,
 		send: func(f *Frame) error {
@@ -288,6 +318,57 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 			}
 		}
 	}
+}
+
+// serveDataStream consumes a data stream: the Agent pushes payloads and the
+// Server hands them to the data handler. The stream is authenticated by the
+// registration handshake (join token plus the connection-level client
+// certificate) and never touches the agent online registry.
+//
+// A rejected payload only drops that payload: the stream stays open and the
+// agent may continue pushing.
+func (s *ServerTunnel) serveDataStream(stream grpc.BidiStreamingServer[Frame, Frame], agentID string) error {
+	for {
+		frame, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			slog.Debug("server tunnel: data stream ended", "agent_id", agentID, "err", err)
+			return nil
+		}
+
+		switch frame.FrameType {
+		case FrameType_FRAME_STREAM_DATA:
+			if s.dataHandler == nil {
+				slog.Warn("server tunnel: data payload dropped (no handler)", "agent_id", agentID)
+				continue
+			}
+			if err := s.dataHandler(context.Background(), agentID, frame.Method, frame.Payload); err != nil {
+				slog.Error("server tunnel: data payload rejected", "agent_id", agentID, "method", frame.Method, "error", err)
+				_ = stream.Send(&Frame{
+					FrameType: FrameType_FRAME_REPLY,
+					Id:        frame.Id,
+					Error:     err.Error(),
+				})
+				continue
+			}
+			_ = stream.Send(&Frame{
+				FrameType: FrameType_FRAME_REPLY,
+				Id:        frame.Id,
+			})
+
+		case FrameType_FRAME_HEARTBEAT:
+			// Keep-alive on the data stream; liveness is tracked by the control stream.
+		default:
+			slog.Debug("server tunnel: unexpected frame on data stream", "agent_id", agentID, "frame_type", frame.FrameType)
+		}
+	}
+}
+
+// SetDataHandler registers the handler for payloads pushed over data streams.
+func (s *ServerTunnel) SetDataHandler(h DataHandler) {
+	s.dataHandler = h
 }
 
 func (s *ServerTunnel) validJoinToken(token string) bool {

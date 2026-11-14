@@ -19,7 +19,7 @@
 - 模块路径：`beacon`
 - Go 版本：`1.25.0`
 - Go 源码文件：138（非测试 `.go`，不含 `web/`）
-- Go 测试文件：66
+- Go 测试文件：67
 - 包名：`account`, `agent`, `alarm`, `api`, `audit`, `auth`, `authcookie`, `client`, `container`, `contextx`, `dingtalk`, `errors`, `fiberx`, `hash`, `health`, `host`, `jwtauth`, `mail`, `main`, `middleware`, `model`, `report`, `repository`, `rpc`, `schema`, `secret`, `service`, `task`, `terminal`, `testutil`, `title`, `utils`, `uuid`, `validatex`, `web`
 - 推断角色：HTTP/API service module: Web/API 接入、路由注册、请求校验和服务协调
 
