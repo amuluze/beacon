@@ -373,9 +373,11 @@ button {
   color: var(--am-accent-primary-hover);
 }
 
-/* §11.2 弹层底部按钮：Ghost 在左（surface-inset 底 + border-primary），Primary 在右。 */
-.el-dialog__footer .el-button:not(.el-button--primary),
-.el-drawer__footer .el-button:not(.el-button--primary) {
+/* §11.2 弹层底部按钮：Ghost 在左（surface-inset 底 + border-primary），Primary 在右。
+   type=danger 的破坏性确认键不参与 Ghost 改写：Ghost 只覆盖背景/描边而 danger 键
+   文字为白色，落到 surface-inset 底上会白字白底不可见（删除镜像弹窗实测暴露）。 */
+.el-dialog__footer .el-button:not(.el-button--primary):not(.el-button--danger),
+.el-drawer__footer .el-button:not(.el-button--primary):not(.el-button--danger) {
   background: var(--am-surface-inset);
   border-color: var(--am-border-primary);
 }

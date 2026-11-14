@@ -30,8 +30,10 @@ import (
 	authService "beacon/service/auth/service"
 	containerAPI "beacon/service/container/api"
 	dingTalkAPI "beacon/service/dingtalk/api"
+	feishuAPI "beacon/service/feishu/api"
 	hostAPI "beacon/service/host/api"
 	mailAPI "beacon/service/mail/api"
+	wecomAPI "beacon/service/wecom/api"
 )
 
 var RouterSet = wire.NewSet(wire.Struct(new(Router), "*"), wire.Bind(new(IRouter), new(*Router)))
@@ -57,6 +59,8 @@ type Router struct {
 	accountAPI   *accountAPI.AccountAPI
 	mailAPI      *mailAPI.MailAPI
 	dingTalkAPI  *dingTalkAPI.DingTalkAPI
+	feishuAPI    *feishuAPI.FeishuAPI
+	wecomAPI     *wecomAPI.WeComAPI
 	alarmAPI     *alarmAPI.AlarmAPI
 	agentAPI     *agent.API
 	systemAPI    *systemapi.SystemAPI
@@ -184,6 +188,8 @@ func (a *Router) registerAPIRoutes(api fiber.Router) {
 	a.registerAuditRoutes(v1)
 	a.registerMailRoutes(v1)
 	a.registerDingTalkRoutes(v1)
+	a.registerFeishuRoutes(v1)
+	a.registerWeComRoutes(v1)
 	a.registerAlarmRoutes(v1)
 }
 
@@ -299,6 +305,20 @@ func (a *Router) registerDingTalkRoutes(v1 fiber.Router) {
 	g.Get("/query", a.dingTalkAPI.Query).Name("查询钉钉告警配置")
 	g.Post("/update", a.dingTalkAPI.Update).Name("更新钉钉告警配置")
 	g.Post("/test", a.dingTalkAPI.Test).Name("测试钉钉告警")
+}
+
+func (a *Router) registerFeishuRoutes(v1 fiber.Router) {
+	g := v1.Group("feishu")
+	g.Get("/query", a.feishuAPI.Query).Name("查询飞书告警配置")
+	g.Post("/update", a.feishuAPI.Update).Name("更新飞书告警配置")
+	g.Post("/test", a.feishuAPI.Test).Name("测试飞书告警")
+}
+
+func (a *Router) registerWeComRoutes(v1 fiber.Router) {
+	g := v1.Group("wecom")
+	g.Get("/query", a.wecomAPI.Query).Name("查询企业微信告警配置")
+	g.Post("/update", a.wecomAPI.Update).Name("更新企业微信告警配置")
+	g.Post("/test", a.wecomAPI.Test).Name("测试企业微信告警")
 }
 
 func (a *Router) registerAlarmRoutes(v1 fiber.Router) {

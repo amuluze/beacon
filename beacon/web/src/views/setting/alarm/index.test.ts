@@ -7,6 +7,13 @@ const mocks = vi.hoisted(() => ({
     queryAlarmMessageSetting: vi.fn(),
     queryAlarmThreshold: vi.fn(),
     queryDingTalk: vi.fn(),
+    updateDingTalk: vi.fn(),
+    queryFeishu: vi.fn(),
+    updateFeishu: vi.fn(),
+    testFeishu: vi.fn(),
+    queryWeCom: vi.fn(),
+    updateWeCom: vi.fn(),
+    testWeCom: vi.fn(),
     queryMail: vi.fn(),
     testDingTalk: vi.fn(),
     testMail: vi.fn(),
@@ -18,7 +25,18 @@ vi.mock('@/api/alarm', () => ({
 }))
 vi.mock('@/api/dingtalk', () => ({
     queryDingTalk: mocks.queryDingTalk,
+    updateDingTalk: mocks.updateDingTalk,
     testDingTalk: mocks.testDingTalk,
+}))
+vi.mock('@/api/feishu', () => ({
+    queryFeishu: mocks.queryFeishu,
+    updateFeishu: mocks.updateFeishu,
+    testFeishu: mocks.testFeishu,
+}))
+vi.mock('@/api/wecom', () => ({
+    queryWeCom: mocks.queryWeCom,
+    updateWeCom: mocks.updateWeCom,
+    testWeCom: mocks.testWeCom,
 }))
 vi.mock('@/api/mail', () => ({
     queryMail: mocks.queryMail,
@@ -44,7 +62,8 @@ const stubs = {
     },
     'el-input': {
         props: ['modelValue'],
-        template: '<input :value="modelValue">',
+        emits: ['update:modelValue'],
+        template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">',
     },
     'el-tag': { template: '<span><slot /></span>' },
 }
@@ -76,6 +95,12 @@ describe('alarm settings DingTalk credential display', () => {
         })
         mocks.queryAlarmMessageSetting.mockResolvedValue({ data: { message_title: 'Beacon 主机告警' } })
         mocks.queryAlarmThreshold.mockResolvedValue({ data: { data: [] } })
+        mocks.queryFeishu.mockResolvedValue({
+            data: { id: 0, enabled: false, webhook_masked: '', webhook_configured: false, secret_configured: false },
+        })
+        mocks.queryWeCom.mockResolvedValue({
+            data: { id: 0, enabled: false, webhook_masked: '', webhook_configured: false, at_all: false },
+        })
     })
 
     it('renders only the masked Webhook and refreshes the mask after saving', async () => {
@@ -94,15 +119,57 @@ describe('alarm settings DingTalk credential display', () => {
         expect(mask.text()).toBe(firstMask)
         expect(wrapper.html()).not.toContain(firstPlainWebhook)
 
-        await wrapper.get('[data-testid="dingtalk-edit"]').trigger('click')
-        const editOptions = mocks.command.mock.calls.at(-1)?.[0]
-        expect(editOptions.setting).not.toHaveProperty('webhook')
-
-        await editOptions.onSaved()
+        // 内联表单：输入新 Webhook 并保存（留空即保留语义的对面路径），
+        // 保存成功后重新拉取配置刷新遮罩。
+        await wrapper.get('[data-testid="dingtalk-webhook-input"]').setValue(nextPlainWebhook)
+        await wrapper.get('[data-testid="dingtalk-save"]').trigger('click')
         await flushPromises()
 
+        expect(mocks.updateDingTalk).toHaveBeenCalledTimes(1)
+        expect(mocks.updateDingTalk).toHaveBeenCalledWith(expect.objectContaining({ webhook: nextPlainWebhook }))
         expect(mask.text()).toBe(nextMask)
         expect(wrapper.html()).not.toContain(nextPlainWebhook)
         expect(mocks.queryDingTalk).toHaveBeenCalledTimes(2)
+    })
+
+    it('switches to the Feishu channel and saves its inline form', async () => {
+        mocks.queryFeishu.mockResolvedValue({
+            data: { id: 1, enabled: false, webhook_masked: 'https://open.feishu.cn/open-apis/bot/v2/hook/****ook', webhook_configured: true, secret_configured: false },
+        })
+        const wrapper = mountAlarmSettings()
+        await flushPromises()
+
+        // 渠道单选切到飞书：钉钉表单卸载，飞书表单出现。
+        const radios = wrapper.findAll('input[type="radio"]')
+        await radios[1].setValue(true)
+        await flushPromises()
+        expect(wrapper.find('[data-testid="dingtalk-webhook-input"]').exists()).toBe(false)
+
+        const feishuInput = wrapper.get('[data-testid="feishu-webhook-input"]')
+        await feishuInput.setValue('https://open.feishu.cn/open-apis/bot/v2/hook/new-hook-id')
+        await wrapper.get('[data-testid="feishu-save"]').trigger('click')
+        await flushPromises()
+
+        expect(mocks.updateFeishu).toHaveBeenCalledTimes(1)
+        expect(mocks.updateFeishu).toHaveBeenCalledWith(expect.objectContaining({
+            enabled: false,
+            webhook: 'https://open.feishu.cn/open-apis/bot/v2/hook/new-hook-id',
+        }))
+    })
+
+    it('blocks enabling the WeCom channel without a webhook', async () => {
+        const wrapper = mountAlarmSettings()
+        await flushPromises()
+
+        const radios = wrapper.findAll('input[type="radio"]')
+        await radios[2].setValue(true)
+        await flushPromises()
+
+        // 未配置 Webhook 时启用开关 + 直接保存：前端拦截且不发起请求。
+        await wrapper.get('.el-switch').trigger('click')
+        await wrapper.get('[data-testid="wecom-save"]').trigger('click')
+        await flushPromises()
+
+        expect(mocks.updateWeCom).not.toHaveBeenCalled()
     })
 })

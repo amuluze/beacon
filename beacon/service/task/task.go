@@ -14,7 +14,9 @@ import (
 	"beacon/pkg/utils"
 	alarmtitle "beacon/service/alarm/title"
 	dingtalkclient "beacon/service/dingtalk/client"
+	feishuclient "beacon/service/feishu/client"
 	"beacon/service/model"
+	wecomclient "beacon/service/wecom/client"
 	"common/database"
 
 	"github.com/patrickmn/go-cache"
@@ -63,6 +65,8 @@ type Task struct {
 	cache          *cache.Cache
 	mailSender     MailSender
 	dingTalkSender dingtalkclient.Sender
+	feishuSender   feishuclient.Sender
+	weComSender    wecomclient.Sender
 	cipher         *secret.Cipher
 	alarmMu        sync.Mutex
 	now            func() time.Time
@@ -73,6 +77,8 @@ func NewTask(db *database.DB, ciphers ...*secret.Cipher) *Task {
 		db:             db,
 		cache:          cache.New(5*time.Minute, 10*time.Minute),
 		dingTalkSender: dingtalkclient.NewSender(),
+		feishuSender:   feishuclient.NewSender(),
+		weComSender:    wecomclient.NewSender(),
 		now:            time.Now,
 	}
 	if len(ciphers) > 0 {
@@ -90,6 +96,16 @@ func (t *Task) SetMailSender(s MailSender) {
 // SetDingTalkSender overrides the HTTP sender for focused notification tests.
 func (t *Task) SetDingTalkSender(sender dingtalkclient.Sender) {
 	t.dingTalkSender = sender
+}
+
+// SetFeishuSender overrides the HTTP sender for focused notification tests.
+func (t *Task) SetFeishuSender(sender feishuclient.Sender) {
+	t.feishuSender = sender
+}
+
+// SetWeComSender overrides the HTTP sender for focused notification tests.
+func (t *Task) SetWeComSender(sender wecomclient.Sender) {
+	t.weComSender = sender
 }
 
 func (t *Task) threshold(alarmType string) (model.AlarmThreshold, error) {
@@ -464,6 +480,12 @@ func (t *Task) notify(ctx context.Context, msg string) {
 	if err := t.sendDingTalk(ctx, title, msg); err != nil {
 		slog.Warn("send alarm notification failed", "channel", "dingtalk", "err", err)
 	}
+	if err := t.sendFeishu(ctx, title, msg); err != nil {
+		slog.Warn("send alarm notification failed", "channel", "feishu", "err", err)
+	}
+	if err := t.sendWeCom(ctx, title, msg); err != nil {
+		slog.Warn("send alarm notification failed", "channel", "wecom", "err", err)
+	}
 }
 
 func (t *Task) alarmMessageTitle(ctx context.Context) string {
@@ -542,6 +564,63 @@ func (t *Task) sendDingTalk(ctx context.Context, title string, msg string) error
 	return t.dingTalkSender.Send(ctx, dingtalkclient.Config{
 		Webhook:      setting.Webhook,
 		Secret:       setting.Secret,
+		AtAll:        setting.AtAll,
+		MessageTitle: title,
+	}, msg)
+}
+
+func (t *Task) sendFeishu(ctx context.Context, title string, msg string) error {
+	var setting model.Feishu
+	err := t.db.WithContext(ctx).
+		Where("key = ?", model.DefaultFeishuConfigKey).
+		First(&setting).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	webhook, err := t.decryptAndMigrate(ctx, &setting, "webhook", setting.Webhook)
+	if err != nil {
+		return err
+	}
+	secretValue, err := t.decryptAndMigrate(ctx, &setting, "secret", setting.Secret)
+	if err != nil {
+		return err
+	}
+	setting.Webhook = webhook
+	setting.Secret = secretValue
+	if !setting.Enabled || setting.Webhook == "" {
+		return nil
+	}
+	return t.feishuSender.Send(ctx, feishuclient.Config{
+		Webhook:      setting.Webhook,
+		Secret:       setting.Secret,
+		MessageTitle: title,
+	}, msg)
+}
+
+func (t *Task) sendWeCom(ctx context.Context, title string, msg string) error {
+	var setting model.WeCom
+	err := t.db.WithContext(ctx).
+		Where("key = ?", model.DefaultWeComConfigKey).
+		First(&setting).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	webhook, err := t.decryptAndMigrate(ctx, &setting, "webhook", setting.Webhook)
+	if err != nil {
+		return err
+	}
+	setting.Webhook = webhook
+	if !setting.Enabled || setting.Webhook == "" {
+		return nil
+	}
+	return t.weComSender.Send(ctx, wecomclient.Config{
+		Webhook:      setting.Webhook,
 		AtAll:        setting.AtAll,
 		MessageTitle: title,
 	}, msg)

@@ -610,6 +610,32 @@ function openRoleCreate() {
   font-size: var(--am-font-xs);
 }
 
+:deep(.settings-field) {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--am-spacing-sm);
+  min-width: 0;
+}
+
+:deep(.settings-field__hint) {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--am-foreground-muted);
+  font-size: var(--am-font-xs);
+}
+
+:deep(.settings-field__mask) {
+  overflow-wrap: anywhere;
+  color: inherit;
+  font-family: 'Geist Mono', 'SFMono-Regular', Consolas, monospace;
+}
+
+:deep(.settings-panel__channels) {
+  display: flex;
+  min-width: 0;
+}
+
 :deep(.settings-thresholds) {
   display: flex;
   flex-direction: column;

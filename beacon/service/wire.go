@@ -11,12 +11,14 @@ import (
 	"beacon/service/auth"
 	"beacon/service/container"
 	"beacon/service/dingtalk"
+	"beacon/service/feishu"
 	healthapi "beacon/service/health/api"
 	"beacon/service/host"
 	"beacon/service/mail"
 	"beacon/service/model"
 	systemapi "beacon/service/system/api"
 	"beacon/service/terminal"
+	"beacon/service/wecom"
 
 	"github.com/google/wire"
 )
@@ -46,6 +48,8 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		InitCasbin,
 		container.Set,
 		dingtalk.Set,
+		feishu.Set,
+		wecom.Set,
 		host.Set,
 		agent.Set,
 		model.Set,

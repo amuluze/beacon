@@ -24,6 +24,8 @@ func (a *Models) GetAllModels() []interface{} {
 		new(AlarmMessageSetting),
 		new(Mail),
 		new(DingTalk),
+		new(Feishu),
+		new(WeCom),
 		new(Agent),
 		new(AgentSetting),
 		new(MonitorHost),

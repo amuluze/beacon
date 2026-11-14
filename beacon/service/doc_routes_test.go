@@ -12,9 +12,11 @@ import (
 	authAPI "beacon/service/auth/api"
 	containerAPI "beacon/service/container/api"
 	dingTalkAPI "beacon/service/dingtalk/api"
+	feishuAPI "beacon/service/feishu/api"
 	healthAPI "beacon/service/health/api"
 	hostAPI "beacon/service/host/api"
 	mailAPI "beacon/service/mail/api"
+	wecomAPI "beacon/service/wecom/api"
 	"beacon/service/terminal"
 	"github.com/gofiber/fiber/v2"
 )
@@ -31,6 +33,7 @@ func TestDocumentationRoutes(t *testing.T) {
 		accountAPI: &accountAPI.AccountAPI{}, alarmAPI: &alarmAPI.AlarmAPI{},
 		auditAPI: &auditAPI.AuditAPI{}, authAPI: &authAPI.AuthAPI{},
 		containerAPI: &containerAPI.ContainerAPI{}, dingTalkAPI: &dingTalkAPI.DingTalkAPI{},
+		feishuAPI: &feishuAPI.FeishuAPI{}, wecomAPI: &wecomAPI.WeComAPI{},
 		hostAPI: &hostAPI.HostAPI{}, mailAPI: &mailAPI.MailAPI{},
 		healthProbe: &healthAPI.Probe{}, loggerHandler: NewLoggerHandler(nil),
 		terminalHandler: terminal.NewHandler(nil, nil),
