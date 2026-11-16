@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 260" role="img" aria-label="Beacon logo">
+  <defs>
+    <linearGradient id="l-tile" x1="96" y1="64" x2="928" y2="960" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#123231"/>
+      <stop offset="0.55" stop-color="#0b201f"/>
+      <stop offset="1" stop-color="#071413"/>
+    </linearGradient>
+    <linearGradient id="l-mark" x1="268" y1="248" x2="760" y2="760" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0FA09B"/>
+      <stop offset="1" stop-color="#8FDCD8"/>
+    </linearGradient>
+    <linearGradient id="l-sheen" x1="256" y1="160" x2="768" y2="640" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(24 26) scale(0.2)">
+    <rect x="112" y="112" width="800" height="800" rx="186" fill="url(#l-tile)"/>
+    <rect x="112" y="112" width="800" height="800" rx="186" fill="url(#l-sheen)"/>
+    <rect x="116" y="116" width="792" height="792" rx="182" fill="none" stroke="#2b4a48" stroke-width="8"/>
+    <path d="M576 300 A170 170 0 0 1 576 552" fill="none" stroke="url(#l-mark)" stroke-width="52" stroke-linecap="round"/>
+    <path d="M636 233 A260 260 0 0 1 636 619" fill="none" stroke="url(#l-mark)" stroke-width="40" stroke-linecap="round"/>
+    <circle cx="462" cy="426" r="42" fill="#F0FAF9"/>
+    <path d="M406 474 H518" fill="none" stroke="#F0FAF9" stroke-width="56" stroke-linecap="round"/>
+    <path d="M426 474 L386 740" fill="none" stroke="#F0FAF9" stroke-width="56" stroke-linecap="round"/>
+    <path d="M498 474 L538 740" fill="none" stroke="#F0FAF9" stroke-width="56" stroke-linecap="round"/>
+    <path d="M318 740 H606" fill="none" stroke="#F0FAF9" stroke-width="56" stroke-linecap="round"/>
+  </g>
+
+  <text x="266" y="170" font-family="Inter, -apple-system, 'SF Pro Display', 'PingFang SC', sans-serif"
+        font-size="112" font-weight="650" letter-spacing="-3.5" fill="#8b98a5">Beacon<tspan dx="20" fill="url(#l-mark)">Pro</tspan></text>
+</svg>

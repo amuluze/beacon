@@ -5,7 +5,6 @@
  */
 
 import request from '@/api'
-export { queryAgentList } from '@/api/agent'
 import type {
     CPUInfo,
     CPUTrending,
@@ -21,6 +20,8 @@ import type {
     NetTrendingArgs,
     NetUsageResult,
 } from '@/interface/host.ts'
+
+export { queryAgentList } from '@/api/agent'
 
 export async function queryHostInfo(params?: object) {
     return request.get<HostInfo>('/api/v1/host/host_info', params || {})

@@ -26,7 +26,9 @@ export default antfu(
         },
         vue: true,
         unocss: true,
-        ignores: ['**/fixtures'],
+        // src/types 下的 d.ts 全部为生成物（openapi-typescript / unplugin 自动导入与组件声明）；
+        // Markdown 仅限 AGENTS/CLAUDE 等协作入口文档，不属业务源码，均不参与 lint。
+        ignores: ['**/fixtures', 'src/types/**/*.d.ts', '**/*.md'],
     },
     {
         rules: {

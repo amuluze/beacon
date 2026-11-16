@@ -393,10 +393,6 @@ function openRoleCreate() {
   box-shadow: var(--am-shadow-subtle);
 }
 
-:deep(.settings-card--warning) {
-  border-left: 3px solid var(--am-accent-warning);
-}
-
 :deep(.settings-card__header) {
   min-width: 0;
   display: flex;
@@ -415,11 +411,6 @@ function openRoleCreate() {
   background: color-mix(in srgb, var(--am-accent-primary) 12%, transparent);
   border-radius: var(--am-radius-sm);
   font-size: 18px;
-}
-
-:deep(.settings-card__icon--warning) {
-  color: var(--am-accent-warning);
-  background: color-mix(in srgb, var(--am-accent-warning) 12%, transparent);
 }
 
 :deep(.settings-card__heading) {
@@ -496,13 +487,6 @@ function openRoleCreate() {
   gap: var(--am-spacing-sm);
 }
 
-:deep(.settings-panels) {
-  display: flex;
-  align-items: stretch;
-  gap: var(--am-spacing-lg);
-  min-width: 0;
-}
-
 :deep(.settings-panel) {
   flex: 1;
   min-width: 0;
@@ -530,53 +514,10 @@ function openRoleCreate() {
   letter-spacing: 0.04em;
 }
 
-:deep(.settings-panel__title) {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--am-foreground-primary);
-  font-size: var(--am-font-sm);
-  font-weight: 600;
-}
-
-:deep(.settings-panel__mark) {
-  width: 24px;
-  height: 24px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--am-accent-primary);
-  background: color-mix(in srgb, var(--am-accent-primary) 12%, transparent);
-  border-radius: var(--am-radius-sm);
-  font-size: 15px;
-}
-
 :deep(.settings-panel__footer) {
   display: flex;
   justify-content: flex-end;
   gap: var(--am-spacing-sm);
-}
-
-:deep(.settings-panel__cols) {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--am-spacing-lg);
-  min-width: 0;
-}
-
-:deep(.settings-panel__col) {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--am-spacing-sm);
-}
-
-:deep(.settings-row) {
-  display: flex;
-  align-items: center;
-  gap: var(--am-spacing-sm);
-  min-width: 0;
 }
 
 :deep(.settings-row__label) {
@@ -605,11 +546,6 @@ function openRoleCreate() {
   font-family: inherit;
 }
 
-:deep(.settings-row__hint) {
-  color: var(--am-foreground-muted);
-  font-size: var(--am-font-xs);
-}
-
 :deep(.settings-field) {
   display: flex;
   align-items: center;
@@ -629,11 +565,6 @@ function openRoleCreate() {
   overflow-wrap: anywhere;
   color: inherit;
   font-family: 'Geist Mono', 'SFMono-Regular', Consolas, monospace;
-}
-
-:deep(.settings-panel__channels) {
-  display: flex;
-  min-width: 0;
 }
 
 :deep(.settings-thresholds) {
@@ -690,7 +621,7 @@ function openRoleCreate() {
   font-size: var(--am-font-xs);
 }
 
-:deep(.settings-chip--sm.el-button > span) {
+:deep(.settings-chip.el-button > span) {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -714,11 +645,6 @@ function openRoleCreate() {
 
   .workspace__section-note {
     white-space: normal;
-  }
-
-  :deep(.settings-panels),
-  :deep(.settings-panel__cols) {
-    flex-direction: column;
   }
 }
 </style>
