@@ -145,6 +145,22 @@ describe('alarm settings DingTalk credential display', () => {
         expect(diskRow?.text()).toContain('setting.diskUsage 2 setting.over 80%')
     })
 
+    it('blocks the mail test when no receiver is entered', async () => {
+        mocks.queryMail.mockResolvedValue({
+            data: { id: 1, server: '', port: 465, sender: '', receiver: '' },
+        })
+        const wrapper = mountAlarmSettings()
+        await flushPromises()
+
+        const mailCard = wrapper.findAll('article.settings-card').find(card => card.text().includes('setting.mailServerSetting'))
+        const testButton = mailCard?.findAll('button').find(button => button.text() === 'setting.test')
+        await testButton?.trigger('click')
+        await flushPromises()
+
+        // 空收信人由前端拦截，不再把服务端的英文校验信息暴露给用户。
+        expect(mocks.testMail).not.toHaveBeenCalled()
+    })
+
     it('switches robot channel tabs and saves the Feishu form', async () => {
         mocks.queryFeishu.mockResolvedValue({
             data: { id: 1, enabled: false, webhook_masked: 'https://open.feishu.cn/open-apis/bot/v2/hook/****ook', webhook_configured: true, secret_configured: false },

@@ -60,8 +60,13 @@ interface RuleForm {
   status: string
 }
 
+const { t } = useI18n()
+
 const rules = reactive<FormRules<RuleForm>>({
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { pattern: /^[a-z0-9]+$/i, message: t('account.usernameAlphanum'), trigger: 'blur' },
+  ],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
   role_ids: [{ required: true, message: '请选择角色', trigger: 'blur' }],
 })
@@ -99,8 +104,6 @@ async function confirmUserUpdate(formEl: FormInstance | undefined) {
     }
   })
 }
-
-const { t } = useI18n()
 </script>
 
 <template>

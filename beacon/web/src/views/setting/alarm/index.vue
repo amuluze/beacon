@@ -364,8 +364,13 @@ watch(() => emailSetting.receiver, (receiver) => {
   lastSavedReceiver = receiver
 })
 async function mailTest() {
+  const receiver = testReceiver.value.trim()
+  if (!receiver) {
+    warning(t('setting.mailReceiverRequired'))
+    return
+  }
   const Params: MailTestArgs = {
-    receiver: testReceiver.value,
+    receiver,
   }
   try {
     await testMail(Params)

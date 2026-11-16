@@ -49,12 +49,14 @@ interface RuleForm {
   networkLabels: string
 }
 
-const rules = reactive<FormRules<RuleForm>>({
-  networkName: [{ required: true, message: 'Please input network name', trigger: 'blur' }],
-  networkMode: [{ required: true, message: 'Please select network mode', trigger: 'blur' }],
-  networkSubnet: [{ required: true, message: 'Please input network subnet', trigger: 'blur' }],
-  networkGateway: [{ required: true, message: 'Please input network gateway', trigger: 'blur' }],
-})
+const { t } = useI18n()
+
+const rules = computed<FormRules<RuleForm>>(() => ({
+  networkName: [{ required: true, message: t('network.networkNameRequired'), trigger: 'blur' }],
+  networkMode: [{ required: true, message: t('network.networkModeRequired'), trigger: 'blur' }],
+  networkSubnet: [{ required: true, message: t('network.networkSubnetRequired'), trigger: 'blur' }],
+  networkGateway: [{ required: true, message: t('network.networkGatewayRequired'), trigger: 'blur' }],
+}))
 
 const networkOptions = [
   {
@@ -105,8 +107,6 @@ async function confirmCreateNetwork(formEl: FormInstance | undefined) {
     }
   })
 }
-
-const { t } = useI18n()
 </script>
 
 <template>

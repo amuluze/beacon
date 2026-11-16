@@ -142,8 +142,11 @@ func UserAuthMiddleware(a auth.Auther, manager *authcookie.Manager, checker Pass
 
 		err = c.Next()
 		if err == nil {
-			if c.Method() == "POST" {
-				a.RecordAudit(c.UserContext(), username, c.Route().Name, contextx.AuditObject(c.UserContext()))
+			// 只记录成功的具名 POST：被权限拒绝的请求仍会以 nil error 返回，
+			// 但它们没有可读的操作名，写入会产生空 operate/object 审计行。
+			operate := c.Route().Name
+			if c.Method() == "POST" && operate != "" && c.Response().StatusCode() < fiber.StatusBadRequest {
+				a.RecordAudit(c.UserContext(), username, operate, contextx.AuditObject(c.UserContext()))
 			}
 			return nil
 		}

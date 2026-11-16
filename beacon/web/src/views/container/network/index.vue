@@ -88,6 +88,27 @@ async function removeSelected(ids: string[]) {
     await removeNetwork({ network_id: id })
 }
 
+// 网络列表取自 Agent 周期上报（默认 15s）：增删操作经隧道立即落到 Docker，
+// 但数据库快照要等下一次上报才更新。变更成功后先立即刷新，并在一个上报周期内
+// 补两次，避免列表长时间停留在旧快照、用户误以为操作未生效。
+const REPORT_REFRESH_DELAYS = [5_000, 16_000]
+let reportRefreshTimers: ReturnType<typeof setTimeout>[] = []
+
+function scheduleRefresh(delay: number) {
+  reportRefreshTimers.push(setTimeout(() => {
+    void search()
+  }, delay))
+}
+
+function refreshAfterAgentReport() {
+  void search()
+  reportRefreshTimers.forEach(timer => clearTimeout(timer))
+  reportRefreshTimers = []
+  REPORT_REFRESH_DELAYS.forEach(scheduleRefresh)
+}
+
+onUnmounted(() => reportRefreshTimers.forEach(timer => clearTimeout(timer)))
+
 const batchDelete = useConfirmCommand({
   title: 'network.batchDelete',
   message: 'network.confirmBatchDelete',
@@ -98,7 +119,7 @@ const batchDelete = useConfirmCommand({
     tableRef.value?.clearSelection()
   },
   onResolved: () => {
-    void search()
+    refreshAfterAgentReport()
   },
 })
 
@@ -118,7 +139,7 @@ const { t } = useI18n()
     <div class="am-container">
         <div class="am-table-operator">
             <div class="am-table-operator__left">
-                <el-button type="primary" size="small" :disabled="!selectedAgentID" @click="addNetwork({ title: 'network.newNetwork', update: search })">
+                <el-button type="primary" size="small" :disabled="!selectedAgentID" @click="addNetwork({ title: 'network.newNetwork', update: refreshAfterAgentReport })">
                     <svg-icon icon-class="add" />
                     {{ t('network.newNetwork') }}
                 </el-button>
@@ -169,7 +190,7 @@ const { t } = useI18n()
                         <span v-if="isProtectedNetwork(scope.row.name)" class="am-row-note">
                             {{ t('container.builtinNetwork') }}
                         </span>
-                        <el-button v-else type="danger" size="small" text :disabled="!selectedAgentID" @click="deleteNetwork({ title: 'network.deleteNetwork', id: scope.row.id, update: search })">
+                        <el-button v-else type="danger" size="small" text :disabled="!selectedAgentID" @click="deleteNetwork({ title: 'network.deleteNetwork', id: scope.row.id, update: refreshAfterAgentReport })">
                             <svg-icon icon-class="delete" />
                             {{ t('network.delete') }}
                         </el-button>

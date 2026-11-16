@@ -111,3 +111,48 @@ func TestAuditCountUsesSameFiltersAsQuery(t *testing.T) {
 		t.Fatalf("filtered total = %d, want 2", total)
 	}
 }
+
+// 控制台审计页需要一条同时包含系统与操作员记录的合并时间线：
+// 空 type 返回全部，operator 只返回操作员，system 语义保持既有行为。
+func TestAuditQueryEmptyTypeReturnsBothSources(t *testing.T) {
+	db := newAuditTestDB(t)
+	if err := db.Create(&[]model.Audit{
+		{Username: "system", Operate: "Collia upgrade started"},
+		{Username: "system", Operate: "Collia upgrade succeeded"},
+		{Username: "admin", Operate: "创建网络"},
+		{Username: "admin", Operate: "删除镜像"},
+	}).Error; err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	repo := NewAuditRepo(db)
+	all, err := repo.AuditQuery(t.Context(), schema.AuditQueryArgs{Page: 1, Size: 20})
+	if err != nil {
+		t.Fatalf("query all: %v", err)
+	}
+	if len(all) != 4 {
+		t.Fatalf("empty type count = %d, want 4", len(all))
+	}
+	total, err := repo.AuditCount(t.Context(), schema.AuditQueryArgs{Page: 1, Size: 20})
+	if err != nil {
+		t.Fatalf("count all: %v", err)
+	}
+	if total != 4 {
+		t.Fatalf("empty type total = %d, want 4", total)
+	}
+
+	operators, err := repo.AuditQuery(t.Context(), schema.AuditQueryArgs{Type: "operator", Page: 1, Size: 20})
+	if err != nil {
+		t.Fatalf("query operator: %v", err)
+	}
+	if len(operators) != 2 {
+		t.Fatalf("operator count = %d, want 2", len(operators))
+	}
+	system, err := repo.AuditQuery(t.Context(), schema.AuditQueryArgs{Type: "system", Page: 1, Size: 20})
+	if err != nil {
+		t.Fatalf("query system: %v", err)
+	}
+	if len(system) != 2 {
+		t.Fatalf("system count = %d, want 2", len(system))
+	}
+}
