@@ -44,6 +44,7 @@ vi.mock('@/api/mail', () => ({
 }))
 vi.mock('@/components/Message/message.ts', () => ({
     info: vi.fn(),
+    warning: vi.fn(),
 }))
 vi.mock('@/hooks/useCommandComponent.ts', () => ({
     default: () => mocks.command,
@@ -95,6 +96,9 @@ describe('alarm settings DingTalk credential display', () => {
         })
         mocks.queryAlarmMessageSetting.mockResolvedValue({ data: { message_title: 'Beacon 主机告警' } })
         mocks.queryAlarmThreshold.mockResolvedValue({ data: { data: [] } })
+        mocks.queryDingTalk.mockResolvedValue({
+            data: { id: 0, enabled: false, webhook_masked: '', webhook_configured: false, secret_configured: false, at_all: false },
+        })
         mocks.queryFeishu.mockResolvedValue({
             data: { id: 0, enabled: false, webhook_masked: '', webhook_configured: false, secret_configured: false },
         })
@@ -132,25 +136,27 @@ describe('alarm settings DingTalk credential display', () => {
         expect(mocks.queryDingTalk).toHaveBeenCalledTimes(2)
     })
 
-    it('switches to the Feishu channel and saves its inline form', async () => {
+    it('renders the three channel forms independently and saves the Feishu form', async () => {
         mocks.queryFeishu.mockResolvedValue({
             data: { id: 1, enabled: false, webhook_masked: 'https://open.feishu.cn/open-apis/bot/v2/hook/****ook', webhook_configured: true, secret_configured: false },
         })
         const wrapper = mountAlarmSettings()
         await flushPromises()
 
-        // 渠道单选切到飞书：钉钉表单卸载，飞书表单出现。
-        const radios = wrapper.findAll('input[type="radio"]')
-        await radios[1].setValue(true)
-        await flushPromises()
-        expect(wrapper.find('[data-testid="dingtalk-webhook-input"]').exists()).toBe(false)
+        // 三个渠道面板同时挂载，各自表单独立存在、互不干扰。
+        expect(wrapper.find('[data-testid="dingtalk-webhook-input"]').exists()).toBe(true)
+        expect(wrapper.find('[data-testid="feishu-webhook-input"]').exists()).toBe(true)
+        expect(wrapper.find('[data-testid="wecom-webhook-input"]').exists()).toBe(true)
 
+        // 只保存飞书表单：不触发钉钉/企业微信的保存请求。
         const feishuInput = wrapper.get('[data-testid="feishu-webhook-input"]')
         await feishuInput.setValue('https://open.feishu.cn/open-apis/bot/v2/hook/new-hook-id')
         await wrapper.get('[data-testid="feishu-save"]').trigger('click')
         await flushPromises()
 
         expect(mocks.updateFeishu).toHaveBeenCalledTimes(1)
+        expect(mocks.updateDingTalk).not.toHaveBeenCalled()
+        expect(mocks.updateWeCom).not.toHaveBeenCalled()
         expect(mocks.updateFeishu).toHaveBeenCalledWith(expect.objectContaining({
             enabled: false,
             webhook: 'https://open.feishu.cn/open-apis/bot/v2/hook/new-hook-id',
@@ -161,12 +167,8 @@ describe('alarm settings DingTalk credential display', () => {
         const wrapper = mountAlarmSettings()
         await flushPromises()
 
-        const radios = wrapper.findAll('input[type="radio"]')
-        await radios[2].setValue(true)
-        await flushPromises()
-
         // 未配置 Webhook 时启用开关 + 直接保存：前端拦截且不发起请求。
-        await wrapper.get('.el-switch').trigger('click')
+        await wrapper.get('[data-testid="wecom-enabled"]').trigger('click')
         await wrapper.get('[data-testid="wecom-save"]').trigger('click')
         await flushPromises()
 

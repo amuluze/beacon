@@ -10,7 +10,7 @@ const stubStore = {
 }
 
 const routerReplace = vi.fn()
-const routeState = vi.hoisted(() => ({ query: {} as Record<string, string> }))
+const routeState = vi.hoisted(() => ({ query: {} }))
 
 vi.mock('@/store', () => ({
     default: () => stubStore,

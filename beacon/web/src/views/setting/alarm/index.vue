@@ -51,10 +51,9 @@ const dingTalkSetting = reactive<DingTalkSetting>({
 })
 const dingTalkTesting = shallowRef(false)
 
-// 群机器人卡片内联表单（参考通知管理形态）：webhook/secret 保持「留空即保留」
-// 的服务端语义，已配置时以遮罩提示展示当前凭据。飞书/企业微信渠道服务端尚未
-// 支持，先以禁用态呈现。
-const dingTalkChannel = ref('dingtalk')
+// 群机器人卡片按钉钉/飞书/企业微信三个独立面板并列展示：webhook/secret 保持
+// 「留空即保留」的服务端语义，已配置时以遮罩提示展示当前凭据；三个渠道各自
+// 持有独立表单、启用状态与测试结果，互不干扰。
 const dingTalkForm = reactive({
   enabled: false,
   webhook: '',
@@ -120,6 +119,7 @@ const feishuForm = reactive<FeishuUpdateArgs>({
 })
 const feishuSaving = shallowRef(false)
 const feishuTestedAt = shallowRef('')
+const feishuTesting = shallowRef(false)
 
 watch(() => ({
   enabled: feishuSetting.enabled,
@@ -179,7 +179,6 @@ async function feishuTest() {
     feishuTesting.value = false
   }
 }
-const feishuTesting = shallowRef(false)
 
 const weComSetting = reactive<WeComSetting>({
   id: 0,
@@ -288,9 +287,15 @@ const DiskThreshold = ref<AlarmThreshold>({
 })
 
 const mailConfigured = computed(() => Boolean(emailSetting.server && emailSetting.sender))
-const dingTalkBadge = computed(() => (dingTalkSetting.enabled
-  ? { text: t('setting.enabled'), tone: 'success' }
-  : { text: t('setting.disabled'), tone: 'muted' }))
+// 徽标展示服务端已保存的启用状态；面板内的开关是尚未保存的本地编辑值。
+function channelBadge(enabled: boolean) {
+  return enabled
+    ? { text: t('setting.enabled'), tone: 'success' }
+    : { text: t('setting.disabled'), tone: 'muted' }
+}
+const dingTalkBadge = computed(() => channelBadge(dingTalkSetting.enabled))
+const feishuBadge = computed(() => channelBadge(feishuSetting.enabled))
+const weComBadge = computed(() => channelBadge(weComSetting.enabled))
 
 const cpuThresholdText = computed(() => (locale.value === 'zh'
   ? `${t('setting.cpuUsage')} ${CPUThreshold.value.duration} ${t('setting.over')} ${CPUThreshold.value.threshold}%`
@@ -412,9 +417,9 @@ const editDiskThreshold = useCommandComponent(EditDiskThreshold)
 
 <template>
     <div class="settings-grid">
-        <article class="settings-card settings-card--warning">
+        <article class="settings-card">
             <header class="settings-card__header">
-                <span class="settings-card__icon settings-card__icon--warning"><IconGauge /></span>
+                <span class="settings-card__icon"><IconGauge /></span>
                 <div class="settings-card__heading">
                     <h3 class="settings-card__title">
                         {{ t('setting.alarmThresholdSetting') }}
@@ -479,70 +484,56 @@ const editDiskThreshold = useCommandComponent(EditDiskThreshold)
                 >
                     {{ mailConfigured ? t('setting.enabled') : t('setting.notConfigured') }}
                 </span>
+                <el-button
+                    class="settings-chip"
+                    :aria-label="t('setting.edit')"
+                    :title="t('setting.edit')"
+                    @click="editEmailSetting({ title: 'setting.mailServerSetting', setting: emailSetting, onSaved: applyEmailSetting })"
+                >
+                    <IconPencil />{{ t('setting.edit') }}
+                </el-button>
             </header>
 
-            <div class="settings-panels">
-                <section class="settings-panel">
-                    <header class="settings-panel__header">
-                        <span class="settings-panel__label">{{ t('setting.mailSenderPanel') }}</span>
-                        <el-button
-                            class="settings-chip settings-chip--sm"
-                            :aria-label="t('setting.edit')"
-                            :title="t('setting.edit')"
-                            @click="editEmailSetting({ title: 'setting.mailServerSetting', setting: emailSetting, onSaved: applyEmailSetting })"
-                        >
-                            <IconPencil />{{ t('setting.edit') }}
-                        </el-button>
-                    </header>
-                    <div class="settings-row">
-                        <span class="settings-row__label">{{ t('setting.mailServerHost') }}</span>
-                        <span class="settings-row__value">{{ emailSetting.server || '—' }}</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-row__label">{{ t('setting.mailServerPort') }}</span>
-                        <span class="settings-row__value">{{ emailSetting.port }}</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-row__label">{{ t('setting.mailServerAccount') }}</span>
-                        <span class="settings-row__value">{{ emailSetting.sender || '—' }}</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-row__label">{{ t('setting.mailServerPassword') }}</span>
-                        <span class="settings-row__value settings-row__value--text">•••••••••••• {{ t('setting.saved') }}</span>
-                    </div>
-                </section>
-
-                <section class="settings-panel">
-                    <header class="settings-panel__header">
-                        <span class="settings-panel__label">{{ t('setting.mailVerifyPanel') }}</span>
-                    </header>
-                    <div class="settings-row">
-                        <span class="settings-row__label">{{ t('setting.mailReceiver') }}</span>
-                        <span class="settings-row__value">{{ emailSetting.receiver || '—' }}</span>
-                    </div>
-                    <p class="settings-row__hint">
-                        {{ t('setting.mailReceiverHint') }}
-                    </p>
-                    <div class="settings-row">
-                        <span class="settings-row__label">{{ t('setting.testSend') }}</span>
-                        <el-input
-                            v-model="testReceiver"
-                            class="settings-row__input"
-                            :placeholder="t('setting.receiverPlaceholder')"
-                        />
-                        <el-button class="settings-chip settings-chip--sm" @click="mailTest">
-                            {{ t('setting.test') }}
-                        </el-button>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-row__label">{{ t('setting.lastTest') }}</span>
-                        <span
-                            v-if="mailTestedAt"
-                            class="settings-row__value settings-row__value--ok"
-                        >{{ mailTestedAt }} · {{ t('setting.testSuccess') }}</span>
-                        <span v-else class="settings-row__value settings-row__value--text">{{ t('setting.notTested') }}</span>
-                    </div>
-                </section>
+            <div class="settings-thresholds">
+                <div class="settings-threshold">
+                    <span class="settings-threshold__label">{{ t('setting.mailServerHost') }}</span>
+                    <span class="settings-threshold__value">{{ emailSetting.server || '—' }}</span>
+                </div>
+                <div class="settings-threshold">
+                    <span class="settings-threshold__label">{{ t('setting.mailServerPort') }}</span>
+                    <span class="settings-threshold__value">{{ emailSetting.port }}</span>
+                </div>
+                <div class="settings-threshold">
+                    <span class="settings-threshold__label">{{ t('setting.mailServerAccount') }}</span>
+                    <span class="settings-threshold__value">{{ emailSetting.sender || '—' }}</span>
+                </div>
+                <div class="settings-threshold">
+                    <span class="settings-threshold__label">{{ t('setting.mailServerPassword') }}</span>
+                    <span class="settings-threshold__value">•••••••••••• {{ t('setting.saved') }}</span>
+                </div>
+                <div class="settings-threshold">
+                    <span class="settings-threshold__label">{{ t('setting.mailReceiver') }}</span>
+                    <span class="settings-threshold__value">{{ emailSetting.receiver || '—' }}</span>
+                </div>
+                <div class="settings-threshold">
+                    <span class="settings-threshold__label">{{ t('setting.testSend') }}</span>
+                    <el-input
+                        v-model="testReceiver"
+                        class="settings-row__input"
+                        :placeholder="t('setting.receiverPlaceholder')"
+                    />
+                    <el-button class="settings-chip settings-chip--sm" @click="mailTest">
+                        {{ t('setting.test') }}
+                    </el-button>
+                </div>
+                <div class="settings-threshold">
+                    <span class="settings-threshold__label">{{ t('setting.lastTest') }}</span>
+                    <span
+                        v-if="mailTestedAt"
+                        class="settings-threshold__value settings-row__value--ok"
+                    >{{ mailTestedAt }} · {{ t('setting.testSuccess') }}</span>
+                    <span v-else class="settings-threshold__value">{{ t('setting.notTested') }}</span>
+                </div>
             </div>
 
             <p class="settings-card__hint">
@@ -561,25 +552,18 @@ const editDiskThreshold = useCommandComponent(EditDiskThreshold)
                         {{ t('setting.dingTalkGroupSettingTips') }}
                     </p>
                 </div>
-                <span class="settings-card__badge" :class="`settings-card__badge--${dingTalkBadge.tone}`">
-                    {{ dingTalkBadge.text }}
-                </span>
             </header>
 
-            <section v-if="dingTalkChannel === 'dingtalk'" class="settings-panel">
+            <section class="settings-panel">
                 <header class="settings-panel__header">
                     <span class="settings-panel__label">{{ t('setting.dingTalkRobot') }}</span>
+                    <span class="settings-card__badge" :class="`settings-card__badge--${dingTalkBadge.tone}`">
+                        {{ dingTalkBadge.text }}
+                    </span>
                 </header>
-                <div class="settings-field" role="radiogroup" :aria-label="t('setting.dingTalkRobot')">
-                    <el-radio-group v-model="dingTalkChannel">
-                        <el-radio value="dingtalk">{{ t('setting.channelDingTalk') }}</el-radio>
-                        <el-radio value="feishu">{{ t('setting.channelFeishu') }}</el-radio>
-                        <el-radio value="wecom">{{ t('setting.channelWeCom') }}</el-radio>
-                    </el-radio-group>
-                </div>
                 <div class="settings-field">
                     <span class="settings-row__label">{{ t('setting.dingTalkEnabled') }}</span>
-                    <el-switch v-model="dingTalkForm.enabled" />
+                    <el-switch v-model="dingTalkForm.enabled" data-testid="dingtalk-enabled" />
                 </div>
                 <div class="settings-field">
                     <span class="settings-row__label">{{ t('setting.dingTalkWebhook') }}</span>
@@ -640,19 +624,22 @@ const editDiskThreshold = useCommandComponent(EditDiskThreshold)
                     <span class="settings-row__label">{{ t('setting.lastTest') }}</span>
                     <span
                         v-if="dingTalkTestedAt"
-                        class="settings-row__value settings-row__value--ok"
+                        class="settings-row__value--ok settings-row__value"
                     >{{ dingTalkTestedAt }} · {{ t('setting.testSuccess') }}</span>
                     <span v-else class="settings-row__value settings-row__value--text">{{ t('setting.notTested') }}</span>
                 </div>
             </section>
 
-            <section v-if="dingTalkChannel === 'feishu'" class="settings-panel">
+            <section class="settings-panel">
                 <header class="settings-panel__header">
                     <span class="settings-panel__label">{{ t('setting.feishuRobot') }}</span>
+                    <span class="settings-card__badge" :class="`settings-card__badge--${feishuBadge.tone}`">
+                        {{ feishuBadge.text }}
+                    </span>
                 </header>
                 <div class="settings-field">
                     <span class="settings-row__label">{{ t('setting.feishuEnabled') }}</span>
-                    <el-switch v-model="feishuForm.enabled" />
+                    <el-switch v-model="feishuForm.enabled" data-testid="feishu-enabled" />
                 </div>
                 <div class="settings-field">
                     <span class="settings-row__label">{{ t('setting.feishuWebhook') }}</span>
@@ -707,19 +694,22 @@ const editDiskThreshold = useCommandComponent(EditDiskThreshold)
                     <span class="settings-row__label">{{ t('setting.lastTest') }}</span>
                     <span
                         v-if="feishuTestedAt"
-                        class="settings-row__value settings-row__value--ok"
+                        class="settings-row__value--ok settings-row__value"
                     >{{ feishuTestedAt }} · {{ t('setting.testSuccess') }}</span>
                     <span v-else class="settings-row__value settings-row__value--text">{{ t('setting.notTested') }}</span>
                 </div>
             </section>
 
-            <section v-if="dingTalkChannel === 'wecom'" class="settings-panel">
+            <section class="settings-panel">
                 <header class="settings-panel__header">
                     <span class="settings-panel__label">{{ t('setting.weComRobot') }}</span>
+                    <span class="settings-card__badge" :class="`settings-card__badge--${weComBadge.tone}`">
+                        {{ weComBadge.text }}
+                    </span>
                 </header>
                 <div class="settings-field">
                     <span class="settings-row__label">{{ t('setting.weComEnabled') }}</span>
-                    <el-switch v-model="weComForm.enabled" />
+                    <el-switch v-model="weComForm.enabled" data-testid="wecom-enabled" />
                 </div>
                 <div class="settings-field">
                     <span class="settings-row__label">{{ t('setting.weComWebhook') }}</span>
@@ -766,7 +756,7 @@ const editDiskThreshold = useCommandComponent(EditDiskThreshold)
                     <span class="settings-row__label">{{ t('setting.lastTest') }}</span>
                     <span
                         v-if="weComTestedAt"
-                        class="settings-row__value settings-row__value--ok"
+                        class="settings-row__value--ok settings-row__value"
                     >{{ weComTestedAt }} · {{ t('setting.testSuccess') }}</span>
                     <span v-else class="settings-row__value settings-row__value--text">{{ t('setting.notTested') }}</span>
                 </div>
