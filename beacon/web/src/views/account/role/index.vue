@@ -40,7 +40,7 @@ function generateTree(data: Resource[]) {
   return tree
 }
 
-const { tableData, pageable, loading, search, handleSizeChange, handleCurrentChange } = useTable(queryRole, {}, false)
+const { tableData, loading, search } = useTable(queryRole, {}, false)
 
 onMounted(async () => {
   await search()
@@ -86,17 +86,6 @@ watch(() => props.createTicket, (ticket) => {
                 </el-table-column>
                 <el-table-column prop="created_at" label="创建时间" min-width="160" align="center" sortable />
             </el-table>
-        </div>
-        <div class="am-pagination">
-            <el-pagination
-                v-model:current-page="pageable.page"
-                :page-size="pageable.size"
-                layout="total, sizes, prev, pager, next, jumper"
-                :page-sizes="pageable.options"
-                :total="pageable.total"
-                @size-change="handleSizeChange"
-                @current-change="handleCurrentChange"
-            />
         </div>
     </div>
 </template>

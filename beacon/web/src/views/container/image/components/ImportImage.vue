@@ -77,11 +77,11 @@ const { t } = useI18n()
         >
             <svg-icon icon-class="upload" />
             <div class="el-upload__text">
-                Drop file here or <em>click to upload</em>
+                {{ t('image.imageImportDrop') }}
             </div>
             <template #tip>
                 <div class="el-upload__tip">
-                    tar/tar.gz files
+                    {{ t('image.imageImportTip') }}
                 </div>
             </template>
         </el-upload>

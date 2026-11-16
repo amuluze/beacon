@@ -318,7 +318,9 @@ const memThresholdText = computed(() => (locale.value === 'zh'
   ? `${t('setting.memUsage')} ${MemThreshold.value.duration} ${t('setting.over')} ${MemThreshold.value.threshold}%`
   : `${t('setting.memUsage')} ${MemThreshold.value.threshold}% for ${MemThreshold.value.duration} ${t('setting.over')}`))
 
-const diskThresholdText = computed(() => `${t('setting.diskUsage')} ${DiskThreshold.value.threshold}%`)
+const diskThresholdText = computed(() => (locale.value === 'zh'
+  ? `${t('setting.diskUsage')} ${DiskThreshold.value.duration} ${t('setting.over')} ${DiskThreshold.value.threshold}%`
+  : `${t('setting.diskUsage')} ${DiskThreshold.value.threshold}% for ${DiskThreshold.value.duration} ${t('setting.over')}`))
 
 async function loadAlarmMessageSetting() {
   const response = await queryAlarmMessageSetting()
