@@ -17,8 +17,9 @@ type Audit struct {
 }
 
 type AuditQueryArgs struct {
-	// Type filter is the historical toggle: "system" returns only system
-	// rows (Username = "system"), any other value returns operator rows.
+	// Type selects the audit source: "system" keeps only system rows
+	// (Username = "system"), "operator" keeps only operator rows, and an empty
+	// value returns both so the console can render one merged timeline.
 	Type string `json:"type,omitempty" validate:"lte=64"`
 	// AgentID is an optional filter that limits results to a single Agent.
 	// Empty string disables the filter.

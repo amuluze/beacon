@@ -35,9 +35,10 @@ func NewAuditRepo(db *database.DB) *AuditRepo {
 
 func (a *AuditRepo) filteredQuery(ctx context.Context, args schema.AuditQueryArgs) *gorm.DB {
 	q := a.DB.WithContext(ctx).Model(&model.Audit{})
-	if args.Type == "system" {
+	switch args.Type {
+	case "system":
 		q = q.Where("username = ?", "system")
-	} else {
+	case "operator":
 		q = q.Where("username != ?", "system")
 	}
 	if args.AgentID != "" {

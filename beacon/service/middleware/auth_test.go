@@ -10,6 +10,7 @@ import (
 	"beacon/pkg/auth"
 	"beacon/pkg/authcookie"
 	"beacon/pkg/contextx"
+	"beacon/service/testutil"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -222,5 +223,44 @@ func TestCSRFMiddlewareProtectsLoginWithoutExistingSession(t *testing.T) {
 	defer resp.Body.Close()
 	if resp.StatusCode != fiber.StatusNoContent {
 		t.Fatalf("login with CSRF proof status = %d, want 204", resp.StatusCode)
+	}
+}
+
+// 审计只记录成功的具名操作：403 拒绝与未命名路由不得写入空操作记录。
+func TestUserAuthMiddlewareAuditsOnlySuccessfulNamedPosts(t *testing.T) {
+	auther := testutil.NewFakeAuther()
+	manager := authcookie.NewManager(false, 60, 120)
+	var recorded []string
+	auther.RecordAuditFn = func(_ context.Context, _ string, operate string, _ string) {
+		recorded = append(recorded, operate)
+	}
+
+	app := fiber.New()
+	app.Use(UserAuthMiddleware(auther, manager, nil))
+	app.Post("/api/v1/network_create", func(c *fiber.Ctx) error {
+		return c.SendStatus(fiber.StatusNoContent)
+	}).Name("创建网络")
+	app.Post("/api/v1/network_delete", func(c *fiber.Ctx) error {
+		return c.SendStatus(fiber.StatusForbidden)
+	}).Name("删除网络")
+	app.Post("/api/v1/unnamed", func(c *fiber.Ctx) error {
+		return c.SendStatus(fiber.StatusNoContent)
+	})
+
+	call := func(path string) {
+		req := httptest.NewRequest(fiber.MethodPost, path, nil)
+		req.AddCookie(&http.Cookie{Name: authcookie.AccessCookieName, Value: "access"})
+		resp, err := app.Test(req)
+		if err != nil {
+			t.Fatalf("request %s failed: %v", path, err)
+		}
+		defer resp.Body.Close()
+	}
+	call("/api/v1/network_create")
+	call("/api/v1/network_delete")
+	call("/api/v1/unnamed")
+
+	if len(recorded) != 1 || recorded[0] != "创建网络" {
+		t.Fatalf("recorded audits = %v, want only 创建网络", recorded)
 	}
 }

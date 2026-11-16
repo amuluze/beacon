@@ -1,29 +1,19 @@
 <script setup lang="ts">
 import { queryAudit } from '@/api/audit'
-import AgentEmptyState from '@/components/Agent/AgentEmptyState.vue'
-import { useAgentSelection } from '@/hooks/useAgentSelection'
 import type { Audit } from '@/interface/audit'
 
-const { selectedAgentID, isAgentEmpty, ensureSelectedAgent, loadAgents } = useAgentSelection({ immediate: false })
+// 审计页展示一条合并时间线：既包含 Agent 系统记录，也包含登录、用户、
+// 网络、镜像与设置变更等操作员记录。后端 type 留空即返回两类记录。
 const rows = ref<Audit[]>([])
 const loading = shallowRef(false)
-const initialized = shallowRef(false)
 const page = shallowRef(1)
 const size = shallowRef(10)
 const total = shallowRef(0)
 
 async function loadAudit() {
-  if (!selectedAgentID.value) {
-    rows.value = []
-    total.value = 0
-    return
-  }
-
   loading.value = true
   try {
     const { data } = await queryAudit({
-      type: 'system',
-      agent_id: selectedAgentID.value,
       page: page.value,
       size: size.value,
     })
@@ -33,12 +23,6 @@ async function loadAudit() {
   finally {
     loading.value = false
   }
-}
-
-async function refreshAgents() {
-  await loadAgents()
-  page.value = 1
-  await loadAudit()
 }
 
 async function handleSizeChange(value: number) {
@@ -52,23 +36,11 @@ async function handlePageChange(value: number) {
   await loadAudit()
 }
 
-watch(selectedAgentID, async () => {
-  if (!initialized.value)
-    return
-  page.value = 1
-  await loadAudit()
-})
-
-onMounted(async () => {
-  await ensureSelectedAgent()
-  await loadAudit()
-  initialized.value = true
-})
+onMounted(loadAudit)
 </script>
 
 <template>
-    <AgentEmptyState v-if="isAgentEmpty" min-height="280px" @refresh="refreshAgents" />
-    <div v-else class="audit-log">
+    <div class="audit-log">
         <el-table
             v-loading="loading"
             :data="rows"
