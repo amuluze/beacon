@@ -51,9 +51,16 @@ const dingTalkSetting = reactive<DingTalkSetting>({
 })
 const dingTalkTesting = shallowRef(false)
 
-// 群机器人卡片按钉钉/飞书/企业微信三个独立面板并列展示：webhook/secret 保持
-// 「留空即保留」的服务端语义，已配置时以遮罩提示展示当前凭据；三个渠道各自
-// 持有独立表单、启用状态与测试结果，互不干扰。
+// 群机器人卡片在顶部用 Tab 在钉钉/飞书/企业微信间切换，只渲染当前渠道面板，
+// 控制卡片高度：webhook/secret 保持「留空即保留」的服务端语义，已配置时以
+// 遮罩提示展示当前凭据；三个渠道各自持有独立表单、启用状态与测试结果，互不干扰。
+const channels = [
+  { name: 'dingtalk', label: 'setting.dingTalkRobot' },
+  { name: 'feishu', label: 'setting.feishuRobot' },
+  { name: 'wecom', label: 'setting.weComRobot' },
+] as const
+type ChannelName = typeof channels[number]['name']
+const activeChannel = ref<ChannelName>('dingtalk')
 const dingTalkForm = reactive({
   enabled: false,
   webhook: '',
@@ -296,6 +303,12 @@ function channelBadge(enabled: boolean) {
 const dingTalkBadge = computed(() => channelBadge(dingTalkSetting.enabled))
 const feishuBadge = computed(() => channelBadge(feishuSetting.enabled))
 const weComBadge = computed(() => channelBadge(weComSetting.enabled))
+// Tab 行右侧只展示当前渠道已保存的启用状态；面板内的开关仍是本地编辑值。
+const activeBadge = computed(() => ({
+  dingtalk: dingTalkBadge.value,
+  feishu: feishuBadge.value,
+  wecom: weComBadge.value,
+}[activeChannel.value]))
 
 const cpuThresholdText = computed(() => (locale.value === 'zh'
   ? `${t('setting.cpuUsage')} ${CPUThreshold.value.duration} ${t('setting.over')} ${CPUThreshold.value.threshold}%`
@@ -554,13 +567,40 @@ const editDiskThreshold = useCommandComponent(EditDiskThreshold)
                 </div>
             </header>
 
-            <section class="settings-panel">
-                <header class="settings-panel__header">
-                    <span class="settings-panel__label">{{ t('setting.dingTalkRobot') }}</span>
-                    <span class="settings-card__badge" :class="`settings-card__badge--${dingTalkBadge.tone}`">
-                        {{ dingTalkBadge.text }}
-                    </span>
-                </header>
+            <div class="settings-channels">
+                <div
+                    class="settings-channels__tabs"
+                    role="tablist"
+                    :aria-label="t('setting.dingTalkGroupSetting')"
+                >
+                    <button
+                        v-for="channel in channels"
+                        :id="`robot-tab-${channel.name}`"
+                        :key="channel.name"
+                        type="button"
+                        role="tab"
+                        class="settings-channels__tab"
+                        :class="{ 'settings-channels__tab--active': activeChannel === channel.name }"
+                        :aria-selected="activeChannel === channel.name"
+                        :data-testid="`channel-tab-${channel.name}`"
+                        @click="activeChannel = channel.name"
+                    >
+                        {{ t(channel.label) }}
+                    </button>
+                </div>
+                <span class="settings-card__badge" :class="`settings-card__badge--${activeBadge.tone}`">
+                    {{ activeBadge.text }}
+                </span>
+            </div>
+
+            <section
+                v-if="activeChannel === 'dingtalk'"
+                id="robot-panel-dingtalk"
+                role="tabpanel"
+                aria-labelledby="robot-tab-dingtalk"
+                class="settings-panel"
+                data-testid="channel-panel-dingtalk"
+            >
                 <div class="settings-field">
                     <span class="settings-row__label">{{ t('setting.dingTalkEnabled') }}</span>
                     <el-switch v-model="dingTalkForm.enabled" data-testid="dingtalk-enabled" />
@@ -630,13 +670,14 @@ const editDiskThreshold = useCommandComponent(EditDiskThreshold)
                 </div>
             </section>
 
-            <section class="settings-panel">
-                <header class="settings-panel__header">
-                    <span class="settings-panel__label">{{ t('setting.feishuRobot') }}</span>
-                    <span class="settings-card__badge" :class="`settings-card__badge--${feishuBadge.tone}`">
-                        {{ feishuBadge.text }}
-                    </span>
-                </header>
+            <section
+                v-else-if="activeChannel === 'feishu'"
+                id="robot-panel-feishu"
+                role="tabpanel"
+                aria-labelledby="robot-tab-feishu"
+                class="settings-panel"
+                data-testid="channel-panel-feishu"
+            >
                 <div class="settings-field">
                     <span class="settings-row__label">{{ t('setting.feishuEnabled') }}</span>
                     <el-switch v-model="feishuForm.enabled" data-testid="feishu-enabled" />
@@ -700,13 +741,14 @@ const editDiskThreshold = useCommandComponent(EditDiskThreshold)
                 </div>
             </section>
 
-            <section class="settings-panel">
-                <header class="settings-panel__header">
-                    <span class="settings-panel__label">{{ t('setting.weComRobot') }}</span>
-                    <span class="settings-card__badge" :class="`settings-card__badge--${weComBadge.tone}`">
-                        {{ weComBadge.text }}
-                    </span>
-                </header>
+            <section
+                v-else
+                id="robot-panel-wecom"
+                role="tabpanel"
+                aria-labelledby="robot-tab-wecom"
+                class="settings-panel"
+                data-testid="channel-panel-wecom"
+            >
                 <div class="settings-field">
                     <span class="settings-row__label">{{ t('setting.weComEnabled') }}</span>
                     <el-switch v-model="weComForm.enabled" data-testid="wecom-enabled" />
@@ -804,5 +846,53 @@ const editDiskThreshold = useCommandComponent(EditDiskThreshold)
 .settings-row__input :deep(.el-input__wrapper) {
   min-height: 28px;
   background: var(--am-surface-primary);
+}
+
+// 与一级 Tab 条同款分段控件，尺寸收紧以服务卡内切换。
+.settings-channels {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--am-spacing-sm);
+  flex-wrap: wrap;
+}
+
+.settings-channels__tabs {
+  display: inline-flex;
+  gap: var(--am-spacing-xs);
+  min-width: 0;
+  padding: 4px;
+  background: var(--am-surface-secondary);
+  border: 1px solid var(--am-border-subtle);
+  border-radius: var(--am-radius-md);
+}
+
+.settings-channels__tab {
+  min-width: 132px;
+  padding: 6px 14px;
+  text-align: center;
+  color: var(--am-foreground-secondary);
+  font-family: inherit;
+  font-size: var(--am-font-sm);
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--am-radius-sm);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.settings-channels__tab:hover:not(.settings-channels__tab--active) {
+  color: var(--am-foreground-primary);
+}
+
+.settings-channels__tab--active {
+  color: var(--am-accent-primary);
+  font-weight: 600;
+  background: var(--am-surface-card);
+  border-color: var(--am-border-primary);
 }
 </style>

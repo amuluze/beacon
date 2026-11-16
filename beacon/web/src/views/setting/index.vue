@@ -499,21 +499,6 @@ function openRoleCreate() {
   border-radius: var(--am-radius-sm);
 }
 
-:deep(.settings-panel__header) {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--am-spacing-sm);
-}
-
-:deep(.settings-panel__label) {
-  color: var(--am-foreground-secondary);
-  font-family: 'Geist Mono', 'SFMono-Regular', Consolas, monospace;
-  font-size: var(--am-font-xs);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-}
-
 :deep(.settings-panel__footer) {
   display: flex;
   justify-content: flex-end;
