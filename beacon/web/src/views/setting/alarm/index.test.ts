@@ -136,17 +136,24 @@ describe('alarm settings DingTalk credential display', () => {
         expect(mocks.queryDingTalk).toHaveBeenCalledTimes(2)
     })
 
-    it('renders the three channel forms independently and saves the Feishu form', async () => {
+    it('switches robot channel tabs and saves the Feishu form', async () => {
         mocks.queryFeishu.mockResolvedValue({
             data: { id: 1, enabled: false, webhook_masked: 'https://open.feishu.cn/open-apis/bot/v2/hook/****ook', webhook_configured: true, secret_configured: false },
         })
         const wrapper = mountAlarmSettings()
         await flushPromises()
 
-        // 三个渠道面板同时挂载，各自表单独立存在、互不干扰。
+        // 默认只挂载钉钉面板，其余渠道按 Tab 切换后才渲染。
+        expect(wrapper.find('[data-testid="channel-panel-dingtalk"]').exists()).toBe(true)
         expect(wrapper.find('[data-testid="dingtalk-webhook-input"]').exists()).toBe(true)
-        expect(wrapper.find('[data-testid="feishu-webhook-input"]').exists()).toBe(true)
-        expect(wrapper.find('[data-testid="wecom-webhook-input"]').exists()).toBe(true)
+        expect(wrapper.find('[data-testid="feishu-webhook-input"]').exists()).toBe(false)
+        expect(wrapper.find('[data-testid="wecom-webhook-input"]').exists()).toBe(false)
+
+        await wrapper.get('[data-testid="channel-tab-feishu"]').trigger('click')
+
+        expect(wrapper.get('[data-testid="channel-tab-feishu"]').attributes('aria-selected')).toBe('true')
+        expect(wrapper.find('[data-testid="channel-panel-feishu"]').exists()).toBe(true)
+        expect(wrapper.find('[data-testid="dingtalk-webhook-input"]').exists()).toBe(false)
 
         // 只保存飞书表单：不触发钉钉/企业微信的保存请求。
         const feishuInput = wrapper.get('[data-testid="feishu-webhook-input"]')
@@ -166,6 +173,8 @@ describe('alarm settings DingTalk credential display', () => {
     it('blocks enabling the WeCom channel without a webhook', async () => {
         const wrapper = mountAlarmSettings()
         await flushPromises()
+
+        await wrapper.get('[data-testid="channel-tab-wecom"]').trigger('click')
 
         // 未配置 Webhook 时启用开关 + 直接保存：前端拦截且不发起请求。
         await wrapper.get('[data-testid="wecom-enabled"]').trigger('click')
