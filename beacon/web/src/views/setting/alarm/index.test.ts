@@ -136,6 +136,15 @@ describe('alarm settings DingTalk credential display', () => {
         expect(mocks.queryDingTalk).toHaveBeenCalledTimes(2)
     })
 
+    it('renders the disk threshold together with its duration window', async () => {
+        const wrapper = mountAlarmSettings()
+        await flushPromises()
+
+        // 磁盘阈值文案必须与 CPU/内存一致地展示连续时长，不能只显示百分比。
+        const diskRow = wrapper.findAll('.settings-threshold').find(row => row.text().includes('setting.diskAlarmThreshold'))
+        expect(diskRow?.text()).toContain('setting.diskUsage 2 setting.over 80%')
+    })
+
     it('switches robot channel tabs and saves the Feishu form', async () => {
         mocks.queryFeishu.mockResolvedValue({
             data: { id: 1, enabled: false, webhook_masked: 'https://open.feishu.cn/open-apis/bot/v2/hook/****ook', webhook_configured: true, secret_configured: false },
