@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -83,12 +84,26 @@ func TestBuildAgentInstallScriptSurvivesStopAndStartFailures(t *testing.T) {
 	if !strings.Contains(script, "下载失败") || !strings.Contains(script, "update-ca-certificates") {
 		t.Fatal("expected script to explain download failures including self-signed CA guidance")
 	}
+	// 瞬时传输中断（curl 18）要自动重试，避免一次抖动导致整次安装失败。
+	if !strings.Contains(script, `while [ "$attempt" -le 3 ]`) || !strings.Contains(script, "下载中断，2 秒后重试") {
+		t.Fatal("expected script to retry transient download failures")
+	}
 }
 
 func TestBuildAgentInstallScriptDownloadsCertsWhenTLSEnabled(t *testing.T) {
 	script := buildAgentInstallScript("https://beacon.example.com", "agent-a", true)
 	if !strings.Contains(script, `/api/v1/host/install/certs?node=$NODE`) {
 		t.Fatal("expected script to download collia cert package when TLS is enabled")
+	}
+}
+
+// 安装脚本必须能通过 POSIX shell 语法检查，重试循环等改动不得引入语法错误。
+func TestBuildAgentInstallScriptIsValidShell(t *testing.T) {
+	script := buildAgentInstallScript("https://beacon.example.com", "agent-a", true)
+	cmd := exec.Command("sh", "-n")
+	cmd.Stdin = strings.NewReader(script)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("install script has invalid shell syntax: %v\n%s", err, out)
 	}
 }
 

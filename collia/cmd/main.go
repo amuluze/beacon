@@ -43,7 +43,21 @@ const (
 	defaultCfg    = "/etc/collia/config.yml"
 	binaryPath    = "/usr/sbin/collia"
 	defaultPrefix = "/"
+	// systemdUnitPath 与 takama/daemon 在 Linux 上生成的单元位置一致；
+	// 重复安装时据此判断服务已注册，从而保持幂等。
+	systemdUnitPath = "/etc/systemd/system/collia.service"
 )
+
+// systemdUnitExists 判断 collia 的 systemd 单元是否已注册。
+func systemdUnitExists() bool {
+	return runtime.GOOS == "linux" && unitFileExists(systemdUnitPath)
+}
+
+// unitFileExists 是可单测的单元文件存在性判断。
+func unitFileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -212,7 +226,12 @@ func installService(cfg string) {
 	// systemd 单元 ExecStart 指向 `collia daemon -c <cfg>`
 	out, err := d.Install("daemon", "-c", cfg)
 	if err != nil {
-		// 已安装视为成功（幂等），与 agent_install.go 的 `collia install || true` 一致
+		// 已安装视为成功（幂等）：单元文件已存在时保留现有注册并输出中性提示，
+		// 不把 systemd 的 [FAILED] 噪声透传给安装脚本，避免被误判为安装失败。
+		if systemdUnitExists() {
+			fmt.Println("Beacon Probe Agent already installed; existing unit kept")
+			return
+		}
 		fmt.Fprintln(os.Stderr, out)
 		os.Exit(0)
 	}

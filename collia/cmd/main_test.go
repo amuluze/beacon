@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestIsColliaDaemonCommand(t *testing.T) {
 	tests := []struct {
@@ -22,5 +26,19 @@ func TestIsColliaDaemonCommand(t *testing.T) {
 				t.Fatalf("isColliaDaemonCommand(%q) = %v, want %v", tt.argv, got, tt.want)
 			}
 		})
+	}
+}
+
+// 重复安装时以 systemd 单元文件是否存在判定「已安装」，据此走幂等分支。
+func TestUnitFileExists(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "collia.service")
+	if unitFileExists(path) {
+		t.Fatal("missing unit file reported as existing")
+	}
+	if err := os.WriteFile(path, []byte("[Unit]\n"), 0o600); err != nil {
+		t.Fatalf("write unit file: %v", err)
+	}
+	if !unitFileExists(path) {
+		t.Fatal("existing unit file not detected")
 	}
 }
