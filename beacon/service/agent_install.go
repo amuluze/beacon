@@ -244,12 +244,21 @@ cleanup() {
 trap cleanup EXIT
 
 download() {
-  if ! curl -fsSL -H "X-Install-Token: $TOKEN" "$1" -o "$2"; then
-    echo "下载失败：$1" >&2
-    echo "  若服务端使用自签证书，请先把 CA 导入系统信任库" >&2
-    echo "  （/usr/local/share/ca-certificates/<ca>.crt，然后 update-ca-certificates）" >&2
-    exit 1
-  fi
+  attempt=1
+  while [ "$attempt" -le 3 ]; do
+    if curl -fsSL -H "X-Install-Token: $TOKEN" "$1" -o "$2"; then
+      return 0
+    fi
+    if [ "$attempt" -lt 3 ]; then
+      echo "下载中断，2 秒后重试（第 $attempt 次）：$1" >&2
+      sleep 2
+    fi
+    attempt=$((attempt + 1))
+  done
+  echo "下载失败：$1" >&2
+  echo "  若服务端使用自签证书，请先把 CA 导入系统信任库" >&2
+  echo "  （/usr/local/share/ca-certificates/<ca>.crt，然后 update-ca-certificates）" >&2
+  exit 1
 }
 
 mkdir -p /etc/collia /data/beacon/collia/storage /data/beacon/logs/collia /usr/sbin
