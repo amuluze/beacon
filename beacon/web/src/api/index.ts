@@ -10,6 +10,7 @@
  */
 
 import { warning } from '@/components/Message/message.ts'
+import i18n from '@/languages/index'
 
 import type { ResultData } from '@/interface/result.ts'
 import type { AxiosError, AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios'
@@ -219,7 +220,10 @@ class Request {
                     warning(data.err || data.msg)
                 }
                 else if (status === 403) {
-                    warning('您目前没有权限执行该操作，请联系管理员')
+                    if (data?.msg === 'read-only mode')
+                        warning(i18n.global.t('common.readOnlyBlocked'))
+                    else
+                        warning('您目前没有权限执行该操作，请联系管理员')
                 }
                 else if (status === 500) {
                     warning(data.err || data.msg || '服务器错误，请稍后再试')

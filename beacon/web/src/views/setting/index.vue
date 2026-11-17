@@ -15,7 +15,8 @@ const store = useStore()
 const route = useRoute()
 const router = useRouter()
 
-const isAdmin = computed(() => store.user.userInfo.name === 'admin')
+// 只读部署不提供登录，但应能浏览全部管理页；写入口由服务端只读守卫拒绝。
+const isAdmin = computed(() => store.user.userInfo.name === 'admin' || store.user.userInfo.readOnly === true)
 
 // 一级 Tab 与设计稿一致：设置 / 探针管理 / 用户管理 / 角色管理 / 接口管理 / 审计日志。
 // 探针管理对所有用户可见（Agent 列表本身是只读资源），升级入口仍限管理员。

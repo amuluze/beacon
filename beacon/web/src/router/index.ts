@@ -13,7 +13,14 @@ router.beforeEach(async (to, _, next) => {
     if (!store.user.sessionChecked) {
         try {
             const { data } = await getUserInfo()
-            store.user.setUserInfo(data.username, data.status, data.is_admin, data.must_change_password)
+            store.user.setUserInfo(
+                data.username,
+                data.status,
+                data.is_admin,
+                data.must_change_password,
+                data.read_only,
+                data.no_auth,
+            )
         }
         catch {
             store.user.clearSession()

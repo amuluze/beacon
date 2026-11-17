@@ -40,15 +40,22 @@ function openPasswordDrawer() {
         </div>
         <template #dropdown>
             <el-dropdown-menu>
-                <el-dropdown-item @click="openPasswordDrawer">
-                    <svg-icon icon-class="edit" style="margin-right: 4px" />
-                    {{ t('avatar.updatePassword') }}
-                </el-dropdown-item>
-                <el-divider />
-                <el-dropdown-item @click.prevent="doLogout">
-                    <svg-icon icon-class="power" style="margin-right: 4px" />
-                    {{ t('avatar.logout') }}
-                </el-dropdown-item>
+                <template v-if="store.user.userInfo.noAuth">
+                    <el-dropdown-item disabled>
+                        {{ t('common.readOnlyMode') }}
+                    </el-dropdown-item>
+                </template>
+                <template v-else>
+                    <el-dropdown-item @click="openPasswordDrawer">
+                        <svg-icon icon-class="edit" style="margin-right: 4px" />
+                        {{ t('avatar.updatePassword') }}
+                    </el-dropdown-item>
+                    <el-divider />
+                    <el-dropdown-item @click.prevent="doLogout">
+                        <svg-icon icon-class="power" style="margin-right: 4px" />
+                        {{ t('avatar.logout') }}
+                    </el-dropdown-item>
+                </template>
             </el-dropdown-menu>
         </template>
     </el-dropdown>

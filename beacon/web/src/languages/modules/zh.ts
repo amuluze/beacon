@@ -8,6 +8,9 @@ export default {
     common: {
         cancel: '取消',
         confirm: '确认',
+        readOnlyMode: '只读模式',
+        readOnlyBanner: '当前部署为只读模式：可浏览页面内容，所有修改操作已被禁用。',
+        readOnlyBlocked: '只读模式：当前部署禁止修改。',
     },
     login: {
         login: '登录',

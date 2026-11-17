@@ -1,5 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useUserStore } from '@/store/modules/user'
 
 import AppLayout from './index.vue'
 
@@ -33,6 +34,16 @@ function mountLayout() {
 describe('application layout Agent readiness gate', () => {
     beforeEach(() => {
         vi.clearAllMocks()
+    })
+
+    it('shows the read-only banner for a read-only session', async () => {
+        ensureSelectedAgent.mockResolvedValue('agent-1')
+        useUserStore().setUserInfo('readonly', 1, 1, false, true, true)
+
+        const wrapper = mountLayout()
+        await flushPromises()
+
+        expect(wrapper.get('.am-layout__readonly').text()).toContain('common.readOnlyBanner')
     })
 
     it('mounts workspace content only after Agent initialization settles', async () => {

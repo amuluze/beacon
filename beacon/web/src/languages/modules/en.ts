@@ -8,6 +8,9 @@ export default {
     common: {
         cancel: 'Cancel',
         confirm: 'Confirm',
+        readOnlyMode: 'Read-only',
+        readOnlyBanner: 'This deployment is read-only: pages remain browsable, but all modifications are disabled.',
+        readOnlyBlocked: 'Read-only mode: modifications are disabled on this deployment.',
     },
     login: {
         login: 'Login',

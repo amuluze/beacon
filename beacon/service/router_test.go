@@ -1,9 +1,14 @@
 package service
 
 import (
+	"encoding/json"
+	"net/http/httptest"
 	"testing"
 
+	"beacon/pkg/authcookie"
 	"beacon/service/agent"
+	authAPI "beacon/service/auth/api"
+	healthapi "beacon/service/health/api"
 	hostAPI "beacon/service/host/api"
 	"beacon/service/terminal"
 
@@ -44,6 +49,52 @@ func TestTerminalWebSocketRoutePrecedesContainerLogRoute(t *testing.T) {
 	}
 	if terminalIndex >= containerLogIndex {
 		t.Fatalf("terminal route index %d must precede dynamic log route index %d", terminalIndex, containerLogIndex)
+	}
+}
+
+func TestNoAuthRouterIsAnonymousAndReadOnly(t *testing.T) {
+	cfg := &Config{}
+	cfg.App.NoAuth = true
+	cfg.Auth.Enable = true
+	cfg.Casbin.Enable = true
+	app := fiber.New()
+	router := &Router{
+		config:          cfg,
+		authAPI:         &authAPI.AuthAPI{},
+		sessionCookies:  authcookie.NewManager(true, 120, 3600),
+		healthProbe:     &healthapi.Probe{},
+		loggerHandler:   NewLoggerHandler(nil),
+		terminalHandler: terminal.NewHandler(nil, nil),
+	}
+	router.RegisterAPI(app)
+
+	resp, err := app.Test(httptest.NewRequest(fiber.MethodGet, "/api/v1/auth/user_info", nil))
+	if err != nil {
+		t.Fatalf("user_info: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != fiber.StatusOK {
+		t.Fatalf("user_info status = %d, want 200", resp.StatusCode)
+	}
+	var info struct {
+		Username string `json:"username"`
+		ReadOnly bool   `json:"read_only"`
+		NoAuth   bool   `json:"no_auth"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		t.Fatalf("decode user_info: %v", err)
+	}
+	if info.Username != "readonly" || !info.ReadOnly || !info.NoAuth {
+		t.Fatalf("unexpected user_info: %#v", info)
+	}
+
+	resp, err = app.Test(httptest.NewRequest(fiber.MethodPost, "/api/v1/user/user_create", nil))
+	if err != nil {
+		t.Fatalf("user_create: %v", err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != fiber.StatusForbidden {
+		t.Fatalf("user_create status = %d, want 403", resp.StatusCode)
 	}
 }
 

@@ -25,4 +25,6 @@ type UserInfo struct {
 	Status             int    `json:"status" description:"状态"`
 	IsAdmin            int    `json:"is_admin" description:"是否是管理员"`
 	MustChangePassword bool   `json:"must_change_password" description:"是否必须修改密码"`
+	ReadOnly           bool   `json:"read_only" description:"当前部署是否为只读模式"`
+	NoAuth             bool   `json:"no_auth" description:"当前会话是否来自免登录只读模式"`
 }

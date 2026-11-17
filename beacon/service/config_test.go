@@ -59,6 +59,25 @@ Env = "development"
 	}
 }
 
+func TestNewConfig_ReadOnlyModeEnvOverrides(t *testing.T) {
+	const toml = `
+[App]
+Env = "production"
+ReadOnly = false
+NoAuth = false
+`
+	t.Setenv("BEACON_READ_ONLY", "true")
+	t.Setenv("BEACON_NO_AUTH", "true")
+
+	cfg, err := NewConfig(writeConfig(t, toml))
+	if err != nil {
+		t.Fatalf("NewConfig: %v", err)
+	}
+	if !cfg.App.ReadOnly || !cfg.App.NoAuth {
+		t.Fatalf("expected read-only modes enabled, got %#v", cfg.App)
+	}
+}
+
 func TestNewConfigRejectsInsecureProductionTransport(t *testing.T) {
 	const toml = `
 [App]

@@ -8,8 +8,15 @@ export const useUserStore = defineStore('user', {
         userInfo: {} as UserInfo,
     }),
     actions: {
-        setUserInfo(name: string, status: number, isAdmin: number, mustChangePassword = false) {
-            this.userInfo = { name, status, isAdmin, mustChangePassword }
+        setUserInfo(
+            name: string,
+            status: number,
+            isAdmin: number,
+            mustChangePassword = false,
+            readOnly = false,
+            noAuth = false,
+        ) {
+            this.userInfo = { name, status, isAdmin, mustChangePassword, readOnly, noAuth }
             this.authenticated = true
             this.sessionChecked = true
         },
