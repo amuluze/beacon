@@ -1,5 +1,7 @@
 [App]
 Env = "production"
+ReadOnly = false # 只读模式：允许浏览，拒绝所有业务写操作
+NoAuth = false   # 免登录模式：匿名访问且强制只读；开启后无需登录，但所有业务写操作被拒绝
 
 [Fiber]
 Host = "0.0.0.0"      # http监听地址

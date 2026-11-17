@@ -87,8 +87,11 @@ COPY beacon/configs /app/configs
 COPY beacon/nginx /etc/nginx
 COPY beacon/supervisor/server.conf beacon/supervisor/nginx.conf /etc/supervisor/conf.d/
 COPY beacon/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
+COPY beacon/scripts/docker-entrypoint.sh /usr/local/bin/beacon-entrypoint
+RUN chmod 0755 /usr/local/bin/beacon-entrypoint
 
 EXPOSE 80 17000
 
-# 这里有点坑，不加 -n 服务启动不了
+# 入口脚本校验关键密钥后 exec CMD；保留 CMD 便于覆盖默认进程。
+ENTRYPOINT ["/usr/local/bin/beacon-entrypoint"]
 CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]

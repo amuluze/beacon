@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -20,6 +21,33 @@ func newTestAPI() (*AuthAPI, *testutil.FakeAuther) {
 	auther := testutil.NewFakeAuther()
 	service := authservice.NewAuthService(auther, testutil.NewFakeAuthRepo())
 	return NewLoginAPI(service, authcookie.NewManager(true, 120, 3600)), auther
+}
+
+func TestAnonymousUserInfoIsReadOnly(t *testing.T) {
+	api := &AuthAPI{NoAuth: true}
+	app := fiber.New()
+	app.Get("/api/v1/auth/user_info", api.UserInfo)
+
+	resp, err := app.Test(httptest.NewRequest(fiber.MethodGet, "/api/v1/auth/user_info", nil))
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != fiber.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+	var info struct {
+		Username string `json:"username"`
+		IsAdmin  int    `json:"is_admin"`
+		ReadOnly bool   `json:"read_only"`
+		NoAuth   bool   `json:"no_auth"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if info.Username != "readonly" || info.IsAdmin != 1 || !info.ReadOnly || !info.NoAuth {
+		t.Fatalf("unexpected anonymous user info: %#v", info)
+	}
 }
 
 func TestLoginSetsHttpOnlyCookiesWithoutReturningTokens(t *testing.T) {

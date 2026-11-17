@@ -3,7 +3,10 @@ import Content from '@/layout/content/index.vue'
 import Navbar from '@/layout/navbar/index.vue'
 import StatusBar from '@/layout/statusbar/index.vue'
 import { useAgentSelection } from '@/hooks/useAgentSelection'
+import useStore from '@/store'
 
+const store = useStore()
+const readOnly = computed(() => store.user.userInfo.readOnly === true)
 const { ensureSelectedAgent } = useAgentSelection({ immediate: false })
 const workspaceReady = shallowRef(false)
 
@@ -23,6 +26,9 @@ onBeforeMount(async () => {
 <template>
     <section class="am-layout">
         <Navbar />
+        <p v-if="readOnly" class="am-layout__readonly" role="status">
+            {{ $t('common.readOnlyBanner') }}
+        </p>
         <template v-if="workspaceReady">
             <Content />
             <StatusBar />
@@ -52,6 +58,17 @@ onBeforeMount(async () => {
     gap: var(--am-spacing-sm);
     color: var(--am-foreground-muted);
     font-size: var(--am-font-sm);
+  }
+
+  @include e(readonly) {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 6px var(--am-spacing-lg);
+    color: var(--am-accent-warning);
+    background: var(--am-accent-warning-soft);
+    border-bottom: 1px solid color-mix(in srgb, var(--am-accent-warning) 28%, transparent);
+    font-size: var(--am-font-xs);
+    text-align: center;
   }
 
   @include e(loading-mark) {

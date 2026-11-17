@@ -62,6 +62,8 @@ func NewConfig(configFile string) (*Config, error) {
 func bindEnvs() {
 	bindings := map[string]string{
 		"app.env":                    "BEACON_APP_ENV",
+		"app.readonly":               "BEACON_READ_ONLY",
+		"app.noauth":                 "BEACON_NO_AUTH",
 		"db.dbname":                  "BEACON_DB_NAME",
 		"auth.signingkey":            "BEACON_AUTH_SIGNING_KEY",
 		"control.jointoken":          "BEACON_CONTROL_JOIN_TOKEN",
@@ -234,7 +236,9 @@ type RateLimit struct {
 }
 
 type App struct {
-	Env string
+	Env      string
+	ReadOnly bool
+	NoAuth   bool
 }
 
 type Retention struct {

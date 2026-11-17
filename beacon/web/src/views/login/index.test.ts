@@ -80,7 +80,7 @@ describe('login view', () => {
         validateImpl = async () => true
         locale.value = 'zh'
         loginMock.mockResolvedValue({ data: { must_change_password: false } })
-        getUserInfoMock.mockResolvedValue({ data: { username: 'admin', status: 1, is_admin: true, must_change_password: false } })
+        getUserInfoMock.mockResolvedValue({ data: { username: 'admin', status: 1, is_admin: true, must_change_password: false, read_only: false, no_auth: false } })
     })
 
     it('renders the brand panel and the login card with two credential fields', () => {
@@ -132,19 +132,19 @@ describe('login view', () => {
         await submitForm(wrapper)
 
         expect(loginMock).toHaveBeenCalledWith({ username: '', password: '' })
-        expect(setUserInfo).toHaveBeenCalledWith('admin', 1, true, false)
+        expect(setUserInfo).toHaveBeenCalledWith('admin', 1, true, false, false, false)
         expect(clearAgent).toHaveBeenCalledOnce()
         expect(replace).toHaveBeenCalledWith('/monitor')
     })
 
     it('redirects bootstrap accounts to mandatory password change', async () => {
         getUserInfoMock.mockResolvedValueOnce({
-            data: { username: 'admin', status: 1, is_admin: true, must_change_password: true },
+            data: { username: 'admin', status: 1, is_admin: true, must_change_password: true, read_only: false, no_auth: false },
         })
         const wrapper = mountLogin()
         await submitForm(wrapper)
 
-        expect(setUserInfo).toHaveBeenCalledWith('admin', 1, true, true)
+        expect(setUserInfo).toHaveBeenCalledWith('admin', 1, true, true, false, false)
         expect(replace).toHaveBeenCalledWith('/change-password')
     })
 

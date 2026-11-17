@@ -3,6 +3,8 @@ export interface UserInfo {
     status: number
     isAdmin: number
     mustChangePassword: boolean
+    readOnly: boolean
+    noAuth: boolean
 }
 
 export interface UserState {

@@ -21,6 +21,8 @@ import (
 type AuthAPI struct {
 	AuthService   *service.AuthService
 	CookieManager *authcookie.Manager
+	ReadOnly      bool
+	NoAuth        bool
 }
 
 func NewLoginAPI(userService *service.AuthService, cookieManager *authcookie.Manager) *AuthAPI {
@@ -120,10 +122,21 @@ func (a *AuthAPI) TokenUpdate(ctx *fiber.Ctx) error {
 }
 
 func (a *AuthAPI) UserInfo(ctx *fiber.Ctx) error {
+	if a.NoAuth {
+		return fiberx.Success(ctx, schema.UserInfo{
+			ID:       "readonly",
+			Username: "readonly",
+			Status:   1,
+			IsAdmin:  1,
+			ReadOnly: true,
+			NoAuth:   true,
+		})
+	}
 	c := ctx.UserContext()
 	res, err := a.AuthService.UserInfo(c)
 	if err != nil {
 		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
+	res.ReadOnly = a.ReadOnly
 	return fiberx.Success(ctx, res)
 }

@@ -41,6 +41,8 @@ async function handleLogin() {
       userInfo.data.status,
       userInfo.data.is_admin,
       userInfo.data.must_change_password,
+      userInfo.data.read_only,
+      userInfo.data.no_auth,
     )
     // 每次认证会话都重新确认可用 Agent，避免沿用上一个会话的目标节点。
     store.agent.clear()

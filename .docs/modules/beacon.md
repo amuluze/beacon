@@ -18,8 +18,8 @@
 
 - 模块路径：`beacon`
 - Go 版本：`1.25.0`
-- Go 源码文件：158（非测试 `.go`，不含 `web/`）
-- Go 测试文件：73
+- Go 源码文件：159（非测试 `.go`，不含 `web/`）
+- Go 测试文件：74
 - 包名：`account`, `agent`, `alarm`, `api`, `audit`, `auth`, `authcookie`, `client`, `container`, `contextx`, `dingtalk`, `errors`, `feishu`, `fiberx`, `hash`, `health`, `host`, `jwtauth`, `mail`, `main`, `middleware`, `model`, `report`, `repository`, `rpc`, `schema`, `secret`, `service`, `task`, `terminal`, `testutil`, `title`, `utils`, `uuid`, `validatex`, `wecom`, `web`
 - 推断角色：HTTP/API service module: Web/API 接入、路由注册、请求校验和服务协调
 
@@ -87,6 +87,8 @@
 - 配置：`BEACON_CONTROL_JOIN_TOKEN` at `beacon/service/config.go:102`
 - 配置：`BEACON_RETENTION_DAYS` at `beacon/service/config.go:80`
 - 配置：`BEACON_RETENTION_AUDIT_DAYS` at `beacon/service/config.go:81`
+- 配置：`BEACON_READ_ONLY` at `beacon/service/config.go:65`
+- 配置：`BEACON_NO_AUTH` at `beacon/service/config.go:66`
 - 配置：`BEACON_CONTROL_PORT` at `beacon/service/install_report.go:96`
 - 配置：`BEACON_HTTP_PORT` at `beacon/service/install_report.go:95`
 - 配置：`BEACON_IMAGE` at `beacon/service/install_report.go:91`
@@ -106,7 +108,8 @@
 - 入口：`app.Use("/api/v1/host/report", limiter.New(limiter.Config{` at `beacon/service/router.go:101`
 - 入口：`app.Use("/ws", func(c *fiber.Ctx) error {` at `beacon/service/router.go:153`
 - 入口：`app.Use(func(c *fiber.Ctx) error {` at `beacon/service/router.go:119`
-- 入口：`app.Use(middleware.CasbinMiddleware(` at `beacon/service/router.go:145`
+- 入口：`app.Use(middleware.ReadOnlyMiddleware())` at `beacon/service/router.go:140`
+- 入口：`app.Use(middleware.CasbinMiddleware(` at `beacon/service/router.go:159`
 - 入口：`app.Use(middleware.GlobalRateLimitMiddleware(config.RateLimit.GlobalMax))` at `beacon/service/app.go:58`
 - 入口：`app.Use(middleware.PanicMiddleware())` at `beacon/service/app.go:66`
 - 入口：`app.Use(middleware.StackMiddleware)` at `beacon/service/app.go:67`

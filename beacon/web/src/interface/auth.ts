@@ -25,4 +25,6 @@ export interface UserInfo {
     status: number
     is_admin: number
     must_change_password: boolean
+    read_only: boolean
+    no_auth: boolean
 }
