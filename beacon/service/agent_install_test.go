@@ -258,6 +258,12 @@ func TestAgentInstallCAEndpointAndFingerprint(t *testing.T) {
 	}
 
 	app := fiber.New()
+	// 模拟生产环境的静态文件中间件：未命中的路径会先写入 404，
+	// 后续的 SendFile 处理器必须显式恢复 200。
+	app.Use(func(c *fiber.Ctx) error {
+		c.Status(http.StatusNotFound)
+		return c.Next()
+	})
 	app.Get("/api/v1/host/install/ca", router.AgentInstallCA)
 	app.Post("/api/v1/host/get_install_token", router.AgentInstallToken)
 
