@@ -119,7 +119,9 @@ func (a *Router) AgentInstallCA(ctx *fiber.Ctx) error {
 		return fiber.NewError(http.StatusNotFound, err.Error())
 	}
 	ctx.Set("Cache-Control", "no-store")
-	return ctx.SendFile(caPath)
+	// 静态文件中间件会先为未命中的路径写入 404；显式设为 200，避免
+	// SendFile 保留该状态码导致下载成功但响应仍是 404。
+	return ctx.Status(http.StatusOK).SendFile(caPath)
 }
 
 func (a *Router) agentInstallCAFingerprint() string {
