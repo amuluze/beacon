@@ -1,6 +1,8 @@
 package service
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -60,6 +62,9 @@ func TestBuildAgentInstallScriptUsesInstallTokenHeader(t *testing.T) {
 	}
 	if !strings.Contains(script, `install -m 0600 "$WORKDIR/config.yml" /etc/collia/config.yml`) {
 		t.Fatal("install script must install the collia config with owner-only permissions")
+	}
+	if !strings.Contains(script, `--ca-file`) || !strings.Contains(script, `--cacert "$CA_FILE"`) {
+		t.Fatal("install script must support an explicit CA file for pinned self-signed deployments")
 	}
 }
 
@@ -236,6 +241,58 @@ func TestAgentInstallRejectsQueryTokenFallback(t *testing.T) {
 	}
 }
 
+func TestAgentInstallCAEndpointAndFingerprint(t *testing.T) {
+	certDir := t.TempDir()
+	config := &Config{
+		Control: Control{TLS: ControlTLS{Enable: true, CertDir: certDir}},
+		AgentInstall: AgentInstall{
+			Enable:     true,
+			Token:      "install-secret",
+			TLSEnable:  true,
+			PackageDir: t.TempDir(),
+		},
+	}
+	router := &Router{config: config, certManager: NewCertManager(config)}
+	if err := router.certManager.EnsureControlCerts(); err != nil {
+		t.Fatalf("ensure control certs: %v", err)
+	}
+
+	app := fiber.New()
+	app.Get("/api/v1/host/install/ca", router.AgentInstallCA)
+	app.Post("/api/v1/host/get_install_token", router.AgentInstallToken)
+
+	resp, err := app.Test(httptest.NewRequest(http.MethodGet, "/api/v1/host/install/ca", nil), -1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	caBody, err := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK || !strings.Contains(string(caBody), "BEGIN CERTIFICATE") {
+		t.Fatalf("CA endpoint status=%d body=%q", resp.StatusCode, string(caBody[:min(len(caBody), 80)]))
+	}
+
+	resp, err = app.Test(httptest.NewRequest(http.MethodPost, "/api/v1/host/get_install_token", nil), -1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("token endpoint status = %d, want 200", resp.StatusCode)
+	}
+	var payload struct {
+		Token         string `json:"token"`
+		CAFingerprint string `json:"ca_fingerprint"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		t.Fatalf("decode token response: %v", err)
+	}
+	if payload.Token != "install-secret" || len(payload.CAFingerprint) != 64 {
+		t.Fatalf("unexpected token payload: %+v", payload)
+	}
+}
 func TestAgentInstallCertsGeneratesWhenTLSEnabled(t *testing.T) {
 	certDir := t.TempDir()
 	packageDir := t.TempDir()

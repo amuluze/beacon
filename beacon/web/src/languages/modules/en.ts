@@ -84,6 +84,7 @@ export default {
         installTipRoot: 'Run as root or with sudo on the target host.',
         installTipArch: 'Detects amd64 / arm64 automatically; binary installed to /usr/sbin/collia.',
         installTipService: 'Registers a system service, starts and opens a reverse tunnel automatically.',
+        installTipCa: 'The command verifies the control CA by SHA-256 fingerprint and passes it via --ca-file; no system trust-store change is required, and the same token and fingerprint work across hosts.',
         upgradeTitle: 'Upgrade Collia Agent',
         upgradeAction: 'Upgrade',
         upgradeDesc: 'Runs a remote upgrade on the target node with the Collia version bundled in the Server image. Monitoring data of that node may be briefly interrupted during the upgrade.',

@@ -335,6 +335,7 @@ func (a *Router) registerContainerRoutes(v1 fiber.Router) {
 func (a *Router) registerHostRoutes(v1 fiber.Router) {
 	g := v1.Group("host")
 	g.Get("/install", a.AgentInstallScript).Name("获取 Collia 安装脚本")
+	g.Get("/install/ca", a.AgentInstallCA).Name("下载 Collia 控制 CA")
 	g.Get("/install/package", a.AgentInstallPackage).Name("下载 Collia 安装包")
 	g.Get("/install/config", a.AgentInstallConfig).Name("下载 Collia 配置")
 	g.Get("/install/certs", a.AgentInstallCerts).Name("下载 Collia 证书")

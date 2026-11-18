@@ -28,6 +28,7 @@ const dialogVisible = computed<boolean>({
 
 const loading = shallowRef(false)
 const token = ref('')
+const caFingerprint = ref('')
 const node = ref('node-01')
 const nodeRegex = /^[A-Z0-9][\w.-]*$/i
 const nodeError = ref('')
@@ -37,13 +38,26 @@ const origin = window.location.origin
 const curlCommand = computed(() => {
   const safeNode = nodeRegex.test(node.value) ? node.value : 'node-01'
   const tk = token.value || '<your-install-token>'
-  return `curl -fsSL '${origin}/api/v1/host/install?node=${safeNode}' | sudo bash -s -- --token=${tk}`
+  const installURL = `${origin}/api/v1/host/install?node=${safeNode}`
+
+  if (!caFingerprint.value) {
+    return `curl -fsSL '${installURL}' | sudo bash -s -- --token=${tk}`
+  }
+
+  const caURL = `${origin}/api/v1/host/install/ca`
+  return `CA=$(mktemp) &&
+curl -fsSLk '${caURL}' -o "$CA" &&
+echo "${caFingerprint.value}  $CA" | sha256sum -c - &&
+( curl -fsSL --cacert "$CA" '${installURL}' || curl -fsSL '${installURL}' ) > /tmp/beacon-agent-install.sh &&
+sudo bash /tmp/beacon-agent-install.sh --token=${tk} --ca-file="$CA" &&
+rm -f "$CA" /tmp/beacon-agent-install.sh`
 })
 
 const tips = computed(() => [
   t('agent.installTipRoot'),
   t('agent.installTipArch'),
   t('agent.installTipService'),
+  ...(caFingerprint.value ? [t('agent.installTipCa')] : []),
 ])
 
 function validateNode() {
@@ -57,6 +71,7 @@ async function loadToken() {
   try {
     const { data } = await getInstallToken()
     token.value = data?.token ?? ''
+    caFingerprint.value = data?.ca_fingerprint ?? ''
   }
   finally {
     loading.value = false
