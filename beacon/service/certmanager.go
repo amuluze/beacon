@@ -57,6 +57,19 @@ func (m *CertManager) EnsureControlCerts() error {
 	return nil
 }
 
+// ControlCAPath returns the public CA certificate used by the control channel.
+func (m *CertManager) ControlCAPath() (string, error) {
+	certDir := m.config.Control.TLS.CertDir
+	if certDir == "" {
+		return "", fmt.Errorf("control tls cert dir is empty")
+	}
+	caPath := filepath.Join(certDir, transporttls.CACertFile)
+	if !fileExists(caPath) {
+		return "", fmt.Errorf("control ca certificate not found")
+	}
+	return caPath, nil
+}
+
 // GenerateAgentCertPackage creates a client certificate for the given node,
 // packages it with the runtime CA into a tar.gz, and returns the package path.
 // The package is written under AgentInstall.PackageDir/certs/{node}.tar.gz.

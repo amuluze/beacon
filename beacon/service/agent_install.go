@@ -1,6 +1,8 @@
 package service
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"os"
@@ -104,6 +106,38 @@ func (a *Router) AgentInstallCerts(ctx *fiber.Ctx) error {
 	return ctx.Status(http.StatusOK).Download(certsPath, node+"-certs.tar.gz")
 }
 
+// AgentInstallCA exposes only the public control-plane CA certificate. It is
+// intentionally token-free so a fresh host can bootstrap trust before it has
+// the install token. The certificate is safe to publish; the matching private
+// key never leaves the server cert directory.
+func (a *Router) AgentInstallCA(ctx *fiber.Ctx) error {
+	if !a.config.AgentInstall.Enable || !a.config.AgentInstall.TLSEnable || a.certManager == nil {
+		return fiber.ErrNotFound
+	}
+	caPath, err := a.certManager.ControlCAPath()
+	if err != nil {
+		return fiber.NewError(http.StatusNotFound, err.Error())
+	}
+	ctx.Set("Cache-Control", "no-store")
+	return ctx.SendFile(caPath)
+}
+
+func (a *Router) agentInstallCAFingerprint() string {
+	if a.certManager == nil || !a.config.AgentInstall.TLSEnable {
+		return ""
+	}
+	caPath, err := a.certManager.ControlCAPath()
+	if err != nil {
+		return ""
+	}
+	raw, err := os.ReadFile(caPath)
+	if err != nil {
+		return ""
+	}
+	sum := sha256.Sum256(raw)
+	return hex.EncodeToString(sum[:])
+}
+
 func (a *Router) AgentInstallToken(ctx *fiber.Ctx) error {
 	if !a.config.AgentInstall.Enable {
 		return fiber.ErrNotFound
@@ -112,7 +146,11 @@ func (a *Router) AgentInstallToken(ctx *fiber.Ctx) error {
 		return fiber.NewError(http.StatusServiceUnavailable, "install token not configured")
 	}
 	ctx.Set("Cache-Control", "no-store")
-	return fiberx.Success(ctx, fiber.Map{"token": a.config.AgentInstall.Token})
+	data := fiber.Map{"token": a.config.AgentInstall.Token}
+	if fingerprint := a.agentInstallCAFingerprint(); fingerprint != "" {
+		data["ca_fingerprint"] = fingerprint
+	}
+	return fiberx.Success(ctx, data)
 }
 
 func (a *Router) verifyAgentInstallToken(ctx *fiber.Ctx) error {
@@ -216,11 +254,14 @@ umask 077
 BASE_URL=%s
 NODE=%s
 TOKEN=""
+CA_FILE=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --token=*) TOKEN="${1#*=}" ;;
     --token) shift; TOKEN="${1:-}" ;;
+    --ca-file=*) CA_FILE="${1#*=}" ;;
+    --ca-file) shift; CA_FILE="${1:-}" ;;
     *) echo "unknown argument: $1" >&2; exit 1 ;;
   esac
   shift
@@ -228,6 +269,11 @@ done
 
 if [ -z "$TOKEN" ]; then
   echo "missing --token" >&2
+  exit 1
+fi
+
+if [ -n "$CA_FILE" ] && [ ! -r "$CA_FILE" ]; then
+  echo "CA file is not readable: $CA_FILE" >&2
   exit 1
 fi
 
@@ -249,6 +295,9 @@ download() {
     if curl -fsSL -H "X-Install-Token: $TOKEN" "$1" -o "$2"; then
       return 0
     fi
+    if [ -n "$CA_FILE" ] && curl -fsSL --cacert "$CA_FILE" -H "X-Install-Token: $TOKEN" "$1" -o "$2"; then
+      return 0
+    fi
     if [ "$attempt" -lt 3 ]; then
       echo "下载中断，2 秒后重试（第 $attempt 次）：$1" >&2
       sleep 2
@@ -256,7 +305,7 @@ download() {
     attempt=$((attempt + 1))
   done
   echo "下载失败：$1" >&2
-  echo "  若服务端使用自签证书，请先把 CA 导入系统信任库" >&2
+  echo "  若服务端使用自签证书，请通过 --ca-file 指定控制 CA，或先把 CA 导入系统信任库" >&2
   echo "  （/usr/local/share/ca-certificates/<ca>.crt，然后 update-ca-certificates）" >&2
   exit 1
 }

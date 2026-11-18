@@ -6,6 +6,7 @@
 
 export interface InstallTokenResult {
     token: string
+    ca_fingerprint?: string
 }
 
 export interface HostInfo {
