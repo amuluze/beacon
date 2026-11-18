@@ -96,6 +96,14 @@ func (a *Router) registerHealthProbes(app *fiber.App) {
 var commonAuthSkipperPaths = []string{"/health", "/ready", "/api/v1/index/index", "/api/v1/auth/csrf", "/api/v1/auth/login", "/api/v1/auth/token_update", "/api/v1/host/install", "/api/v1/host/report"}
 
 func (a *Router) registerMiddlewares(app *fiber.App) {
+	// 会话与权限相关接口不可被浏览器或中间代理缓存；否则登录后可能继续读到
+	// 匿名只读的 user_info 旧响应，导致横幅残留。
+	app.Use("/api", func(c *fiber.Ctx) error {
+		c.Set(fiber.HeaderCacheControl, "no-store")
+		c.Set(fiber.HeaderPragma, "no-cache")
+		return c.Next()
+	})
+
 	app.Use("/api/v1/auth/login", limiter.New(limiter.Config{
 		Max:        10,
 		Expiration: 60 * time.Second,
