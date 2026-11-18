@@ -35,5 +35,6 @@ export async function updatePassword(data: UpdatePassword) {
  * 获取用户信息
  */
 export async function getUserInfo() {
-    return request.get<UserInfo>('/api/v1/auth/user_info')
+    // 会话状态随登录切换；显式绕过任何浏览器/代理缓存。
+    return request.get<UserInfo>(`/api/v1/auth/user_info?_t=${Date.now()}`)
 }
