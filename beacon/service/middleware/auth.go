@@ -92,6 +92,30 @@ func WebSocketUserAuthMiddleware(a auth.Auther, manager *authcookie.Manager) fib
 	}
 }
 
+// OptionalWebSocketUserAuthMiddleware accepts anonymous and authenticated
+// same-origin WebSocket handshakes. The terminal route must still reject an
+// empty user context; container logs remain available to anonymous visitors.
+func OptionalWebSocketUserAuthMiddleware(a auth.Auther, manager *authcookie.Manager) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		if !sameWebSocketOrigin(c) {
+			slog.Warn("cross-origin websocket rejected")
+			return fiberx.Unauthorized(c)
+		}
+		if manager.AccessToken(c) == "" {
+			return c.Next()
+		}
+		userID, username, err := a.ParseToken(manager.AccessToken(c), "access_token")
+		if err != nil {
+			slog.Warn("optional websocket session rejected")
+			return fiberx.Unauthorized(c)
+		}
+		wrapUserAuthContext(c, userID, username)
+		c.Locals("user_id", userID)
+		c.Locals("username", username)
+		return c.Next()
+	}
+}
+
 func sameWebSocketOrigin(c *fiber.Ctx) bool {
 	origin, err := url.Parse(c.Get(fiber.HeaderOrigin))
 	if err != nil || origin.Scheme == "" || origin.Host == "" {
@@ -144,6 +168,60 @@ func UserAuthMiddleware(a auth.Auther, manager *authcookie.Manager, checker Pass
 		if err == nil {
 			// 只记录成功的具名 POST：被权限拒绝的请求仍会以 nil error 返回，
 			// 但它们没有可读的操作名，写入会产生空 operate/object 审计行。
+			operate := c.Route().Name
+			if c.Method() == "POST" && operate != "" && c.Response().StatusCode() < fiber.StatusBadRequest {
+				a.RecordAudit(c.UserContext(), username, operate, contextx.AuditObject(c.UserContext()))
+			}
+			return nil
+		}
+		return err
+	}
+}
+
+// OptionalUserAuthMiddleware authenticates a session when one is present but
+// permits anonymous access otherwise. It is used by public read-only
+// deployments so visitors can browse anonymously and still log in explicitly.
+// A partial session (refresh cookie without an access token) is rejected as
+// unauthorized so the frontend can rotate it instead of silently downgrading.
+func OptionalUserAuthMiddleware(a auth.Auther, manager *authcookie.Manager, checker PasswordChangeChecker, skippers ...SkipperFunc) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		if SkipHandler(c, skippers...) {
+			if c.Path() == "/api/v1/auth/login" {
+				var args schema.LoginArgs
+				_ = fiberx.ParseBody(c, &args)
+				a.RecordAudit(c.UserContext(), args.Username, "登录", "")
+			}
+			return c.Next()
+		}
+
+		accessToken := manager.AccessToken(c)
+		if accessToken == "" {
+			if manager.RefreshToken(c) != "" {
+				return fiberx.Unauthorized(c)
+			}
+			return c.Next()
+		}
+
+		userID, username, err := a.ParseToken(accessToken, "access_token")
+		if err != nil {
+			slog.Error("optional token parse failed", "err", err)
+			return fiberx.Unauthorized(c)
+		}
+
+		wrapUserAuthContext(c, userID, username)
+		if checker != nil {
+			mustChange, checkErr := checker.MustChangePassword(c.UserContext(), userID)
+			if checkErr != nil {
+				slog.Error("password change state lookup failed", "error", checkErr)
+				return fiberx.Failure(c, errors.Error{Status: fiber.StatusInternalServerError, Msg: errors.InternalServerError})
+			}
+			if _, allowed := passwordChangeAllowedPaths[c.Path()]; mustChange && !allowed {
+				return fiberx.Failure(c, errors.Error{Status: fiber.StatusForbidden, Msg: "password change required"})
+			}
+		}
+
+		err = c.Next()
+		if err == nil {
 			operate := c.Route().Name
 			if c.Method() == "POST" && operate != "" && c.Response().StatusCode() < fiber.StatusBadRequest {
 				a.RecordAudit(c.UserContext(), username, operate, contextx.AuditObject(c.UserContext()))

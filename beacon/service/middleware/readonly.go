@@ -4,6 +4,7 @@
 package middleware
 
 import (
+	"beacon/pkg/contextx"
 	"beacon/pkg/errors"
 	"beacon/pkg/fiberx"
 
@@ -29,11 +30,15 @@ var readOnlyAuthenticatedPaths = map[string]struct{}{
 }
 
 // ReadOnlyMiddleware rejects every mutating request not explicitly allowlisted.
-// NoAuth deployments install it unconditionally because anonymous access must
-// never imply write access.
+// NoAuth deployments use it as an anonymous-access guard: requests without an
+// authenticated session stay read-only, while a valid session keeps normal
+// permissions. Login remains available so a visitor can elevate explicitly.
 func ReadOnlyMiddleware(noAuth bool) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		if isSafeMethod(c.Method()) {
+			return c.Next()
+		}
+		if noAuth && contextx.FromUserID(c.UserContext()) != "" {
 			return c.Next()
 		}
 		if _, ok := readOnlyAllowedPaths[c.Path()]; ok {
@@ -43,6 +48,11 @@ func ReadOnlyMiddleware(noAuth bool) fiber.Handler {
 			if _, ok := readOnlyAuthenticatedPaths[c.Path()]; ok {
 				return c.Next()
 			}
+		}
+		// Anonymous sessions may start the login flow, but cannot change the
+		// password until a session exists.
+		if noAuth && c.Path() == "/api/v1/auth/login" {
+			return c.Next()
 		}
 		return fiberx.Failure(c, errors.Error{Status: fiber.StatusForbidden, Msg: "read-only mode"})
 	}

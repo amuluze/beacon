@@ -9,6 +9,7 @@ import (
 
 	"beacon/pkg/auth"
 	"beacon/pkg/authcookie"
+	"beacon/pkg/contextx"
 	"beacon/pkg/errors"
 	"beacon/pkg/fiberx"
 	"beacon/pkg/validatex"
@@ -122,7 +123,7 @@ func (a *AuthAPI) TokenUpdate(ctx *fiber.Ctx) error {
 }
 
 func (a *AuthAPI) UserInfo(ctx *fiber.Ctx) error {
-	if a.NoAuth {
+	if a.NoAuth && contextx.FromUserID(ctx.UserContext()) == "" {
 		return fiberx.Success(ctx, schema.UserInfo{
 			ID:       "readonly",
 			Username: "readonly",
@@ -137,6 +138,7 @@ func (a *AuthAPI) UserInfo(ctx *fiber.Ctx) error {
 	if err != nil {
 		return fiberx.Failure(ctx, fiberx.ServiceError(err))
 	}
-	res.ReadOnly = a.ReadOnly
+	// NoAuth 模式下匿名访客只读；显式登录后的会话按正常权限使用。
+	res.ReadOnly = a.ReadOnly && !a.NoAuth
 	return fiberx.Success(ctx, res)
 }

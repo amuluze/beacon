@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -43,7 +44,7 @@ func (a *websocketTestAuth) ParseToken(token, tokenType string) (string, string,
 	}
 	return "user-1", "admin", nil
 }
-func (a *websocketTestAuth) Release() error             { return nil }
+func (a *websocketTestAuth) Release() error                                      { return nil }
 func (a *websocketTestAuth) RecordAudit(context.Context, string, string, string) {}
 
 func TestWebSocketUserAuthMiddlewareUsesCookieAndCarriesIdentity(t *testing.T) {
@@ -263,4 +264,56 @@ func TestUserAuthMiddlewareAuditsOnlySuccessfulNamedPosts(t *testing.T) {
 	if len(recorded) != 1 || recorded[0] != "创建网络" {
 		t.Fatalf("recorded audits = %v, want only 创建网络", recorded)
 	}
+}
+
+func TestOptionalUserAuthMiddlewareAnonymousAndAuthenticated(t *testing.T) {
+	auther := &websocketTestAuth{}
+	manager := authcookie.NewManager(false, 60, 120)
+	app := fiber.New()
+	app.Use(OptionalUserAuthMiddleware(auther, manager, nil))
+	app.Get("/whoami", func(c *fiber.Ctx) error {
+		return c.SendString(contextx.FromUserID(c.UserContext()))
+	})
+
+	resp, err := app.Test(httptest.NewRequest(fiber.MethodGet, "/whoami", nil))
+	if err != nil {
+		t.Fatalf("anonymous request failed: %v", err)
+	}
+	if body := readTestBody(t, resp); body != "" {
+		t.Fatalf("anonymous user id = %q, want empty", body)
+	}
+
+	req := httptest.NewRequest(fiber.MethodGet, "/whoami", nil)
+	req.AddCookie(&http.Cookie{Name: authcookie.AccessCookieName, Value: "access-token"})
+	resp, err = app.Test(req)
+	if err != nil {
+		t.Fatalf("authenticated request failed: %v", err)
+	}
+	if body := readTestBody(t, resp); body != "user-1" {
+		t.Fatalf("authenticated user id = %q, want user-1", body)
+	}
+
+	req = httptest.NewRequest(fiber.MethodGet, "/whoami", nil)
+	req.AddCookie(&http.Cookie{Name: authcookie.RefreshCookieName, Value: "refresh-token"})
+	resp, err = app.Test(req)
+	if err != nil {
+		t.Fatalf("refresh-only request failed: %v", err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != fiber.StatusUnauthorized {
+		t.Fatalf("refresh-only status = %d, want 401", resp.StatusCode)
+	}
+}
+
+func readTestBody(t *testing.T, resp *http.Response) string {
+	t.Helper()
+	defer resp.Body.Close()
+	if resp.StatusCode != fiber.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("read body: %v", err)
+	}
+	return string(body)
 }

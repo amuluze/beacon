@@ -194,7 +194,7 @@ describe('api/index response interceptor', () => {
         expect(latestFakeInstance.post).toHaveBeenCalledTimes(1)
         expect(stubStore.user.clearSession).toHaveBeenCalledOnce()
         expect(stubStore.agent.clear).toHaveBeenCalledOnce()
-        expect(lastHref).toBe('/#/login')
+        expect(lastHref).toBe('/#/monitor')
     })
 
     it('fails closed if the retried request is still unauthorized', async () => {
@@ -207,6 +207,6 @@ describe('api/index response interceptor', () => {
 
         await expect(responseErrHandlers[0]({ response })).rejects.toEqual(response)
         expect(stubStore.user.clearSession).toHaveBeenCalledOnce()
-        expect(lastHref).toBe('/#/login')
+        expect(lastHref).toBe('/#/monitor')
     })
 })

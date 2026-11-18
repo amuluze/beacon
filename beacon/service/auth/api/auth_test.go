@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"beacon/pkg/authcookie"
+	"beacon/pkg/contextx"
 	authservice "beacon/service/auth/service"
 	"beacon/service/middleware"
 	"beacon/service/testutil"
@@ -47,6 +48,38 @@ func TestAnonymousUserInfoIsReadOnly(t *testing.T) {
 	}
 	if info.Username != "readonly" || info.IsAdmin != 1 || !info.ReadOnly || !info.NoAuth {
 		t.Fatalf("unexpected anonymous user info: %#v", info)
+	}
+}
+
+func TestAuthenticatedUserInfoInNoAuthModeIsNotReadOnly(t *testing.T) {
+	api, _ := newTestAPI()
+	api.NoAuth = true
+	api.ReadOnly = true
+
+	app := fiber.New()
+	app.Get("/api/v1/auth/user_info", func(c *fiber.Ctx) error {
+		c.SetUserContext(contextx.NewUserID(c.UserContext(), "user-1"))
+		return api.UserInfo(c)
+	})
+
+	resp, err := app.Test(httptest.NewRequest(fiber.MethodGet, "/api/v1/auth/user_info", nil))
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != fiber.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+	var info struct {
+		Username string `json:"username"`
+		ReadOnly bool   `json:"read_only"`
+		NoAuth   bool   `json:"no_auth"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if info.Username != "admin" || info.ReadOnly || info.NoAuth {
+		t.Fatalf("unexpected authenticated user info: %#v", info)
 	}
 }
 

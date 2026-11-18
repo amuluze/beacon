@@ -134,10 +134,10 @@ func (a *Router) registerMiddlewares(app *fiber.App) {
 		}
 		return c.Next()
 	})
-	// 只读守卫先于认证/CSRF 执行，确保任何未显式放行的写请求都得到一致的 403。
-	// NoAuth 表示匿名浏览，天然只读；不能出现“跳过登录即可写”的组合。
-	if a.config.App.ReadOnly || a.config.App.NoAuth {
-		app.Use(middleware.ReadOnlyMiddleware(a.config.App.NoAuth))
+	// 认证模式下的只读守卫先于认证/CSRF 执行，确保写请求稳定得到 403。
+	// NoAuth 模式则在可选认证之后执行：匿名会话只读，登录会话恢复正常权限。
+	if a.config.App.ReadOnly && !a.config.App.NoAuth {
+		app.Use(middleware.ReadOnlyMiddleware(false))
 	}
 
 	if a.config.Auth.Enable {
@@ -146,7 +146,26 @@ func (a *Router) registerMiddlewares(app *fiber.App) {
 
 	a.registerWebSocketRoutes(app)
 
-	if a.config.Auth.Enable && !a.config.App.NoAuth {
+	if a.config.App.NoAuth {
+		if a.config.Auth.Enable {
+			app.Use(middleware.OptionalUserAuthMiddleware(
+				a.auth,
+				a.sessionCookies,
+				a.authService,
+				middleware.AllowPathPrefixSkipper(commonAuthSkipperPaths...),
+			))
+		}
+		if a.config.Casbin.Enable {
+			app.Use(middleware.OptionalCasbinMiddleware(
+				a.enforcer,
+				middleware.AllowPathPrefixSkipper(commonAuthSkipperPaths...),
+			))
+		}
+		app.Use(middleware.ReadOnlyMiddleware(true))
+		return
+	}
+
+	if a.config.Auth.Enable {
 		app.Use(middleware.UserAuthMiddleware(
 			a.auth,
 			a.sessionCookies,
@@ -155,7 +174,7 @@ func (a *Router) registerMiddlewares(app *fiber.App) {
 		))
 	}
 
-	if a.config.Casbin.Enable && !a.config.App.NoAuth {
+	if a.config.Casbin.Enable {
 		app.Use(middleware.CasbinMiddleware(
 			a.enforcer,
 			middleware.AllowPathPrefixSkipper(commonAuthSkipperPaths...),
@@ -173,7 +192,19 @@ func (a *Router) registerWebSocketRoutes(app *fiber.App) {
 	})
 
 	if a.config.App.NoAuth {
-		// 匿名会话只允许读取容器日志；终端会执行命令，必须保持关闭。
+		if a.config.Auth.Enable {
+			wsOptional := middleware.OptionalWebSocketUserAuthMiddleware(a.auth, a.sessionCookies)
+			terminalHandler := websocket.New(a.terminalHandler.Handle)
+			// 匿名会话只允许读取容器日志；登录后恢复正常终端能力。
+			app.Get("/ws/terminal", wsOptional, func(c *fiber.Ctx) error {
+				if contextx.FromUserID(c.UserContext()) == "" {
+					return fiber.ErrForbidden
+				}
+				return terminalHandler(c)
+			})
+			app.Get("/ws/:id", wsOptional, websocket.New(a.loggerHandler.Handler))
+			return
+		}
 		app.Get("/ws/terminal", func(c *fiber.Ctx) error {
 			return fiber.ErrForbidden
 		})

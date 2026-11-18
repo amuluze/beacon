@@ -115,7 +115,7 @@ class Request {
         store.agent.clear()
         this.rejectExpiredRequest(reason)
         this.isRefreshing = false
-        window.location.href = '/#/login'
+        window.location.href = '/#/monitor'
     }
 
     /** 利用 HttpOnly refresh Cookie 轮换服务端会话 Cookie */

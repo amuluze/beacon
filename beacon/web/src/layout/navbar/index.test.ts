@@ -20,6 +20,7 @@ vi.mock('vue-router', () => ({
 
 vi.mock('vue-i18n', () => ({
     useI18n: () => ({ t: (key: string) => key }),
+    createI18n: () => ({ global: { t: (key: string) => key } }),
 }))
 
 describe('navbar', () => {
