@@ -294,10 +294,12 @@ trap cleanup EXIT
 download() {
   attempt=1
   while [ "$attempt" -le 3 ]; do
-    if curl -fsSL -H "X-Install-Token: $TOKEN" "$1" -o "$2"; then
+    # --ca-file 是显式信任锚：先用它验证，避免先以系统信任库发起
+    # 携带安装令牌的请求；自签部署也不会先打印一条误导性的 SSL 错误。
+    if [ -n "$CA_FILE" ] && curl -fsSL --cacert "$CA_FILE" -H "X-Install-Token: $TOKEN" "$1" -o "$2" 2>/dev/null; then
       return 0
     fi
-    if [ -n "$CA_FILE" ] && curl -fsSL --cacert "$CA_FILE" -H "X-Install-Token: $TOKEN" "$1" -o "$2"; then
+    if curl -fsSL -H "X-Install-Token: $TOKEN" "$1" -o "$2" 2>/dev/null; then
       return 0
     fi
     if [ "$attempt" -lt 3 ]; then

@@ -48,7 +48,8 @@ const curlCommand = computed(() => {
   return `CA=$(mktemp) &&
 curl -fsSLk '${caURL}' -o "$CA" &&
 echo "${caFingerprint.value}  $CA" | sha256sum -c - &&
-( curl -fsSL --cacert "$CA" '${installURL}' || curl -fsSL '${installURL}' ) > /tmp/beacon-agent-install.sh &&
+( curl -fsSL --cacert "$CA" '${installURL}' 2>/dev/null || curl -fsSL '${installURL}' ) > /tmp/beacon-agent-install.sh &&
+test -s /tmp/beacon-agent-install.sh &&
 sudo bash /tmp/beacon-agent-install.sh --token=${tk} --ca-file="$CA" &&
 rm -f "$CA" /tmp/beacon-agent-install.sh`
 })

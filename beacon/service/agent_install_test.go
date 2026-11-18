@@ -66,6 +66,14 @@ func TestBuildAgentInstallScriptUsesInstallTokenHeader(t *testing.T) {
 	if !strings.Contains(script, `--ca-file`) || !strings.Contains(script, `--cacert "$CA_FILE"`) {
 		t.Fatal("install script must support an explicit CA file for pinned self-signed deployments")
 	}
+	caIndex := strings.Index(script, `--cacert "$CA_FILE"`)
+	plainIndex := strings.Index(script, `curl -fsSL -H "X-Install-Token: $TOKEN"`)
+	if caIndex < 0 || plainIndex < 0 || caIndex > plainIndex {
+		t.Fatal("install script must try the pinned CA before system trust and must not leak the install token over an unverified first request")
+	}
+	if !strings.Contains(script, `-o "$2" 2>/dev/null`) {
+		t.Fatal("install script must silence intermediate TLS probe failures")
+	}
 }
 
 func TestBuildAgentInstallScriptSurvivesStopAndStartFailures(t *testing.T) {
