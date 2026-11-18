@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"beacon/pkg/contextx"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -66,30 +68,48 @@ func TestReadOnlyMiddlewareRejectsMutations(t *testing.T) {
 	}
 }
 
-func TestReadOnlyMiddlewareNoAuthRejectsAuthenticatedWrites(t *testing.T) {
+func TestReadOnlyMiddlewareNoAuthOnlyRestrictsAnonymous(t *testing.T) {
 	app := fiber.New()
+	app.Use(func(c *fiber.Ctx) error {
+		if c.Get("X-Test-User") != "" {
+			c.SetUserContext(contextx.NewUserID(c.UserContext(), c.Get("X-Test-User")))
+		}
+		return c.Next()
+	})
 	app.Use(ReadOnlyMiddleware(true))
 	app.Post("/api/v1/auth/login", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
 	app.Post("/api/v1/auth/pass_update", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
 	app.Post("/api/v1/auth/logout", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
+	app.Post("/api/v1/container/container_create", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
 
-	for _, path := range []string{"/api/v1/auth/login", "/api/v1/auth/pass_update"} {
+	for _, path := range []string{"/api/v1/auth/login", "/api/v1/auth/logout"} {
 		resp, err := app.Test(httptest.NewRequest(fiber.MethodPost, path, nil))
 		if err != nil {
 			t.Fatalf("%s: %v", path, err)
 		}
 		resp.Body.Close()
-		if resp.StatusCode != http.StatusForbidden {
-			t.Fatalf("%s status = %d, want 403", path, resp.StatusCode)
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("%s status = %d, want 200", path, resp.StatusCode)
 		}
 	}
 
-	resp, err := app.Test(httptest.NewRequest(fiber.MethodPost, "/api/v1/auth/logout", nil))
+	resp, err := app.Test(httptest.NewRequest(fiber.MethodPost, "/api/v1/auth/pass_update", nil))
 	if err != nil {
-		t.Fatalf("logout: %v", err)
+		t.Fatalf("pass_update anonymous: %v", err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("anonymous pass_update status = %d, want 403", resp.StatusCode)
+	}
+
+	req := httptest.NewRequest(fiber.MethodPost, "/api/v1/container/container_create", nil)
+	req.Header.Set("X-Test-User", "admin")
+	resp, err = app.Test(req)
+	if err != nil {
+		t.Fatalf("authenticated write: %v", err)
 	}
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("logout status = %d, want 200", resp.StatusCode)
+		t.Fatalf("authenticated write status = %d, want 200", resp.StatusCode)
 	}
 }

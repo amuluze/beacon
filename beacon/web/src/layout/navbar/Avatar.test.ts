@@ -89,7 +89,7 @@ describe('navbar avatar', () => {
         })
     })
 
-    it('clears the authenticated Agent state before returning to login', async () => {
+    it('clears the authenticated Agent state before leaving the session', async () => {
         const wrapper = mount(Avatar, {
             global: {
                 stubs: {
@@ -111,6 +111,6 @@ describe('navbar avatar', () => {
         expect(logoutMock).toHaveBeenCalledOnce()
         expect(clearSession).toHaveBeenCalledOnce()
         expect(clearAgent).toHaveBeenCalledOnce()
-        expect(replace).toHaveBeenCalledWith('/login')
+        expect(replace).toHaveBeenCalledWith('/monitor')
     })
 })

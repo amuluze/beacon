@@ -68,6 +68,7 @@ vi.mock('@/api/host', () => apiMocks)
 
 vi.mock('vue-i18n', () => ({
     useI18n: () => ({ t: (key: string) => key }),
+    createI18n: () => ({ global: { t: (key: string) => key } }),
 }))
 
 const ElSelectStub = defineComponent({

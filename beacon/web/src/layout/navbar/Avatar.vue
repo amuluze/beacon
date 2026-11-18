@@ -18,8 +18,14 @@ async function doLogout() {
   await logout()
   // 2.清除缓存
   store.user.clearSession()
+  store.user.sessionChecked = false
   store.agent.clear()
-  // 3.重定向到登录页
+  // 3.重定向到监控页；普通部署由路由守卫转登录页，
+  //    no-auth 部署则重新进入匿名只读会话。
+  await router.replace('/monitor')
+}
+
+async function goLogin() {
   await router.replace('/login')
 }
 
@@ -43,6 +49,11 @@ function openPasswordDrawer() {
                 <template v-if="store.user.userInfo.noAuth">
                     <el-dropdown-item disabled>
                         {{ t('common.readOnlyMode') }}
+                    </el-dropdown-item>
+                    <el-divider />
+                    <el-dropdown-item @click="goLogin">
+                        <svg-icon icon-class="user" style="margin-right: 4px" />
+                        {{ t('login.login') }}
                     </el-dropdown-item>
                 </template>
                 <template v-else>
