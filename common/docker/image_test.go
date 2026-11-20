@@ -69,3 +69,46 @@ func TestImageLifecycle(t *testing.T) {
 		t.Fatalf("import image: %v", err)
 	}
 }
+
+func TestSplitRepoTag(t *testing.T) {
+	tests := []struct {
+		name     string
+		repoTag  string
+		wantName string
+		wantTag  string
+	}{
+		{"plain name without tag", "alpine", "alpine", ""},
+		{"name with tag", "alpine:latest", "alpine", "latest"},
+		{"registry with port and tag", "reg.example.com:5000/img:v1", "reg.example.com:5000/img", "v1"},
+		{"registry with port without tag", "reg.example.com:5000/img", "reg.example.com:5000/img", ""},
+		{"dangling placeholder tag", "<none>:<none>", "<none>", "<none>"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotName, gotTag := splitRepoTag(tt.repoTag)
+			if gotName != tt.wantName || gotTag != tt.wantTag {
+				t.Fatalf("splitRepoTag(%q) = (%q, %q), want (%q, %q)", tt.repoTag, gotName, gotTag, tt.wantName, tt.wantTag)
+			}
+		})
+	}
+}
+
+func TestShortImageID(t *testing.T) {
+	tests := []struct {
+		name string
+		id   string
+		want string
+	}{
+		{"sha256 digest", "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "0123456789ab"},
+		{"short digest keeps whole value", "sha256:abc", "abc"},
+		{"digest without prefix", "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "0123456789ab"},
+		{"empty id", "", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ShortImageID(tt.id); got != tt.want {
+				t.Fatalf("ShortImageID(%q) = %q, want %q", tt.id, got, tt.want)
+			}
+		})
+	}
+}

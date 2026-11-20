@@ -9,6 +9,16 @@ import (
 	"time"
 )
 
+const (
+	// DefaultAdminRoleName 与 Prepare 初始化创建的管理员角色名保持一致；
+	// 用户绑定该角色时被判定为管理员。
+	DefaultAdminRoleName = "管理员"
+
+	// IsAdmin 状态取值与 IsAdmin 字段注释一致：1 表示是管理员，2 表示否。
+	IsAdminYes = 1
+	IsAdminNo  = 2
+)
+
 type Users []*User
 
 type User struct {

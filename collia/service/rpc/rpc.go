@@ -5,6 +5,11 @@
 package rpc
 
 import (
+	"crypto/ed25519"
+	"encoding/base64"
+	"fmt"
+	"strings"
+
 	"common/database"
 	"common/rpc"
 
@@ -23,6 +28,7 @@ type Service struct {
 	rootDir              string
 	binaryPath           string       // 自更新目标二进制绝对路径（默认 /usr/sbin/collia）
 	restartFn            func() error // 自更新成功后触发的重启回调（由 cmd/main 注入）
+	upgradePubKeys       []ed25519.PublicKey
 }
 
 // NewService 构造 Agent RPC 服务。rootDir 是文件操作的根目录沙箱，
@@ -38,6 +44,38 @@ func NewService(db *database.DB, manager *docker.Manager, rootDir string) *Servi
 		rootDir:              rootDir,
 		binaryPath:           defaultColliaBinaryPath,
 	}
+}
+
+// SetUpgradePublicKeys 固定发布签名公钥集合（base64 Ed25519）；空集合表示未固定。
+// 支持轮换重叠窗口：升级包签名匹配集合中任一公钥即放行。非法编码或长度直接
+// 报错，不静默降级；重复键按首次出现去重。
+func (s *Service) SetUpgradePublicKeys(encodedKeys []string) error {
+	keys := make([]ed25519.PublicKey, 0, len(encodedKeys))
+	seen := make(map[string]struct{}, len(encodedKeys))
+	for _, encoded := range encodedKeys {
+		trimmed := strings.TrimSpace(encoded)
+		if trimmed == "" {
+			continue
+		}
+		if _, ok := seen[trimmed]; ok {
+			continue
+		}
+		raw, err := base64.StdEncoding.DecodeString(trimmed)
+		if err != nil {
+			return fmt.Errorf("decode upgrade public key: %w", err)
+		}
+		if len(raw) != ed25519.PublicKeySize {
+			return fmt.Errorf("upgrade public key must be %d bytes, got %d", ed25519.PublicKeySize, len(raw))
+		}
+		seen[trimmed] = struct{}{}
+		keys = append(keys, ed25519.PublicKey(raw))
+	}
+	if len(keys) == 0 {
+		s.upgradePubKeys = nil
+		return nil
+	}
+	s.upgradePubKeys = keys
+	return nil
 }
 
 // SetSelfUpdateConfig 注入自更新所需依赖：目标二进制路径与重启回调。

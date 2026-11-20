@@ -9,7 +9,9 @@ package rpc
 
 import (
 	"context"
+	"crypto/ed25519"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -20,6 +22,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -120,6 +123,13 @@ func (s *Service) handleUpgrade(ctx context.Context, args rpcSchema.UpgradeAgent
 		return failReply("verify failed: " + err.Error()), nil
 	}
 
+	// 2b. 发布签名（Ed25519 over SHA-256 摘要）：公钥已固定时缺失即拒绝。
+	if err := s.verifyUpgradeSignature(tmpFile, args.Signature); err != nil {
+		slog.Error("upgrade signature verify failed", "err", err)
+		sendProgress(streamSender, rpcSchema.UpgradeStageFailed, 0, err.Error())
+		return failReply("signature verify failed: " + err.Error()), nil
+	}
+
 	// 3. 原子替换（IU003）
 	sendProgress(streamSender, rpcSchema.UpgradeStageReplacing, 70, "replacing")
 	if err := replaceBinary(tmpFile, binaryPath); err != nil {
@@ -217,6 +227,44 @@ func verifySHA256(file, expected string) error {
 		return fmt.Errorf("sha256 mismatch: want %s got %s", expected, actual)
 	}
 	return nil
+}
+
+// verifyUpgradeSignature 裁决发布签名的四种组合：
+//   - 未固定公钥 + 无签名 → 兼容模式放行（存量部署）；
+//   - 未固定公钥 + 有签名 → 拒绝（无法验证，不得静默忽略）；
+//   - 固定公钥   + 无签名 → 拒绝（fail-closed）；
+//   - 固定公钥   + 有签名 → Ed25519 验签（对文件 SHA-256 摘要）。
+func (s *Service) verifyUpgradeSignature(file, signature string) error {
+	hasSig := strings.TrimSpace(signature) != ""
+	if len(s.upgradePubKeys) == 0 {
+		if hasSig {
+			return errors.New("升级包携带发布签名，但本机未固定发布公钥")
+		}
+		return nil
+	}
+	if !hasSig {
+		return errors.New("本机已固定发布公钥，拒绝缺少发布签名的升级包")
+	}
+	sig, err := base64.StdEncoding.DecodeString(strings.TrimSpace(signature))
+	if err != nil {
+		return fmt.Errorf("decode signature: %w", err)
+	}
+	f, err := os.Open(file) //#nosec G304 -- 临时文件路径由 CreateTemp 生成
+	if err != nil {
+		return err
+	}
+	defer func() { _ = f.Close() }()
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return err
+	}
+	digest := h.Sum(nil)
+	for _, pub := range s.upgradePubKeys {
+		if ed25519.Verify(pub, digest, sig) {
+			return nil
+		}
+	}
+	return errors.New("发布签名校验失败")
 }
 
 // replaceBinary 原子替换：先为当前 inode 创建 .bak 硬链接，再以 rename

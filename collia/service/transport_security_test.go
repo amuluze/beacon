@@ -25,4 +25,12 @@ func TestValidateTransportSecurity(t *testing.T) {
 	if err := validateTransportSecurity(&insecureReport); !errors.Is(err, ErrHTTPSReportTargetRequired) {
 		t.Fatalf("report error = %v, want ErrHTTPSReportTargetRequired", err)
 	}
+
+	// 单机 Unix Socket 目标：本机链路无需 mTLS。
+	unixControl := *secure
+	unixControl.Control.Server = "unix:///data/beacon/data/control/collia.sock"
+	unixControl.Control.TLS.Enable = false
+	if err := validateTransportSecurity(&unixControl); err != nil {
+		t.Fatalf("unix control must not require TLS: %v", err)
+	}
 }

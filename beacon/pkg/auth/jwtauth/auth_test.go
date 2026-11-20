@@ -371,3 +371,23 @@ func TestRecordAuditCarriesObjectAndAgentID(t *testing.T) {
 		t.Errorf("login AgentID = %q, want empty", rows[1].AgentID)
 	}
 }
+
+// TestRecordAuditSurfacesDBError 验证审计写入失败以错误返回，不得静默丢失。
+func TestRecordAuditSurfacesDBError(t *testing.T) {
+	db, err := database.NewDB(database.WithDBName(filepath.Join(t.TempDir(), "audit-err")))
+	if err != nil {
+		t.Fatalf("new db: %v", err)
+	}
+	t.Cleanup(db.Close)
+
+	a := New(&fakeStore{}, db)
+	// 审计表未迁移：Create 必须失败并向上返回错误。
+	if err := a.RecordAudit(context.Background(), "admin", "登录", ""); err == nil {
+		t.Fatal("RecordAudit must surface the missing audit table error")
+	}
+
+	// 未注入数据库时显式报错，不做 nil 解引用。
+	if err := newTestJWTAuth(newFakeStore()).RecordAudit(context.Background(), "admin", "登录", ""); err == nil {
+		t.Fatal("RecordAudit must fail without an audit database")
+	}
+}

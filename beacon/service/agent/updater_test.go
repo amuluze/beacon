@@ -2,8 +2,12 @@ package agent
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -606,5 +610,87 @@ func TestUpdaterPurgeStaleFailuresKeepsAllWhenNoneExpired(t *testing.T) {
 	defer updater.mu.Unlock()
 	if len(updater.failedAt) != 2 {
 		t.Fatalf("failedAt size = %d, want 2 (all within retention)", len(updater.failedAt))
+	}
+}
+
+// TestUpdaterPassesSidecarSignatureToAgent 验证升级编排把发布方侧车签名
+// （collia.sig）随 UpgradeAgentArgs 透传给 Agent；无侧车时签名字段为空。
+func TestUpdaterPassesSidecarSignatureToAgent(t *testing.T) {
+	db := newUpdaterTestDB(t)
+	config := newUpdaterTestConfig(t, "signed-")
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	digest := sha256.Sum256([]byte("signed-amd64"))
+	sidecar := base64.StdEncoding.EncodeToString(ed25519.Sign(priv, digest[:]))
+	if err := os.WriteFile(filepath.Join(config.PackageDir, "amd64", "collia.sig"), []byte(sidecar+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	caller := &fakeUpdateCaller{}
+	updater, err := NewUpdater(config, caller, db)
+	if err != nil {
+		t.Fatalf("NewUpdater: %v", err)
+	}
+
+	if _, err := updater.Trigger(context.Background(), tunnelpkg.AgentInfo{
+		AgentID: "agent-1",
+		Version: "v3.0.5",
+		OS:      "linux",
+		Arch:    "x86_64",
+	}); err != nil {
+		t.Fatalf("Trigger: %v", err)
+	}
+	calls := caller.snapshot()
+	if len(calls) != 1 {
+		t.Fatalf("calls = %d, want 1", len(calls))
+	}
+	if got := calls[0].args.Signature; got != sidecar {
+		t.Fatalf("Signature = %q, want sidecar %q", got, sidecar)
+	}
+
+	// 无侧车的包透传空签名，由 Agent 端按公钥固定状态裁决。
+	db2 := newUpdaterTestDB(t)
+	config2 := newUpdaterTestConfig(t, "unsigned-")
+	caller2 := &fakeUpdateCaller{}
+	updater2, err := NewUpdater(config2, caller2, db2)
+	if err != nil {
+		t.Fatalf("NewUpdater: %v", err)
+	}
+	if _, err := updater2.Trigger(context.Background(), tunnelpkg.AgentInfo{
+		AgentID: "agent-2",
+		Version: "v3.0.5",
+		OS:      "linux",
+		Arch:    "x86_64",
+	}); err != nil {
+		t.Fatalf("Trigger unsigned: %v", err)
+	}
+	calls2 := caller2.snapshot()
+	if len(calls2) != 1 || calls2[0].args.Signature != "" {
+		t.Fatalf("unsigned package must carry empty signature, calls=%#v", calls2)
+	}
+
+	// 侧车签名对包摘要可验证（签的就是升级包内容）。
+	if !ed25519.Verify(pub, digest[:], ed25519.Sign(priv, digest[:])) {
+		t.Fatal("sidecar signature failed round-trip verification")
+	}
+}
+
+// TestUpgradeAgentArgsBackwardCompatibleJSON 验证旧版 Agent 与新增签名字段的
+// 兼容性：旧负载（无 signature）解码后签名为空；新负载正常解码。
+func TestUpgradeAgentArgsBackwardCompatibleJSON(t *testing.T) {
+	var legacy rpcSchema.UpgradeAgentArgs
+	if err := json.Unmarshal([]byte(`{"download_url":"https://x/package","sha256":"abc","version":"v1","install_token":"tok"}`), &legacy); err != nil {
+		t.Fatalf("decode legacy payload: %v", err)
+	}
+	if legacy.Signature != "" {
+		t.Fatalf("legacy payload must decode with empty signature, got %q", legacy.Signature)
+	}
+	var signed rpcSchema.UpgradeAgentArgs
+	if err := json.Unmarshal([]byte(`{"download_url":"https://x/package","sha256":"abc","signature":"c2ln","version":"v1","install_token":"tok"}`), &signed); err != nil {
+		t.Fatalf("decode signed payload: %v", err)
+	}
+	if signed.Signature != "c2ln" {
+		t.Fatalf("signed payload signature = %q", signed.Signature)
 	}
 }

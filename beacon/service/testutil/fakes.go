@@ -29,7 +29,7 @@ type FakeAuther struct {
 	ParseTokenFn    func(token, tokenType string) (string, string, error)
 	DestroyTokenFn  func(token string) error
 	ReleaseFn       func() error
-	RecordAuditFn   func(ctx context.Context, username, operate, object string)
+	RecordAuditFn   func(ctx context.Context, username, operate, object string) error
 }
 
 func NewFakeAuther() *FakeAuther {
@@ -42,7 +42,7 @@ func NewFakeAuther() *FakeAuther {
 		},
 		DestroyTokenFn: func(token string) error { return nil },
 		ReleaseFn:      func() error { return nil },
-		RecordAuditFn:  func(context.Context, string, string, string) {},
+		RecordAuditFn:  func(context.Context, string, string, string) error { return nil },
 	}
 }
 
@@ -54,8 +54,8 @@ func (f *FakeAuther) ParseToken(token, tokenType string) (string, string, error)
 }
 func (f *FakeAuther) DestroyToken(token string) error { return f.DestroyTokenFn(token) }
 func (f *FakeAuther) Release() error                  { return f.ReleaseFn() }
-func (f *FakeAuther) RecordAudit(ctx context.Context, username, operate, object string) {
-	f.RecordAuditFn(ctx, username, operate, object)
+func (f *FakeAuther) RecordAudit(ctx context.Context, username string, operate string, object string) error {
+	return f.RecordAuditFn(ctx, username, operate, object)
 }
 
 type fakeTokenInfo struct {

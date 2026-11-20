@@ -1,8 +1,13 @@
 package service
 
 import (
+	"crypto/hmac"
+	"crypto/rand"
 	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -10,6 +15,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"beacon/pkg/fiberx"
 
@@ -19,6 +25,64 @@ import (
 const defaultAgentInstallPackageDir = "/app/downloads/collia"
 
 const colliaBinaryName = "collia"
+
+const (
+	// ephemeralInstallTokenPrefix 标识短时安装令牌；静态令牌永不携带该前缀。
+	ephemeralInstallTokenPrefix = "bpit."
+	// defaultInstallTokenTTLSeconds 是 TokenTTL 未配置时的默认有效期（30 分钟）。
+	defaultInstallTokenTTLSeconds = 1800
+)
+
+// issueEphemeralInstallToken 签发短时安装令牌：
+// bpit.<expires-unix>.<base64url(nonce24)>.<base64url(hmac-sha256(K, 前三段))>。
+// HMAC 密钥 K 即静态安装令牌——轮换静态令牌会同时吊销全部已签发短时令牌。
+func issueEphemeralInstallToken(staticToken string, ttlSeconds int, now time.Time) (string, int64, error) {
+	if staticToken == "" {
+		return "", 0, errors.New("static install token not configured")
+	}
+	if ttlSeconds <= 0 {
+		return "", 0, errors.New("install token ttl must be positive")
+	}
+	nonce := make([]byte, 24)
+	if _, err := rand.Read(nonce); err != nil {
+		return "", 0, fmt.Errorf("read randomness: %w", err)
+	}
+	expiresAt := now.Unix() + int64(ttlSeconds)
+	body := ephemeralInstallTokenPrefix + strconv.FormatInt(expiresAt, 10) + "." + base64.RawURLEncoding.EncodeToString(nonce)
+	mac := hmac.New(sha256.New, []byte(staticToken))
+	mac.Write([]byte(body))
+	return body + "." + base64.RawURLEncoding.EncodeToString(mac.Sum(nil)), expiresAt, nil
+}
+
+// verifyEphemeralInstallToken 校验短时安装令牌；非短时格式或任何校验失败
+// 一律返回 false，不区分失败原因，避免向调用方泄露校验细节。
+func verifyEphemeralInstallToken(staticToken, raw string, now time.Time) bool {
+	if !strings.HasPrefix(raw, ephemeralInstallTokenPrefix) {
+		return false
+	}
+	parts := strings.Split(raw, ".")
+	if len(parts) != 4 {
+		return false
+	}
+	expiresAt, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return false
+	}
+	if now.Unix() >= expiresAt {
+		return false
+	}
+	nonce, err := base64.RawURLEncoding.DecodeString(parts[2])
+	if err != nil || len(nonce) == 0 || len(nonce) > 64 {
+		return false
+	}
+	gotSig, err := base64.RawURLEncoding.DecodeString(parts[3])
+	if err != nil {
+		return false
+	}
+	mac := hmac.New(sha256.New, []byte(staticToken))
+	mac.Write([]byte(parts[0] + "." + parts[1] + "." + parts[2]))
+	return subtle.ConstantTimeCompare(gotSig, mac.Sum(nil)) == 1
+}
 
 var safeInstallNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]*$`)
 
@@ -148,7 +212,23 @@ func (a *Router) AgentInstallToken(ctx *fiber.Ctx) error {
 		return fiber.NewError(http.StatusServiceUnavailable, "install token not configured")
 	}
 	ctx.Set("Cache-Control", "no-store")
-	data := fiber.Map{"token": a.config.AgentInstall.Token}
+	data := fiber.Map{}
+	// TokenTTL < 0 显式回退静态令牌（兼容模式）；否则签发短时令牌，
+	// 默认 30 分钟，静态令牌不再直接暴露给控制台。
+	if a.config.AgentInstall.TokenTTL < 0 {
+		data["token"] = a.config.AgentInstall.Token
+	} else {
+		ttl := a.config.AgentInstall.TokenTTL
+		if ttl == 0 {
+			ttl = defaultInstallTokenTTLSeconds
+		}
+		token, expiresAt, err := issueEphemeralInstallToken(a.config.AgentInstall.Token, ttl, time.Now())
+		if err != nil {
+			return fiber.NewError(http.StatusServiceUnavailable, "issue install token failed")
+		}
+		data["token"] = token
+		data["expires_at"] = expiresAt
+	}
 	if fingerprint := a.agentInstallCAFingerprint(); fingerprint != "" {
 		data["ca_fingerprint"] = fingerprint
 	}
@@ -166,7 +246,15 @@ func (a *Router) verifyAgentInstallToken(ctx *fiber.Ctx) error {
 	if token == "" {
 		token = strings.TrimPrefix(ctx.Get("Authorization"), "Bearer ")
 	}
-	if token != a.config.AgentInstall.Token {
+	if token == "" {
+		return fiber.NewError(http.StatusUnauthorized, "invalid install token")
+	}
+	// 双通道：短时令牌（过期 + HMAC 常量时间）或静态令牌（常量时间比较）。
+	// 上报端点不在本函数管辖内，只认静态令牌，实现令牌分域。
+	if verifyEphemeralInstallToken(a.config.AgentInstall.Token, token, time.Now()) {
+		return nil
+	}
+	if subtle.ConstantTimeCompare([]byte(token), []byte(a.config.AgentInstall.Token)) != 1 {
 		return fiber.NewError(http.StatusUnauthorized, "invalid install token")
 	}
 	return nil
@@ -175,20 +263,39 @@ func (a *Router) verifyAgentInstallToken(ctx *fiber.Ctx) error {
 func (a *Router) buildColliaConfig(node string) string {
 	reportURL := ""
 	controlServer := "127.0.0.1:17000"
+	agentTLSEnable := a.config.Control.TLS.Enable
 	controlPort := a.config.AgentInstall.ControlPort
 	if controlPort == 0 {
 		controlPort = 17000
 	}
+	if socket := strings.TrimSpace(a.config.AgentInstall.ControlSocket); socket != "" {
+		// 单机部署：Agent 经宿主侧 Unix Socket 接入，本机链路无需 mTLS。
+		controlServer = "unix://" + socket
+		agentTLSEnable = false
+	} else if a.config.AgentInstall.PublicBaseURL != "" {
+		controlServer = extractHost(a.config.AgentInstall.PublicBaseURL) + ":" + strconv.Itoa(controlPort)
+	}
 	if a.config.AgentInstall.PublicBaseURL != "" {
 		reportURL = a.config.AgentInstall.PublicBaseURL + "/api/v1/host/report"
-		controlServer = extractHost(a.config.AgentInstall.PublicBaseURL) + ":" + strconv.Itoa(controlPort)
+	}
+
+	upgradeKeyLine := ""
+	if keys := splitPublicKeys(a.config.AgentUpdate.PublicKey); len(keys) == 1 {
+		upgradeKeyLine = fmt.Sprintf("  upgrade_public_key: %q\n", keys[0])
+	} else if len(keys) > 1 {
+		var b strings.Builder
+		b.WriteString("  upgrade_public_keys:\n")
+		for _, key := range keys {
+			fmt.Fprintf(&b, "    - %q\n", key)
+		}
+		upgradeKeyLine = b.String()
 	}
 
 	return fmt.Sprintf(`control:
   server: %s
   agent_id: %s
   join_token: "%s"
-  tls:
+%stls:
     enable: %t
     cert_dir: %s
     server_name: beacon/collia
@@ -218,7 +325,7 @@ variables:
   host_prefix: /data/beacon
   container_prefix: /
   node: %s
-`, controlServer, node, controlJoinToken(a.config), a.config.Control.TLS.Enable, a.config.AgentInstall.CertDir, reportURL, a.config.AgentInstall.Token, node, node)
+`, controlServer, node, controlJoinToken(a.config), upgradeKeyLine, agentTLSEnable, a.config.AgentInstall.CertDir, reportURL, a.config.AgentInstall.Token, node, node)
 }
 
 func (a *Router) agentInstallPackageDir() string {
@@ -349,6 +456,14 @@ echo "collia installed and started, reverse tunnel -> $BASE_URL"
 
 func isSafeInstallName(s string) bool {
 	return safeInstallNamePattern.MatchString(s)
+}
+
+// splitPublicKeys 把 Server 配置的公钥串拆成列表：支持逗号/分号/空白分隔，
+// 供轮换重叠窗口同时下发旧钥与新钥（单键时仍写单行字段保持兼容）。
+func splitPublicKeys(raw string) []string {
+	return strings.FieldsFunc(raw, func(r rune) bool {
+		return r == ',' || r == ';' || r == ' ' || r == '\t' || r == '\n' || r == '\r'
+	})
 }
 
 func safeJoin(base string, elems ...string) (string, error) {

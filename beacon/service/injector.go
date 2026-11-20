@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"beacon/service/report"
 
@@ -35,6 +36,12 @@ func NewInjector(app *fiber.App, router *Router, prepare *Prepare, config *Confi
 	// report endpoint stays available as a compatibility fallback.
 	if tun := ServerTunnelFromHolder(); tun != nil {
 		tun.SetDataHandler(newTunnelReportHandler(reportService))
+		// 数据处理器就位后才开始接受 Agent 连接，消除启动窗口的静默丢批。
+		go func() {
+			if err := tun.Start(controlListenAddress(config)); err != nil {
+				slog.Error("reverse tunnel server stopped", "err", err)
+			}
+		}()
 	}
 	return &Injector{
 		App:           app,

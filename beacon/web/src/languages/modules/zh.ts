@@ -85,6 +85,7 @@ export default {
         installTipArch: '自动识别 amd64 / arm64 架构，二进制落地 /usr/sbin/collia',
         installTipService: '安装后自动注册系统服务、启动并建立反向隧道',
         installTipCa: '安装命令会先用 SHA-256 指纹校验控制 CA，再通过 --ca-file 使用；无需修改目标机系统信任库，多机安装可复用同一 Token 与指纹',
+        installTipTokenTtl: '安装令牌为短时令牌，过期后重新打开本对话框获取新令牌即可',
         upgradeTitle: '升级 Collia Agent',
         upgradeAction: '升级',
         upgradeDesc: '使用 Server 镜像内置的 Collia 版本对目标节点执行远程升级，升级过程中该节点的监控数据可能短暂中断。',

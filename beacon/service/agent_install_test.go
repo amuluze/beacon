@@ -1,7 +1,11 @@
 package service
 
 import (
+	"crypto/ed25519"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	servicemiddleware "beacon/service/middleware"
 
@@ -299,12 +304,20 @@ func TestAgentInstallCAEndpointAndFingerprint(t *testing.T) {
 	var payload struct {
 		Token         string `json:"token"`
 		CAFingerprint string `json:"ca_fingerprint"`
+		ExpiresAt     int64  `json:"expires_at"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
 		t.Fatalf("decode token response: %v", err)
 	}
-	if payload.Token != "install-secret" || len(payload.CAFingerprint) != 64 {
-		t.Fatalf("unexpected token payload: %+v", payload)
+	// 默认 TTL 下端点签发短时令牌，静态令牌不再直接暴露。
+	if !strings.HasPrefix(payload.Token, "bpit.") {
+		t.Fatalf("token payload must be ephemeral, got %q", payload.Token)
+	}
+	if payload.ExpiresAt <= 0 {
+		t.Fatalf("ephemeral token must carry expires_at, got %d", payload.ExpiresAt)
+	}
+	if len(payload.CAFingerprint) != 64 {
+		t.Fatalf("unexpected fingerprint payload: %+v", payload)
 	}
 }
 func TestAgentInstallCertsGeneratesWhenTLSEnabled(t *testing.T) {
@@ -345,5 +358,170 @@ func TestAgentInstallCertsGeneratesWhenTLSEnabled(t *testing.T) {
 	pkgPath := filepath.Join(packageDir, "certs", "node-01.tar.gz")
 	if _, err := os.Stat(pkgPath); err != nil {
 		t.Fatalf("agent cert package not generated: %v", err)
+	}
+}
+
+func TestIssueAndVerifyEphemeralInstallToken(t *testing.T) {
+	now := time.Unix(1_800_000_000, 0)
+	token, expiresAt, err := issueEphemeralInstallToken("install-secret", 1800, now)
+	if err != nil {
+		t.Fatalf("issue token: %v", err)
+	}
+	if expiresAt != now.Unix()+1800 {
+		t.Fatalf("expiresAt = %d, want %d", expiresAt, now.Unix()+1800)
+	}
+	if !strings.HasPrefix(token, "bpit.") {
+		t.Fatalf("token %q must carry the ephemeral prefix", token)
+	}
+	if !verifyEphemeralInstallToken("install-secret", token, now.Add(1799*time.Second)) {
+		t.Fatal("valid token within TTL must verify")
+	}
+	if verifyEphemeralInstallToken("install-secret", token, now.Add(1801*time.Second)) {
+		t.Fatal("expired token must be rejected")
+	}
+	if verifyEphemeralInstallToken("other-secret", token, now) {
+		t.Fatal("token minted under a different static token must be rejected")
+	}
+	if verifyEphemeralInstallToken("install-secret", token+"x", now) {
+		t.Fatal("tampered token must be rejected")
+	}
+	if verifyEphemeralInstallToken("install-secret", "bpit.oops", now) {
+		t.Fatal("malformed token must be rejected")
+	}
+	if verifyEphemeralInstallToken("install-secret", "plain-static-token", now) {
+		t.Fatal("non-ephemeral format must not verify as ephemeral")
+	}
+}
+
+func TestAgentInstallTokenEndpointIssuesEphemeralToken(t *testing.T) {
+	router := &Router{config: &Config{AgentInstall: AgentInstall{Enable: true, Token: "install-secret", TokenTTL: 600}}}
+	app := fiber.New()
+	app.Post("/api/v1/host/get_install_token", router.AgentInstallToken)
+	app.Get("/api/v1/host/install/config", router.AgentInstallConfig)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/host/get_install_token", nil)
+	resp, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("token endpoint status = %d, want 200", resp.StatusCode)
+	}
+	var payload struct {
+		Token     string `json:"token"`
+		ExpiresAt int64  `json:"expires_at"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		t.Fatalf("decode token response: %v", err)
+	}
+	if !strings.HasPrefix(payload.Token, "bpit.") {
+		t.Fatalf("token = %q, want ephemeral format", payload.Token)
+	}
+	if payload.ExpiresAt <= time.Now().Unix() {
+		t.Fatalf("expires_at = %d, must be in the future", payload.ExpiresAt)
+	}
+
+	// 短时令牌必须能通过安装期受信端点。
+	installReq := httptest.NewRequest(http.MethodGet, "/api/v1/host/install/config?node=node-01", nil)
+	installReq.Header.Set("X-Install-Token", payload.Token)
+	installResp, err := app.Test(installReq, -1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = installResp.Body.Close() }()
+	if installResp.StatusCode != http.StatusOK {
+		t.Fatalf("install config with ephemeral token = %d, want 200", installResp.StatusCode)
+	}
+}
+
+func TestAgentInstallTokenLegacyModeReturnsStaticToken(t *testing.T) {
+	router := &Router{config: &Config{AgentInstall: AgentInstall{Enable: true, Token: "install-secret", TokenTTL: -1}}}
+	app := fiber.New()
+	app.Post("/api/v1/host/get_install_token", router.AgentInstallToken)
+
+	resp, err := app.Test(httptest.NewRequest(http.MethodPost, "/api/v1/host/get_install_token", nil), -1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	var payload struct {
+		Token     string `json:"token"`
+		ExpiresAt int64  `json:"expires_at"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		t.Fatalf("decode token response: %v", err)
+	}
+	if payload.Token != "install-secret" {
+		t.Fatalf("legacy mode token = %q, want static token", payload.Token)
+	}
+	if payload.ExpiresAt != 0 {
+		t.Fatalf("legacy mode must omit expires_at, got %d", payload.ExpiresAt)
+	}
+}
+
+func TestBuildColliaConfigUsesUnixSocket(t *testing.T) {
+	const socket = "/data/beacon/data/control/collia.sock"
+	router := &Router{config: &Config{
+		AgentInstall: AgentInstall{
+			Enable:        true,
+			Token:         "install-secret",
+			PublicBaseURL: "https://beacon.example.com",
+			ControlSocket: socket,
+		},
+		Control: Control{TLS: ControlTLS{Enable: true}},
+	}}
+	cfg := router.buildColliaConfig("node-01")
+	if !strings.Contains(cfg, "server: unix://"+socket) {
+		t.Fatalf("agent config must use the unix socket target:\n%s", cfg)
+	}
+	if !strings.Contains(cfg, "enable: false") {
+		t.Fatalf("unix target must disable agent mTLS:\n%s", cfg)
+	}
+	if !strings.Contains(cfg, "url: \"https://beacon.example.com/api/v1/host/report\"") {
+		t.Fatalf("HTTP report fallback must stay available:\n%s", cfg)
+	}
+	if strings.Contains(cfg, "enable: true") {
+		t.Fatalf("unix target must not request agent certificates:\n%s", cfg)
+	}
+}
+
+func TestBuildColliaConfigEmbedsUpgradePublicKey(t *testing.T) {
+	pub, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	encoded := base64.StdEncoding.EncodeToString(pub)
+	router := &Router{config: &Config{
+		AgentInstall: AgentInstall{Enable: true, Token: "install-secret", PublicBaseURL: "https://beacon.example.com"},
+		AgentUpdate:  AgentUpdate{PublicKey: encoded},
+	}}
+	cfg := router.buildColliaConfig("node-01")
+	if !strings.Contains(cfg, fmt.Sprintf("upgrade_public_key: %q", encoded)) {
+		t.Fatalf("agent config must pin the release public key, got:\n%s", cfg)
+	}
+
+	router.config.AgentUpdate.PublicKey = ""
+	cfg = router.buildColliaConfig("node-01")
+	if strings.Contains(cfg, "upgrade_public_key") {
+		t.Fatalf("unconfigured public key must not be written into agent config:\n%s", cfg)
+	}
+
+	// 轮换重叠窗口：逗号分隔的两把公钥写成 YAML 列表并逐项引用。
+	second, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondEncoded := base64.StdEncoding.EncodeToString(second)
+	router.config.AgentUpdate.PublicKey = encoded + "," + secondEncoded
+	cfg = router.buildColliaConfig("node-01")
+	if !strings.Contains(cfg, "upgrade_public_keys:") {
+		t.Fatalf("multi-key config must use the list field, got:\n%s", cfg)
+	}
+	if !strings.Contains(cfg, fmt.Sprintf("- %q", encoded)) || !strings.Contains(cfg, fmt.Sprintf("- %q", secondEncoded)) {
+		t.Fatalf("multi-key config must list both keys, got:\n%s", cfg)
+	}
+	if strings.Contains(cfg, "upgrade_public_key: \"") {
+		t.Fatalf("multi-key config must not emit the single-key field:\n%s", cfg)
 	}
 }

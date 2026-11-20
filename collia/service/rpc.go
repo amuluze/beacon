@@ -6,6 +6,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"runtime"
 
@@ -32,10 +33,19 @@ func NewRPCServer(config *Config, db *database.DB, version Version) (*Server, er
 	}
 	rootDir := config.Variables.HostPrefix
 	s := rpc.NewService(db, manager, rootDir)
+	// 固定发布签名公钥（安装期由 Server config 通道写入 config.yml）；
+	// 单键与轮换集合取并集，非法配置直接终止启动，不静默降级为兼容模式。
+	upgradeKeys := make([]string, 0, 1+len(config.Control.UpgradePublicKeys))
+	if config.Control.UpgradePublicKey != "" {
+		upgradeKeys = append(upgradeKeys, config.Control.UpgradePublicKey)
+	}
+	upgradeKeys = append(upgradeKeys, config.Control.UpgradePublicKeys...)
+	if err := s.SetUpgradePublicKeys(upgradeKeys); err != nil {
+		return nil, fmt.Errorf("configure upgrade public key: %w", err)
+	}
 	// 接线自更新：二进制路径 + systemctl restart 回调；并清理上次更新残留的 .bak
 	s.SetSelfUpdateConfig("", rpc.DefaultRestartFn("collia"))
 	rpc.CleanupBackup("")
-
 	agentID := config.Control.AgentID
 	if agentID == "" {
 		agentID = "default"
@@ -46,7 +56,7 @@ func NewRPCServer(config *Config, db *database.DB, version Version) (*Server, er
 	tunnel := rpctunnel.NewAgentTunnel(config.Control.Server, agentID)
 	tunnel.SetJoinToken(config.Control.JoinToken)
 	tunnel.SetMetadata(version.String(), runtime.GOOS, runtime.GOARCH)
-	if config.Control.TLS.Enable {
+	if config.Control.TLS.Enable && !isUnixControlTarget(config.Control.Server) {
 		serverName := config.Control.TLS.ServerName
 		if serverName == "" {
 			serverName = "beacon/collia"
@@ -57,6 +67,8 @@ func NewRPCServer(config *Config, db *database.DB, version Version) (*Server, er
 		}
 		tunnel.SetTLSConfig(tlsCfg)
 		slog.Info("reverse tunnel tls enabled", "cert_dir", config.Control.TLS.CertDir, "server_name", serverName)
+	} else if isUnixControlTarget(config.Control.Server) {
+		slog.Info("reverse tunnel over unix socket", "socket", config.Control.Server)
 	}
 	tunnel.SetHandler(buildRPCDispatcher(s))
 	slog.Info("reverse tunnel configured", "server", config.Control.Server, "agent_id", agentID)

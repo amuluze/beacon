@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -149,7 +150,9 @@ func (a *AgentTunnel) openDataStream(ctx context.Context, client ReverseTunnelCl
 	if err := stream.Send(regFrame); err != nil {
 		return fmt.Errorf("send data registration: %w", err)
 	}
+	a.dataSendMu.Lock()
 	a.dataStream = stream
+	a.dataSendMu.Unlock()
 	a.dataReady.Store(true)
 
 	// Drain server acknowledgements so the server's writes never stall.
@@ -180,12 +183,33 @@ func (a *AgentTunnel) SetHandler(h Handler) {
 	a.handler = h
 }
 
+// agentDialTarget 把 unix:// 目标转换为 passthrough 目标并注入 Unix 拨号器；
+// 非 Unix 目标原样返回且不注入拨号器，保持既有 TCP 行为。
+func agentDialTarget(serverAddr string) (string, []grpc.DialOption) {
+	path := unixSocketPath(serverAddr)
+	if path == "" {
+		return serverAddr, nil
+	}
+	dialer := func(ctx context.Context, _ string) (net.Conn, error) {
+		var d net.Dialer
+		return d.DialContext(ctx, "unix", path)
+	}
+	return "passthrough:///collia-unix", []grpc.DialOption{grpc.WithContextDialer(dialer)}
+}
+
 // Start connects to the Server and starts processing frames.
 // Blocks until the connection is closed or ctx is cancelled.
 func (a *AgentTunnel) Start(ctx context.Context) error {
 	for {
-		if a.conn != nil {
-			if err := a.conn.Close(); err != nil {
+		a.mu.Lock()
+		closed := a.closed
+		previous := a.conn
+		a.mu.Unlock()
+		if closed {
+			return nil
+		}
+		if previous != nil {
+			if err := previous.Close(); err != nil {
 				slog.Debug("agent tunnel: close previous connection failed", "err", err)
 			}
 		}
@@ -195,17 +219,21 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 		if a.tlsConfig != nil {
 			transportCreds = credentials.NewTLS(a.tlsConfig)
 		}
-		conn, err := grpc.NewClient(a.serverAddr,
+		target, dialOpts := agentDialTarget(a.serverAddr)
+		opts := []grpc.DialOption{
 			grpc.WithTransportCredentials(transportCreds),
 			grpc.WithKeepaliveParams(keepalive.ClientParameters{
 				Time:                30 * time.Second,
 				Timeout:             10 * time.Second,
 				PermitWithoutStream: true,
 			}),
-		)
+		}
+		opts = append(opts, dialOpts...)
+		var client ReverseTunnelClient
+		conn, err := grpc.NewClient(target, opts...)
 		if err != nil {
 			slog.Error("agent tunnel: connect failed", "err", err)
-			if !a.reconnect {
+			if !a.shouldReconnect() {
 				return err
 			}
 			select {
@@ -215,17 +243,20 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 				continue
 			}
 		}
+		a.mu.Lock()
 		a.conn = conn
-		a.client = NewReverseTunnelClient(conn)
+		client = NewReverseTunnelClient(conn)
+		a.client = client
+		a.mu.Unlock()
 		a.dataReady.Store(false)
 
-		stream, err := a.client.Tunnel(ctx)
+		stream, err := client.Tunnel(ctx)
 		if err != nil {
 			slog.Error("agent tunnel: create stream failed", "err", err)
 			if closeErr := conn.Close(); closeErr != nil {
 				slog.Debug("agent tunnel: close failed connection failed", "err", closeErr)
 			}
-			if !a.reconnect {
+			if !a.shouldReconnect() {
 				return err
 			}
 			select {
@@ -235,7 +266,9 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 				continue
 			}
 		}
+		a.mu.Lock()
 		a.stream = stream
+		a.mu.Unlock()
 		slog.Info("agent tunnel: connected to server")
 
 		// Send registration frame with JSON payload carrying agent metadata.
@@ -257,7 +290,7 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 		// Open the push-only data stream on the same connection. Failures are
 		// not fatal: the agent keeps working and falls back to the legacy
 		// HTTP report channel until the data stream is available.
-		if err := a.openDataStream(ctx, a.client); err != nil {
+		if err := a.openDataStream(ctx, client); err != nil {
 			slog.Warn("agent tunnel: data stream unavailable, falling back to http report", "agent_id", a.agentID, "err", err)
 		}
 
@@ -272,7 +305,7 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 
 		heartbeatCancel()
 
-		if !a.reconnect {
+		if !a.shouldReconnect() {
 			return streamErr
 		}
 		select {
@@ -380,6 +413,13 @@ func (a *AgentTunnel) sendFrame(stream grpc.BidiStreamingClient[Frame, Frame], f
 	a.sendMu.Lock()
 	defer a.sendMu.Unlock()
 	return stream.Send(frame)
+}
+
+// shouldReconnect 在锁内读取重连开关，避免与 Close 并发写竞争。
+func (a *AgentTunnel) shouldReconnect() bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.reconnect
 }
 
 // Close stops the tunnel and disconnects.

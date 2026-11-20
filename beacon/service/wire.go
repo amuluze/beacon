@@ -12,7 +12,6 @@ import (
 	"beacon/service/container"
 	"beacon/service/dingtalk"
 	"beacon/service/feishu"
-	healthapi "beacon/service/health/api"
 	"beacon/service/host"
 	"beacon/service/mail"
 	"beacon/service/model"
@@ -26,9 +25,6 @@ import (
 // NewStalenessMinutes provides the staleness threshold for host data freshness checks.
 // Default is 300 seconds (5 minutes); can be configured via retention.
 func NewStalenessMinutes() []int64 { return nil }
-
-// NewHealthProbe provides the health probe instance.
-func NewHealthProbe() *healthapi.Probe { return healthapi.NewProbe() }
 
 func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), error) {
 	wire.Build(

@@ -8,7 +8,11 @@ package schema
 type UpgradeAgentArgs struct {
 	DownloadURL string `json:"download_url"`
 	SHA256      string `json:"sha256"`
-	Version     string `json:"version"`
+	// Signature 是发布方对包二进制 SHA-256 摘要的 Ed25519 签名（base64），
+	// 由 Server 透传侧车文件（collia.sig）内容；Agent 侧已固定发布公钥时
+	// 缺失即拒绝（fail-closed）。
+	Signature    string `json:"signature,omitempty"`
+	Version      string `json:"version"`
 	InstallToken string `json:"install_token"`
 }
 

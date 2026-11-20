@@ -477,3 +477,83 @@ func TestNewDBPostgresTLSIntegration(t *testing.T) {
 		}
 	}
 }
+
+// TestNewConfig_ControlUnixSocketEnv 验证单机模式的环境变量覆盖：
+// 监听路径、下发路径与两个 TLS 开关均可由 BEACON_* 注入。
+func TestNewConfig_ControlUnixSocketEnv(t *testing.T) {
+	const toml = `
+[Control]
+Enable = true
+Address = ":17000"
+JoinToken = "join-token-value"
+
+[Control.TLS]
+Enable = true
+
+[AgentInstall]
+Enable = true
+Token = "install-token"
+TLSEnable = true
+`
+	t.Setenv("BEACON_CONTROL_SOCKET", "/app/data/control/collia.sock")
+	t.Setenv("BEACON_AGENT_INSTALL_CONTROL_SOCKET", "/data/beacon/data/control/collia.sock")
+	t.Setenv("BEACON_CONTROL_TLS_ENABLE", "false")
+	t.Setenv("BEACON_AGENT_INSTALL_TLS_ENABLE", "false")
+
+	cfg, err := NewConfig(writeConfig(t, toml))
+	if err != nil {
+		t.Fatalf("NewConfig: %v", err)
+	}
+	if cfg.Control.UnixSocket != "/app/data/control/collia.sock" {
+		t.Fatalf("Control.UnixSocket = %q", cfg.Control.UnixSocket)
+	}
+	if cfg.AgentInstall.ControlSocket != "/data/beacon/data/control/collia.sock" {
+		t.Fatalf("AgentInstall.ControlSocket = %q", cfg.AgentInstall.ControlSocket)
+	}
+	if cfg.Control.TLS.Enable || cfg.AgentInstall.TLSEnable {
+		t.Fatalf("TLS env overrides not applied: control=%v agent=%v", cfg.Control.TLS.Enable, cfg.AgentInstall.TLSEnable)
+	}
+}
+
+// TestValidateTransportSecurityAllowsUnixSocketInProduction 验证单机模式
+// 生产环境可用 UDS 替代 mTLS；切回 TCP 后仍强制 TLS 与 Agent 证书。
+func TestValidateTransportSecurityAllowsUnixSocketInProduction(t *testing.T) {
+	config := &Config{
+		App:          App{Env: productionEnv},
+		Control:      Control{Enable: true, UnixSocket: "/app/data/control/collia.sock", TLS: ControlTLS{Enable: false}},
+		AgentInstall: AgentInstall{Enable: true, PublicBaseURL: "https://beacon.example.com", ControlSocket: "/data/beacon/data/control/collia.sock", TLSEnable: false},
+	}
+	if err := validateTransportSecurity(config); err != nil {
+		t.Fatalf("unix socket mode must be allowed in production: %v", err)
+	}
+
+	config.Control.UnixSocket = ""
+	config.AgentInstall.ControlSocket = ""
+	if err := validateTransportSecurity(config); !errors.Is(err, ErrControlTLSRequired) {
+		t.Fatalf("tcp mode must still require control TLS, got %v", err)
+	}
+	config.Control.TLS.Enable = true
+	if err := validateTransportSecurity(config); !errors.Is(err, ErrAgentTLSRequired) {
+		t.Fatalf("tcp mode must still require agent certificates, got %v", err)
+	}
+}
+
+// TestValidateTransportSecurityRejectsUnpairedUnixSocket 验证 socket 模式
+// 必须同时配置监听路径与下发路径，避免服务端/Agent 目标错位。
+func TestValidateTransportSecurityRejectsUnpairedUnixSocket(t *testing.T) {
+	onlyListen := &Config{Control: Control{UnixSocket: "/app/data/control/collia.sock"}}
+	if err := validateTransportSecurity(onlyListen); !errors.Is(err, ErrControlSocketMismatch) {
+		t.Fatalf("listen-only config error = %v, want ErrControlSocketMismatch", err)
+	}
+	onlyAdvertised := &Config{AgentInstall: AgentInstall{ControlSocket: "/data/beacon/data/control/collia.sock"}}
+	if err := validateTransportSecurity(onlyAdvertised); !errors.Is(err, ErrControlSocketMismatch) {
+		t.Fatalf("advertised-only config error = %v, want ErrControlSocketMismatch", err)
+	}
+	paired := &Config{
+		Control:      Control{UnixSocket: "/app/data/control/collia.sock"},
+		AgentInstall: AgentInstall{ControlSocket: "/data/beacon/data/control/collia.sock"},
+	}
+	if err := validateTransportSecurity(paired); err != nil {
+		t.Fatalf("paired socket config rejected: %v", err)
+	}
+}

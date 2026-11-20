@@ -297,6 +297,10 @@ func (u *Updater) execute(ctx context.Context, info tunnelpkg.AgentInfo) (Update
 	if err != nil {
 		return result, u.auditPreflightFailure(info.AgentID, fmt.Errorf("calculate collia sha256: %w", err))
 	}
+	signature, err := packageSignature(filepath.Join(u.config.PackageDir, arch, "collia"))
+	if err != nil {
+		return result, u.auditPreflightFailure(info.AgentID, err)
+	}
 	downloadURL, err := u.downloadURL(arch)
 	if err != nil {
 		return result, u.auditPreflightFailure(info.AgentID, err)
@@ -310,6 +314,7 @@ func (u *Updater) execute(ctx context.Context, info tunnelpkg.AgentInfo) (Update
 	args := rpcSchema.UpgradeAgentArgs{
 		DownloadURL:  downloadURL,
 		SHA256:       checksum,
+		Signature:    signature,
 		Version:      u.config.TargetVersion,
 		InstallToken: u.config.InstallToken,
 	}
@@ -397,6 +402,19 @@ func normalizeArch(value string) (string, bool) {
 	default:
 		return "", false
 	}
+}
+
+// packageSignature 读取发布方为安装包生成的 Ed25519 签名侧车文件（collia.sig）。
+// 文件不存在表示发布方未启用签名链路，返回空串交由 Agent 侧判定。
+func packageSignature(packagePath string) (string, error) {
+	raw, err := os.ReadFile(packagePath + ".sig")
+	if err != nil {
+		if stderrors.Is(err, os.ErrNotExist) {
+			return "", nil
+		}
+		return "", fmt.Errorf("read collia signature: %w", err)
+	}
+	return strings.TrimSpace(string(raw)), nil
 }
 
 func (u *Updater) downloadURL(arch string) (string, error) {

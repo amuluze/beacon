@@ -29,6 +29,7 @@ const dialogVisible = computed<boolean>({
 const loading = shallowRef(false)
 const token = ref('')
 const caFingerprint = ref('')
+const expiresAt = ref(0)
 const node = ref('node-01')
 const nodeRegex = /^[A-Z0-9][\w.-]*$/i
 const nodeError = ref('')
@@ -59,6 +60,7 @@ const tips = computed(() => [
   t('agent.installTipArch'),
   t('agent.installTipService'),
   ...(caFingerprint.value ? [t('agent.installTipCa')] : []),
+  ...(expiresAt.value ? [t('agent.installTipTokenTtl')] : []),
 ])
 
 function validateNode() {
@@ -73,6 +75,7 @@ async function loadToken() {
     const { data } = await getInstallToken()
     token.value = data?.token ?? ''
     caFingerprint.value = data?.ca_fingerprint ?? ''
+    expiresAt.value = data?.expires_at ?? 0
   }
   finally {
     loading.value = false

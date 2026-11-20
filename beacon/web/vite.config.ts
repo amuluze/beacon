@@ -1,6 +1,7 @@
 import vue from '@vitejs/plugin-vue'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import process from 'node:process'
 import { defineConfig, type Plugin } from 'vite'
 
 import AutoImport from 'unplugin-auto-import/vite'
@@ -85,12 +86,12 @@ export default defineConfig({
         extensions: ['.js', '.ts', '.jsx', '.tsx', '.json', '.vue', '.mjs'],
     },
     server: {
-        host: '0.0.0.0',
+        host: process.env.BEACON_DEV_HOST ?? '127.0.0.1',
         port: 9000,
         open: true,
         proxy: {
             '/api/': {
-                target: 'http://124.70.156.29:8000',
+                target: process.env.BEACON_DEV_API_TARGET ?? 'http://127.0.0.1:8000',
                 changeOrigin: true,
             },
         },

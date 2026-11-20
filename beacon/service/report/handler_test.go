@@ -215,3 +215,32 @@ func TestHandleReport_RejectsWhenServerTokenIsNotConfigured(t *testing.T) {
 		t.Fatalf("unconfigured token status = %d, want 503", resp.StatusCode)
 	}
 }
+
+// TestHandleReport_RejectsEphemeralInstallToken 验证上报分域：短时安装令牌
+// 只服务安装期端点，不得用于伪造 Agent 监控数据上报。
+func TestHandleReport_RejectsEphemeralInstallToken(t *testing.T) {
+	app, cleanup := newTestApp(t, testReportToken)
+	defer cleanup()
+
+	body := mustMarshal(rpcSchema.MonitorReportArgs{
+		AgentID: "agent-a",
+		Host: rpcSchema.HostReport{
+			Timestamp: time.Now(),
+			Hostname:  "host-a",
+		},
+	})
+	// 结构合法的短时令牌：bpit.<远期过期>.<nonce>.<hmac 形态>。
+	ephemeral := "bpit.4102444800." + strings.Repeat("A", 32) + "." + strings.Repeat("B", 43)
+	req := httptest.NewRequest("POST", "/api/v1/host/report", strings.NewReader(string(body)))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Install-Token", ephemeral)
+
+	resp, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("app.Test: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != fiber.StatusUnauthorized {
+		t.Fatalf("ephemeral token report = %d, want 401", resp.StatusCode)
+	}
+}

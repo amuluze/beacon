@@ -68,11 +68,17 @@ func bindEnvs() {
 		"auth.signingkey":            "BEACON_AUTH_SIGNING_KEY",
 		"control.jointoken":          "BEACON_CONTROL_JOIN_TOKEN",
 		"control.address":            "BEACON_CONTROL_ADDRESS",
+		"control.unixsocket":         "BEACON_CONTROL_SOCKET",
+		"control.tls.enable":         "BEACON_CONTROL_TLS_ENABLE",
 		"agentinstall.token":         "BEACON_AGENT_INSTALL_TOKEN",
+		"agentinstall.tokenttl":      "BEACON_AGENT_INSTALL_TOKEN_TTL",
 		"agentinstall.publicbaseurl": "BEACON_PUBLIC_BASE_URL",
+		"agentinstall.controlsocket": "BEACON_AGENT_INSTALL_CONTROL_SOCKET",
+		"agentinstall.tlsenable":     "BEACON_AGENT_INSTALL_TLS_ENABLE",
 		"agentinstall.controlport":   "BEACON_CONTROL_PORT",
 		"agentupdate.enable":         "BEACON_AGENT_UPDATE_ENABLE",
 		"agentupdate.targetversion":  "BEACON_COLLIA_VERSION",
+		"agentupdate.publickey":      "BEACON_AGENT_UPDATE_PUBLIC_KEY",
 		"agentupdate.timeout":        "BEACON_AGENT_UPDATE_TIMEOUT",
 		"agentupdate.maxconcurrent":  "BEACON_AGENT_UPDATE_MAX_CONCURRENT",
 		"agentupdate.retryinterval":  "BEACON_AGENT_UPDATE_RETRY_INTERVAL",
@@ -142,10 +148,13 @@ type Fiber struct {
 }
 
 type Control struct {
-	Enable    bool
-	Address   string
-	JoinToken string
-	TLS       ControlTLS
+	Enable  bool
+	Address string
+	// UnixSocket 非空时反向隧道在 Unix Socket 上监听（单机部署），
+	// 此时忽略 Address 与 TLS 强制要求；路径为进程可见路径。
+	UnixSocket string
+	JoinToken  string
+	TLS        ControlTLS
 }
 
 type ControlTLS struct {
@@ -187,11 +196,17 @@ type Update struct {
 }
 
 type AgentInstall struct {
-	Enable        bool
-	Token         string
+	Enable bool
+	Token  string
+	// TokenTTL 控制安装令牌有效期（秒）：0 未配置时默认 1800（短时令牌），
+	// 负值显式回退为返回静态令牌的兼容模式。
+	TokenTTL      int
 	PublicBaseURL string
 	PackageDir    string
 	ControlPort   int
+	// ControlSocket 非空时把 Agent 的下发 config 指向 `unix://<路径>`（宿主视角），
+	// 与 Control.UnixSocket（容器视角）配合实现单机部署；空值保持 TCP 行为。
+	ControlSocket string
 	TLSEnable     bool
 	CertDir       string
 }
@@ -205,6 +220,9 @@ type AgentInstall struct {
 type AgentUpdate struct {
 	Enable        bool
 	TargetVersion string
+	// PublicKey 是 Collia 发布签名的 Ed25519 公钥（base64）。配置后随安装
+	// config 下发给 Agent 固定；侧车签名缺失时 Agent 拒绝升级。
+	PublicKey     string
 	Timeout       int
 	MaxConcurrent int
 	RetryInterval int
