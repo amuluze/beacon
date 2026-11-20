@@ -87,7 +87,12 @@ type Control struct {
 	Server    string `yaml:"server" mapstructure:"server"`
 	AgentID   string `yaml:"agent_id" mapstructure:"agent_id"`
 	JoinToken string `yaml:"join_token" mapstructure:"join_token"`
-	TLS       TLS    `yaml:"tls" mapstructure:"tls"`
+	// UpgradePublicKey 是 Collia 发布签名公钥（base64 Ed25519）。
+	// 安装期由 Server config 通道写入并本地固定；固定后升级包必须携带匹配签名。
+	UpgradePublicKey string `yaml:"upgrade_public_key" mapstructure:"upgrade_public_key"`
+	// UpgradePublicKeys 是轮换重叠窗口使用的公钥集合；与单键字段同时存在时取并集。
+	UpgradePublicKeys []string `yaml:"upgrade_public_keys" mapstructure:"upgrade_public_keys"`
+	TLS               TLS      `yaml:"tls" mapstructure:"tls"`
 }
 
 type TLS struct {

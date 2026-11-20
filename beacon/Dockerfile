@@ -61,10 +61,14 @@ RUN for attempt in 1 2 3 4 5; do \
         go clean -modcache; \
         sleep 2; \
     done
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+RUN --mount=type=secret,id=collia_signing_key \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -trimpath -ldflags="-s -w -X main.version=$COLLIA_VERSION" -o /out/collia-amd64 ./cmd && \
     CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
-    go build -trimpath -ldflags="-s -w -X main.version=$COLLIA_VERSION" -o /out/collia-arm64 ./cmd
+    go build -trimpath -ldflags="-s -w -X main.version=$COLLIA_VERSION" -o /out/collia-arm64 ./cmd && \
+    CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/sign ./cmd/sign && \
+    COLLIA_SIGNING_KEY_FILE=/run/secrets/collia_signing_key \
+    sh ./script/sign_release_packages.sh /out /out/sign
 
 FROM ${RUNTIME_IMAGE}
 ARG APK_REPOSITORY
@@ -83,6 +87,10 @@ RUN if [ -n "$APK_REPOSITORY" ]; then \
 COPY --from=beacon-builder /out/beacon /app/beacon
 COPY --from=collia-builder /out/collia-amd64 /app/downloads/collia/amd64/collia
 COPY --from=collia-builder /out/collia-arm64 /app/downloads/collia/arm64/collia
+# 发布签名侧车文件仅在构建期挂载私钥时存在；无签名构建保持兼容模式。
+RUN --mount=from=collia-builder,source=/out,target=/out \
+    if [ -f /out/collia-amd64.sig ]; then cp /out/collia-amd64.sig /app/downloads/collia/amd64/collia.sig; fi && \
+    if [ -f /out/collia-arm64.sig ]; then cp /out/collia-arm64.sig /app/downloads/collia/arm64/collia.sig; fi
 COPY beacon/configs /app/configs
 COPY beacon/nginx /etc/nginx
 COPY beacon/supervisor/server.conf beacon/supervisor/nginx.conf /etc/supervisor/conf.d/

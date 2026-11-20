@@ -21,5 +21,5 @@ type Auther interface {
 	DestroyToken(token string) error
 	ParseToken(token string, tokenType string) (string, string, error)
 	Release() error
-	RecordAudit(ctx context.Context, username string, operate string, object string)
+	RecordAudit(ctx context.Context, username string, operate string, object string) error
 }

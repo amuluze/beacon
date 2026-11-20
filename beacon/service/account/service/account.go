@@ -10,6 +10,7 @@ import (
 	"beacon/service/account/repository"
 	"beacon/service/schema"
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/casbin/casbin/v2"
@@ -205,6 +206,9 @@ func (a *AccountService) RoleUpdate(ctx context.Context, args schema.RoleUpdateA
 		resources, err := a.AccountRepository.ResourceQuery(ctx, schema.ResourceQueryArgs{ID: resourceID})
 		if err != nil {
 			return err
+		}
+		if len(resources) == 0 {
+			return fmt.Errorf("resource %s not found", resourceID)
 		}
 		_, err = a.Enforcer.RemoveNamedPolicy("p", role.ID.String(), resources[0].Path, resources[0].Method)
 		if err != nil {

@@ -18,8 +18,8 @@
 
 - 模块路径：`beacon`
 - Go 版本：`1.25.0`
-- Go 源码文件：159（非测试 `.go`，不含 `web/`）
-- Go 测试文件：74
+- Go 源码文件：160（非测试 `.go`，不含 `web/`）
+- Go 测试文件：75
 - 包名：`account`, `agent`, `alarm`, `api`, `audit`, `auth`, `authcookie`, `client`, `container`, `contextx`, `dingtalk`, `errors`, `feishu`, `fiberx`, `hash`, `health`, `host`, `jwtauth`, `mail`, `main`, `middleware`, `model`, `report`, `repository`, `rpc`, `schema`, `secret`, `service`, `task`, `terminal`, `testutil`, `title`, `utils`, `uuid`, `validatex`, `wecom`, `web`
 - 推断角色：HTTP/API service module: Web/API 接入、路由注册、请求校验和服务协调
 
@@ -101,6 +101,11 @@
 - 入口：`api := app.Group("/api")` at `beacon/service/router.go:74`
 - 入口：`app.Get("/health", a.healthProbe.Liveness)` at `beacon/service/router.go:80`
 - 入口：`app.Get("/ready", a.healthProbe.Readiness)` at `beacon/service/router.go:81`
+- 就绪探针真实接线：`NewHealthProbe(caller, db)` 注入数据库 ping 与 tunnel 计数（`beacon/service/rpc.go`），数据库失联时 `/ready` 返回 503。
+- 安装令牌默认签发短时令牌：`bpit.<exp>.<nonce>.<hmac>`，HMAC 密钥派生自静态安装令牌（轮换即吊销批次），`AgentInstall.TokenTTL`（0=默认 1800 秒，负值回退静态）；安装期端点接受短时或静态令牌且比较走常量时间，上报端点只接受静态令牌（`beacon/service/agent_install.go`、`beacon/service/report/report.go`）。
+- 单机 Unix Socket 模式：`Control.UnixSocket`（env `BEACON_CONTROL_SOCKET`，容器内监听路径）与 `AgentInstall.ControlSocket`（env `BEACON_AGENT_INSTALL_CONTROL_SOCKET`，下发给 Agent 的宿主路径）配合 `controlListenAddress` 在 UDS 上监听；UDS 时豁免生产 TLS 强制，`buildColliaConfig` 下发 `server: unix://…` 且 `tls.enable: false`（`beacon/service/rpc.go`、`beacon/service/agent_install.go`）。
+- 升级签名透传：`Updater` 读取 `<PackageDir>/<arch>/collia.sig` 侧车文件并随 `UpgradeAgentArgs.Signature` 下发；`AgentUpdate.PublicKey` 经安装 config 的 `control.upgrade_public_key` 写入 Agent 固定（`beacon/service/agent/updater.go`、`beacon/service/agent_install.go`）。`PublicKey` 支持逗号/空白分隔的多把公钥：单钥写单行字段，多钥写 `upgrade_public_keys` 列表（轮换重叠窗口），升级 RPC 永不下发公钥。
+- `beacon reset-admin` 子命令（`beacon/cmd/beacon/main.go` + `beacon/service/reset_admin.go`）：默认生成满足策略的临时密码并强制首登改密；`--password`/`--password-stdin` 可显式指定；bcrypt 入库并写 `system` 审计（Object=admin ID）；admin 缺失时拒绝重建（IR024）。
 - 入口：`app.Get("/ws/terminal", webSocketAuth, websocket.New(a.terminalHandler.Handle))` at `beacon/service/router.go:163`
 - 入口：`app.Get("/ws/:id", webSocketAuth, websocket.New(a.loggerHandler.Handler))` at `beacon/service/router.go:164`
 - 入口：`app.Use("/", filesystem.New(filesystem.Config{` at `beacon/service/app.go:69`
@@ -160,6 +165,7 @@
 - 流式控制调用（`TunnelClient.StreamCall`）派生最长 2 小时 `maxStreamDuration` 的截止 ctx，即便 Agent PTY hang 且客户端半开导致调用方 ctx 永不取消，超时也会触发 Server 端 `streams` map 与缓冲的回收，避免 entry + 64 帧缓冲 + goroutine 永驻。
 - HTTP server 强制启用读/写/空闲超时（默认 30s/30s/120s，缺值兜底）并将请求体上限从 1GB 收紧到 32MB，慢速请求与异常上报不再能逐步占满容器内存。
 - 反向 gRPC tunnel server 启用 keepalive（`MaxConnectionAge` 30 分钟、`MaxConnectionIdle` 5 分钟），周期性回收超龄与僵尸 Agent 连接；Agent 端已有重连循环，周期性重连无副作用。
+- 控制通道监听在数据处理器挂载之后启动：`NewInjector` 先 `SetDataHandler` 再 `tun.Start`（`beacon/service/injector.go`），消除「连接已接受但监控 Store 未就绪」的启动窗口静默丢批。
 - SQLite 启用 `auto_vacuum=INCREMENTAL` 与 `synchronous=NORMAL`；清理任务每小时执行 `wal_checkpoint(PASSIVE)` 与 `incremental_vacuum` 增量回收已删除页面，避免 WAL 与主库文件只增不减导致 RSS 随 mmap 缓慢上涨。非 SQLite 后端跳过该 PRAGMA 路径。
 - 清理任务除 5 张时序表（CPU/内存/磁盘/网络/容器）外，还删除已关闭（`ended_at` 非空）且超过保留期的 `s_session` 记录，保留活跃与异常会话供排查。
 - Collia 自动更新的 `failedAt` 冷却表在每次 Agent 注册（`Schedule`）时清理超过 24 小时的过期条目，避免长期离线 Agent 的 entry 在内存 map 中永久累积。
@@ -167,7 +173,7 @@
 - 容器删除与镜像删除不同：Agent 侧先调用 Docker Engine 删除容器，成功后才删除本地容器记录（`deleteContainerThenRecord`），避免「记录已消失但容器仍在节点上」的错位；运行时删除失败时本地记录保留，记录移除失败的残留会在下一次上报批次中被替换。
 - 受保护容器名单（`beacon`）在 Server 侧强制执行：`assertNotProtected` 对命中名单的 start/stop/restart/remove 目标返回 `ErrProtectedContainer` 拒绝执行（`beacon/service/container/service/container.go`）；该哨兵定义在 `beacon/pkg/errors`，由 `errors.FromError` 映射为 403 Forbidden，不会被当成内部故障返回 500。
 - 请求参数校验失败（`validatex.ValidateStruct` 返回的 validator 错误）统一由 `errors.FromError` 映射为 400 Bad Request，`err` 字段携带首条字段错误详情，不再落入 500 兜底分支。
-- 审计写入入口是 `JWTAuth.RecordAudit(ctx, username, operate, object)`，落库 Username、AgentID、Operate 与 Object 四个字段（`beacon/pkg/auth/jwtauth/auth.go`）；容器操作等 handler 会显式注入目标 Agent 标识与操作对象，Collia 升级任务与告警任务以 `system` 用户直接写入带 Agent 标识的系统审计。
+- 审计写入入口是 `JWTAuth.RecordAudit(ctx, username, operate, object)`，落库 Username、AgentID、Operate 与 Object 四个字段，写入失败以错误返回并由调用方记录日志，不静默丢失审计行（`beacon/pkg/auth/jwtauth/auth.go`）；容器操作等 handler 会显式注入目标 Agent 标识与操作对象，Collia 升级任务与告警任务以 `system` 用户直接写入带 Agent 标识的系统审计。
 - `interface IMailRepository (beacon/service/mail/repository/mail.go)`
 - `interface IMailService (beacon/service/mail/service/mail.go)`
 - `interface IDingTalkRepository (beacon/service/dingtalk/repository/dingtalk.go)`

@@ -750,3 +750,21 @@ func TestAccountService_ResourceQuery(t *testing.T) {
 		})
 	}
 }
+
+func TestAccountService_RoleUpdateRejectsMissingResource(t *testing.T) {
+	ctx := context.Background()
+	enforcer := newTestEnforcer(t)
+	repo := testutil.NewFakeAccountRepo()
+	roleID := uuid.Must(uuid.NewV7())
+	repo.RoleUpdateFn = func(_ context.Context, _ schema.RoleUpdateArgs) (model.Role, error) {
+		return model.Role{ID: roleID, Name: "ops"}, nil
+	}
+	repo.ResourceQueryFn = func(_ context.Context, _ schema.ResourceQueryArgs) (model.Resources, error) {
+		return model.Resources{}, nil
+	}
+	svc := NewAccountService(repo, enforcer)
+
+	err := svc.RoleUpdate(ctx, schema.RoleUpdateArgs{ID: roleID.String(), ResourceIDs: []string{"00000000-0000-0000-0000-000000000000"}})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+}

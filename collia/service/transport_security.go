@@ -12,7 +12,8 @@ var (
 )
 
 func validateTransportSecurity(config *Config) error {
-	if config.Control.Server != "" && !config.Control.TLS.Enable {
+	// 单机部署经 Unix Socket 接入时本机链路无需 mTLS；TCP 目标必须启用。
+	if config.Control.Server != "" && !isUnixControlTarget(config.Control.Server) && !config.Control.TLS.Enable {
 		return ErrControlTLSRequired
 	}
 	if config.Task.Report.URL != "" && config.Task.Report.Token != "" {
@@ -22,4 +23,9 @@ func validateTransportSecurity(config *Config) error {
 		}
 	}
 	return nil
+}
+
+// isUnixControlTarget 报告控制通道目标是否为 Unix Socket（unix:// 前缀）。
+func isUnixControlTarget(server string) bool {
+	return strings.HasPrefix(strings.TrimSpace(server), "unix://")
 }

@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"strings"
 	"time"
+
+	"github.com/amuluze/docker"
 )
 
 func (a *Task) DockerTask() *DockerReport {
@@ -85,7 +87,7 @@ func (a *Task) ImageTask() []*ImageReport {
 	var reports []*ImageReport
 	for _, im := range images {
 		reports = append(reports, &ImageReport{
-			ImageID: im.ID[7:19],
+			ImageID: docker.ShortImageID(im.ID),
 			Name:    im.Name,
 			Tag:     im.Tag,
 			Created: im.Created,

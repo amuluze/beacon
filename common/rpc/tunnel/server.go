@@ -7,11 +7,15 @@ import (
 	"crypto/subtle"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"net"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -81,6 +85,7 @@ type ServerTunnel struct {
 	UnimplementedReverseTunnelServer
 	grpcServer     *grpc.Server
 	listener       net.Listener
+	unixSocketPath string
 	agents         sync.Map // map[string]*agentStream
 	pending        sync.Map // map[string]*pendingCall   (call_id -> pendingCall)
 	streams        sync.Map // map[string]*pendingStream (stream_id -> pendingStream)
@@ -94,7 +99,23 @@ type ServerTunnel struct {
 
 type agentStream struct {
 	agentID string
+	sendMu  sync.Mutex
 	send    func(*Frame) error
+}
+
+// frameSender 抽象底层流写入，便于没有真实 gRPC 流时测试串行化语义。
+type frameSender interface {
+	Send(*Frame) error
+}
+
+// bindSend 绑定串行化的帧写入：gRPC 不允许同一条流上并发 SendMsg，
+// 每一帧写入都由 sendMu 保护。
+func (as *agentStream) bindSend(sender frameSender) {
+	as.send = func(f *Frame) error {
+		as.sendMu.Lock()
+		defer as.sendMu.Unlock()
+		return sender.Send(f)
+	}
 }
 
 // ServerOption configures the ServerTunnel.
@@ -145,13 +166,16 @@ func (s *ServerTunnel) SetAgentLifecycle(l AgentLifecycle) {
 	s.lifecycle = l
 }
 
-// Start starts the gRPC server on the given address.
+// Start starts the gRPC server on the given address. Addresses with the
+// unix:// prefix are served over a Unix domain socket with owner-only
+// permissions, which lets single-host deployments avoid publishing a TCP port.
 func (s *ServerTunnel) Start(addr string) error {
-	lis, err := net.Listen("tcp", addr)
+	lis, unixPath, err := listenControl(addr)
 	if err != nil {
 		return err
 	}
 	s.listener = lis
+	s.unixSocketPath = unixPath
 
 	var opts []grpc.ServerOption
 	if s.tlsConfig != nil {
@@ -172,10 +196,49 @@ func (s *ServerTunnel) Start(addr string) error {
 	return s.grpcServer.Serve(lis)
 }
 
-// Stop stops the gRPC server.
+// unixSocketPath 解析 unix:// 控制通道目标；非 unix 目标返回空字符串。
+func unixSocketPath(addr string) string {
+	const prefix = "unix://"
+	if !strings.HasPrefix(addr, prefix) {
+		return ""
+	}
+	return strings.TrimPrefix(addr, prefix)
+}
+
+// listenControl 在 TCP 地址或 Unix Socket 路径上监听。Unix 模式下创建
+// owner-only 目录与 socket（0700/0600）并清理上次进程残留的 socket 文件。
+func listenControl(addr string) (net.Listener, string, error) {
+	path := unixSocketPath(addr)
+	if path == "" {
+		lis, err := net.Listen("tcp", addr)
+		return lis, "", err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return nil, "", fmt.Errorf("create unix socket dir: %w", err)
+	}
+	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return nil, "", fmt.Errorf("remove stale unix socket: %w", err)
+	}
+	lis, err := net.Listen("unix", path)
+	if err != nil {
+		return nil, "", err
+	}
+	if err := os.Chmod(path, 0o600); err != nil {
+		_ = lis.Close()
+		return nil, "", fmt.Errorf("chmod unix socket: %w", err)
+	}
+	return lis, path, nil
+}
+
+// Stop stops the gRPC server and removes the Unix socket file when applicable.
 func (s *ServerTunnel) Stop() {
 	if s.grpcServer != nil {
 		s.grpcServer.GracefulStop()
+	}
+	if s.unixSocketPath != "" {
+		if err := os.Remove(s.unixSocketPath); err != nil && !errors.Is(err, os.ErrNotExist) {
+			slog.Warn("server tunnel: remove unix socket failed", "path", s.unixSocketPath, "err", err)
+		}
 	}
 }
 
@@ -235,12 +298,8 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 		return s.serveDataStream(stream, agentID)
 	}
 
-	as := &agentStream{
-		agentID: agentID,
-		send: func(f *Frame) error {
-			return stream.Send(f)
-		},
-	}
+	as := &agentStream{agentID: agentID}
+	as.bindSend(stream)
 	if _, loaded := s.agents.LoadOrStore(agentID, as); loaded {
 		err := &DuplicateAgentError{AgentID: agentID}
 		slog.Warn("server tunnel: duplicate agent rejected", "agent_id", agentID)

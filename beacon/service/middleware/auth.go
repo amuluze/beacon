@@ -134,7 +134,9 @@ func UserAuthMiddleware(a auth.Auther, manager *authcookie.Manager, checker Pass
 			var args schema.LoginArgs
 			_ = fiberx.ParseBody(c, &args)
 			if c.Path() == "/api/v1/auth/login" {
-				a.RecordAudit(c.UserContext(), args.Username, "登录", "")
+				if err := a.RecordAudit(c.UserContext(), args.Username, "登录", ""); err != nil {
+					slog.Error("login audit failed", "error", err)
+				}
 			}
 			return c.Next()
 		}
@@ -170,7 +172,9 @@ func UserAuthMiddleware(a auth.Auther, manager *authcookie.Manager, checker Pass
 			// 但它们没有可读的操作名，写入会产生空 operate/object 审计行。
 			operate := c.Route().Name
 			if c.Method() == "POST" && operate != "" && c.Response().StatusCode() < fiber.StatusBadRequest {
-				a.RecordAudit(c.UserContext(), username, operate, contextx.AuditObject(c.UserContext()))
+				if auditErr := a.RecordAudit(c.UserContext(), username, operate, contextx.AuditObject(c.UserContext())); auditErr != nil {
+					slog.Error("record audit failed", "error", auditErr)
+				}
 			}
 			return nil
 		}
@@ -189,7 +193,9 @@ func OptionalUserAuthMiddleware(a auth.Auther, manager *authcookie.Manager, chec
 			if c.Path() == "/api/v1/auth/login" {
 				var args schema.LoginArgs
 				_ = fiberx.ParseBody(c, &args)
-				a.RecordAudit(c.UserContext(), args.Username, "登录", "")
+				if err := a.RecordAudit(c.UserContext(), args.Username, "登录", ""); err != nil {
+					slog.Error("login audit failed", "error", err)
+				}
 			}
 			return c.Next()
 		}
@@ -224,7 +230,9 @@ func OptionalUserAuthMiddleware(a auth.Auther, manager *authcookie.Manager, chec
 		if err == nil {
 			operate := c.Route().Name
 			if c.Method() == "POST" && operate != "" && c.Response().StatusCode() < fiber.StatusBadRequest {
-				a.RecordAudit(c.UserContext(), username, operate, contextx.AuditObject(c.UserContext()))
+				if auditErr := a.RecordAudit(c.UserContext(), username, operate, contextx.AuditObject(c.UserContext())); auditErr != nil {
+					slog.Error("record audit failed", "error", auditErr)
+				}
 			}
 			return nil
 		}

@@ -90,9 +90,10 @@ func (a *AccountRepository) UserCreate(ctx context.Context, args schema.UserCrea
 		if err := a.DB.Where("id IN (?)", args.RoleIDs).Find(&roles).Error; err != nil {
 			return model.User{}, err
 		}
+		u.IsAdmin = model.IsAdminNo
 		for _, r := range roles {
-			if r.Name == "admin" {
-				u.IsAdmin = 1
+			if r.Name == model.DefaultAdminRoleName {
+				u.IsAdmin = model.IsAdminYes
 			}
 		}
 		u.Roles = roles
@@ -116,23 +117,20 @@ func (a *AccountRepository) UserUpdate(ctx context.Context, args schema.UserUpda
 	}
 	var user model.User
 	err := a.DB.RunInTransaction(func(tx *gorm.DB) error {
-		var roles model.Roles
+		// 显式传入 RoleIDs 才重排角色关联；空列表表示保持角色与 is_admin 现状。
 		if len(args.RoleIDs) > 0 {
+			var roles model.Roles
 			if err := tx.Where("id IN (?)", args.RoleIDs).Find(&roles).Error; err != nil {
 				return err
 			}
+			isAdmin := model.IsAdminNo
 			for _, r := range roles {
-				if r.Name == "admin" {
-					params["is_admin"] = 1
+				if r.Name == model.DefaultAdminRoleName {
+					isAdmin = model.IsAdminYes
 				}
 			}
-		}
-		if err := tx.Model(&model.User{}).Where("id = ?", args.ID).Updates(params).Error; err != nil {
-			return err
-		}
-		// 替换关联
-		if len(roles) == 0 {
-			if err := a.DB.Model(&model.User{}).Where("id = ?", args.ID).First(&user).Error; err != nil {
+			params["is_admin"] = isAdmin
+			if err := tx.Where("id = ?", args.ID).First(&user).Error; err != nil {
 				return err
 			}
 			if err := tx.Model(&user).Association("Roles").Replace(roles); err != nil {
@@ -140,7 +138,9 @@ func (a *AccountRepository) UserUpdate(ctx context.Context, args schema.UserUpda
 				return err
 			}
 		}
-
+		if err := tx.Model(&model.User{}).Where("id = ?", args.ID).Updates(params).Error; err != nil {
+			return err
+		}
 		return nil
 	})
 	if err != nil {
@@ -254,7 +254,7 @@ func (a *AccountRepository) RoleDelete(ctx context.Context, args schema.RoleDele
 		db,
 		database.WithIds(args.IDs),
 	)
-	if err := db.Delete(&model.User{}).Error; err != nil {
+	if err := db.Delete(&model.Role{}).Error; err != nil {
 		return err
 	}
 	return nil

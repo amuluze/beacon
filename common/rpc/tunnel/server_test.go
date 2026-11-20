@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -716,5 +717,43 @@ func TestUnmarshalReplyNonNilReply(t *testing.T) {
 	}
 	if r.Foo != "" {
 		t.Fatalf("empty payload should leave reply at zero value, got %q", r.Foo)
+	}
+}
+
+// countingSender 检测并发进入：任一时刻出现多于一个在执行的调用即未串行化。
+type countingSender struct {
+	active     int32
+	overlapped atomic.Bool
+}
+
+func (c *countingSender) Send(*Frame) error {
+	if n := atomic.AddInt32(&c.active, 1); n > 1 {
+		c.overlapped.Store(true)
+	}
+	time.Sleep(time.Millisecond)
+	atomic.AddInt32(&c.active, -1)
+	return nil
+}
+
+// TestAgentStreamSendSerializesConcurrentFrames 验证 Server 侧帧写入互斥：
+// 并发 Call/StreamCall 不得在同一条 gRPC 流上交错 SendMsg。
+func TestAgentStreamSendSerializesConcurrentFrames(t *testing.T) {
+	as := &agentStream{agentID: "agent-a"}
+	sender := &countingSender{}
+	as.bindSend(sender)
+
+	var wg sync.WaitGroup
+	for range 32 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := as.send(&Frame{}); err != nil {
+				t.Errorf("send: %v", err)
+			}
+		}()
+	}
+	wg.Wait()
+	if sender.overlapped.Load() {
+		t.Fatal("agentStream.send allowed concurrent frame writes")
 	}
 }

@@ -26,6 +26,30 @@ type ImageSummary struct {
 	Size    string
 }
 
+// splitRepoTag 按镜像引用的最后一个「标签冒号」拆分名称与标签：
+// registry:5000/img:v1 中的端口冒号不是标签分隔符；无冒号或冒号后
+// 仍含 "/" 的引用整体视为名称并返回空标签，避免固定下标越界。
+func splitRepoTag(repoTag string) (name, tag string) {
+	idx := strings.LastIndex(repoTag, ":")
+	if idx >= 0 && !strings.Contains(repoTag[idx+1:], "/") {
+		return repoTag[:idx], repoTag[idx+1:]
+	}
+	return repoTag, ""
+}
+
+// ShortImageID 返回用于展示的短镜像 ID：剥离 sha256: 前缀后截取
+// 前 12 个字符；非 sha256 前缀或更短的 ID 原样保留，不做固定下标截取。
+func ShortImageID(id string) string {
+	const digestPrefix = "sha256:"
+	if strings.HasPrefix(id, digestPrefix) {
+		id = id[len(digestPrefix):]
+	}
+	if len(id) > 12 {
+		return id[:12]
+	}
+	return id
+}
+
 func (m *Manager) ListImage(ctx context.Context) ([]ImageSummary, error) {
 	images, err := m.client.ImageList(ctx, image.ListOptions{All: true})
 	if err != nil {
@@ -38,11 +62,11 @@ func (m *Manager) ListImage(ctx context.Context) ([]ImageSummary, error) {
 			continue
 		}
 		for _, repoTag := range im.RepoTags {
-			tags := strings.Split(repoTag, ":")
+			name, tag := splitRepoTag(repoTag)
 			im := ImageSummary{
 				ID:      im.ID,
-				Name:    tags[0],
-				Tag:     tags[1],
+				Name:    name,
+				Tag:     tag,
 				Created: time.Unix(im.Created, 0).Format("2006-01-02 15:04:05"),
 				Size:    strconv.FormatFloat(float64(im.Size)/(1000*1000), 'f', 2, 64) + "MB",
 			}
@@ -174,11 +198,11 @@ func (m *Manager) GetImageByName(ctx context.Context, imageName string) (*ImageS
 	for _, v := range images {
 		for _, t := range v.RepoTags {
 			if t == imageName {
-				tagsList := strings.Split(t, ":")
+				name, tag := splitRepoTag(t)
 				return &ImageSummary{
 					ID:      v.ID,
-					Name:    tagsList[0],
-					Tag:     tagsList[1],
+					Name:    name,
+					Tag:     tag,
 					Created: time.Unix(v.Created, 0).Format("2006-01-02 15:04:05"),
 					Size:    strconv.FormatFloat(float64(v.Size)/(1000*1000), 'f', 2, 64) + "MB",
 				}, nil
@@ -194,12 +218,15 @@ func (m *Manager) GetImageByID(ctx context.Context, imageID string) (*ImageSumma
 		return nil, err
 	}
 
-	tagsList := strings.Split(imageResponse.RepoTags[0], ":")
+	if len(imageResponse.RepoTags) == 0 {
+		return nil, errors.New("image has no repo tags")
+	}
+	name, tag := splitRepoTag(imageResponse.RepoTags[0])
 
 	return &ImageSummary{
 		ID:      imageResponse.ID,
-		Name:    tagsList[0],
-		Tag:     tagsList[1],
+		Name:    name,
+		Tag:     tag,
 		Created: imageResponse.Created,
 		Size:    strconv.FormatFloat(float64(imageResponse.Size)/(1000*1000), 'f', 2, 64) + "MB",
 	}, nil

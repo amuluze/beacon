@@ -43,10 +43,10 @@ func TestBuildReportArgsFullReport(t *testing.T) {
 
 	r := &task.MonitorReport{
 		Host: &task.HostReport{
-			Uptime:    "7d",
-			Hostname:  "prod-01",
-			Os:        "linux",
-			Platform:  "ubuntu",
+			Uptime:     "7d",
+			Hostname:   "prod-01",
+			Os:         "linux",
+			Platform:   "ubuntu",
 			KernelArch: "x86_64",
 		},
 		CPU: &task.CPUReport{
@@ -106,10 +106,10 @@ func TestBuildReportArgsFullReport(t *testing.T) {
 
 	// Host
 	if args.Host.Hostname != "prod-01" {
-		t.Fatalf("Host.Hostname = %q", args.Host.Hostname)
+		t.Fatalf("Host.Hostname = %q, want prod-01", args.Host.Hostname)
 	}
 	if args.Host.Os != "linux" {
-		t.Fatalf("Host.Os = %q", args.Host.Os)
+		t.Fatalf("Host.Os = %q, want linux", args.Host.Os)
 	}
 
 	// CPU
@@ -127,7 +127,7 @@ func TestBuildReportArgsFullReport(t *testing.T) {
 		t.Fatalf("Disks = %d, want 1", len(args.Disks))
 	}
 	if args.Disks[0].Device != "/dev/sda1" {
-		t.Fatalf("Disk.Device = %q", args.Disks[0].Device)
+		t.Fatalf("Disk.Device = %q, want /dev/sda1", args.Disks[0].Device)
 	}
 
 	// Nets
@@ -137,7 +137,7 @@ func TestBuildReportArgsFullReport(t *testing.T) {
 
 	// Docker
 	if args.Docker.DockerVersion != "27.0.0" {
-		t.Fatalf("Docker.Version = %q", args.Docker.DockerVersion)
+		t.Fatalf("Docker.Version = %q, want 27.0.0", args.Docker.DockerVersion)
 	}
 
 	// Containers
@@ -145,7 +145,7 @@ func TestBuildReportArgsFullReport(t *testing.T) {
 		t.Fatalf("Containers = %d, want 1", len(args.Containers))
 	}
 	if args.Containers[0].Name != "nginx" {
-		t.Fatalf("Container.Name = %q", args.Containers[0].Name)
+		t.Fatalf("Container.Name = %q, want nginx", args.Containers[0].Name)
 	}
 
 	// Images
@@ -170,4 +170,26 @@ func TestBuildReportArgsNilReport(t *testing.T) {
 		return
 	}
 	_ = td.buildReportArgs(ts, r)
+}
+
+// TestTryExecuteSkipsWhenCollectionInFlight 验证在途单槽被占用时新 tick
+// 非阻塞跳过，不再叠加采集 goroutine。
+func TestTryExecuteSkipsWhenCollectionInFlight(t *testing.T) {
+	tt := &TimedTask{execGate: make(chan struct{}, 1)}
+	// 占用唯一在途槽位，模拟上一轮采集尚未结束。
+	tt.execGate <- struct{}{}
+
+	done := make(chan struct{})
+	go func() {
+		tt.tryExecute()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("tryExecute 必须在上一轮仍在途时立即跳过，不得阻塞")
+	}
+	if got := len(tt.execGate); got != 1 {
+		t.Fatalf("在途槽位数 = %d, want 1（跳过时不得新起采集）", got)
+	}
 }

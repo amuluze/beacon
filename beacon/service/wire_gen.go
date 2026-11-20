@@ -31,7 +31,6 @@ import (
 	client2 "beacon/service/feishu/client"
 	repository9 "beacon/service/feishu/repository"
 	service8 "beacon/service/feishu/service"
-	"beacon/service/health/api"
 	api2 "beacon/service/host/api"
 	repository2 "beacon/service/host/repository"
 	service2 "beacon/service/host/service"
@@ -140,7 +139,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	}
 	loggerHandler := NewLoggerHandler(caller)
 	handler := terminal.NewHandler(caller, db)
-	probe := NewHealthProbe()
+	probe := NewHealthProbe(caller, db)
 	router := &Router{
 		config:          config,
 		auth:            auther,
@@ -192,6 +191,3 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 // NewStalenessMinutes provides the staleness threshold for host data freshness checks.
 // Default is 300 seconds (5 minutes); can be configured via retention.
 func NewStalenessMinutes() []int64 { return nil }
-
-// NewHealthProbe provides the health probe instance.
-func NewHealthProbe() *health.Probe { return health.NewProbe() }

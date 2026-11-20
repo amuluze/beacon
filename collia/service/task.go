@@ -22,10 +22,12 @@ import (
 )
 
 type TimedTask struct {
-	agentID      string
-	task         task.ITask
-	ticker       timex.Ticker
-	stopCh       chan struct{}
+	agentID string
+	task    task.ITask
+	ticker  timex.Ticker
+	stopCh  chan struct{}
+	// execGate 将在途采集限制为单槽：上一轮未完成时新 tick 直接丢弃。
+	execGate     chan struct{}
 	reportClient *report.Client
 	dataPusher   DataPusher
 }
@@ -76,6 +78,7 @@ func NewTimedTask(conf *Config) *TimedTask {
 		task:         newTask,
 		ticker:       tk,
 		stopCh:       make(chan struct{}),
+		execGate:     make(chan struct{}, 1),
 		reportClient: rptClient,
 	}
 }
@@ -281,11 +284,25 @@ func (a *TimedTask) buildReportArgs(ts time.Time, r *task.MonitorReport) rpcSche
 	return args
 }
 
+// tryExecute 非阻塞地启动一轮采集：上一轮仍在途时丢弃本 tick，
+// 避免慢采集（3s CPU 采样 + 逐容器 stats）叠加放大 goroutine 与 Docker API 压力。
+func (a *TimedTask) tryExecute() {
+	select {
+	case a.execGate <- struct{}{}:
+		go func() {
+			defer func() { <-a.execGate }()
+			a.Execute()
+		}()
+	default:
+		slog.Warn("previous collection still in flight, skipping tick")
+	}
+}
+
 func (a *TimedTask) Run() {
 	for {
 		select {
 		case <-a.ticker.Chan():
-			go a.Execute()
+			a.tryExecute()
 		case <-a.stopCh:
 			fmt.Println("task exit")
 			return

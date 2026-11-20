@@ -44,8 +44,8 @@ func (a *websocketTestAuth) ParseToken(token, tokenType string) (string, string,
 	}
 	return "user-1", "admin", nil
 }
-func (a *websocketTestAuth) Release() error                                      { return nil }
-func (a *websocketTestAuth) RecordAudit(context.Context, string, string, string) {}
+func (a *websocketTestAuth) Release() error                                            { return nil }
+func (a *websocketTestAuth) RecordAudit(context.Context, string, string, string) error { return nil }
 
 func TestWebSocketUserAuthMiddlewareUsesCookieAndCarriesIdentity(t *testing.T) {
 	auther := &websocketTestAuth{}
@@ -232,8 +232,9 @@ func TestUserAuthMiddlewareAuditsOnlySuccessfulNamedPosts(t *testing.T) {
 	auther := testutil.NewFakeAuther()
 	manager := authcookie.NewManager(false, 60, 120)
 	var recorded []string
-	auther.RecordAuditFn = func(_ context.Context, _ string, operate string, _ string) {
+	auther.RecordAuditFn = func(_ context.Context, _ string, operate string, _ string) error {
 		recorded = append(recorded, operate)
+		return nil
 	}
 
 	app := fiber.New()

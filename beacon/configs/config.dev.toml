@@ -69,6 +69,7 @@ Enable = true
 # ⚠️ 生产环境必须通过环境变量 BEACON_AGENT_INSTALL_TOKEN 设置，
 # 或替换下方默认值。保留 "change-me" 会在启动时发出 WARN 日志。
 Token = "change-me"
+TokenTTL = 0           # 开发环境同样默认签发短时令牌；调试安装脚本可用 -1 回退静态令牌
 PublicBaseURL = ""
 PackageDir = "/app/downloads/collia"
 ControlPort = 18080
@@ -78,6 +79,7 @@ CertDir = "/etc/collia/certs"
 [AgentUpdate]
 Enable = false         # 本地开发默认关闭自动升级
 TargetVersion = "dev"
+PublicKey = ""         # 本地开发不固定发布公钥；联调签名链路时填入 collia/cmd/sign -gen 的输出
 Timeout = 300
 MaxConcurrent = 2
 RetryInterval = 1800

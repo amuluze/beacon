@@ -3,7 +3,10 @@ package rpc
 import (
 	"bytes"
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"net/http"
 	"net/http/httptest"
@@ -282,5 +285,181 @@ func TestHandleUninstallReplyConsistency(t *testing.T) {
 	// success 与 residuals 不能自相矛盾
 	if reply.Success && len(reply.Residuals) != 0 {
 		t.Fatalf("inconsistent reply: success but residuals present")
+	}
+}
+
+func TestVerifyUpgradeSignatureMatrix(t *testing.T) {
+	dir := t.TempDir()
+	tmp := filepath.Join(dir, "collia")
+	if err := os.WriteFile(tmp, []byte("signed-binary"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	digest := sha256.Sum256([]byte("signed-binary"))
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, otherPriv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	validSig := base64.StdEncoding.EncodeToString(ed25519.Sign(priv, digest[:]))
+	wrongSig := base64.StdEncoding.EncodeToString(ed25519.Sign(otherPriv, digest[:]))
+
+	s, _ := newTestService(t)
+	// 未固定公钥 + 无签名：兼容模式放行（存量部署）。
+	if err := s.verifyUpgradeSignature(tmp, ""); err != nil {
+		t.Fatalf("legacy unsigned upgrade should pass, got %v", err)
+	}
+	// 未固定公钥 + 有签名：无法验证，拒绝。
+	if err := s.verifyUpgradeSignature(tmp, validSig); err == nil {
+		t.Fatal("signature without a pinned public key must be rejected")
+	}
+
+	s.upgradePubKeys = []ed25519.PublicKey{pub}
+	// 固定公钥 + 缺失签名：fail-closed 拒绝。
+	if err := s.verifyUpgradeSignature(tmp, ""); err == nil {
+		t.Fatal("pinned public key must reject unsigned upgrades")
+	}
+	// 固定公钥 + 有效签名：放行。
+	if err := s.verifyUpgradeSignature(tmp, validSig); err != nil {
+		t.Fatalf("valid signature should pass, got %v", err)
+	}
+	// 固定公钥 + 非本公钥签名：拒绝。
+	if err := s.verifyUpgradeSignature(tmp, wrongSig); err == nil {
+		t.Fatal("signature from another key must be rejected")
+	}
+	// 固定公钥 + 非法 base64：拒绝。
+	if err := s.verifyUpgradeSignature(tmp, "not-base64!!!"); err == nil {
+		t.Fatal("malformed signature must be rejected")
+	}
+}
+
+func TestSetUpgradePublicKeys(t *testing.T) {
+	s, _ := newTestService(t)
+	if err := s.SetUpgradePublicKeys(nil); err != nil || s.upgradePubKeys != nil {
+		t.Fatalf("empty key set should leave the agent unpinned, err=%v", err)
+	}
+	pub, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	encoded := base64.StdEncoding.EncodeToString(pub)
+	if err := s.SetUpgradePublicKeys([]string{encoded}); err != nil {
+		t.Fatalf("valid public key: %v", err)
+	}
+	if len(s.upgradePubKeys) != 1 || len(s.upgradePubKeys[0]) != ed25519.PublicKeySize {
+		t.Fatalf("pinned key set = %v", s.upgradePubKeys)
+	}
+	// 重复键去重，空串忽略。
+	if err := s.SetUpgradePublicKeys([]string{encoded, encoded, "  "}); err != nil {
+		t.Fatalf("dedupe keys: %v", err)
+	}
+	if len(s.upgradePubKeys) != 1 {
+		t.Fatalf("duplicate keys must be deduped, got %d", len(s.upgradePubKeys))
+	}
+	if err := s.SetUpgradePublicKeys([]string{"not-base64!!!"}); err == nil {
+		t.Fatal("malformed key must fail, not silently downgrade")
+	}
+	if err := s.SetUpgradePublicKeys([]string{base64.StdEncoding.EncodeToString([]byte("short"))}); err == nil {
+		t.Fatal("wrong-size key must fail, not silently downgrade")
+	}
+}
+
+// TestVerifyUpgradeSignatureAcceptsRotatedKeyRing 验证轮换重叠窗口：
+// 旧钥与新钥同时固定时两种签名都放行，集合外的第三把钥签名拒绝。
+func TestVerifyUpgradeSignatureAcceptsRotatedKeyRing(t *testing.T) {
+	dir := t.TempDir()
+	tmp := filepath.Join(dir, "collia")
+	if err := os.WriteFile(tmp, []byte("rotate-binary"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	digest := sha256.Sum256([]byte("rotate-binary"))
+	oldPub, oldPriv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	newPub, newPriv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, roguePriv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldSig := base64.StdEncoding.EncodeToString(ed25519.Sign(oldPriv, digest[:]))
+	newSig := base64.StdEncoding.EncodeToString(ed25519.Sign(newPriv, digest[:]))
+	rogueSig := base64.StdEncoding.EncodeToString(ed25519.Sign(roguePriv, digest[:]))
+
+	s, _ := newTestService(t)
+	s.upgradePubKeys = []ed25519.PublicKey{oldPub, newPub}
+	if err := s.verifyUpgradeSignature(tmp, oldSig); err != nil {
+		t.Fatalf("old key during rotation must verify: %v", err)
+	}
+	if err := s.verifyUpgradeSignature(tmp, newSig); err != nil {
+		t.Fatalf("new key during rotation must verify: %v", err)
+	}
+	if err := s.verifyUpgradeSignature(tmp, rogueSig); err == nil {
+		t.Fatal("signature outside the key ring must be rejected")
+	}
+}
+
+func TestHandleUpgradeWithPinnedKeyRequiresValidSignature(t *testing.T) {
+	s, dir := newTestService(t)
+	binary := filepath.Join(dir, "collia")
+	if err := os.WriteFile(binary, []byte("old"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.upgradePubKeys = []ed25519.PublicKey{pub}
+
+	payload := []byte("new-signed-binary")
+	digest := sha256.Sum256(payload)
+	validSig := base64.StdEncoding.EncodeToString(ed25519.Sign(priv, digest[:]))
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write(payload)
+	}))
+	defer srv.Close()
+
+	// 缺签名的升级必须被拒绝且保留旧二进制。
+	args := rpcSchema.UpgradeAgentArgs{DownloadURL: srv.URL, SHA256: sha256Hex(payload)}
+	reply, err := s.handleUpgrade(context.Background(), args, noopStream())
+	if err != nil {
+		t.Fatalf("handleUpgrade: %v", err)
+	}
+	if reply.Success {
+		t.Fatal("unsigned upgrade must fail with a pinned key")
+	}
+	got, _ := os.ReadFile(binary)
+	if string(got) != "old" {
+		t.Fatalf("old binary must be preserved, got %q", got)
+	}
+
+	// 携带有效签名的同一升级成功。
+	args.Signature = validSig
+	releaseUpgradeLockForTest(t)
+	reply, err = s.handleUpgrade(context.Background(), args, noopStream())
+	if err != nil {
+		t.Fatalf("handleUpgrade signed: %v", err)
+	}
+	if !reply.Success {
+		t.Fatalf("signed upgrade should succeed, got %+v", reply)
+	}
+	got, _ = os.ReadFile(binary)
+	if !bytes.Equal(got, payload) {
+		t.Fatalf("binary not replaced: %q", got)
+	}
+}
+
+// releaseUpgradeLockForTest 清理由上一次 handleUpgrade 正常释放的串行锁；
+// 若锁被意外占用则直接失败，保证两次升级调用互不干扰。
+func releaseUpgradeLockForTest(t *testing.T) {
+	t.Helper()
+	if inProgress {
+		t.Fatal("upgrade lock is still held after a completed upgrade")
 	}
 }

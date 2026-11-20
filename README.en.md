@@ -106,6 +106,8 @@ bash -c "$(curl -fsSL https://beacon.amuluze.com/release/latest/manager.sh)" -- 
 
 Production mode accepts HTTPS only. First provide a trusted reverse proxy that forwards this HTTPS origin to Beacon's Web port. The installer then configures the ports and generates authentication, data-encryption, and bootstrap-administrator credentials. `BEACON_DATA_ENCRYPTION_KEY` is stored in the mode-`0600` `.env` file and must be retained permanently.
 
+The installer defaults to **single-node mode** (the Agent control channel uses a Unix Socket and does not publish port 17000). Multi-node mode requires an explicit `BEACON_CONTROL_MODE=tcp` (a future paid-edition capability).
+
 Images are published to both the Aliyun registry and Docker Hub (`registry.cn-hangzhou.aliyuncs.com/amuluze/beacon`, `docker.io/amuluze/beacon`). The installer pulls from Aliyun by default and automatically falls back to Docker Hub when the primary source is unreachable.
 
 ### Offline installation (air-gapped servers)
@@ -150,6 +152,14 @@ curl http://127.0.0.1:1443/health
 ```
 
 The local Compose stack (`website/release/latest/compose.yaml`) exposes `1443` for HTTP (override with `BEACON_HTTP_PORT`) and `17000` for Agent control (override with `BEACON_CONTROL_PORT`) and is intended for development and verification. `BEACON_AGENT_INSTALL_TOKEN`, `BEACON_AUTH_SIGNING_KEY`, `BEACON_CONTROL_JOIN_TOKEN`, and `BEACON_DATA_ENCRYPTION_KEY` are required (Compose fails to start without them); for production, generate unique high-entropy secrets. A new database also requires `BEACON_BOOTSTRAP_ADMIN_PASSWORD`.
+
+If the administrator password is lost, reset it inside the running Server container (generates a temporary password and forces a change at the next login by default):
+
+```bash
+docker exec -it beacon ./beacon reset-admin -c /app/configs/config.toml
+```
+
+Use `--password '<new-password>'` or `--password-stdin` to supply one explicitly. The command enforces the password policy, stores a bcrypt hash, writes a system audit entry, and refuses to run when the `admin` account is missing. See the [deployment guide](./.docs/deployment.md) for details.
 
 After Beacon starts, install Collia on a target host (replace the address, node number, and token with real values):
 

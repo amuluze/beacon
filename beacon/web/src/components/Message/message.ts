@@ -5,7 +5,6 @@
 export function success(msg: string) {
     ElMessage({
         showClose: true,
-        dangerouslyUseHTMLString: true,
         message: msg,
         type: 'success',
     })
@@ -18,7 +17,6 @@ export function success(msg: string) {
 export function info(msg: string) {
     ElMessage({
         showClose: true,
-        dangerouslyUseHTMLString: true,
         message: msg,
         type: 'info',
     })
@@ -31,7 +29,6 @@ export function info(msg: string) {
 export function warning(msg: string) {
     ElMessage({
         showClose: true,
-        dangerouslyUseHTMLString: true,
         message: msg,
         type: 'warning',
     })
@@ -44,7 +41,6 @@ export function warning(msg: string) {
 export function error(msg: string) {
     ElMessage({
         showClose: true,
-        dangerouslyUseHTMLString: true,
         message: msg,
         type: 'error',
     })

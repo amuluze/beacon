@@ -103,6 +103,8 @@ bash -c "$(curl -fsSL https://beacon.amuluze.com/release/latest/manager.sh)" -- 
 
 生产模式只接受 HTTPS。请先准备将该 HTTPS 地址转发到 Beacon Web 端口的可信反向代理；安装脚本会引导配置 Web 端口、Agent 控制端口，并生成认证、数据加密和首次管理员凭据。`BEACON_DATA_ENCRYPTION_KEY` 会保存在权限为 `0600` 的 `.env` 中且必须永久保留。
 
+安装器默认选择**单机模式**（Agent 控制通道经 Unix Socket，不发布 17000 端口）；多机模式需显式指定 `BEACON_CONTROL_MODE=tcp`（后续付费版能力）。
+
 镜像同时发布在阿里云仓库与 Docker Hub（`registry.cn-hangzhou.aliyuncs.com/amuluze/beacon`、`docker.io/amuluze/beacon`）；安装器默认从阿里云拉取，主源不可达时自动回退 Docker Hub。
 
 ### 离线安装（无外网服务器）
@@ -148,6 +150,14 @@ curl http://127.0.0.1:1443/health
 
 本地 Compose（`website/release/latest/compose.yaml`）默认暴露 `1443`（HTTP，可用 `BEACON_HTTP_PORT` 覆盖）与 `17000`（Agent control，可用 `BEACON_CONTROL_PORT` 覆盖）端口，仅用于开发/验证。`BEACON_AGENT_INSTALL_TOKEN`、`BEACON_AUTH_SIGNING_KEY`、`BEACON_CONTROL_JOIN_TOKEN`、`BEACON_DATA_ENCRYPTION_KEY` 为必填项（缺失时 Compose 直接启动失败），生产部署请生成独立的高强度密钥；首次建库还需设置 `BEACON_BOOTSTRAP_ADMIN_PASSWORD`。
 
+忘记管理员密码时，可在运行中的 Server 容器内重置（默认生成临时密码并强制下次登录修改）：
+
+```bash
+docker exec -it beacon ./beacon reset-admin -c /app/configs/config.toml
+```
+
+也可用 `--password '<新密码>'` 或 `--password-stdin` 显式指定；命令校验密码策略、写入 bcrypt 哈希并记录系统审计，`admin` 不存在时拒绝执行。详见[部署指南](./.docs/deployment.md)。
+
 Beacon 启动后，可从目标主机安装 Collia Agent（将地址、节点编号和 Token 替换为实际值）：
 
 ```bash
@@ -156,7 +166,8 @@ curl -fsSL 'https://<beacon-host>/api/v1/host/install?node=1' | sudo bash -s -- 
 
 - `node` 是 Agent 标识：字母或数字开头，仅含字母、数字、点、下划线、短横线；同一主机重复安装会以新标识覆盖配置并注册。
 - 安装 Token 由管理面板「安装 Agent」对话框获取（或管理员调用 `POST /api/v1/host/get_install_token`）；脚本内部下载安装包、配置与证书的请求同样携带该 Token。
-- Beacon 使用自签控制证书时，需先把 CA 导入目标主机信任库，否则脚本内 `curl -fsSL` 会失败：将 Server 宿主机 `$BEACON_CONTROL_CERT_DIR`（默认 `/data/beacon/control-certs`）下的 `ca.pem` 复制到 `/usr/local/share/ca-certificates/beacon-ca.crt` 后执行 `sudo update-ca-certificates`。
+- 管理面板生成的安装命令会先下载控制 CA、用 `SHA-256` 指纹校验，再通过 `--ca-file` 传给安装脚本；目标主机不需要修改系统信任库。多机安装可复用同一 Token 与指纹，只需为每台主机设置不同的 `node`，适合循环脚本或 Ansible 批量执行。
+- 手工执行安装命令时若未提供 CA 文件，脚本仍使用系统信任库；自签 Web 证书场景可按原方式将 Server 宿主机 `$BEACON_CONTROL_CERT_DIR`（默认 `/data/beacon/control-certs`）下的 `ca.pem` 导入目标机信任库。
 - 安装后默认开启 Agent 自动更新：Agent 重连时按 Server 镜像内置版本自动升级；可在「设置 → 探针管理」关闭自动更新，或在该页行内手动升级。
 - 卸载：`sudo collia remove`（先停止服务，再清理二进制、配置、本地数据、日志与系统服务注册；未被 systemd 跟踪的残留 daemon 进程也会被终止）。
 

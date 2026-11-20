@@ -6,6 +6,8 @@ package jwtauth
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"beacon/pkg/auth"
@@ -206,14 +208,23 @@ func (a *JWTAuth) Release() error {
 	})
 }
 
-func (a *JWTAuth) RecordAudit(ctx context.Context, username string, operate string, object string) {
+// RecordAudit 将操作审计写入数据库；写入失败必须以错误返回，
+// 由调用方记录，不得静默丢失审计行。
+func (a *JWTAuth) RecordAudit(ctx context.Context, username string, operate string, object string) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	a.db.Model(&model.Audit{}).Create(&model.Audit{
+	if a.db == nil {
+		return errors.New("jwtauth: audit database unavailable")
+	}
+	audit := model.Audit{
 		Username: username,
 		AgentID:  contextx.FromAgentID(ctx),
 		Operate:  operate,
 		Object:   object,
-	})
+	}
+	if err := a.db.Model(&model.Audit{}).Create(&audit).Error; err != nil {
+		return fmt.Errorf("jwtauth: record audit: %w", err)
+	}
+	return nil
 }

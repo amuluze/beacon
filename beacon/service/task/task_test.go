@@ -3,11 +3,13 @@ package task
 import (
 	"context"
 	"errors"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	dingtalkclient "beacon/service/dingtalk/client"
 	"beacon/service/model"
@@ -879,5 +881,26 @@ func TestAlarmTasksSkipWhenThresholdNotConfigured(t *testing.T) {
 
 	if audits := taskAudits(t, db); len(audits) != 0 {
 		t.Fatalf("audit count = %d, want 0", len(audits))
+	}
+}
+
+// TestTriggerAlarmTruncatesAuditOperate 验证告警消息按审计 Operate 列宽截断，
+// 避免超长 hostname 在 varchar(255) 后端插入失败并中断整轮告警巡检。
+func TestTriggerAlarmTruncatesAuditOperate(t *testing.T) {
+	db := newTaskTestDB(t)
+	task := NewTask(db)
+
+	longHostname := strings.Repeat("主机", 200) // 400 runes，超过 255 列宽
+	msg := fmt.Sprintf("[agent-x] %s CPU 使用率超过 90%%", longHostname)
+	if err := task.triggerAlarm(context.Background(), "cpu:agent-x", msg, "agent-x"); err != nil {
+		t.Fatalf("triggerAlarm: %v", err)
+	}
+
+	var audit model.Audit
+	if err := db.Where("username = ?", "system").First(&audit).Error; err != nil {
+		t.Fatalf("load audit row: %v", err)
+	}
+	if got := utf8.RuneCountInString(audit.Operate); got != 255 {
+		t.Fatalf("audit operate runes = %d, want 255", got)
 	}
 }

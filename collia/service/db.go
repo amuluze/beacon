@@ -27,12 +27,13 @@ func NewDB(config *Config, models *model.Models) (*database.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	// 启用WAL模式
-	if err := db.Exec("PRAGMA journal_mode=WAL;").Error; err != nil {
-		db.Close()
-		return nil, err
-	}
+	// SQLite 专属 PRAGMA 与文件加固：非 SQLite 后端执行 WAL 语句会因
+	// 语法错误而启动失败，必须限定在 sqlite/未指定类型分支内。
 	if strings.EqualFold(dbConfig.DBType, "sqlite") || dbConfig.DBType == "" {
+		if err := db.Exec("PRAGMA journal_mode=WAL;").Error; err != nil {
+			db.Close()
+			return nil, err
+		}
 		if err := database.SecureSQLiteFiles(dbConfig.DBName); err != nil {
 			db.Close()
 			return nil, err

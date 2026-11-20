@@ -71,6 +71,7 @@ Enable = true
 # ⚠️ 生产环境必须通过环境变量 BEACON_AGENT_INSTALL_TOKEN 设置，
 # 或替换下方默认值。保留 "change-me" 会在启动时发出 WARN 日志。
 Token = ""             # 必须通过 BEACON_AGENT_INSTALL_TOKEN 注入
+TokenTTL = 0           # 安装令牌有效期（秒）：0=默认 1800 短时令牌；负值=返回静态令牌（兼容模式）
 PublicBaseURL = ""       # 生产环境必须通过 BEACON_PUBLIC_BASE_URL 注入 HTTPS 地址
 PackageDir = "/app/downloads/collia"
 ControlPort = 17000
@@ -80,6 +81,7 @@ CertDir = "/etc/collia/certs"
 [AgentUpdate]
 Enable = true          # 部署级门禁：Agent 注册后自动比较并升级到镜像内置 Collia 版本；控制台「探针管理」开关可在此基础上关闭自动调度
 TargetVersion = ""     # 生产镜像通过 BEACON_COLLIA_VERSION 注入
+PublicKey = ""         # Collia 发布签名公钥（base64 Ed25519）；配置后随安装 config 下发并由 Agent 固定，升级包必须携带匹配签名
 Timeout = 300          # 单次升级超时（秒）
 MaxConcurrent = 2      # Server 全局最大并发升级数
 RetryInterval = 1800   # 自动升级失败冷却（秒）；管理员手动重试可绕过

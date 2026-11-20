@@ -6,7 +6,11 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"io"
 	"os"
+	"strings"
 
 	"beacon/service"
 
@@ -37,6 +41,7 @@ func main() {
 	app.Usage = "resource monitor"
 	app.Commands = []*cli.Command{
 		monitorCmd(ctx),
+		resetAdminCmd(),
 	}
 	if err := app.Run(os.Args); err != nil {
 		panic(err)
@@ -67,6 +72,54 @@ func monitorCmd(ctx context.Context) *cli.Command {
 				service.SetConfigFile(c.String("conf")),
 				service.SetModelFile(c.String("model")),
 			)
+		},
+	}
+}
+
+// resetAdminCmd 重置 admin 密码：默认生成临时密码并强制首登修改；
+// 可用 --password 或 --password-stdin 指定明文（须满足密码策略）。
+func resetAdminCmd() *cli.Command {
+	return &cli.Command{
+		Name:  "reset-admin",
+		Usage: "reset the administrator password to a generated temporary value (or --password/--password-stdin)",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "conf",
+				Aliases: []string{"c"},
+				Value:   "configs/config.toml",
+				Usage:   "App Configuration file(.toml)",
+			},
+			&cli.StringFlag{
+				Name:  "password",
+				Usage: "explicit new password (at least 12 chars, at least three character classes)",
+			},
+			&cli.BoolFlag{
+				Name:  "password-stdin",
+				Usage: "read the new password from stdin (takes precedence over --password)",
+			},
+		},
+		Action: func(c *cli.Context) error {
+			password := c.String("password")
+			if c.Bool("password-stdin") {
+				raw, err := io.ReadAll(os.Stdin)
+				if err != nil {
+					return fmt.Errorf("read password from stdin: %w", err)
+				}
+				password = strings.TrimRight(string(raw), "\r\n")
+				if password == "" {
+					return errors.New("empty password from stdin")
+				}
+			}
+			password, generated, err := service.ResetAdminFromConfig(c.String("conf"), password)
+			if err != nil {
+				return err
+			}
+			if generated {
+				fmt.Printf("administrator password reset to a temporary value (change it at first login):\n%s\n", password)
+			} else {
+				fmt.Println("administrator password reset (change it at first login)")
+			}
+			return nil
 		},
 	}
 }

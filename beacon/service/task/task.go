@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"beacon/pkg/secret"
 	"beacon/pkg/utils"
@@ -32,6 +33,7 @@ const (
 	alarmWindowGrace         = 45 * time.Second
 	alarmMaximumSampleGap    = 90 * time.Second
 	containerStateFreshness  = 2 * time.Minute
+	maxAuditOperateRunes     = 255
 )
 
 type alarmWindowState uint8
@@ -411,6 +413,15 @@ func (t *Task) ServiceTask(ctx context.Context) error {
 	return nil
 }
 
+// truncateAuditOperate 将告警消息截断到审计 Operate 列宽（varchar(255)）内，
+// 避免超长 hostname 在 Postgres/MySQL 插入失败并中断整轮告警巡检。
+func truncateAuditOperate(msg string) string {
+	if utf8.RuneCountInString(msg) <= maxAuditOperateRunes {
+		return msg
+	}
+	return string([]rune(msg)[:maxAuditOperateRunes])
+}
+
 // triggerAlarm persists the alarm before attempting each notification channel.
 // Delivery failures are isolated from each other and never roll back the audit.
 func (t *Task) triggerAlarm(ctx context.Context, key string, msg string, agentID string) error {
@@ -423,7 +434,7 @@ func (t *Task) triggerAlarm(ctx context.Context, key string, msg string, agentID
 	operateLog := model.Audit{
 		Username: "system",
 		AgentID:  agentID,
-		Operate:  msg,
+		Operate:  truncateAuditOperate(msg),
 	}
 	if err := t.db.WithContext(ctx).Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
 		t.alarmMu.Unlock()
@@ -446,7 +457,7 @@ func (t *Task) resolveAlarm(ctx context.Context, key string, msg string, agentID
 	operateLog := model.Audit{
 		Username: "system",
 		AgentID:  agentID,
-		Operate:  msg,
+		Operate:  truncateAuditOperate(msg),
 	}
 	if err := t.db.WithContext(ctx).Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
 		t.alarmMu.Unlock()
@@ -463,7 +474,7 @@ func (t *Task) sendAlarmAudit(ctx context.Context, msg string, agentID string) e
 	operateLog := model.Audit{
 		Username: "system",
 		AgentID:  agentID,
-		Operate:  msg,
+		Operate:  truncateAuditOperate(msg),
 	}
 	if err := t.db.WithContext(ctx).Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
 		return err
