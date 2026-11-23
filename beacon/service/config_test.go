@@ -557,3 +557,27 @@ func TestValidateTransportSecurityRejectsUnpairedUnixSocket(t *testing.T) {
 		t.Fatalf("paired socket config rejected: %v", err)
 	}
 }
+
+// TestNewConfig_CORSOverrides 验证 CORS 可经环境变量启用并配置白名单：
+// compose 部署无需重建镜像即可放行跨域访问。
+func TestNewConfig_CORSOverrides(t *testing.T) {
+	const toml = `
+[App]
+Env = "development"
+`
+	t.Setenv("BEACON_CORS_ENABLE", "true")
+	t.Setenv("BEACON_CORS_ALLOW_ORIGINS", "https://a.example.com, https://b.example.com")
+
+	cfg, err := NewConfig(writeConfig(t, toml))
+	if err != nil {
+		t.Fatalf("NewConfig: %v", err)
+	}
+	if !cfg.CORS.Enable {
+		t.Fatal("expected CORS.Enable=true from env")
+	}
+	if len(cfg.CORS.AllowOrigins) != 2 ||
+		cfg.CORS.AllowOrigins[0] != "https://a.example.com" ||
+		cfg.CORS.AllowOrigins[1] != "https://b.example.com" {
+		t.Fatalf("CORS.AllowOrigins = %v, want two trimmed origins", cfg.CORS.AllowOrigins)
+	}
+}

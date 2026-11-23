@@ -11,9 +11,11 @@ import (
 	"beacon/service/schema"
 	"common/database"
 	"context"
+	"errors"
 
 	"github.com/google/wire"
 	"gopkg.in/gomail.v2"
+	"gorm.io/gorm"
 )
 
 var MailRepositorySet = wire.NewSet(NewMailRepository, wire.Bind(new(IMailRepository), new(*MailRepository)))
@@ -62,6 +64,21 @@ func (m *MailRepository) MailQuery(ctx context.Context) (model.Mail, error) {
 func (m *MailRepository) MailCreate(ctx context.Context, args schema.MailCreateArgs) error {
 	password, err := m.Cipher.Encrypt(args.Password)
 	if err != nil {
+		return err
+	}
+	// 单例语义：已有配置行时更新原行，避免多次创建让查询/发送命中最旧行。
+	var existing model.Mail
+	err = m.DB.WithContext(ctx).Model(&model.Mail{}).First(&existing).Error
+	if err == nil {
+		return m.DB.WithContext(ctx).Model(&existing).Updates(map[string]any{
+			"server":   args.Server,
+			"port":     args.Port,
+			"sender":   args.Sender,
+			"password": password,
+			"receiver": args.Receiver,
+		}).Error
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
 	}
 	mail := model.Mail{

@@ -170,7 +170,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		cipher:   cipher,
 		enforcer: syncedEnforcer,
 	}
-	timedTask := NewTimedTask(config, caller, db, cipher)
+	timedTask := NewTimedTask(config, db, cipher)
 	logger := NewLogger(config)
 	injector, err := NewInjector(app, router, prepare, config, timedTask, reportService, logger)
 	if err != nil {

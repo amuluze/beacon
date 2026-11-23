@@ -52,6 +52,29 @@ func migrateSensitiveData(ctx context.Context, db *database.DB, cipher *secret.C
 				return fmt.Errorf("migrate DingTalk secret: %w", err)
 			}
 		}
+		var feishuSettings []model.Feishu
+		if err := tx.Find(&feishuSettings).Error; err != nil {
+			return err
+		}
+		for i := range feishuSettings {
+			if err := migrateEncryptedColumn(tx, cipher, &feishuSettings[i], "webhook", feishuSettings[i].Webhook); err != nil {
+				return fmt.Errorf("migrate Feishu webhook: %w", err)
+			}
+			if err := migrateEncryptedColumn(tx, cipher, &feishuSettings[i], "secret", feishuSettings[i].Secret); err != nil {
+				return fmt.Errorf("migrate Feishu secret: %w", err)
+			}
+		}
+
+		var wecomSettings []model.WeCom
+		if err := tx.Find(&wecomSettings).Error; err != nil {
+			return err
+		}
+		for i := range wecomSettings {
+			if err := migrateEncryptedColumn(tx, cipher, &wecomSettings[i], "webhook", wecomSettings[i].Webhook); err != nil {
+				return fmt.Errorf("migrate WeCom webhook: %w", err)
+			}
+		}
+
 		return nil
 	})
 }

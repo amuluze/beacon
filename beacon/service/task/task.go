@@ -178,9 +178,9 @@ func alarmQueryStart(now time.Time, duration int) time.Time {
 	return now.Add(-time.Duration(duration) * time.Minute)
 }
 
-// evaluateAlarmWindow distinguishes a valid normal window from missing or
-// stale data. For a positive duration, samples must cover the whole window,
-// arrive without a long gap, and all remain strictly above the threshold.
+// evaluateAlarmWindow 判定告警窗口：全部样本严格高于阈值 → firing；整窗
+// 样本均 ≤ 阈值（完整正常证据，I014）→ normal；混合窗口不构成任一侧证据 →
+// unknown（既不触发也不恢复，等待决定性窗口）。窗口必须首尾新鲜且样本连续。
 func evaluateAlarmWindow(samples []metricSample, now time.Time, duration int, threshold int) alarmWindowState {
 	if len(samples) == 0 {
 		return alarmWindowUnknown
@@ -209,17 +209,27 @@ func evaluateAlarmWindow(samples []metricSample, now time.Time, duration int, th
 		return alarmWindowUnknown
 	}
 
+	above, atOrBelow := false, false
 	previous := first.observedAt
-	for index, sample := range samples {
-		if index > 0 && sample.observedAt.Sub(previous) > alarmMaximumSampleGap {
+	for _, sample := range samples {
+		if sample.observedAt.Sub(previous) > alarmMaximumSampleGap {
 			return alarmWindowUnknown
 		}
 		previous = sample.observedAt
-		if utils.Decimal(sample.value) <= float64(threshold) {
-			return alarmWindowNormal
+		if utils.Decimal(sample.value) > float64(threshold) {
+			above = true
+		} else {
+			atOrBelow = true
 		}
 	}
-	return alarmWindowFiring
+	switch {
+	case above && atOrBelow:
+		return alarmWindowUnknown
+	case above:
+		return alarmWindowFiring
+	default:
+		return alarmWindowNormal
+	}
 }
 
 func cpuSamples(rows []model.MonitorCPU) []metricSample {
@@ -435,6 +445,7 @@ func (t *Task) triggerAlarm(ctx context.Context, key string, msg string, agentID
 		Username: "system",
 		AgentID:  agentID,
 		Operate:  truncateAuditOperate(msg),
+		Object:   key,
 	}
 	if err := t.db.WithContext(ctx).Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
 		t.alarmMu.Unlock()
@@ -458,6 +469,7 @@ func (t *Task) resolveAlarm(ctx context.Context, key string, msg string, agentID
 		Username: "system",
 		AgentID:  agentID,
 		Operate:  truncateAuditOperate(msg),
+		Object:   key,
 	}
 	if err := t.db.WithContext(ctx).Model(&model.Audit{}).Create(&operateLog).Error; err != nil {
 		t.alarmMu.Unlock()

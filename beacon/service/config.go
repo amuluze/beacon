@@ -7,6 +7,7 @@ package service
 import (
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -87,6 +88,7 @@ func bindEnvs() {
 		"update.checkinterval":       "BEACON_UPDATE_CHECK_INTERVAL",
 		"retention.days":             "BEACON_RETENTION_DAYS",
 		"retention.auditdays":        "BEACON_RETENTION_AUDIT_DAYS",
+		"cors.enable":                "BEACON_CORS_ENABLE",
 	}
 	for key, env := range bindings {
 		if err := viper.BindEnv(key, env); err != nil {
@@ -109,6 +111,13 @@ func overrideFromEnv(config *Config) {
 	}
 	if v := firstEnv("BEACON_CONTROL_JOIN_TOKEN", "BEACON_CONTROL_JOINTOKEN"); v != "" {
 		config.Control.JoinToken = v
+	}
+	if v := firstEnv("BEACON_CORS_ALLOW_ORIGINS"); v != "" {
+		origins := strings.Split(v, ",")
+		for i := range origins {
+			origins[i] = strings.TrimSpace(origins[i])
+		}
+		config.CORS.AllowOrigins = origins
 	}
 }
 

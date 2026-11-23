@@ -99,3 +99,17 @@ func TestValidateStruct_EmptyStruct(t *testing.T) {
 		t.Errorf("empty struct should pass validation: %v", err)
 	}
 }
+
+func TestValidateStructDoesNotPanicOnInvalidInput(t *testing.T) {
+	if err := ValidateStruct(nil); err == nil {
+		t.Fatal("expected error for nil input")
+	}
+	type notAStruct int
+	if err := ValidateStruct(notAStruct(1)); err == nil {
+		t.Fatal("expected error for non-struct input")
+	}
+	// 之后的正常校验不受非法入参影响。
+	if err := ValidateStruct(validStruct{Name: "ok", Age: 1, Status: 1}); err != nil {
+		t.Fatalf("valid struct rejected after invalid input: %v", err)
+	}
+}

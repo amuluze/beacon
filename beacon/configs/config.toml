@@ -4,7 +4,7 @@ ReadOnly = false # 只读模式：允许浏览，拒绝所有业务写操作
 NoAuth = false   # 匿名只读访问：未登录会话只读，仍可手动登录；登录后恢复正常权限
 
 # [CORS]
-# Enable = false  # 默认不挂载 CORS：控制台与 API 同源部署，无需跨域放行。
+# Enable = false  # 默认不挂载 CORS：控制台与 API 同源部署，无需跨域放行；亦可用环境变量 BEACON_CORS_ENABLE=true 与 BEACON_CORS_ALLOW_ORIGINS（逗号分隔）启用。
 #                  # 独立前端域跨域访问时设为 true 并填写 AllowOrigins 白名单
 #                  #（跨域 Cookie 会话依赖具体 Origin，不可用通配 *）。
 # AllowOrigins = ["https://console.example.com"]
@@ -100,7 +100,7 @@ IDFile = "/app/data/install.id"
 Timeout = 5
 
 [Update]
-Enable = true                                    # 启用版本轮询；关闭则仅在启动时检查一次
+Enable = true                                    # 启用版本轮询与启动时检查；关闭则不执行任何远程版本检查
 URL = "https://beacon.amuluze.com"               # beacon-help 版本清单基础 URL
 CheckInterval = 21600                            # 轮询间隔（秒），默认 6h，最低 1h（version_check.go 兜底）
 

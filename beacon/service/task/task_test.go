@@ -279,6 +279,8 @@ func TestServiceTaskSeparatesContainerStateCacheByAgent(t *testing.T) {
 // TestCPUAlarmRecoversAfterMetricDrops 验证报警恢复：
 // 当指标持续高于阈值时产生报警，指标回落后不再产生新报警。
 // Domain I004约束：报警由可观测指标+阈值+恢复条件决定。
+// 严格恢复语义（I014「完整正常证据」）：单个回落样本构成的混合窗口不恢复；
+// 完整干净窗口（整窗 ≤ 阈值）才恢复且仅一次。
 func TestCPUAlarmRecoversAfterMetricDrops(t *testing.T) {
 	db := newTaskTestDB(t)
 	t.Cleanup(db.Close)
@@ -288,7 +290,7 @@ func TestCPUAlarmRecoversAfterMetricDrops(t *testing.T) {
 
 	now := time.Now().Truncate(time.Second)
 	// Simulate sustained high CPU for 5+ minutes
-	for i := 0; i < 6; i++ {
+	for i := range 6 {
 		createTaskRecord(t, db, &model.MonitorCPU{
 			Model:      gorm.Model{CreatedAt: now.Add(-time.Duration(5-i) * time.Minute)},
 			AgentID:    "agent-a",
@@ -311,9 +313,12 @@ func TestCPUAlarmRecoversAfterMetricDrops(t *testing.T) {
 	if !strings.Contains(audits[0].Operate, "CPU") {
 		t.Fatalf("expected CPU alarm message, got %q", audits[0].Operate)
 	}
+	// I026：审计必须携带操作对象（告警粒度键）。
+	if audits[0].Object != "cpu:agent-a" {
+		t.Fatalf("audit Object = %q, want cpu:agent-a", audits[0].Object)
+	}
 
-	// Now simulate a fresh recovery sample: one normal value makes the complete
-	// window normal and emits exactly one recovery event.
+	// 严格恢复语义：单个回落样本构成混合窗口，不产生恢复审计。
 	now = now.Add(time.Minute)
 	createTaskRecord(t, db, &model.MonitorCPU{
 		Model:      gorm.Model{CreatedAt: now},
@@ -321,18 +326,36 @@ func TestCPUAlarmRecoversAfterMetricDrops(t *testing.T) {
 		Timestamp:  now,
 		CPUPercent: 30,
 	})
-
-	// Run the task again — should generate one recovery audit.
 	if err := task.CPUAlarmTask(context.Background()); err != nil {
-		t.Fatalf("CPUAlarmTask after recovery: %v", err)
+		t.Fatalf("CPUAlarmTask after mixed window: %v", err)
+	}
+	if audits := taskAudits(t, db); len(audits) != 1 {
+		t.Fatalf("mixed window must not recover: audit count = %d, want 1", len(audits))
 	}
 
+	// 补齐完整干净窗口（整窗 ≤ 阈值）后恢复，且仅一次。
+	for i := 1; i <= 6; i++ {
+		observedAt := now.Add(time.Duration(i) * time.Minute)
+		createTaskRecord(t, db, &model.MonitorCPU{
+			Model:      gorm.Model{CreatedAt: observedAt},
+			AgentID:    "agent-a",
+			Timestamp:  observedAt,
+			CPUPercent: 30,
+		})
+	}
+	now = now.Add(6 * time.Minute)
+	if err := task.CPUAlarmTask(context.Background()); err != nil {
+		t.Fatalf("CPUAlarmTask after clean window: %v", err)
+	}
 	audits = taskAudits(t, db)
 	if len(audits) != 2 {
 		t.Fatalf("audit count after recovery = %d, want 2 (alarm and recovery)", len(audits))
 	}
 	if !strings.Contains(audits[1].Operate, "恢复") {
 		t.Fatalf("expected recovery audit, got %q", audits[1].Operate)
+	}
+	if audits[1].Object != "cpu:agent-a" {
+		t.Fatalf("recovery audit Object = %q, want cpu:agent-a", audits[1].Object)
 	}
 	if err := task.CPUAlarmTask(context.Background()); err != nil {
 		t.Fatalf("repeated CPUAlarmTask after recovery: %v", err)
@@ -346,6 +369,43 @@ func TestCPUAlarmRecoversAfterMetricDrops(t *testing.T) {
 	}
 }
 
+// 严格恢复语义（I014「完整正常证据」，用户裁决）：窗口内任一样本仍高于阈值时，
+// 既不触发告警也不判定恢复，等待决定性窗口。
+func TestEvaluateAlarmWindowStrictRecovery(t *testing.T) {
+	now := time.Now().Truncate(time.Second)
+	sample := func(offset time.Duration, value float64) metricSample {
+		return metricSample{observedAt: now.Add(offset), value: value}
+	}
+	tests := []struct {
+		name    string
+		samples []metricSample
+		want    alarmWindowState
+	}{
+		{
+			name:    "all samples above threshold fires",
+			samples: []metricSample{sample(-2 * time.Minute, 95), sample(-time.Minute, 94), sample(0, 93)},
+			want:    alarmWindowFiring,
+		},
+		{
+			name:    "all samples at or below threshold is normal",
+			samples: []metricSample{sample(-2 * time.Minute, 50), sample(-time.Minute, 40), sample(0, 30)},
+			want:    alarmWindowNormal,
+		},
+		{
+			name:    "mixed window is unknown",
+			samples: []metricSample{sample(-2 * time.Minute, 95), sample(-time.Minute, 50), sample(0, 93)},
+			want:    alarmWindowUnknown,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := evaluateAlarmWindow(tt.samples, now, 2, 80); got != tt.want {
+				t.Fatalf("evaluateAlarmWindow = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestCPUAlarmRequiresCompleteContinuousWindow(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -355,7 +415,7 @@ func TestCPUAlarmRequiresCompleteContinuousWindow(t *testing.T) {
 	}{
 		{name: "single high sample is insufficient", offsets: []time.Duration{0}, values: []float64{95}},
 		{name: "complete high window fires", offsets: []time.Duration{-2 * time.Minute, -time.Minute, 0}, values: []float64{95, 94, 93}, want: 1},
-		{name: "one normal sample keeps window normal", offsets: []time.Duration{-2 * time.Minute, -time.Minute, 0}, values: []float64{95, 50, 95}},
+		{name: "mixed window neither fires nor recovers", offsets: []time.Duration{-2 * time.Minute, -time.Minute, 0}, values: []float64{95, 50, 95}},
 		{name: "sample gap makes window unknown", offsets: []time.Duration{-2 * time.Minute, 0}, values: []float64{95, 95}},
 	}
 

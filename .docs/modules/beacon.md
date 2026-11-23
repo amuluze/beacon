@@ -95,6 +95,7 @@
 - 配置：`BEACON_VERSION` at `beacon/service/install_report.go:92`
 - 配置：`CORS`（`Enable=false` 时不挂载跨域中间件，同源部署默认关闭） at `beacon/service/app.go:47`
 - 配置：`CORS` at `beacon/service/config.go:223`
+- 配置：`BEACON_CORS_ENABLE` / `BEACON_CORS_ALLOW_ORIGINS`（逗号分隔白名单）at `beacon/service/config.go`
 - 配置：`Config` in `beacon/service/config.go`
 - 配置：`Option` in `beacon/pkg/auth/jwtauth/options.go`
 - 入口：`api := app.Group("/api")` at `beacon/service/router.go:74`
@@ -137,14 +138,15 @@
 - `MonitorCPU.CPUPercent`、`MonitorMemory.MemPercent` 和 `MonitorDisk.DiskPercent` 均沿用 Collia/gopsutil 的 `0–100` 百分数单位，不做二次乘以 100 的换算。
 - `MonitorCPU.CPUCount` 保存 Collia 上报的逻辑核数（批次字段 `cpu_count`，历史行为 0），`GET /api/v1/host/cpu_info` 以 `cores` 返回，供前端把 CPU 指标渲染为「当前 X% · N 核」；核数缺失时返回 0，由前端省略后缀。
 - 容器列表来自 `m_container` 最新批次，支持 `name`（名称或镜像模糊）、`state`（精确）与 `network`（精确，Collia 上报的容器首个网络名）三个服务端筛选；镜像列表支持 `name`（名称或 Tag 模糊）与 `in_use`（`in_use` / `unused`，按 `m_image.number` 判断）。列表与 `total` 使用同一组过滤条件。`m_image.number` 由上报批次按容器镜像引用计算写入（Collia 不上报该字段）。`m_container.network` 与 `m_image.number` 都是升级后由 AutoMigrate 建列/回填：历史行 network 为空、number 为 0，升级后首个上报批次即补齐。
-- CPU、内存和磁盘告警使用 GORM `CreatedAt` 作为 Server 接收时间。正持续时间要求样本覆盖完整窗口、最新样本足够新、相邻样本间隔不超过 90 秒且所有样本严格超过阈值；窗口不完整、陈旧或间断时保持未知态。磁盘按 Agent + 设备独立应用同一窗口。
-- 资源告警按 Agent（磁盘额外按设备）构造状态与去重键；首次触发立即通知，持续异常每 10 分钟最多重复一次，获得正常证据后写一次恢复审计/通知并清除去重状态。告警检查、审计写入和缓存更新由互斥区保护，避免重叠定时任务重复发送。
+- CPU、内存和磁盘告警使用 GORM `CreatedAt` 作为 Server 接收时间。正持续时间要求样本覆盖完整窗口、最新样本足够新、相邻样本间隔不超过 90 秒且所有样本严格超过阈值；整窗样本均不超过阈值才判恢复，混合窗口（部分超阈）不构成任一侧证据、保持未知态（严格恢复语义，I014）；窗口不完整、陈旧或间断时同样保持未知态。磁盘按 Agent + 设备独立应用同一窗口。
+- 资源告警按 Agent（磁盘额外按设备）构造状态与去重键；首次触发立即通知，持续异常每 10 分钟最多重复一次，获得完整正常窗口证据（整窗样本均 ≤ 阈值）后写一次恢复审计/通知并清除去重状态。告警检查、审计写入和缓存更新由互斥区保护，避免重叠定时任务重复发送。
 - 容器状态任务只读取最近 2 分钟内写入的每容器最新记录，陈旧历史状态不触发变化告警。
 - 钉钉告警配置以 `s_dingtalk` 单例记录持久化；查询 API 只返回 Webhook 掩码和凭据配置状态，更新时空白凭据保留原值，签名密钥可显式清除。
 - 钉钉 HTTP sender 只接受 `https://oapi.dingtalk.com/robot/send` 与唯一非空 `access_token`，使用 5 秒超时并禁止重定向；可选签名通过 HMAC-SHA256 生成。
-- 告警任务先持久化审计，再独立尝试邮件和钉钉；任一通道失败只写告警日志，不回滚审计或阻断另一通道。
+- 告警任务先持久化审计，再独立尝试邮件、钉钉、飞书与企微；任一通道失败只写告警日志，不回滚审计或阻断其他通道。
+- mail 通知配置为单例：`MailCreate` 对既有行整行更新而非追加，查询与告警发送始终命中最新配置。
 - 告警消息标题以 `s_alarm_message_setting` 单例持久化，缺失时初始化为 `Beacon 主机告警` 且重复启动不覆盖用户值；实际邮件 Subject、邮件测试 Subject、实际钉钉首行和钉钉测试首行共享该标题。标题按单次通知只读取一次，缺失或非法存量值安全回退默认标题，审计正文不拼接标题。
-- SMTP 密码、钉钉 Webhook 和签名密钥使用 `BEACON_DATA_ENCRYPTION_KEY` 对应的 AES-256-GCM 密钥加密存储；启动时事务迁移历史明文，读取时兼容并回写遗留值。该密钥缺失或非法时拒绝启动。
+- SMTP 密码、钉钉/飞书 Webhook 与签名密钥、企微 Webhook 使用 `BEACON_DATA_ENCRYPTION_KEY` 对应的 AES-256-GCM 密钥加密存储；启动时事务统一迁移四渠道历史明文，读取时兼容并回写遗留值。该密钥缺失或非法时拒绝启动。
 - 浏览器 JWT 仅写入 HttpOnly、SameSite=Strict Cookie，CSRF Cookie 可读并要求 `X-CSRF-Token` 双提交；登录响应只返回 `must_change_password`。新库由 `BEACON_BOOTSTRAP_ADMIN_PASSWORD` 创建唯一管理员并强制改密，历史公开默认密码也被迁移到强制改密状态。
 - 生产环境拒绝非 HTTPS Web 请求并要求 Agent 控制通道双向 TLS；WebSocket 仅使用同源 access Cookie，不接受 Authorization 或 query token。
 - 控制通道 CA 与服务端证书运行于 `/etc/beacon/control-certs`；官方发布 Compose 通过 `BEACON_CONTROL_CERT_DIR` 持久化该目录，避免容器升级静默轮换 CA。
@@ -161,6 +163,7 @@
 - 容器指标历史按批次追加以支持趋势查询；容器管理列表、总数和镜像占用数只读取目标 Agent 的最新容器批次，包含未发布端口的容器，并排除已从最新批次消失的历史容器。
 - `/ws/terminal` 在动态容器日志路由 `/ws/:id` 之前精确注册，并在 WebSocket upgrade 前读取 HttpOnly access Cookie；真实 `terminal.Handler` 等待 Agent PTY 可接受 resize 后发送 ready，以 Ping 控制帧保持空闲代理链路活跃，关闭时携带 Agent ID 调用 `TerminalClose`。
 - WebSocket 终端与容器日志链路均有读写 deadline 兜底，半开 TCP（连接还在但客户端不读不写）不会让 Server 端 goroutine 永久阻塞：终端读 deadline 10 分钟、单次写 deadline 10 秒，活跃会话每次读到消息即重置读 deadline；容器日志每次写前设置 10 秒写 deadline。
+- 容器日志 WebSocket（`/ws/:id`）整条流派生 5 分钟硬超时上下文（`beacon/service/websocket.go`），超时主动断开需前端重连，防止日志流 goroutine 与隧道流资源长期占用。
 - 流式控制调用（`TunnelClient.StreamCall`）派生最长 2 小时 `maxStreamDuration` 的截止 ctx，即便 Agent PTY hang 且客户端半开导致调用方 ctx 永不取消，超时也会触发 Server 端 `streams` map 与缓冲的回收，避免 entry + 64 帧缓冲 + goroutine 永驻。
 - HTTP server 强制启用读/写/空闲超时（默认 30s/30s/120s，缺值兜底）并将请求体上限从 1GB 收紧到 32MB，慢速请求与异常上报不再能逐步占满容器内存。
 - 反向 gRPC tunnel server 启用 keepalive（`MaxConnectionAge` 30 分钟、`MaxConnectionIdle` 5 分钟），周期性回收超龄与僵尸 Agent 连接；Agent 端已有重连循环，周期性重连无副作用。
@@ -172,7 +175,7 @@
 - 容器删除直接调用 Docker Engine 删除运行时容器：Agent 不维护本地容器记录（IC007），运行时删除失败返回错误，删除成功后容器从下一次上报批次消失；创建重名由 Agent 侧 errdefs 冲突判定归一为 `container <name> already exists`。
 - 受保护容器名单（`beacon`）在 Server 侧强制执行：`assertNotProtected` 对命中名单的 start/stop/restart/remove 目标返回 `ErrProtectedContainer` 拒绝执行（`beacon/service/container/service/container.go`）；该哨兵定义在 `beacon/pkg/errors`，由 `errors.FromError` 映射为 403 Forbidden，不会被当成内部故障返回 500。
 - 请求参数校验失败（`validatex.ValidateStruct` 返回的 validator 错误）统一由 `errors.FromError` 映射为 400 Bad Request，`err` 字段携带首条字段错误详情，不再落入 500 兜底分支。
-- 审计写入入口是 `JWTAuth.RecordAudit(ctx, username, operate, object)`，落库 Username、AgentID、Operate 与 Object 四个字段，写入失败以错误返回并由调用方记录日志，不静默丢失审计行（`beacon/pkg/auth/jwtauth/auth.go`）；容器操作等 handler 会显式注入目标 Agent 标识与操作对象，Collia 升级任务与告警任务以 `system` 用户直接写入带 Agent 标识的系统审计。
+- 审计写入入口是 `JWTAuth.RecordAudit(ctx, username, operate, object)`，落库 Username、AgentID、Operate 与 Object 四个字段，写入失败以错误返回并由调用方记录日志，不静默丢失审计行（`beacon/pkg/auth/jwtauth/auth.go`）；容器操作等 handler 会显式注入目标 Agent 标识与操作对象，Collia 升级任务与告警任务以 `system` 用户直接写入带 Agent 标识的系统审计，告警审计以告警粒度键（如 `cpu:agent-a`）写入 Object。
 - `interface IMailRepository (beacon/service/mail/repository/mail.go)`
 - `interface IMailService (beacon/service/mail/service/mail.go)`
 - `interface IDingTalkRepository (beacon/service/dingtalk/repository/dingtalk.go)`
