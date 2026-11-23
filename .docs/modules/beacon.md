@@ -18,8 +18,8 @@
 
 - 模块路径：`beacon`
 - Go 版本：`1.25.0`
-- Go 源码文件：160（非测试 `.go`，不含 `web/`）
-- Go 测试文件：75
+- Go 源码文件：159（非测试 `.go`，不含 `web/`）
+- Go 测试文件：74
 - 包名：`account`, `agent`, `alarm`, `api`, `audit`, `auth`, `authcookie`, `client`, `container`, `contextx`, `dingtalk`, `errors`, `feishu`, `fiberx`, `hash`, `health`, `host`, `jwtauth`, `mail`, `main`, `middleware`, `model`, `report`, `repository`, `rpc`, `schema`, `secret`, `service`, `task`, `terminal`, `testutil`, `title`, `utils`, `uuid`, `validatex`, `wecom`, `web`
 - 推断角色：HTTP/API service module: Web/API 接入、路由注册、请求校验和服务协调
 
@@ -64,7 +64,6 @@
 - `github.com/google/uuid` `v1.6.0`
 - `github.com/google/wire` `v0.6.0`
 - `github.com/patrickmn/go-cache` `v2.1.0+incompatible`
-- `github.com/pkg/errors` `v0.9.1`
 - `github.com/spf13/viper` `v1.19.0`
 - `github.com/stretchr/testify` `v1.9.0`
 - `github.com/urfave/cli/v2` `v2.27.4`
@@ -94,7 +93,7 @@
 - 配置：`BEACON_IMAGE` at `beacon/service/install_report.go:91`
 - 配置：`BEACON_PUBLIC_BASE_URL` at `beacon/service/install_report.go:93`
 - 配置：`BEACON_VERSION` at `beacon/service/install_report.go:92`
-- 配置：`CORS` at `beacon/service/app.go:47`
+- 配置：`CORS`（`Enable=false` 时不挂载跨域中间件，同源部署默认关闭） at `beacon/service/app.go:47`
 - 配置：`CORS` at `beacon/service/config.go:223`
 - 配置：`Config` in `beacon/service/config.go`
 - 配置：`Option` in `beacon/pkg/auth/jwtauth/options.go`
@@ -170,7 +169,7 @@
 - 清理任务除 5 张时序表（CPU/内存/磁盘/网络/容器）外，还删除已关闭（`ended_at` 非空）且超过保留期的 `s_session` 记录，保留活跃与异常会话供排查。
 - Collia 自动更新的 `failedAt` 冷却表在每次 Agent 注册（`Schedule`）时清理超过 24 小时的过期条目，避免长期离线 Agent 的 entry 在内存 map 中永久累积。
 - 镜像删除先通过反向 tunnel 调用目标 Agent；Agent 返回成功后，Server 按 Agent ID 与镜像 ID 失效 `m_image` 缓存，使同一请求后的镜像列表刷新立即反映删除结果。RPC 失败时保留缓存。
-- 容器删除与镜像删除不同：Agent 侧先调用 Docker Engine 删除容器，成功后才删除本地容器记录（`deleteContainerThenRecord`），避免「记录已消失但容器仍在节点上」的错位；运行时删除失败时本地记录保留，记录移除失败的残留会在下一次上报批次中被替换。
+- 容器删除直接调用 Docker Engine 删除运行时容器：Agent 不维护本地容器记录（IC007），运行时删除失败返回错误，删除成功后容器从下一次上报批次消失；创建重名由 Agent 侧 errdefs 冲突判定归一为 `container <name> already exists`。
 - 受保护容器名单（`beacon`）在 Server 侧强制执行：`assertNotProtected` 对命中名单的 start/stop/restart/remove 目标返回 `ErrProtectedContainer` 拒绝执行（`beacon/service/container/service/container.go`）；该哨兵定义在 `beacon/pkg/errors`，由 `errors.FromError` 映射为 403 Forbidden，不会被当成内部故障返回 500。
 - 请求参数校验失败（`validatex.ValidateStruct` 返回的 validator 错误）统一由 `errors.FromError` 映射为 400 Bad Request，`err` 字段携带首条字段错误详情，不再落入 500 兜底分支。
 - 审计写入入口是 `JWTAuth.RecordAudit(ctx, username, operate, object)`，落库 Username、AgentID、Operate 与 Object 四个字段，写入失败以错误返回并由调用方记录日志，不静默丢失审计行（`beacon/pkg/auth/jwtauth/auth.go`）；容器操作等 handler 会显式注入目标 Agent 标识与操作对象，Collia 升级任务与告警任务以 `system` 用户直接写入带 Agent 标识的系统审计。

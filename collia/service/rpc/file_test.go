@@ -14,7 +14,7 @@ func newFileService(t *testing.T) (*Service, string) {
 	t.Helper()
 	root := t.TempDir()
 	// 复用未导出的 NewService：它接受 rootDir。
-	return NewService(nil, nil, root), root
+	return NewService(nil, root), root
 }
 
 // TestFilesSearch_RejectsOutsideSandbox 验证列举沙箱外目录被拒绝。

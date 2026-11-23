@@ -14,7 +14,6 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/takama/daemon v1.0.0
 	google.golang.org/grpc v1.81.1
-	gorm.io/gorm v1.25.12
 )
 
 require (

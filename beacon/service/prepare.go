@@ -28,11 +28,10 @@ import (
 var PrepareSet = wire.NewSet(wire.Struct(new(Prepare), "*"))
 
 var notAdminResourcesMap = map[string]struct{}{
-	"登录":              {},
-	"登出":              {},
-	"更新密码":            {},
-	"更新 token":        {},
-	"获取 WebSocket 票据": {},
+	"登录":       {},
+	"登出":       {},
+	"更新密码":     {},
+	"更新 token": {},
 }
 
 var adminOnlyResourcesMap = map[string]struct{}{

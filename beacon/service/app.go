@@ -44,7 +44,9 @@ func NewFiberApp(config *Config, r IRouter) *fiber.App {
 
 	// 添加中间件
 	app.Use(securityHeadersMiddleware(config))
-	app.Use(cors.New(buildCORSConfig(config.CORS)))
+	if config.CORS.Enable {
+		app.Use(cors.New(buildCORSConfig(config.CORS)))
+	}
 	if strings.EqualFold(config.App.Env, productionEnv) {
 		app.Use(func(c *fiber.Ctx) error {
 			if c.Path() == "/health" || c.Path() == "/ready" || fiberx.IsHTTPS(c) {
@@ -106,12 +108,10 @@ var devAllowOrigins = []string{
 	"http://127.0.0.1:3000",
 }
 
-// buildCORSConfig 根据配置生成 CORS 中间件配置。
-//   - Enable=false：返回空配置（fiber cors 默认放行所有 Origin），保持同源可用。
+// buildCORSConfig 生成 CORS 中间件配置（仅 CORS.Enable=true 时挂载）。
+//   - Enable=false：不挂载 CORS 中间件，同源部署默认关闭。
 //   - AllowOrigins 非空：严格限定到白名单。
-//   - AllowOrigins 为空：回退到本地开发域（仅适用于开发模式）。
-//
-// HttpOnly Cookie 跨域依赖 AllowCredentials 与具体 Origin（不可用通配 *）。
+//   - AllowOrigins 为空：回退到本地开发域（生产显式开启时必须配置白名单）。
 func buildCORSConfig(cfg CORS) cors.Config {
 	origins := cfg.AllowOrigins
 	if len(origins) == 0 {

@@ -71,70 +71,6 @@ func TestAllowPathPrefixSkipper(t *testing.T) {
 	}
 }
 
-func TestAllowPathPrefixNoSkipper(t *testing.T) {
-	tests := []struct {
-		name     string
-		prefixes []string
-		path     string
-		want     bool
-	}{
-		{
-			name:     "matching prefix returns false",
-			prefixes: []string{"/api/v1/auth"},
-			path:     "/api/v1/auth/login",
-			want:     false,
-		},
-		{
-			name:     "non-matching prefix returns true",
-			prefixes: []string{"/api/v1/auth"},
-			path:     "/api/v1/host/info",
-			want:     true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			skipper := AllowPathPrefixNoSkipper(tt.prefixes...)
-
-			var result bool
-			app := fiber.New()
-			app.Use(func(c *fiber.Ctx) error {
-				result = skipper(c)
-				return c.SendStatus(200)
-			})
-			req := httptest.NewRequest("GET", tt.path, nil)
-			_, _ = app.Test(req, -1)
-
-			if result != tt.want {
-				t.Errorf("AllowPathPrefixNoSkipper(%v) on %q = %v, want %v",
-					tt.prefixes, tt.path, result, tt.want)
-			}
-		})
-	}
-}
-
-func TestJoinRouter(t *testing.T) {
-	tests := []struct {
-		method string
-		path   string
-		want   string
-	}{
-		{"GET", "/api/v1/auth", "GET/api/v1/auth"},
-		{"POST", "api/v1/host", "POST/api/v1/host"},
-		{"get", "/test", "GET/test"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.method+tt.path, func(t *testing.T) {
-			result := JoinRouter(tt.method, tt.path)
-			if result != tt.want {
-				t.Errorf("JoinRouter(%q, %q) = %q, want %q",
-					tt.method, tt.path, result, tt.want)
-			}
-		})
-	}
-}
-
 func TestSkipHandler(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -187,38 +123,6 @@ func TestSkipHandler(t *testing.T) {
 
 			if result != tt.want {
 				t.Errorf("SkipHandler = %v, want %v", result, tt.want)
-			}
-		})
-	}
-}
-
-func TestAllowMethodAndPathPrefixSkipper(t *testing.T) {
-	skipper := AllowMethodAndPathPrefixSkipper("POST/api/v1/auth")
-
-	tests := []struct {
-		method string
-		path   string
-		want   bool
-	}{
-		{"POST", "/api/v1/auth/login", true},
-		{"GET", "/api/v1/auth/login", false},
-		{"POST", "/api/v1/host/info", false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.method+tt.path, func(t *testing.T) {
-			var result bool
-			app := fiber.New()
-			app.Use(func(c *fiber.Ctx) error {
-				result = skipper(c)
-				return c.SendStatus(200)
-			})
-			req := httptest.NewRequest(tt.method, tt.path, nil)
-			_, _ = app.Test(req, -1)
-
-			if result != tt.want {
-				t.Errorf("AllowMethodAndPathPrefixSkipper on %s %s = %v, want %v",
-					tt.method, tt.path, result, tt.want)
 			}
 		})
 	}

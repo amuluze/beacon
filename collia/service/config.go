@@ -22,7 +22,6 @@ type Config struct {
 	Control   Control   `yaml:"control"`
 	Log       Log       `yaml:"log"`
 	Task      Task      `yaml:"task"`
-	DB        DB        `yaml:"db"`
 	Variables Variables `yaml:"variables"`
 }
 
@@ -115,16 +114,6 @@ type Log struct {
 	Level    string `yaml:"level" mapstructure:"level"`
 	Rotation int    `yaml:"rotation" mapstructure:"rotation"`
 	MaxAge   int    `yaml:"max_age" mapstructure:"max_age"`
-}
-
-type DB struct {
-	DBType   string `yaml:"dbtype" mapstructure:"dbtype"`
-	Host     string `yaml:"host" mapstructure:"host"`
-	Port     string `yaml:"port" mapstructure:"port"`
-	User     string `yaml:"user" mapstructure:"user"`
-	Password string `yaml:"password" mapstructure:"password"`
-	DBName   string `yaml:"dbname" mapstructure:"dbname"`
-	SSLMode  string `yaml:"sslmode" mapstructure:"sslmode"`
 }
 
 type Variables struct {

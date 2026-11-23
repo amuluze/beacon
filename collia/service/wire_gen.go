@@ -6,10 +6,6 @@
 
 package service
 
-import (
-	"collia/service/model"
-)
-
 // Injectors from wire.go:
 
 func BuildInjector(configFile string, prefix Prefix, version Version) (*Injector, func(), error) {
@@ -18,12 +14,7 @@ func BuildInjector(configFile string, prefix Prefix, version Version) (*Injector
 		return nil, nil, err
 	}
 	timedTask := NewTimedTask(config)
-	models := model.NewModels()
-	db, err := NewDB(config, models)
-	if err != nil {
-		return nil, nil, err
-	}
-	server, err := NewRPCServer(config, db, version)
+	server, err := NewRPCServer(config, version)
 	if err != nil {
 		return nil, nil, err
 	}

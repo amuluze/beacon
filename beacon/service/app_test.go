@@ -14,7 +14,6 @@ import (
 type noopRouter struct{}
 
 func (noopRouter) Register(app *fiber.App) error { return nil }
-func (noopRouter) Prefixes() []string            { return nil }
 
 // TestPprofDisabledInProduction 验证生产模式下 /debug/pprof 不被挂载（404），
 // 防止运行时内存/goroutine 信息无鉴权泄漏或被用于 DoS。
@@ -150,5 +149,37 @@ func TestFiberBodyLimitReduced(t *testing.T) {
 	}
 	if server.MaxRequestBodySize != defaultBodyLimit {
 		t.Fatalf("MaxRequestBodySize = %d, want %d", server.MaxRequestBodySize, defaultBodyLimit)
+	}
+}
+
+// TestCORSRespectsEnableSwitch 验证 CORS 仅在显式开启时挂载：Enable=false 时
+// 不得回退到开发域白名单并携带凭据放行跨域请求。
+func TestCORSRespectsEnableSwitch(t *testing.T) {
+	const devOrigin = "http://localhost:5173"
+
+	app := NewFiberApp(&Config{App: App{Env: "development"}, CORS: CORS{Enable: false}}, noopRouter{})
+	defer func() { _ = app.Shutdown() }()
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Origin", devOrigin)
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	if got := resp.Header.Get("Access-Control-Allow-Origin"); got != "" {
+		t.Fatalf("CORS.Enable=false must not mount CORS middleware, got Access-Control-Allow-Origin=%q", got)
+	}
+
+	app = NewFiberApp(&Config{App: App{Env: "development"}, CORS: CORS{Enable: true, AllowOrigins: []string{"https://console.example.com"}}}, noopRouter{})
+	defer func() { _ = app.Shutdown() }()
+	req = httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Origin", "https://console.example.com")
+	resp, err = app.Test(req)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	if got := resp.Header.Get("Access-Control-Allow-Origin"); got != "https://console.example.com" {
+		t.Fatalf("CORS.Enable=true must honor the allowlist, got %q", got)
 	}
 }

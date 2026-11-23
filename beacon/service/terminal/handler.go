@@ -21,10 +21,8 @@ import (
 
 // Handler upgrades WebSocket connections and bridges them to Agent PTY sessions.
 type Handler struct {
-	rpcClient        rpc.Caller
-	db               *database.DB
-	sessionDir       string
-	recordingEnabled bool
+	rpcClient rpc.Caller
+	db        *database.DB
 }
 
 const (
@@ -85,21 +83,6 @@ func (h *Handler) handle(conn ClientConnection) {
 		return
 	}
 
-	var recorder *Recorder
-	if h.recordingEnabled {
-		var path string
-		var err error
-		recorder, path, err = NewRecorder(h.sessionDir, sessionID, cols, rows)
-		if err != nil {
-			slog.Error("terminal: create recorder failed", "session_id", sessionID, "err", err)
-			_ = sendError(conn, "failed to start recording")
-			_ = h.closeSession(sessionID, "failed")
-			return
-		}
-		session.FilePath = path
-		_ = h.db.Model(&model.Session{}).Where("session_id = ?", sessionID).Update("file_path", path).Error
-	}
-
 	stream, err := h.rpcClient.StreamCall(ctx, "TerminalSession", rpcSchema.TerminalSessionArgs{
 		SessionID: sessionID,
 		Shell:     "/bin/bash",
@@ -110,9 +93,6 @@ func (h *Handler) handle(conn ClientConnection) {
 		slog.Error("terminal: start agent session failed", "session_id", sessionID, "agent_id", agentID, "err", err)
 		_ = sendError(conn, fmt.Sprintf("failed to start terminal: %v", err))
 		_ = h.closeSession(sessionID, "failed")
-		if recorder != nil {
-			_ = recorder.Close()
-		}
 		return
 	}
 	if err := h.awaitAgentReady(ctx, sessionID, rows, cols); err != nil {
@@ -120,30 +100,21 @@ func (h *Handler) handle(conn ClientConnection) {
 		_ = sendError(conn, fmt.Sprintf("failed to prepare terminal: %v", err))
 		_ = h.closeAgentSession(agentID, sessionID)
 		_ = h.closeSession(sessionID, "failed")
-		if recorder != nil {
-			_ = recorder.Close()
-		}
 		return
 	}
 	if err := sendMessage(conn, NewReadyMessage()); err != nil {
 		slog.Debug("terminal: send ready message failed", "session_id", sessionID, "err", err)
 		_ = h.closeAgentSession(agentID, sessionID)
 		_ = h.closeSession(sessionID, "failed")
-		if recorder != nil {
-			_ = recorder.Close()
-		}
 		return
 	}
 
-	bridge := newBridge(h.rpcClient, conn, stream, recorder, sessionID, agentID)
+	bridge := newBridge(h.rpcClient, conn, stream, sessionID, agentID)
 	if err := bridge.run(ctx, rows, cols); err != nil {
 		slog.Debug("terminal: bridge ended", "session_id", sessionID, "err", err)
 	}
 
 	_ = h.closeSession(sessionID, "closed")
-	if recorder != nil {
-		_ = recorder.Close()
-	}
 }
 
 func (h *Handler) awaitAgentReady(ctx context.Context, sessionID string, rows, cols int) error {

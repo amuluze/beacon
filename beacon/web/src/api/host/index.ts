@@ -21,8 +21,6 @@ import type {
     NetUsageResult,
 } from '@/interface/host.ts'
 
-export { queryAgentList } from '@/api/agent'
-
 export async function queryHostInfo(params?: object) {
     return request.get<HostInfo>('/api/v1/host/host_info', params || {})
 }

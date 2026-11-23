@@ -10,7 +10,6 @@ import (
 	"log/slog"
 	"runtime"
 
-	"common/database"
 	rpctunnel "common/rpc/tunnel"
 	transporttls "common/transport/tlsconfig"
 
@@ -26,13 +25,13 @@ type Server struct {
 }
 
 // NewRPCServer creates the tunnel connection to the Server.
-func NewRPCServer(config *Config, db *database.DB, version Version) (*Server, error) {
+func NewRPCServer(config *Config, version Version) (*Server, error) {
 	manager, err := docker.NewManager()
 	if err != nil {
 		return nil, err
 	}
 	rootDir := config.Variables.HostPrefix
-	s := rpc.NewService(db, manager, rootDir)
+	s := rpc.NewService(manager, rootDir)
 	// 固定发布签名公钥（安装期由 Server config 通道写入 config.yml）；
 	// 单键与轮换集合取并集，非法配置直接终止启动，不静默降级为兼容模式。
 	upgradeKeys := make([]string, 0, 1+len(config.Control.UpgradePublicKeys))

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useEcharts } from '@/hooks/useEcharts'
 import type { EChartsOption } from './echarts'
-import useStore from '@/store'
 
 interface Props {
   width?: string
@@ -18,9 +17,7 @@ const props = withDefaults(defineProps<Props>(), {
 const chartRef = shallowRef<HTMLDivElement>()
 const currentOptions = shallowRef<EChartsOption>(props.option)
 
-const { setOptions, initCharts, echartsResize } = useEcharts(chartRef as Ref<HTMLDivElement>, currentOptions.value)
-
-const store = useStore()
+const { setOptions, initCharts } = useEcharts(chartRef as Ref<HTMLDivElement>, currentOptions.value)
 
 watch(
   () => props.option,
@@ -31,21 +28,6 @@ watch(
   },
   {
     deep: true,
-  },
-)
-
-watch(
-  () => store.echarts.currentColorArray,
-  (newValue) => {
-    currentOptions.value.color = newValue
-    setOptions(currentOptions.value)
-  },
-)
-
-watch(
-  () => store.app.isCollapse,
-  () => {
-    echartsResize()
   },
 )
 

@@ -25,18 +25,17 @@
 
 | 目录/文件 | 职责 |
 |-----------|------|
-| `collia/` | monitoring agent module: 主机与 Docker 指标采集、反向 gRPC tunnel 服务端、周期上报 |
+| `collia/` | monitoring agent module: 主机与 Docker 指标采集、反向 gRPC tunnel 客户端、周期上报 |
 | `collia/cmd/` | 命令行或进程入口（install / start / stop / status / remove） |
 | `collia/config.yml` | Agent 配置文件（Server 地址、Agent ID、采集间隔、磁盘/网卡列表、上报 URL） |
 | `collia/pkg/` | 可复用公共包集合 |
 | `collia/pkg/psutil/` | gopsutil 指标采集辅助 |
 | `collia/pkg/utils/` | 通用辅助函数（文件、字符串等） |
-| `collia/script/` | 安装/卸载脚本 |
+| `collia/script/` | 发布包签名脚本（sign_release_packages.sh） |
 | `collia/service/` | 业务核心层：RPC 服务、采集任务、预检、报告客户端 |
-| `collia/service/rpc/` | 反向 gRPC tunnel 服务端、调度器、Agent 生命周期 RPC |
+| `collia/service/rpc/` | 反向 gRPC tunnel 客户端、调度器、Agent 生命周期 RPC |
 | `collia/service/task/` | 采集任务调度（CPU/内存/磁盘/网络/Docker 指标） |
 | `collia/service/report/` | 上报到 beacon Server 的 HTTP 客户端 |
-| `collia/service/model/` | Go package `model`，源码 2，测试 0 |
 
 ## 依赖
 
@@ -51,7 +50,6 @@
 - `github.com/spf13/viper` `v1.19.0`
 - `github.com/takama/daemon` `v1.0.0`
 - `google.golang.org/grpc` `v1.81.1`
-- `gorm.io/gorm` `v1.25.12`
 
 ## 模块约束
 

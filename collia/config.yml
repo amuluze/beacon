@@ -30,6 +30,8 @@ task:
     token: ""
     agent_id: default
 
+# db 段仅为兼容旧版 Collia 的本地库开关；当前版本不再打开本地库
+# （容器以 Docker 运行时为唯一事实源），该段被解析后忽略。
 db:
   dbtype: sqlite
   host: ""

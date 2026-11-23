@@ -30,13 +30,12 @@ type Connection interface {
 
 // bridge forwards data between a WebSocket connection and an Agent PTY stream.
 type bridge struct {
-	rpcClient   rpc.Caller
-	conn        Connection
-	stream      <-chan []byte
-	recorder    *Recorder
-	sessionID   string
-	agentID     string
-	pingEvery   time.Duration
+	rpcClient    rpc.Caller
+	conn         Connection
+	stream       <-chan []byte
+	sessionID    string
+	agentID      string
+	pingEvery    time.Duration
 	writeTimeout time.Duration
 }
 
@@ -51,12 +50,11 @@ const (
 	terminalWriteDeadline = 10 * time.Second
 )
 
-func newBridge(rpcClient rpc.Caller, conn Connection, stream <-chan []byte, recorder *Recorder, sessionID, agentID string) *bridge {
+func newBridge(rpcClient rpc.Caller, conn Connection, stream <-chan []byte, sessionID, agentID string) *bridge {
 	return &bridge{
 		rpcClient:    rpcClient,
 		conn:         conn,
 		stream:       stream,
-		recorder:     recorder,
 		sessionID:    sessionID,
 		agentID:      agentID,
 		pingEvery:    terminalPingInterval,
@@ -151,9 +149,6 @@ func (b *bridge) readWebSocket(ctx context.Context, cancel context.CancelFunc) {
 				slog.Debug("terminal: resize failed", "session_id", b.sessionID, "err", err)
 				continue
 			}
-			if b.recorder != nil {
-				_ = b.recorder.Resize(msg.Cols, msg.Rows)
-			}
 
 		default:
 			slog.Debug("terminal: unknown message type", "session_id", b.sessionID, "type", msg.Type)
@@ -192,11 +187,6 @@ func (b *bridge) readTunnel(ctx context.Context, cancel context.CancelFunc) {
 			if err := b.writeMessage(NewOutputMessage(encoded)); err != nil {
 				slog.Debug("terminal: write output failed", "session_id", b.sessionID, "err", err)
 				return
-			}
-			if b.recorder != nil {
-				if err := b.recorder.WriteOutput(frame); err != nil {
-					slog.Error("terminal: record output failed", "session_id", b.sessionID, "err", err)
-				}
 			}
 		}
 	}

@@ -196,14 +196,6 @@ func Preflight(cfg *Config, sysRoot string) *PreflightReport {
 			report.Errors = append(report.Errors, err.Error())
 		}
 	}
-	if cfg.DB.DBType == "sqlite" || cfg.DB.DBType == "" {
-		if cfg.DB.DBName != "" {
-			dbDir := filepath.Dir(cfg.DB.DBName)
-			if err := dirWritable(dbDir); err != nil {
-				report.Errors = append(report.Errors, err.Error())
-			}
-		}
-	}
 
 	// 控制端口可达性（仅警告）
 	if cfg.Control.Server != "" {

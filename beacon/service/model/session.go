@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Session stores terminal session metadata and recording file path.
+// Session stores terminal session metadata.
 type Session struct {
 	gorm.Model
 	SessionID string    `gorm:"uniqueIndex;size:128"`
@@ -18,7 +18,6 @@ type Session struct {
 	UserID    string    `gorm:"size:128"`
 	StartedAt time.Time `gorm:"index"`
 	EndedAt   *time.Time
-	FilePath  string `gorm:"size:512"`
 	Status    string `gorm:"size:16;default:active"` // active / closed / failed
 	Width     int
 	Height    int

@@ -295,7 +295,7 @@ func (a *Router) buildColliaConfig(node string) string {
   server: %s
   agent_id: %s
   join_token: "%s"
-%stls:
+%s  tls:
     enable: %t
     cert_dir: %s
     server_name: beacon/collia

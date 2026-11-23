@@ -14,13 +14,6 @@ vi.mock('@/hooks/useEcharts', () => ({
     useEcharts: () => echartsMocks,
 }))
 
-vi.mock('@/store', () => ({
-    default: () => reactive({
-        echarts: { currentColorArray: [] },
-        app: { isCollapse: false },
-    }),
-}))
-
 beforeEach(() => {
     vi.clearAllMocks()
 })

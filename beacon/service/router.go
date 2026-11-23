@@ -42,7 +42,6 @@ var _ IRouter = (*Router)(nil)
 
 type IRouter interface {
 	Register(app *fiber.App) error
-	Prefixes() []string
 }
 
 type Router struct {
@@ -401,7 +400,4 @@ func (a *Router) registerAlarmRoutes(v1 fiber.Router) {
 func (a *Router) Register(app *fiber.App) error {
 	a.RegisterAPI(app)
 	return nil
-}
-func (a *Router) Prefixes() []string {
-	return []string{"/api/"}
 }

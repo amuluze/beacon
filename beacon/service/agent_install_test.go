@@ -17,6 +17,7 @@ import (
 	"time"
 
 	servicemiddleware "beacon/service/middleware"
+	colliaservice "collia/service"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -153,6 +154,72 @@ func TestBuildColliaConfigUsesControlTLSFlag(t *testing.T) {
 	if !strings.Contains(config, `cert_dir: /etc/collia/certs`) {
 		t.Fatalf("expected TLS cert dir in config, got:\n%s", config)
 	}
+}
+
+// TestBuildColliaConfigRoundTripsThroughColliaConfig 用目标 Agent 自己的
+// NewConfig 反解析生成的安装配置：任何让 Agent 拒绝启动的模板缺陷（层级、
+// 传输安全校验）都必须在这里直接失败，而不是靠子串断言间接覆盖。
+// 前置条件：经 go.work 工作区解析 collia 模块；运行时不得设置
+// BEACON_CONTROL_* 等会通过全局 viper 覆盖模板解析值的环境变量。
+func TestBuildColliaConfigRoundTripsThroughColliaConfig(t *testing.T) {
+	t.Run("tcp control target with mTLS", func(t *testing.T) {
+		router := &Router{config: &Config{
+			Control:      Control{TLS: ControlTLS{Enable: true}, JoinToken: "control-secret"},
+			AgentInstall: AgentInstall{
+				Token:         "install-secret",
+				PublicBaseURL: "https://beacon.example.com",
+				CertDir:       "/etc/collia/certs",
+			},
+		}}
+
+		path := filepath.Join(t.TempDir(), "collia.yml")
+		if err := os.WriteFile(path, []byte(router.buildColliaConfig("node-01")), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		cfg, err := colliaservice.NewConfig(path, colliaservice.Prefix("/"))
+		if err != nil {
+			t.Fatalf("generated config must satisfy collia's own validation: %v", err)
+		}
+		if cfg.Control.Server != "beacon.example.com:17000" {
+			t.Fatalf("expected control.server=beacon.example.com:17000, got %q", cfg.Control.Server)
+		}
+		if !cfg.Control.TLS.Enable {
+			t.Fatal("expected control.tls.enable=true parsed from the generated config")
+		}
+		if cfg.Control.TLS.CertDir != "/etc/collia/certs" {
+			t.Fatalf("expected control.tls.cert_dir=/etc/collia/certs, got %q", cfg.Control.TLS.CertDir)
+		}
+		if cfg.Control.TLS.ServerName != "beacon/collia" {
+			t.Fatalf("expected control.tls.server_name=beacon/collia, got %q", cfg.Control.TLS.ServerName)
+		}
+	})
+
+	t.Run("unix socket single-node target", func(t *testing.T) {
+		const socket = "/data/beacon/data/control/collia.sock"
+		router := &Router{config: &Config{
+			AgentInstall: AgentInstall{
+				Token:         "install-secret",
+				PublicBaseURL: "https://beacon.example.com",
+				ControlSocket: socket,
+			},
+			Control: Control{TLS: ControlTLS{Enable: true}},
+		}}
+
+		path := filepath.Join(t.TempDir(), "collia.yml")
+		if err := os.WriteFile(path, []byte(router.buildColliaConfig("node-01")), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		cfg, err := colliaservice.NewConfig(path, colliaservice.Prefix("/"))
+		if err != nil {
+			t.Fatalf("generated config must satisfy collia's own validation: %v", err)
+		}
+		if cfg.Control.Server != "unix://"+socket {
+			t.Fatalf("expected control.server=unix://%s, got %q", socket, cfg.Control.Server)
+		}
+		if cfg.Control.TLS.Enable {
+			t.Fatal("unix target must disable agent mTLS")
+		}
+	})
 }
 
 func TestAgentInstallEndpointsResetSuccessStatus(t *testing.T) {

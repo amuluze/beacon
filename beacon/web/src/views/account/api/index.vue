@@ -31,7 +31,7 @@ const { t } = useI18n()
                     </template>
                 </el-table-column>
                 <el-table-column prop="method" label="请求方式" min-width="100" sortable />
-                <el-table-column prop="status" label="状态" wmin-idth="100" sortable>
+                <el-table-column prop="status" label="状态" min-width="100" sortable>
                     <template #default="scope">
                         <el-tag v-if="scope.row.status === 1" type="success">
                             {{ t('account.enable') }}

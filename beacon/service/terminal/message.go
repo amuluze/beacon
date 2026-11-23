@@ -1,4 +1,4 @@
-// Package terminal provides WebSocket terminal bridge and asciinema session recording.
+// Package terminal provides the WebSocket terminal bridge.
 package terminal
 
 // MessageType is the type of a WebSocket terminal message.

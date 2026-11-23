@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"strings"
 
-	"common/database"
 	"common/rpc"
 
 	"github.com/amuluze/docker"
@@ -22,7 +21,6 @@ var _ rpc.IService = (*Service)(nil)
 const defaultRootDir = "/data/amprobe"
 
 type Service struct {
-	DB                   *database.DB
 	Manager              *docker.Manager
 	restartPolicyUpdater restartPolicyUpdater
 	rootDir              string
@@ -33,12 +31,12 @@ type Service struct {
 
 // NewService 构造 Agent RPC 服务。rootDir 是文件操作的根目录沙箱，
 // 为空时回退 defaultRootDir，所有文件操作必须在该前缀内。
-func NewService(db *database.DB, manager *docker.Manager, rootDir string) *Service {
+// 容器/镜像/网络以 Docker 运行时为唯一事实源，Agent 不维护本地记录。
+func NewService(manager *docker.Manager, rootDir string) *Service {
 	if rootDir == "" {
 		rootDir = defaultRootDir
 	}
 	return &Service{
-		DB:                   db,
 		Manager:              manager,
 		restartPolicyUpdater: dockerRestartPolicyUpdater{},
 		rootDir:              rootDir,

@@ -14,14 +14,9 @@ export interface UserState {
 }
 
 export interface AppState {
-    isCollapse: boolean
     language: string
 }
 
 export interface themeState {
     dark: boolean
-}
-
-export interface echartsThemeState {
-    currentColorArray: string[]
 }

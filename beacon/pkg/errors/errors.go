@@ -13,35 +13,21 @@ import (
 	tunnel "common/rpc/tunnel"
 
 	"github.com/go-playground/validator/v10"
-	pkgerrors "github.com/pkg/errors"
 	"gorm.io/gorm"
 )
 
 const (
 	InternalServerError = "Internal server error"
 	InvalidToken        = "invalid token"
-	MethodNotAllow      = "method not allowed"
-	NotFound            = "not found"
-	TooManyRequests     = "too many requests"
 	Forbidden           = "forbidden"
 	BadRequest          = "bad request"
 	InvalidParameter    = "invalid request parameter"
 )
 
 var (
-	Is          = pkgerrors.Is
-	New         = pkgerrors.New
-	Wrap        = pkgerrors.Wrap
-	WithStack   = pkgerrors.WithStack
-	WithMessage = pkgerrors.WithMessage
-)
-
-var (
-	UnauthorizedError    = newError(401, InvalidToken)
-	ForbiddenError       = newError(403, Forbidden)
-	NotFoundError        = newError(404, NotFound)
-	MethodNotAllowError  = newError(405, MethodNotAllow)
-	TooManyRequestsError = newError(429, TooManyRequests)
+	// Is/New 兼容再导出：导入本包并别名为 errors 的文件可直接使用标准库语义。
+	Is  = stderrors.Is
+	New = stderrors.New
 )
 
 // ErrProtectedContainer 表示目标是系统保留容器，控制面操作必须由服务端拒绝。

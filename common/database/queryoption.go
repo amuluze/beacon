@@ -8,7 +8,10 @@ type QueryOption func(db *DB) *DB
 
 func OptionDB(db *DB, options ...QueryOption) *DB {
 	for _, option := range options {
-		db = option(db)
+		// 跳过 nil option（个别 QueryOption 工厂在非法入参时可能返回 nil），避免 panic
+		if option != nil {
+			db = option(db)
+		}
 	}
 	return db
 }

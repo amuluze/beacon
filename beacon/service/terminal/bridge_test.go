@@ -128,10 +128,8 @@ func TestBridge_ForwardsOutputAndInput(t *testing.T) {
 	close(stream)
 
 	rpcClient := &fakeRPC{}
-	recorder := &Recorder{} // closed recorder, no file writes
-	recorder.closed = true
 
-	b := newBridge(rpcClient, conn, stream, recorder, "sess-test", "agent-1")
+	b := newBridge(rpcClient, conn, stream, "sess-test", "agent-1")
 
 	done := make(chan struct{})
 	go func() {
@@ -184,10 +182,8 @@ func TestBridge_ForwardsInputAndResize(t *testing.T) {
 	stream := make(chan []byte, 4) // keep open
 
 	rpcClient := &fakeRPC{}
-	recorder := &Recorder{}
-	recorder.closed = true
 
-	b := newBridge(rpcClient, conn, stream, recorder, "sess-input", "agent-1")
+	b := newBridge(rpcClient, conn, stream, "sess-input", "agent-1")
 
 	done := make(chan struct{})
 	go func() {
@@ -237,7 +233,7 @@ func TestBridge_PingsIdleWebSocket(t *testing.T) {
 	conn := newFakeConn()
 	stream := make(chan []byte)
 	rpcClient := &fakeRPC{}
-	b := newBridge(rpcClient, conn, stream, nil, "sess-idle", "agent-1")
+	b := newBridge(rpcClient, conn, stream, "sess-idle", "agent-1")
 	b.pingEvery = 10 * time.Millisecond
 
 	done := make(chan struct{})
@@ -270,7 +266,7 @@ func TestBridge_PingsIdleWebSocket(t *testing.T) {
 // TestBridgeWriteTimeoutDefaultsToGuard 验证 bridge 默认配置写超时为有限正值，
 // 用于兜底回收半开 TCP 上的阻塞写 goroutine。
 func TestBridgeWriteTimeoutDefaultsToGuard(t *testing.T) {
-	b := newBridge(&fakeRPC{}, newFakeConn(), make(chan []byte), nil, "sess", "agent")
+	b := newBridge(&fakeRPC{}, newFakeConn(), make(chan []byte), "sess", "agent")
 	if b.writeTimeout != terminalWriteDeadline {
 		t.Fatalf("writeTimeout = %v, want %v", b.writeTimeout, terminalWriteDeadline)
 	}
@@ -284,7 +280,7 @@ func TestBridgeWriteTimeoutDefaultsToGuard(t *testing.T) {
 func TestBridgeWriteMessageSurfacesWriteError(t *testing.T) {
 	conn := newFakeConn()
 	conn.writeErr = errors.New("broken pipe")
-	b := newBridge(&fakeRPC{}, conn, make(chan []byte), nil, "sess", "agent")
+	b := newBridge(&fakeRPC{}, conn, make(chan []byte), "sess", "agent")
 
 	if err := b.writeMessage(NewOutputMessage("data")); err == nil {
 		t.Fatal("writeMessage with broken conn: expected error, got nil")

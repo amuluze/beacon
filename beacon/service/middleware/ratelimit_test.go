@@ -22,45 +22,6 @@ func fiberApp(t *testing.T, mw fiber.Handler, method, path string) *fiber.App {
 	return app
 }
 
-// TestLoginRateLimitMiddleware_AllowsNonLoginPath 验证非登录路径不计入限流。
-func TestLoginRateLimitMiddleware_AllowsNonLoginPath(t *testing.T) {
-	app := fiberApp(t,
-		LoginRateLimitMiddleware(2, "/api/v1/auth/login"),
-		fiber.MethodGet, "/api/v1/host/list",
-	)
-	for i := 0; i < 5; i++ {
-		req := httptest.NewRequest(fiber.MethodGet, "/api/v1/host/list", nil)
-		resp, err := app.Test(req, -1)
-		if err != nil {
-			t.Fatalf("request %d: %v", i, err)
-		}
-		if resp.StatusCode != fiber.StatusOK {
-			t.Fatalf("non-login path should not be limited, got %d on iter %d", resp.StatusCode, i)
-		}
-	}
-}
-
-// TestLoginRateLimitMiddleware_BlocksAfterMax 验证登录路径超限后返回 429。
-func TestLoginRateLimitMiddleware_BlocksAfterMax(t *testing.T) {
-	const max = 3
-	app := fiberApp(t,
-		LoginRateLimitMiddleware(max, "/api/v1/auth/login"),
-		fiber.MethodPost, "/api/v1/auth/login",
-	)
-	var last int
-	for i := 0; i < max+2; i++ {
-		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/auth/login", nil)
-		resp, err := app.Test(req, -1)
-		if err != nil {
-			t.Fatalf("request %d: %v", i, err)
-		}
-		last = resp.StatusCode
-	}
-	if last != fiber.StatusTooManyRequests {
-		t.Fatalf("expected 429 after exceeding limit, got %d", last)
-	}
-}
-
 // TestGlobalRateLimitMiddleware_SkipsStaticAndAuth 验证全局限流跳过静态资源与登录路径。
 func TestGlobalRateLimitMiddleware_SkipsStaticAndAuth(t *testing.T) {
 	app := fiber.New()

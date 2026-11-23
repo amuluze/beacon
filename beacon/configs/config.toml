@@ -3,6 +3,12 @@ Env = "production"
 ReadOnly = false # 只读模式：允许浏览，拒绝所有业务写操作
 NoAuth = false   # 匿名只读访问：未登录会话只读，仍可手动登录；登录后恢复正常权限
 
+# [CORS]
+# Enable = false  # 默认不挂载 CORS：控制台与 API 同源部署，无需跨域放行。
+#                  # 独立前端域跨域访问时设为 true 并填写 AllowOrigins 白名单
+#                  #（跨域 Cookie 会话依赖具体 Origin，不可用通配 *）。
+# AllowOrigins = ["https://console.example.com"]
+
 [Fiber]
 Host = "0.0.0.0"      # http监听地址
 Port = 8000           # http监听端口

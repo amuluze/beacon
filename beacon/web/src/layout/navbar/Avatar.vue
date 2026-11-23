@@ -14,8 +14,13 @@ const displayName = computed(() => store.user.userInfo.name || 'admin')
 const avatarText = computed(() => displayName.value.slice(0, 1).toUpperCase())
 
 async function doLogout() {
-  // 1. 退出登录
-  await logout()
+  // 1. 退出登录；失败时全局拦截器已提示网络/服务错误，会话保持不伪造登出成功。
+  try {
+    await logout()
+  }
+  catch {
+    return
+  }
   // 2.清除缓存
   store.user.clearSession()
   store.user.sessionChecked = false

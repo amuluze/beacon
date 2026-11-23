@@ -16,9 +16,9 @@ func Run(configFile string, prefix Prefix, version string) (func(), error) {
 		return nil, err
 	}
 
-	// 初始化日志
-	// 注：vendored 版 logger（common/logger）底层为 zap，不再桥接到标准库 slog；
-	// 业务日志统一走 injector.Logger，slog 包级调用保持默认输出。
+	// 初始化日志：NewLogger 已把包级 slog 默认实例接到 log.output 声明的
+	// 按天切割文件 sink，业务日志随配置落盘；injector.Logger 保留 zap 句柄
+	// 供需要结构化 logger 的组件使用。
 
 	// 定时任务
 	timedTask := injector.Task

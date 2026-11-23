@@ -28,8 +28,6 @@ import type {
     UpdateContainerResult,
 } from '@/interface/container.ts'
 
-export { queryAgentList } from '@/api/agent'
-
 export async function queryContainers(params: ContainerListParams) {
     return request.get<ContainerQueryResult>('/api/v1/container/containers', params)
 }

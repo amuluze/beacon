@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import SettingWorkspace from './index.vue'
 
-const stubStore = {
+const stubStore: { user: { userInfo: { name: string, isAdmin: number, readOnly?: boolean } } } = {
     user: {
-        userInfo: { name: 'admin' },
+        userInfo: { name: 'ops-admin', isAdmin: 1 },
     },
 }
 
@@ -57,7 +57,7 @@ function tabLabels(wrapper: ReturnType<typeof mountWorkspace>) {
 
 describe('setting workspace', () => {
     beforeEach(() => {
-        stubStore.user.userInfo.name = 'admin'
+        stubStore.user.userInfo = { name: 'ops-admin', isAdmin: 1 }
         routeState.query = {}
         routerReplace.mockReset()
     })
@@ -122,7 +122,7 @@ describe('setting workspace', () => {
     })
 
     it('keeps permission tabs hidden from non-administrators', () => {
-        stubStore.user.userInfo.name = 'operator'
+        stubStore.user.userInfo = { name: 'ops-admin', isAdmin: 0 }
 
         const wrapper = mountWorkspace()
 
@@ -130,8 +130,26 @@ describe('setting workspace', () => {
         expect(wrapper.find('[data-testid="user-manager"]').exists()).toBe(false)
     })
 
+    it('does not grant permission tabs by literal username', () => {
+        stubStore.user.userInfo = { name: 'admin', isAdmin: 0 }
+
+        const wrapper = mountWorkspace()
+
+        expect(tabLabels(wrapper)).toEqual(['menu.setting', 'menu.probeManager', 'audit.title'])
+    })
+
+    it('exposes permission tabs to anonymous read-only sessions', () => {
+        stubStore.user.userInfo = { name: '', isAdmin: 0, readOnly: true }
+
+        const wrapper = mountWorkspace()
+
+        expect(tabLabels(wrapper)).toContain('menu.userManager')
+        expect(tabLabels(wrapper)).toContain('menu.roleManager')
+        expect(tabLabels(wrapper)).toContain('menu.apiManager')
+    })
+
     it('falls back to configuration when a restricted tab is requested in the query', () => {
-        stubStore.user.userInfo.name = 'operator'
+        stubStore.user.userInfo = { name: 'ops-admin', isAdmin: 0 }
         routeState.query = { tab: 'roles' }
 
         const wrapper = mountWorkspace()
