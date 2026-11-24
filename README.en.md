@@ -1,5 +1,3 @@
-> [!IMPORTANT]
-> **Repository rename:** this repository has moved from `amuluze/amprobe` to `amuluze/beacon-pro`. GitHub temporarily redirects old links, but existing clones should run `git remote set-url origin git@github.com:amuluze/beacon-pro.git` and update bookmarks, badges, and automation to the new address.
 
 <p align="center">
   <img src="beacon/web/src/assets/images/beacon.png" alt="Beacon Logo" width="128" />
@@ -13,8 +11,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/amuluze/beacon-pro/stargazers"><img src="https://img.shields.io/github/stars/amuluze/beacon-pro?style=flat-square" alt="GitHub Stars" /></a>
-  <a href="https://github.com/amuluze/beacon-pro/releases"><img src="https://img.shields.io/github/v/release/amuluze/beacon-pro?display_name=tag&sort=semver&style=flat-square" alt="GitHub Release" /></a>
+  <a href="https://github.com/amuluze/beacon/stargazers"><img src="https://img.shields.io/github/stars/amuluze/beacon?style=flat-square" alt="GitHub Stars" /></a>
+  <a href="https://github.com/amuluze/beacon/releases"><img src="https://img.shields.io/github/v/release/amuluze/beacon?display_name=tag&sort=semver&style=flat-square" alt="GitHub Release" /></a>
   <img src="https://img.shields.io/badge/Go-1.25-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go 1.25" />
   <img src="https://img.shields.io/badge/Vue-3-42B883?style=flat-square&logo=vuedotjs&logoColor=white" alt="Vue 3" />
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-2EA44F?style=flat-square" alt="MIT License" /></a>
@@ -46,7 +44,7 @@
 - **Collia Agent** collects host and Docker metrics, reports monitoring batches over HTTP, and opens a reverse gRPC tunnel for Server-initiated control calls.
 - Query and control requests must explicitly select an Agent, preventing implicit fallback or cross-node reads.
 
-Website: [beacon.amuluze.com](https://beacon.amuluze.com) · Repository: [github.com/amuluze/beacon-pro](https://github.com/amuluze/beacon-pro)
+Website: [beacon.amuluze.com](https://beacon.amuluze.com) · Repository: [github.com/amuluze/beacon](https://github.com/amuluze/beacon)
 
 ## ✨ Features
 
@@ -54,7 +52,7 @@ Website: [beacon.amuluze.com](https://beacon.amuluze.com) · Repository: [github
 
 - Inspect Docker versions and runtime status.
 - Create, start, stop, restart, delete, and inspect container logs.
-- Import, export, delete, and clean dangling images.
+- Import, delete, and clean dangling images.
 - Create, delete, and inspect Docker networks.
 
 ### 🖥️ Host monitoring
@@ -94,7 +92,7 @@ Beacon keeps three paths distinct:
 2. **Monitoring reports** are atomically persisted in batches sent by Collia over HTTP.
 3. **Control calls** target an Agent through the reverse gRPC tunnel opened by Collia.
 
-See [System Architecture](./.docs/architecture.md) and [Data Flow](./.docs/concepts/data-flow.md) for the complete boundaries and dependency direction.
+See [`.docs/modules/beacon.md`](./.docs/modules/beacon.md) for the current Server module facts.
 
 ## 🚀 Quick Start
 
@@ -108,7 +106,7 @@ Production mode accepts HTTPS only. First provide a trusted reverse proxy that f
 
 The installer defaults to **single-node mode** (the Agent control channel uses a Unix Socket and does not publish port 17000). Multi-node mode requires an explicit `BEACON_CONTROL_MODE=tcp` (a future paid-edition capability).
 
-Images are published to both the Aliyun registry and Docker Hub (`registry.cn-hangzhou.aliyuncs.com/amuluze/beacon`, `docker.io/amuluze/beacon`). The installer pulls from Aliyun by default and automatically falls back to Docker Hub when the primary source is unreachable.
+Images are published to both the Aliyun registry and Docker Hub (amd64: `registry.cn-hangzhou.aliyuncs.com/amuluze/beacon`, `docker.io/amuluze/beacon`; arm64 ships under the separate name `amuluze/beacon-arm`). The installer pulls from Aliyun by default and automatically falls back to Docker Hub when the primary source is unreachable.
 
 ### Offline installation (air-gapped servers)
 
@@ -128,30 +126,32 @@ The installer verifies the bundled SHA-256 manifest first, then loads the image 
 
 Prerequisites:
 
-- Docker >= 20.10.9 with Docker Compose.
 - Go 1.25 for local backend development.
 - Node.js, pnpm, and [Task](https://taskfile.dev/) to build Web assets.
+- Docker >= 20.10.9 to build the image.
 
 ```bash
-# Clone the renamed repository
-git clone https://github.com/amuluze/beacon-pro.git
-cd beacon-pro
+git clone https://github.com/amuluze/beacon.git
+cd beacon
 
-# Build frontend assets
+# Build frontend assets (embedded into the Server binary via go:embed)
 task beacon-web:install
 task beacon-web:build
 
-# Build the Beacon image and start the local Compose stack
+# Development run: the development env does not enforce secrets (warnings only);
+# local data and logs are written to beacon/data/
+task beacon:dev
+
+# Or build and run the image (production secrets are injected via environment
+# variables, same contract as the online installer above)
 docker build -f beacon/Dockerfile -t beacon:latest .
-cp website/release/latest/.env.example website/release/latest/.env
-# Edit .env: set BEACON_IMAGE=beacon:latest (locally built image) and fill in the four required secrets
-docker compose -f website/release/latest/compose.yaml up -d
+docker run -d --name beacon -p 8000:8000 -p 17000:17000 beacon:latest
 
 # Verify
-curl http://127.0.0.1:1443/health
+curl http://127.0.0.1:8000/health
 ```
 
-The local Compose stack (`website/release/latest/compose.yaml`) exposes `1443` for HTTP (override with `BEACON_HTTP_PORT`) and `17000` for Agent control (override with `BEACON_CONTROL_PORT`) and is intended for development and verification. `BEACON_AGENT_INSTALL_TOKEN`, `BEACON_AUTH_SIGNING_KEY`, `BEACON_CONTROL_JOIN_TOKEN`, and `BEACON_DATA_ENCRYPTION_KEY` are required (Compose fails to start without them); for production, generate unique high-entropy secrets. A new database also requires `BEACON_BOOTSTRAP_ADMIN_PASSWORD`.
+The development run writes its local database and logs under `beacon/data/` (see `beacon/configs/config.dev.toml`). For production deployments use the online installer above.
 
 If the administrator password is lost, reset it inside the running Server container (generates a temporary password and forces a change at the next login by default):
 
@@ -159,7 +159,7 @@ If the administrator password is lost, reset it inside the running Server contai
 docker exec -it beacon ./beacon reset-admin -c /app/configs/config.toml
 ```
 
-Use `--password '<new-password>'` or `--password-stdin` to supply one explicitly. The command enforces the password policy, stores a bcrypt hash, writes a system audit entry, and refuses to run when the `admin` account is missing. See the [deployment guide](./.docs/deployment.md) for details.
+Use `--password '<new-password>'` or `--password-stdin` to supply one explicitly. The command enforces the password policy, stores a bcrypt hash, writes a system audit entry, and refuses to run when the `admin` account is missing.
 
 After Beacon starts, install Collia on a target host (replace the address, node number, and token with real values):
 
@@ -169,7 +169,7 @@ curl -fsSL 'https://<beacon-host>/api/v1/host/install?node=1' | sudo bash -s -- 
 
 - `node` is the agent identity: it starts with a letter or digit and may contain letters, digits, dots, underscores and hyphens. Reinstalling on the same host overwrites the config and registers under the new identity.
 - The install token comes from the "Install Agent" dialog in the console (or the admin-only `POST /api/v1/host/get_install_token`). The script also sends it when downloading the package, config and certificates.
-- With a self-signed control certificate, import the CA into the target host trust store first, otherwise the script's `curl -fsSL` fails: copy `ca.pem` from the Server host's `$BEACON_CONTROL_CERT_DIR` (default `/data/beacon/control-certs`) to `/usr/local/share/ca-certificates/beacon-ca.crt` and run `sudo update-ca-certificates`.
+- The console-generated install command downloads the control CA, verifies it by its `SHA-256` fingerprint, and passes it to the installer via `--ca-file`; the target host does not need to touch its system trust store. Multi-node installs can reuse the same token and fingerprint with a distinct `node` per host — suitable for loops or Ansible.
 - Agent auto-update is enabled by default: agents upgrade to the version bundled in the Server image on reconnect. Disable it under Settings → Probes, where a per-row manual upgrade is also available.
 - Uninstall with `sudo collia remove`: it stops the service first, then removes the systemd unit, binary, config, local data and logs; any residual `collia daemon` process not tracked by systemd is terminated as well.
 
@@ -194,19 +194,15 @@ The payload contains only `install_id`, `image`, `version`, `public_base_url`, `
 ## 📁 Project Structure
 
 ```text
-beacon-pro/
+beacon/
+├── assets/                 # Brand icon assets
 ├── beacon/                 # Server, Web UI, HTTP/WS API, and tunnel client
 │   ├── cmd/beacon/         # Server process entrypoint
 │   ├── service/            # Business services, routing, auth, and persistence
 │   └── web/                # Vue 3 admin UI
-├── collia/                 # Agent collection, host/Docker ops, tunnel service
+├── collia/                 # Agent collection, host/Docker ops, tunnel client
 ├── common/                 # Shared schemas, database, and tunnel transport
-├── website/                # Product website, installer, and release artifacts
-│   ├── compose.yml         # Local dev Compose (NODE_ENV=development)
-│   ├── docker-compose.yml  # Production Compose (NODE_ENV=production)
-│   └── release/latest/     # Online installer bundle (manager.sh / compose.yaml / SHA256SUMS)
-├── .docs/                  # Current implementation documentation
-├── .specs/                 # SDD Domain and Task Specs
+├── .docs/                  # Current implementation docs (module facts)
 └── Taskfile.yml            # Workspace command entrypoint
 ```
 
@@ -214,13 +210,8 @@ beacon-pro/
 
 | Document | Contents |
 |---|---|
-| [Architecture](./.docs/architecture.md) | Module boundaries, runtime paths, and dependency direction |
-| [Data Flow](./.docs/concepts/data-flow.md) | Request lifecycle, data ownership, and cross-module flow |
-| [Deployment](./.docs/deployment.md) | Environment, build, configuration, and release checks |
-| [API Routes](./.docs/api/routes.md) | Current HTTP route and handler index |
-| [OpenAPI](./.docs/api/openapi.yml) | Beacon HTTP API contract |
-| [Domain Constraints](./.specs/domain/monitoring-platform.md) | Durable monitoring behavior and invariants |
-| [Account Administration Constraints](./.specs/domain/account-administration.md) | Admin user maintenance, deletion targets, and failure semantics |
+| [Beacon module doc](./.docs/modules/beacon.md) | Current Server module implementation facts |
+| Website (docs and release notes) | [beacon.amuluze.com](https://beacon.amuluze.com) |
 
 ## 🧑‍💻 Development and Contributing
 
@@ -239,7 +230,7 @@ cd beacon/web && pnpm test:run && pnpm ts && pnpm build
 
 Issues and pull requests are welcome:
 
-1. Fork [this repository](https://github.com/amuluze/beacon-pro).
+1. Fork [this repository](https://github.com/amuluze/beacon).
 2. Create a focused branch and run the relevant checks.
 3. Commit a clear, reviewable change.
 4. Push the branch and open a Pull Request.
@@ -247,17 +238,6 @@ Issues and pull requests are welcome:
 ## ☕ Support and Contact
 
 Beacon is maintained in the author's spare time. If it helps you, please give the project a ⭐ or consider buying the author a coffee.
-
-<details>
-<summary>Donation and contact QR codes</summary>
-
-<p>
-  <img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/beacon/202403171446310.jpg" alt="Donation QR code" width="260" />
-  <img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/beacon/202403171449114.jpg" alt="Author WeChat" width="260" />
-  <img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/beacon/202403171450306.png" alt="Public account" width="260" />
-</p>
-
-</details>
 
 ## 📄 License
 

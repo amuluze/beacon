@@ -74,63 +74,80 @@
 
 ## 配置与入口信号
 
-- 配置：`BASE_URL` at `beacon/service/agent_install.go:216`
+- 配置：`BASE_URL` at `beacon/service/agent_install.go:355`
 - 配置：`BEACON_AGENT_INSTALL_TOKEN` at `beacon/service/auth.go:146`
-- 配置：`BEACON_AGENT_INSTALL_TOKEN` at `beacon/service/config.go:99`
+- 配置：`BEACON_AGENT_INSTALL_TOKEN` at `beacon/service/config.go:74` 与 `:108`
 - 配置：`BEACON_AUTH_SIGNING_KEY` at `beacon/service/auth.go:83`
-- 配置：`BEACON_AUTH_SIGNING_KEY` at `beacon/service/config.go:96`
+- 配置：`BEACON_AUTH_SIGNING_KEY` at `beacon/service/config.go:69` 与 `:106`
 - 配置：`BEACON_BOOTSTRAP_ADMIN_PASSWORD` at `beacon/service/prepare.go`
 - 配置：`BEACON_DATA_ENCRYPTION_KEY` at `beacon/service/data_encryption.go`
 - 配置：`BEACON_CONTAINER_NAME` at `beacon/service/install_report.go:97`
 - 配置：`BEACON_CONTROL_JOIN_TOKEN` at `beacon/service/auth.go:121`
-- 配置：`BEACON_CONTROL_JOIN_TOKEN` at `beacon/service/config.go:102`
-- 配置：`BEACON_RETENTION_DAYS` at `beacon/service/config.go:80`
-- 配置：`BEACON_RETENTION_AUDIT_DAYS` at `beacon/service/config.go:81`
-- 配置：`BEACON_READ_ONLY` at `beacon/service/config.go:65`
-- 配置：`BEACON_NO_AUTH` at `beacon/service/config.go:66`
+- 配置：`BEACON_CONTROL_JOIN_TOKEN` at `beacon/service/config.go:70` 与 `:111`
+- 配置：`BEACON_APP_ENV` at `beacon/service/config.go:65`
+- 配置：`BEACON_DB_NAME` at `beacon/service/config.go:68`
+- 配置：`BEACON_CONTROL_ADDRESS` at `beacon/service/config.go:71`
+- 配置：`BEACON_CONTROL_SOCKET` at `beacon/service/config.go:72`
+- 配置：`BEACON_CONTROL_TLS_ENABLE` at `beacon/service/config.go:73`
+- 配置：`BEACON_AGENT_INSTALL_TOKEN_TTL` at `beacon/service/config.go:75`
+- 配置：`BEACON_AGENT_INSTALL_CONTROL_SOCKET` at `beacon/service/config.go:77`
+- 配置：`BEACON_AGENT_INSTALL_TLS_ENABLE` at `beacon/service/config.go:78`
+- 配置：`BEACON_AGENT_UPDATE_ENABLE` at `beacon/service/config.go:80`
+- 配置：`BEACON_COLLIA_VERSION`（AgentUpdate 目标版本） at `beacon/service/config.go:81`
+- 配置：`BEACON_AGENT_UPDATE_PUBLIC_KEY` at `beacon/service/config.go:82`
+- 配置：`BEACON_AGENT_UPDATE_TIMEOUT` at `beacon/service/config.go:83`
+- 配置：`BEACON_AGENT_UPDATE_MAX_CONCURRENT` at `beacon/service/config.go:84`
+- 配置：`BEACON_AGENT_UPDATE_RETRY_INTERVAL` at `beacon/service/config.go:85`
+- 配置：`BEACON_UPDATE_ENABLE` at `beacon/service/config.go:86`
+- 配置：`BEACON_UPDATE_URL` at `beacon/service/config.go:87`
+- 配置：`BEACON_UPDATE_CHECK_INTERVAL` at `beacon/service/config.go:88`
+- 配置：`BEACON_RETENTION_DAYS` at `beacon/service/config.go:89`
+- 配置：`BEACON_RETENTION_AUDIT_DAYS` at `beacon/service/config.go:90`
+- 配置：`BEACON_READ_ONLY` at `beacon/service/config.go:66`
+- 配置：`BEACON_NO_AUTH` at `beacon/service/config.go:67`
 - 配置：`BEACON_CONTROL_PORT` at `beacon/service/install_report.go:96`
 - 配置：`BEACON_HTTP_PORT` at `beacon/service/install_report.go:95`
 - 配置：`BEACON_IMAGE` at `beacon/service/install_report.go:91`
 - 配置：`BEACON_PUBLIC_BASE_URL` at `beacon/service/install_report.go:93`
 - 配置：`BEACON_VERSION` at `beacon/service/install_report.go:92`
-- 配置：`CORS`（`Enable=false` 时不挂载跨域中间件，同源部署默认关闭） at `beacon/service/app.go:47`
-- 配置：`CORS` at `beacon/service/config.go:223`
+- 配置：`CORS`（`Enable=false` 时不挂载跨域中间件，同源部署默认关闭） at `beacon/service/app.go:48`
+- 配置：`CORS` at `beacon/service/config.go:255`
 - 配置：`BEACON_CORS_ENABLE` / `BEACON_CORS_ALLOW_ORIGINS`（逗号分隔白名单）at `beacon/service/config.go`
 - 配置：`Config` in `beacon/service/config.go`
 - 配置：`Option` in `beacon/pkg/auth/jwtauth/options.go`
-- 入口：`api := app.Group("/api")` at `beacon/service/router.go:74`
-- 入口：`app.Get("/health", a.healthProbe.Liveness)` at `beacon/service/router.go:80`
-- 入口：`app.Get("/ready", a.healthProbe.Readiness)` at `beacon/service/router.go:81`
+- 入口：`api := app.Group("/api")` at `beacon/service/router.go:81`
+- 入口：`app.Get("/health", a.healthProbe.Liveness)` at `beacon/service/router.go:87`
+- 入口：`app.Get("/ready", a.healthProbe.Readiness)` at `beacon/service/router.go:88`
 - 就绪探针真实接线：`NewHealthProbe(caller, db)` 注入数据库 ping 与 tunnel 计数（`beacon/service/rpc.go`），数据库失联时 `/ready` 返回 503。
 - 安装令牌默认签发短时令牌：`bpit.<exp>.<nonce>.<hmac>`，HMAC 密钥派生自静态安装令牌（轮换即吊销批次），`AgentInstall.TokenTTL`（0=默认 1800 秒，负值回退静态）；安装期端点接受短时或静态令牌且比较走常量时间，上报端点只接受静态令牌（`beacon/service/agent_install.go`、`beacon/service/report/report.go`）。
 - 单机 Unix Socket 模式：`Control.UnixSocket`（env `BEACON_CONTROL_SOCKET`，容器内监听路径）与 `AgentInstall.ControlSocket`（env `BEACON_AGENT_INSTALL_CONTROL_SOCKET`，下发给 Agent 的宿主路径）配合 `controlListenAddress` 在 UDS 上监听；UDS 时豁免生产 TLS 强制，`buildColliaConfig` 下发 `server: unix://…` 且 `tls.enable: false`（`beacon/service/rpc.go`、`beacon/service/agent_install.go`）。
 - 升级签名透传：`Updater` 读取 `<PackageDir>/<arch>/collia.sig` 侧车文件并随 `UpgradeAgentArgs.Signature` 下发；`AgentUpdate.PublicKey` 经安装 config 的 `control.upgrade_public_key` 写入 Agent 固定（`beacon/service/agent/updater.go`、`beacon/service/agent_install.go`）。`PublicKey` 支持逗号/空白分隔的多把公钥：单钥写单行字段，多钥写 `upgrade_public_keys` 列表（轮换重叠窗口），升级 RPC 永不下发公钥。
 - `beacon reset-admin` 子命令（`beacon/cmd/beacon/main.go` + `beacon/service/reset_admin.go`）：默认生成满足策略的临时密码并强制首登改密；`--password`/`--password-stdin` 可显式指定；bcrypt 入库并写 `system` 审计（Object=admin ID）；admin 缺失时拒绝重建（IR024）。
-- 入口：`app.Get("/ws/terminal", webSocketAuth, websocket.New(a.terminalHandler.Handle))` at `beacon/service/router.go:163`
-- 入口：`app.Get("/ws/:id", webSocketAuth, websocket.New(a.loggerHandler.Handler))` at `beacon/service/router.go:164`
-- 入口：`app.Use("/", filesystem.New(filesystem.Config{` at `beacon/service/app.go:69`
-- 入口：`app.Use("/api/v1/auth/login", limiter.New(limiter.Config{` at `beacon/service/router.go:91`
-- 入口：`app.Use("/api/v1/host/report", limiter.New(limiter.Config{` at `beacon/service/router.go:101`
-- 入口：`app.Use("/ws", func(c *fiber.Ctx) error {` at `beacon/service/router.go:153`
-- 入口：`app.Use(func(c *fiber.Ctx) error {` at `beacon/service/router.go:119`
-- 入口：`app.Use(middleware.ReadOnlyMiddleware())` at `beacon/service/router.go:140`
-- 入口：`app.Use(middleware.CasbinMiddleware(` at `beacon/service/router.go:159`
-- 入口：`app.Use(middleware.GlobalRateLimitMiddleware(config.RateLimit.GlobalMax))` at `beacon/service/app.go:58`
-- 入口：`app.Use(middleware.PanicMiddleware())` at `beacon/service/app.go:66`
-- 入口：`app.Use(middleware.StackMiddleware)` at `beacon/service/app.go:67`
-- 入口：`app.Use(middleware.UserAuthMiddleware(` at `beacon/service/router.go:136`
-- 入口：`g.Get("/alarm_query", a.alarmAPI.AlarmQuery).Name("查询告警阈值")` at `beacon/service/router.go:297`
-- 入口：`g.Get("/message_setting", a.alarmAPI.AlarmMessageSettingQuery).Name("查询告警消息标题")` at `beacon/service/router.go:298`
-- 入口：`g.Post("/message_setting_update", a.alarmAPI.AlarmMessageSettingUpdate).Name("更新告警消息标题")` at `beacon/service/router.go:299`
-- 入口：`g.Get("/query", a.dingTalkAPI.Query).Name("查询钉钉告警配置")` at `beacon/service/router.go:305`
-- 入口：`g.Post("/update", a.dingTalkAPI.Update).Name("更新钉钉告警配置")` at `beacon/service/router.go:306`
-- 入口：`g.Post("/test", a.dingTalkAPI.Test).Name("测试钉钉告警")` at `beacon/service/router.go:307`
-- 入口：`g.Get("/query", a.feishuAPI.Query).Name("查询飞书告警配置")` at `beacon/service/router.go:312`
-- 入口：`g.Post("/update", a.feishuAPI.Update).Name("更新飞书告警配置")` at `beacon/service/router.go:313`
-- 入口：`g.Post("/test", a.feishuAPI.Test).Name("测试飞书告警")` at `beacon/service/router.go:314`
-- 入口：`g.Get("/query", a.weComAPI.Query).Name("查询企业微信告警配置")` at `beacon/service/router.go:319`
-- 入口：`g.Post("/update", a.weComAPI.Update).Name("更新企业微信告警配置")` at `beacon/service/router.go:320`
-- 入口：`g.Post("/test", a.weComAPI.Test).Name("测试企业微信告警")` at `beacon/service/router.go:321`
+- 入口：`app.Get("/ws/terminal", webSocketAuth, websocket.New(a.terminalHandler.Handle))` at `beacon/service/router.go:229`
+- 入口：`app.Get("/ws/:id", webSocketAuth, websocket.New(a.loggerHandler.Handler))` at `beacon/service/router.go:231`
+- 入口：`app.Use("/", filesystem.New(filesystem.Config{` at `beacon/service/app.go:71`
+- 入口：`app.Use("/api/v1/auth/login", limiter.New(limiter.Config{` at `beacon/service/router.go:106`
+- 入口：`app.Use("/api/v1/host/report", limiter.New(limiter.Config{` at `beacon/service/router.go:116`
+- 入口：`app.Use("/ws", func(c *fiber.Ctx) error {` at `beacon/service/router.go:193`
+- 入口：`app.Use(func(c *fiber.Ctx) error {` at `beacon/service/router.go:134`
+- 入口：`app.Use(middleware.ReadOnlyMiddleware(noAuth bool))` at `beacon/service/router.go:147`
+- 入口：`app.Use(middleware.CasbinMiddleware(` at `beacon/service/router.go:185`
+- 入口：`app.Use(middleware.GlobalRateLimitMiddleware(config.RateLimit.GlobalMax))` at `beacon/service/app.go:60`
+- 入口：`app.Use(middleware.PanicMiddleware())` at `beacon/service/app.go:68`
+- 入口：`app.Use(middleware.StackMiddleware)` at `beacon/service/app.go:69`
+- 入口：`app.Use(middleware.UserAuthMiddleware(` at `beacon/service/router.go:176`
+- 入口：`g.Get("/alarm_query", a.alarmAPI.AlarmQuery).Name("查询告警阈值")` at `beacon/service/router.go:395`
+- 入口：`g.Get("/message_setting", a.alarmAPI.AlarmMessageSettingQuery).Name("查询告警消息标题")` at `beacon/service/router.go:396`
+- 入口：`g.Post("/message_setting_update", a.alarmAPI.AlarmMessageSettingUpdate).Name("更新告警消息标题")` at `beacon/service/router.go:397`
+- 入口：`g.Get("/query", a.dingTalkAPI.Query).Name("查询钉钉告警配置")` at `beacon/service/router.go:373`
+- 入口：`g.Post("/update", a.dingTalkAPI.Update).Name("更新钉钉告警配置")` at `beacon/service/router.go:374`
+- 入口：`g.Post("/test", a.dingTalkAPI.Test).Name("测试钉钉告警")` at `beacon/service/router.go:375`
+- 入口：`g.Get("/query", a.feishuAPI.Query).Name("查询飞书告警配置")` at `beacon/service/router.go:380`
+- 入口：`g.Post("/update", a.feishuAPI.Update).Name("更新飞书告警配置")` at `beacon/service/router.go:381`
+- 入口：`g.Post("/test", a.feishuAPI.Test).Name("测试飞书告警")` at `beacon/service/router.go:382`
+- 入口：`g.Get("/query", a.weComAPI.Query).Name("查询企业微信告警配置")` at `beacon/service/router.go:390`
+- 入口：`g.Post("/update", a.weComAPI.Update).Name("更新企业微信告警配置")` at `beacon/service/router.go:391`
+- 入口：`g.Post("/test", a.weComAPI.Test).Name("测试企业微信告警")` at `beacon/service/router.go:392`
 
 ## 数据模型与状态
 
@@ -232,15 +249,3 @@ docker buildx build --platform linux/arm64 -f Dockerfile \
 go test -race ./...
 go vet ./...
 ```
-
-## Taskfile Commands
-
-- `task beacon`
-- `task beacon-web`
-- `task collia`
-- `task default`
-- `task website`
-- `task website-server`
-- `task website-web`
-
-用户与角色状态约定：1启用、2停用；创建请求必须显式传入其中之一，编辑请求省略status或传0保持原状态，其他值拒绝。校验、持久化和OpenAPI枚举须同步维护。

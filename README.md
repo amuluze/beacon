@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/amuluze/beacon-pro/stargazers"><img src="https://img.shields.io/github/stars/amuluze/beacon-pro?style=flat-square" alt="GitHub Stars" /></a>
-  <a href="https://github.com/amuluze/beacon-pro/releases"><img src="https://img.shields.io/github/v/release/amuluze/beacon-pro?display_name=tag&sort=semver&style=flat-square" alt="GitHub Release" /></a>
+  <a href="https://github.com/amuluze/beacon/stargazers"><img src="https://img.shields.io/github/stars/amuluze/beacon?style=flat-square" alt="GitHub Stars" /></a>
+  <a href="https://github.com/amuluze/beacon/releases"><img src="https://img.shields.io/github/v/release/amuluze/beacon?display_name=tag&sort=semver&style=flat-square" alt="GitHub Release" /></a>
   <img src="https://img.shields.io/badge/Go-1.25-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go 1.25" />
   <img src="https://img.shields.io/badge/Vue-3-42B883?style=flat-square&logo=vuedotjs&logoColor=white" alt="Vue 3" />
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-2EA44F?style=flat-square" alt="MIT License" /></a>
@@ -43,7 +43,7 @@
 - **Collia Agent** 采集主机和 Docker 指标，通过 HTTP 上报监控批次，并主动建立反向 gRPC tunnel 接收 Server 控制调用。
 - 查询与控制请求必须显式指定 Agent，避免默认节点回退或跨节点读取。
 
-官网：[beacon.amuluze.com](https://beacon.amuluze.com) · 仓库：[github.com/amuluze/beacon-pro](https://github.com/amuluze/beacon-pro)
+官网：[beacon.amuluze.com](https://beacon.amuluze.com) · 仓库：[github.com/amuluze/beacon](https://github.com/amuluze/beacon)
 
 ## ✨ 功能特性
 
@@ -51,7 +51,7 @@
 
 - 查看 Docker 版本与运行状态。
 - 管理容器的创建、启动、停止、重启、删除与日志。
-- 管理镜像导入、导出、删除和虚悬镜像清理。
+- 管理镜像导入、删除和虚悬镜像清理。
 - 创建、删除并查看 Docker 网络状态。
 
 ### 🖥️ 主机监控
@@ -91,7 +91,7 @@ Beacon 将三条路径明确分离：
 2. **监控上报**：Collia 通过 HTTP report 接口按批次原子写入 Server。
 3. **控制调用**：Beacon 通过 Collia 主动建立的反向 gRPC tunnel 调用目标 Agent。
 
-更完整的边界、依赖方向和数据流见 [架构文档](./.docs/architecture.md) 与 [数据流文档](./.docs/concepts/data-flow.md)。
+更完整的模块实现事实见 [`.docs/modules/beacon.md`](./.docs/modules/beacon.md)。
 
 ## 🚀 快速开始
 
@@ -105,7 +105,7 @@ bash -c "$(curl -fsSL https://beacon.amuluze.com/release/latest/manager.sh)" -- 
 
 安装器默认选择**单机模式**（Agent 控制通道经 Unix Socket，不发布 17000 端口）；多机模式需显式指定 `BEACON_CONTROL_MODE=tcp`（后续付费版能力）。
 
-镜像同时发布在阿里云仓库与 Docker Hub（`registry.cn-hangzhou.aliyuncs.com/amuluze/beacon`、`docker.io/amuluze/beacon`）；安装器默认从阿里云拉取，主源不可达时自动回退 Docker Hub。
+镜像同时发布在阿里云仓库与 Docker Hub（amd64：`registry.cn-hangzhou.aliyuncs.com/amuluze/beacon`、`docker.io/amuluze/beacon`；arm64 为独立镜像名 `amuluze/beacon-arm`）；安装器默认从阿里云拉取，主源不可达时自动回退 Docker Hub。
 
 ### 离线安装（无外网服务器）
 
@@ -125,30 +125,28 @@ sh beacon-offline-<version>-amd64/manager.sh install \
 
 环境要求：
 
-- Docker >= 20.10.9，并安装 Docker Compose。
 - Go 1.25（本地开发后端时需要）。
 - Node.js、pnpm 与 [Task](https://taskfile.dev/)（构建 Web 资源时需要）。
+- Docker >= 20.10.9（构建镜像时需要）。
 
 ```bash
-# 克隆新仓库
-git clone https://github.com/amuluze/beacon-pro.git
-cd beacon-pro
+git clone https://github.com/amuluze/beacon.git
+cd beacon
 
-# 构建前端静态资源
+# 构建前端静态资源（Server 以 go:embed 内嵌）
 task beacon-web:install
 task beacon-web:build
 
-# 构建 Beacon 镜像并启动本地 Compose
+# 开发模式直跑：development 环境不强制密钥（仅告警），本地数据与日志写入 beacon/data/
+task beacon:dev
+
+# 或构建镜像运行（生产密钥经环境变量注入，契约同在线安装一节）
 docker build -f beacon/Dockerfile -t beacon:latest .
-cp website/release/latest/.env.example website/release/latest/.env
-# 编辑 .env：设置 BEACON_IMAGE=beacon:latest（本机构建镜像）并填写四个必需密钥
-docker compose -f website/release/latest/compose.yaml up -d
+docker run -d --name beacon -p 8000:8000 -p 17000:17000 beacon:latest
 
 # 验证服务
-curl http://127.0.0.1:1443/health
+curl http://127.0.0.1:8000/health
 ```
-
-本地 Compose（`website/release/latest/compose.yaml`）默认暴露 `1443`（HTTP，可用 `BEACON_HTTP_PORT` 覆盖）与 `17000`（Agent control，可用 `BEACON_CONTROL_PORT` 覆盖）端口，仅用于开发/验证。`BEACON_AGENT_INSTALL_TOKEN`、`BEACON_AUTH_SIGNING_KEY`、`BEACON_CONTROL_JOIN_TOKEN`、`BEACON_DATA_ENCRYPTION_KEY` 为必填项（缺失时 Compose 直接启动失败），生产部署请生成独立的高强度密钥；首次建库还需设置 `BEACON_BOOTSTRAP_ADMIN_PASSWORD`。
 
 忘记管理员密码时，可在运行中的 Server 容器内重置（默认生成临时密码并强制下次登录修改）：
 
@@ -156,7 +154,7 @@ curl http://127.0.0.1:1443/health
 docker exec -it beacon ./beacon reset-admin -c /app/configs/config.toml
 ```
 
-也可用 `--password '<新密码>'` 或 `--password-stdin` 显式指定；命令校验密码策略、写入 bcrypt 哈希并记录系统审计，`admin` 不存在时拒绝执行。详见[部署指南](./.docs/deployment.md)。
+也可用 `--password '<新密码>'` 或 `--password-stdin` 显式指定；命令校验密码策略、写入 bcrypt 哈希并记录系统审计，`admin` 不存在时拒绝执行。
 
 Beacon 启动后，可从目标主机安装 Collia Agent（将地址、节点编号和 Token 替换为实际值）：
 
@@ -192,19 +190,15 @@ curl -fsSL 'https://<beacon-host>/api/v1/host/install?node=1' | sudo bash -s -- 
 ## 📁 项目结构
 
 ```text
-beacon-pro/
+beacon/
+├── assets/                 # 品牌图标资源
 ├── beacon/                 # Server、Web UI、HTTP/WS API 与 tunnel client
 │   ├── cmd/beacon/         # Server 进程入口
 │   ├── service/            # 业务服务、路由、认证与数据访问
 │   └── web/                # Vue 3 管理端
-├── collia/                 # Agent 采集、Docker/主机操作与 tunnel service
+├── collia/                 # Agent 采集、Docker/主机操作与 tunnel 客户端
 ├── common/                 # 共享 schema、数据库与 reverse tunnel transport
-├── website/                # Beacon 官网、安装脚本与发布产物
-│   ├── compose.yml         # 本地开发 Compose（NODE_ENV=development）
-│   ├── docker-compose.yml  # 生产 Compose（NODE_ENV=production）
-│   └── release/latest/     # 在线安装包（manager.sh / compose.yaml / SHA256SUMS）
-├── .docs/                  # 当前实现文档
-├── .specs/                 # SDD Domain / Task Specs
+├── .docs/                  # 当前实现文档（模块事实）
 └── Taskfile.yml            # 工作区开发命令入口
 ```
 
@@ -212,13 +206,8 @@ beacon-pro/
 
 | 文档 | 内容 |
 |---|---|
-| [架构设计](./.docs/architecture.md) | 模块边界、核心运行链路与依赖方向 |
-| [数据流](./.docs/concepts/data-flow.md) | 请求生命周期、数据归属与跨模块流转 |
-| [部署指南](./.docs/deployment.md) | 环境、构建、配置与发布检查 |
-| [API 路由](./.docs/api/routes.md) | 当前 HTTP 路由与处理器索引 |
-| [OpenAPI](./.docs/api/openapi.yml) | Beacon HTTP API 契约 |
-| [账户管理约束](./.specs/domain/account-administration.md) | 管理员用户维护、删除目标与失败语义 |
-| [领域约束](./.specs/domain/monitoring-platform.md) | 监控平台长期行为与不变量 |
+| [Beacon 模块文档](./.docs/modules/beacon.md) | Server 模块当前实现事实 |
+| 官网（文档与版本说明） | [beacon.amuluze.com](https://beacon.amuluze.com) |
 
 ## 🧑‍💻 开发与贡献
 
@@ -237,7 +226,7 @@ cd beacon/web && pnpm test:run && pnpm ts && pnpm build
 
 欢迎提交 Issue 和 Pull Request：
 
-1. Fork [本仓库](https://github.com/amuluze/beacon-pro)。
+1. Fork [本仓库](https://github.com/amuluze/beacon)。
 2. 创建功能分支并完成最小验证。
 3. 提交清晰、可审查的变更。
 4. 推送分支并创建 Pull Request。
@@ -245,17 +234,6 @@ cd beacon/web && pnpm test:run && pnpm ts && pnpm build
 ## ☕ 支持项目与联系作者
 
 Beacon 由作者利用业余时间持续维护。如果项目对你有帮助，欢迎给仓库点一个 ⭐，也可以请作者喝杯咖啡。
-
-<details>
-<summary>展开赞赏码与联系方式</summary>
-
-<p>
-  <img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/beacon/202403171446310.jpg" alt="赞赏码" width="260" />
-  <img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/beacon/202403171449114.jpg" alt="作者微信" width="260" />
-  <img src="https://cdn.jsdelivr.net/gh/amuluze/picgo@main/beacon/202403171450306.png" alt="公众号" width="260" />
-</p>
-
-</details>
 
 ## 📄 License
 

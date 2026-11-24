@@ -13,8 +13,6 @@
 .specs
 .docs
 
-# website/ 需进入构建上下文（beacon-help 镜像以仓库根为上下文）；
-# 重产物已由下方通配规则排除。
 beacon/Dockerfile
 **/node_modules
 beacon/web/dist
@@ -22,5 +20,3 @@ beacon/web/dist
 **/.output
 **/coverage
 **/*.log
-
-deploy/.env
