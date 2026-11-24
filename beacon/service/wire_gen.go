@@ -78,8 +78,7 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 	}
 	agentRepository := agent.NewAgentRepo(db)
 	agentService := agent.NewAgentService(agentRepository)
-	certManager := NewCertManager(config)
-	caller, err := NewRPCClient(config, agentService, certManager, db)
+	caller, err := NewRPCClient(config, agentService, db)
 	if err != nil {
 		cleanup3()
 		cleanup2()
@@ -162,7 +161,6 @@ func BuildInjector(configFile string, modelFile ModeConf) (*Injector, func(), er
 		loggerHandler:   loggerHandler,
 		terminalHandler: handler,
 		healthProbe:     probe,
-		certManager:     certManager,
 	}
 	app := NewFiberApp(config, router)
 	prepare := &Prepare{

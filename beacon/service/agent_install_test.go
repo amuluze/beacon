@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -53,7 +52,7 @@ func TestSafeJoinRejectsEscapes(t *testing.T) {
 }
 
 func TestBuildAgentInstallScriptUsesInstallTokenHeader(t *testing.T) {
-	script := buildAgentInstallScript("https://beacon.example.com", "1", false)
+	script := buildAgentInstallScript("https://beacon.example.com", "1")
 	if !strings.Contains(script, `X-Install-Token: $TOKEN`) {
 		t.Fatal("expected script downloads to use X-Install-Token header")
 	}
@@ -63,27 +62,19 @@ func TestBuildAgentInstallScriptUsesInstallTokenHeader(t *testing.T) {
 	if strings.Contains(script, "curl -k") || strings.Contains(script, "--insecure") {
 		t.Fatal("install script must not disable TLS certificate verification")
 	}
+	if strings.Contains(script, "--ca-file") || strings.Contains(script, "install/certs") {
+		t.Fatal("single-machine install script must not carry CA or certificate bootstrap steps")
+	}
 	if !strings.Contains(script, "umask 077") {
 		t.Fatal("install script must use an owner-only umask")
 	}
 	if !strings.Contains(script, `install -m 0600 "$WORKDIR/config.yml" /etc/collia/config.yml`) {
 		t.Fatal("install script must install the collia config with owner-only permissions")
 	}
-	if !strings.Contains(script, `--ca-file`) || !strings.Contains(script, `--cacert "$CA_FILE"`) {
-		t.Fatal("install script must support an explicit CA file for pinned self-signed deployments")
-	}
-	caIndex := strings.Index(script, `--cacert "$CA_FILE"`)
-	plainIndex := strings.Index(script, `curl -fsSL -H "X-Install-Token: $TOKEN"`)
-	if caIndex < 0 || plainIndex < 0 || caIndex > plainIndex {
-		t.Fatal("install script must try the pinned CA before system trust and must not leak the install token over an unverified first request")
-	}
-	if !strings.Contains(script, `-o "$2" 2>/dev/null`) {
-		t.Fatal("install script must silence intermediate TLS probe failures")
-	}
 }
 
 func TestBuildAgentInstallScriptSurvivesStopAndStartFailures(t *testing.T) {
-	script := buildAgentInstallScript("https://beacon.example.com", "1", false)
+	script := buildAgentInstallScript("https://beacon.example.com", "1")
 	// 首次安装时 collia stop 返回非 0，若不忽略会在 set -e 下中断脚本，探针永远不启动。
 	if !strings.Contains(script, "collia stop >/dev/null 2>&1 || true") {
 		t.Fatal("expected script to ignore collia stop failure so installation continues")
@@ -99,9 +90,9 @@ func TestBuildAgentInstallScriptSurvivesStopAndStartFailures(t *testing.T) {
 	if !strings.Contains(script, "未检测到 systemd") {
 		t.Fatal("expected script to warn when systemd is unavailable")
 	}
-	// 下载失败要提示自签证书场景下的 CA 导入方式。
-	if !strings.Contains(script, "下载失败") || !strings.Contains(script, "update-ca-certificates") {
-		t.Fatal("expected script to explain download failures including self-signed CA guidance")
+	// 下载失败要保留可定位提示。
+	if !strings.Contains(script, "下载失败") {
+		t.Fatal("expected script to explain download failures")
 	}
 	// 瞬时传输中断（curl 18）要自动重试，避免一次抖动导致整次安装失败。
 	if !strings.Contains(script, `while [ "$attempt" -le 3 ]`) || !strings.Contains(script, "下载中断，2 秒后重试") {
@@ -109,16 +100,9 @@ func TestBuildAgentInstallScriptSurvivesStopAndStartFailures(t *testing.T) {
 	}
 }
 
-func TestBuildAgentInstallScriptDownloadsCertsWhenTLSEnabled(t *testing.T) {
-	script := buildAgentInstallScript("https://beacon.example.com", "agent-a", true)
-	if !strings.Contains(script, `/api/v1/host/install/certs?node=$NODE`) {
-		t.Fatal("expected script to download collia cert package when TLS is enabled")
-	}
-}
-
 // 安装脚本必须能通过 POSIX shell 语法检查，重试循环等改动不得引入语法错误。
 func TestBuildAgentInstallScriptIsValidShell(t *testing.T) {
-	script := buildAgentInstallScript("https://beacon.example.com", "agent-a", true)
+	script := buildAgentInstallScript("https://beacon.example.com", "agent-a")
 	cmd := exec.Command("sh", "-n")
 	cmd.Stdin = strings.NewReader(script)
 	if out, err := cmd.CombinedOutput(); err != nil {
@@ -141,85 +125,33 @@ func TestBuildColliaConfigUsesControlJoinToken(t *testing.T) {
 	}
 }
 
-func TestBuildColliaConfigUsesControlTLSFlag(t *testing.T) {
-	router := &Router{config: &Config{
-		Control:      Control{TLS: ControlTLS{Enable: true}},
-		AgentInstall: AgentInstall{CertDir: "/etc/collia/certs"},
-	}}
-
-	config := router.buildColliaConfig("agent-a")
-	if !strings.Contains(config, `enable: true`) {
-		t.Fatalf("expected TLS enable flag in config, got:\n%s", config)
-	}
-	if !strings.Contains(config, `cert_dir: /etc/collia/certs`) {
-		t.Fatalf("expected TLS cert dir in config, got:\n%s", config)
-	}
-}
-
 // TestBuildColliaConfigRoundTripsThroughColliaConfig 用目标 Agent 自己的
 // NewConfig 反解析生成的安装配置：任何让 Agent 拒绝启动的模板缺陷（层级、
 // 传输安全校验）都必须在这里直接失败，而不是靠子串断言间接覆盖。
 // 前置条件：经 go.work 工作区解析 collia 模块；运行时不得设置
 // BEACON_CONTROL_* 等会通过全局 viper 覆盖模板解析值的环境变量。
 func TestBuildColliaConfigRoundTripsThroughColliaConfig(t *testing.T) {
-	t.Run("tcp control target with mTLS", func(t *testing.T) {
-		router := &Router{config: &Config{
-			Control:      Control{TLS: ControlTLS{Enable: true}, JoinToken: "control-secret"},
-			AgentInstall: AgentInstall{
-				Token:         "install-secret",
-				PublicBaseURL: "https://beacon.example.com",
-				CertDir:       "/etc/collia/certs",
-			},
-		}}
+	const socket = "/data/beacon/data/control/collia.sock"
+	router := &Router{config: &Config{
+		AgentInstall: AgentInstall{
+			Token:         "install-secret",
+			PublicBaseURL: "https://beacon.example.com",
+			ControlSocket: socket,
+		},
+		Control: Control{JoinToken: "control-secret"},
+	}}
 
-		path := filepath.Join(t.TempDir(), "collia.yml")
-		if err := os.WriteFile(path, []byte(router.buildColliaConfig("node-01")), 0o600); err != nil {
-			t.Fatal(err)
-		}
-		cfg, err := colliaservice.NewConfig(path, colliaservice.Prefix("/"))
-		if err != nil {
-			t.Fatalf("generated config must satisfy collia's own validation: %v", err)
-		}
-		if cfg.Control.Server != "beacon.example.com:17000" {
-			t.Fatalf("expected control.server=beacon.example.com:17000, got %q", cfg.Control.Server)
-		}
-		if !cfg.Control.TLS.Enable {
-			t.Fatal("expected control.tls.enable=true parsed from the generated config")
-		}
-		if cfg.Control.TLS.CertDir != "/etc/collia/certs" {
-			t.Fatalf("expected control.tls.cert_dir=/etc/collia/certs, got %q", cfg.Control.TLS.CertDir)
-		}
-		if cfg.Control.TLS.ServerName != "beacon/collia" {
-			t.Fatalf("expected control.tls.server_name=beacon/collia, got %q", cfg.Control.TLS.ServerName)
-		}
-	})
-
-	t.Run("unix socket single-node target", func(t *testing.T) {
-		const socket = "/data/beacon/data/control/collia.sock"
-		router := &Router{config: &Config{
-			AgentInstall: AgentInstall{
-				Token:         "install-secret",
-				PublicBaseURL: "https://beacon.example.com",
-				ControlSocket: socket,
-			},
-			Control: Control{TLS: ControlTLS{Enable: true}},
-		}}
-
-		path := filepath.Join(t.TempDir(), "collia.yml")
-		if err := os.WriteFile(path, []byte(router.buildColliaConfig("node-01")), 0o600); err != nil {
-			t.Fatal(err)
-		}
-		cfg, err := colliaservice.NewConfig(path, colliaservice.Prefix("/"))
-		if err != nil {
-			t.Fatalf("generated config must satisfy collia's own validation: %v", err)
-		}
-		if cfg.Control.Server != "unix://"+socket {
-			t.Fatalf("expected control.server=unix://%s, got %q", socket, cfg.Control.Server)
-		}
-		if cfg.Control.TLS.Enable {
-			t.Fatal("unix target must disable agent mTLS")
-		}
-	})
+	path := filepath.Join(t.TempDir(), "collia.yml")
+	if err := os.WriteFile(path, []byte(router.buildColliaConfig("node-01")), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := colliaservice.NewConfig(path, colliaservice.Prefix("/"))
+	if err != nil {
+		t.Fatalf("generated config must satisfy collia's own validation: %v", err)
+	}
+	if cfg.Control.Server != "unix://"+socket {
+		t.Fatalf("expected control.server=unix://%s, got %q", socket, cfg.Control.Server)
+	}
 }
 
 func TestAgentInstallEndpointsResetSuccessStatus(t *testing.T) {
@@ -227,13 +159,7 @@ func TestAgentInstallEndpointsResetSuccessStatus(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(packageDir, "amd64"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.MkdirAll(filepath.Join(packageDir, "certs"), 0o755); err != nil {
-		t.Fatal(err)
-	}
 	if err := os.WriteFile(filepath.Join(packageDir, "amd64", colliaBinaryName), []byte("collia"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(packageDir, "certs", "node-01.tar.gz"), []byte("certs"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -253,7 +179,6 @@ func TestAgentInstallEndpointsResetSuccessStatus(t *testing.T) {
 	app.Get("/api/v1/host/install", router.AgentInstallScript)
 	app.Get("/api/v1/host/install/package", router.AgentInstallPackage)
 	app.Get("/api/v1/host/install/config", router.AgentInstallConfig)
-	app.Get("/api/v1/host/install/certs", router.AgentInstallCerts)
 
 	tests := []struct {
 		name  string
@@ -263,7 +188,6 @@ func TestAgentInstallEndpointsResetSuccessStatus(t *testing.T) {
 		{name: "script", path: "/api/v1/host/install?node=node-01"},
 		{name: "package", path: "/api/v1/host/install/package?arch=amd64", token: true},
 		{name: "config", path: "/api/v1/host/install/config?node=node-01", token: true},
-		{name: "certs", path: "/api/v1/host/install/certs?node=node-01", token: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -318,113 +242,6 @@ func TestAgentInstallRejectsQueryTokenFallback(t *testing.T) {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("query token status = %d, want 401", resp.StatusCode)
-	}
-}
-
-func TestAgentInstallCAEndpointAndFingerprint(t *testing.T) {
-	certDir := t.TempDir()
-	config := &Config{
-		Control: Control{TLS: ControlTLS{Enable: true, CertDir: certDir}},
-		AgentInstall: AgentInstall{
-			Enable:     true,
-			Token:      "install-secret",
-			TLSEnable:  true,
-			PackageDir: t.TempDir(),
-		},
-	}
-	router := &Router{config: config, certManager: NewCertManager(config)}
-	if err := router.certManager.EnsureControlCerts(); err != nil {
-		t.Fatalf("ensure control certs: %v", err)
-	}
-
-	app := fiber.New()
-	// 模拟生产环境的静态文件中间件：未命中的路径会先写入 404，
-	// 后续的 SendFile 处理器必须显式恢复 200。
-	app.Use(func(c *fiber.Ctx) error {
-		c.Status(http.StatusNotFound)
-		return c.Next()
-	})
-	app.Get("/api/v1/host/install/ca", router.AgentInstallCA)
-	app.Post("/api/v1/host/get_install_token", router.AgentInstallToken)
-
-	resp, err := app.Test(httptest.NewRequest(http.MethodGet, "/api/v1/host/install/ca", nil), -1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	caBody, err := io.ReadAll(resp.Body)
-	_ = resp.Body.Close()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if resp.StatusCode != http.StatusOK || !strings.Contains(string(caBody), "BEGIN CERTIFICATE") {
-		t.Fatalf("CA endpoint status=%d body=%q", resp.StatusCode, string(caBody[:min(len(caBody), 80)]))
-	}
-
-	resp, err = app.Test(httptest.NewRequest(http.MethodPost, "/api/v1/host/get_install_token", nil), -1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("token endpoint status = %d, want 200", resp.StatusCode)
-	}
-	var payload struct {
-		Token         string `json:"token"`
-		CAFingerprint string `json:"ca_fingerprint"`
-		ExpiresAt     int64  `json:"expires_at"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-		t.Fatalf("decode token response: %v", err)
-	}
-	// 默认 TTL 下端点签发短时令牌，静态令牌不再直接暴露。
-	if !strings.HasPrefix(payload.Token, "bpit.") {
-		t.Fatalf("token payload must be ephemeral, got %q", payload.Token)
-	}
-	if payload.ExpiresAt <= 0 {
-		t.Fatalf("ephemeral token must carry expires_at, got %d", payload.ExpiresAt)
-	}
-	if len(payload.CAFingerprint) != 64 {
-		t.Fatalf("unexpected fingerprint payload: %+v", payload)
-	}
-}
-func TestAgentInstallCertsGeneratesWhenTLSEnabled(t *testing.T) {
-	certDir := t.TempDir()
-	packageDir := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(packageDir, "amd64"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(packageDir, "amd64", colliaBinaryName), []byte("collia"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-
-	router := &Router{config: &Config{
-		Control: Control{TLS: ControlTLS{Enable: true, CertDir: certDir}},
-		AgentInstall: AgentInstall{
-			Enable:     true,
-			Token:      "install-secret",
-			PackageDir: packageDir,
-			TLSEnable:  true,
-		},
-	}}
-	router.certManager = NewCertManager(router.config)
-
-	app := fiber.New()
-	app.Get("/api/v1/host/install/certs", router.AgentInstallCerts)
-
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/host/install/certs?node=node-01", nil)
-	req.Header.Set("X-Install-Token", "install-secret")
-	resp, err := app.Test(req, -1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("status = %d, want %d", resp.StatusCode, http.StatusOK)
-	}
-
-	pkgPath := filepath.Join(packageDir, "certs", "node-01.tar.gz")
-	if _, err := os.Stat(pkgPath); err != nil {
-		t.Fatalf("agent cert package not generated: %v", err)
 	}
 }
 
@@ -536,20 +353,16 @@ func TestBuildColliaConfigUsesUnixSocket(t *testing.T) {
 			PublicBaseURL: "https://beacon.example.com",
 			ControlSocket: socket,
 		},
-		Control: Control{TLS: ControlTLS{Enable: true}},
 	}}
 	cfg := router.buildColliaConfig("node-01")
 	if !strings.Contains(cfg, "server: unix://"+socket) {
 		t.Fatalf("agent config must use the unix socket target:\n%s", cfg)
 	}
-	if !strings.Contains(cfg, "enable: false") {
-		t.Fatalf("unix target must disable agent mTLS:\n%s", cfg)
+	if strings.Contains(cfg, "tls:") {
+		t.Fatalf("single-machine agent config must not carry a control TLS section:\n%s", cfg)
 	}
-	if !strings.Contains(cfg, "url: \"https://beacon.example.com/api/v1/host/report\"") {
+	if !strings.Contains(cfg, `url: "https://beacon.example.com/api/v1/host/report"`) {
 		t.Fatalf("HTTP report fallback must stay available:\n%s", cfg)
-	}
-	if strings.Contains(cfg, "enable: true") {
-		t.Fatalf("unix target must not request agent certificates:\n%s", cfg)
 	}
 }
 

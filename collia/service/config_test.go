@@ -20,11 +20,9 @@ func writeTempYAML(t *testing.T, content string) string {
 func TestNewConfigParsesMinimal(t *testing.T) {
 	const yaml = `
 control:
-  server: 127.0.0.1:17000
+  server: unix:///data/beacon/control/beacon.sock
   agent_id: agent-1
   join_token: secret
-  tls:
-    enable: true
 task:
   interval: 30
   disk:
@@ -47,8 +45,8 @@ db:
 	if err != nil {
 		t.Fatalf("NewConfig: %v", err)
 	}
-	if cfg.Control.Server != "127.0.0.1:17000" {
-		t.Fatalf("control.server = %q, want 127.0.0.1:17000", cfg.Control.Server)
+	if cfg.Control.Server != "unix:///data/beacon/control/beacon.sock" {
+		t.Fatalf("control.server = %q, want unix:///data/beacon/control/beacon.sock", cfg.Control.Server)
 	}
 	if cfg.Control.AgentID != "agent-1" {
 		t.Fatalf("control.agent_id = %q, want agent-1", cfg.Control.AgentID)

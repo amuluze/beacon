@@ -14,13 +14,8 @@ IdleTimeout = 120     # keepalive 空闲超时(秒)，0 或缺省兜底为 120s
 
 [Control]
 Enable = true
-Address = ":17000"
+UnixSocket = "data/control.sock" # 控制通道监听路径（本地开发，相对 beacon/ 运行目录）
 JoinToken = ""
-
-[Control.TLS]
-Enable = true
-CertDir = "/etc/beacon/control-certs"  # beacon 启动时若目录缺少 ca.pem/tls.crt/tls.key 则自动生成自签 CA 与服务端证书
-ClientNames = []
 
 [Gorm]
 Debug = true             # 是否开启调试模式
@@ -75,9 +70,7 @@ Token = "change-me"
 TokenTTL = 0           # 开发环境同样默认签发短时令牌；调试安装脚本可用 -1 回退静态令牌
 PublicBaseURL = ""
 PackageDir = "/app/downloads/collia"
-ControlPort = 18080
-TLSEnable = true
-CertDir = "/etc/collia/certs"
+ControlSocket = "data/control.sock" # 下发给 Agent 的宿主可见路径（本地开发即同一文件）
 
 [AgentUpdate]
 Enable = false         # 本地开发默认关闭自动升级

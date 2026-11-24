@@ -26,7 +26,6 @@ type installReportPayload struct {
 	PublicBaseURL string `json:"public_base_url"`
 	InstallDir    string `json:"install_dir"`
 	HTTPPort      string `json:"http_port"`
-	ControlPort   string `json:"control_port"`
 	ContainerName string `json:"container_name"`
 	Hostname      string `json:"hostname"`
 }
@@ -93,7 +92,6 @@ func buildInstallReportPayload(config *Config) (installReportPayload, error) {
 		PublicBaseURL: firstNonEmpty(firstEnv("BEACON_PUBLIC_BASE_URL"), config.AgentInstall.PublicBaseURL),
 		InstallDir:    config.InstallReport.InstallDir,
 		HTTPPort:      firstNonEmpty(firstEnv("BEACON_HTTP_PORT"), intString(config.Fiber.Port)),
-		ControlPort:   firstNonEmpty(firstEnv("BEACON_CONTROL_PORT"), intString(config.AgentInstall.ControlPort)),
 		ContainerName: firstEnv("BEACON_CONTAINER_NAME"),
 		Hostname:      hostname,
 	}, nil

@@ -6,7 +6,6 @@
 
 export interface InstallTokenResult {
     token: string
-    ca_fingerprint?: string
     /** 短时令牌的过期时间（Unix 秒）；静态令牌兼容模式下省略 */
     expires_at?: number
 }

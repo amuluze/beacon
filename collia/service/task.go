@@ -8,14 +8,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"os"
-	"path/filepath"
 	"time"
 
 	"collia/service/report"
 	"collia/service/task"
 	rpcSchema "common/rpc/schema"
-	transporttls "common/transport/tlsconfig"
 
 	"github.com/amuluze/amutool/timex"
 	"github.com/amuluze/docker"
@@ -86,34 +83,17 @@ func NewTimedTask(conf *Config) *TimedTask {
 // buildReportTLSConfig builds the TLS config for the HTTPS report client.
 // The report endpoint is the Server's public HTTPS API (authenticated by
 // X-Install-Token), so the certificate must be verified against the report
-// URL's host name and the system trust store — the control plane's mTLS
-// server_name identifies the tunnel server certificate ("beacon/collia") and
-// must not be reused here. The control-plane CA is still added so self-signed
-// deployments keep working.
+// URL's host name and the system trust store. The control channel carries no
+// certificate of its own (Unix Socket), so there is no control CA to add.
 func buildReportTLSConfig(conf *Config) *tls.Config {
-	if !conf.Control.TLS.Enable {
-		return nil
-	}
 	pool, err := x509.SystemCertPool()
 	if err != nil || pool == nil {
 		pool = x509.NewCertPool()
 	}
-	if caPEM, err := os.ReadFile(filepath.Join(conf.Control.TLS.CertDir, transporttls.CACertFile)); err == nil {
-		pool.AppendCertsFromPEM(caPEM)
-	} else {
-		slog.Warn("read control plane ca for report client failed", "error", err)
-	}
-	cfg := &tls.Config{
+	return &tls.Config{
 		MinVersion: tls.VersionTLS12,
 		RootCAs:    pool,
 	}
-	// 客户端证书仅在存在时附带：部分部署要求上报也走 mTLS。
-	certPath := filepath.Join(conf.Control.TLS.CertDir, transporttls.TLSCertFile)
-	keyPath := filepath.Join(conf.Control.TLS.CertDir, transporttls.TLSKeyFile)
-	if cert, err := tls.LoadX509KeyPair(certPath, keyPath); err == nil {
-		cfg.Certificates = []tls.Certificate{cert}
-	}
-	return cfg
 }
 
 func (a *TimedTask) Execute() {

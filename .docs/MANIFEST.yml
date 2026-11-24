@@ -1,0 +1,235 @@
+# Managed project documentation manifest.
+# Records the documentation entities expected by the project's SDD workflow.
+version: "3.1"
+
+quality:
+  warning_rules:
+    - code: low_signal_description
+      description: generated descriptions should name the concrete document purpose instead of generic placeholders
+    - code: unmanaged_ai_entry
+      description: CLAUDE-only local guidance should be promoted to AGENTS.md or migrated into .docs when it affects collaboration
+    - code: stale_generated_doc
+      description: generated .docs files outside the current target set should be archived, migrated, re-adopted or removed
+
+docs:
+  required:
+    - path: doc-system.md
+      min_lines: 20
+      must_contain:
+        - "## 门禁"
+      description: 文档系统规则与门禁边界
+    - path: api/routes.md
+      min_lines: 20
+      must_contain:
+        - "## 范围"
+      description: Beacon Server HTTP 路由索引：按 group 列出方法、路径、中文名与处理函数
+    - path: api/openapi.yml
+      min_lines: 100
+      must_contain:
+        - "openapi: 3.0"
+        - "/ws/terminal"
+        - "X-Install-Token"
+        - "CookieAuth"
+      description: Beacon Server HTTP API OpenAPI 3.0 contract（机器可读契约，与 routes.md 同源维护）
+    - path: architecture.md
+      min_lines: 50
+      must_contain:
+        - "## 架构概览"
+        - "## 核心模块"
+        - "## 职责边界"
+      description: 系统架构：模块边界、依赖方向与三条运行链路（监控查询、指标上报、反向隧道控制）
+    - path: concepts/data-flow.md
+      min_lines: 25
+      must_contain:
+        - "## 请求生命周期"
+        - "## 数据边界"
+      description: 跨模块数据流：请求生命周期、数据归属边界与上报批次的原子写入路径
+    - path: deployment.md
+      min_lines: 30
+      must_contain:
+        - "## 环境要求"
+        - "## 快速启动"
+        - "## 配置说明"
+      description: 部署指南：环境要求、构建命令、配置项语义与发布前校验清单
+    - path: modules/beacon-web.md
+      min_lines: 30
+      must_contain:
+        - "## 模块职责"
+        - "## 职责边界"
+        - "## 验证命令"
+      description: 控制台前端：Vue 3 + Element Plus + Pinia，工作区路由、主题 token 与设置工作区事实
+    - path: modules/beacon.md
+      min_lines: 30
+      must_contain:
+        - "## 模块职责"
+        - "## 职责边界"
+        - "## 验证命令"
+      description: Beacon Server：Fiber 路由注册、鉴权中间件、容器与 Agent 服务及审计写入事实
+    - path: modules/collia.md
+      min_lines: 30
+      must_contain:
+        - "## 模块职责"
+        - "## 职责边界"
+        - "## 验证命令"
+      description: Collia Agent：主机与容器指标采集、反向 gRPC tunnel 服务端与周期上报事实
+    - path: modules/common-docker.md
+      min_lines: 30
+      must_contain:
+        - "## 模块职责"
+        - "## 职责边界"
+        - "## 验证命令"
+      description: common/docker：容器与镜像操作封装、运行时交互与错误语义事实
+    - path: modules/common-logger.md
+      min_lines: 30
+      must_contain:
+        - "## 模块职责"
+        - "## 职责边界"
+        - "## 验证命令"
+      description: common/logger：结构化日志初始化、分级输出与调用方约定
+    - path: modules/common-timex.md
+      min_lines: 30
+      must_contain:
+        - "## 模块职责"
+        - "## 职责边界"
+        - "## 验证命令"
+      description: common/timex：时间解析、时区处理与区间计算工具的实现事实
+    - path: modules/common.md
+      min_lines: 30
+      must_contain:
+        - "## 模块职责"
+        - "## 职责边界"
+        - "## 验证命令"
+      description: common 共享契约库：跨端复用的 schema、数据库封装、RPC 参数/返回值、tunnel 协议
+    - path: project-analysis.md
+      min_lines: 40
+      must_contain:
+        - "## Documentation Coverage Model"
+        - "## Update Guidance"
+      description: workspace 文档盘点：模块清单、覆盖模型、文档健康计数与更新指引
+  optional:
+    - path: api/*.md
+      pattern: true
+      min_lines: 20
+      description: API or route documentation when route signals exist
+    - path: concepts/*.md
+      pattern: true
+      min_lines: 20
+      description: implementation-side concept documentation
+
+specs:
+  required:
+    - path: ../.specs/domain/account-administration.md
+      min_lines: 30
+      must_contain:
+        - "## 约束空间"
+        - "## 状态模型"
+      description: Domain Spec：管理员用户创建、角色分配、删除目标与失败反馈语义
+    - path: ../.specs/domain/agent-lifecycle-update.md
+      min_lines: 30
+      must_contain:
+        - "## 约束空间"
+        - "## 状态模型"
+      description: Domain Spec：Agent 升级的并发控制、版本推进与升级窗口内数据可用性
+    - path: ../.specs/domain/container-runtime.md
+      min_lines: 30
+      must_contain:
+        - "## 约束空间"
+        - "## 状态模型"
+      description: Domain Spec：容器运行时能力面、列表作用域、受保护容器与删除原子性
+    - path: ../.specs/domain/monitoring-platform.md
+      min_lines: 30
+      must_contain:
+        - "## 约束空间"
+        - "## 状态模型"
+      description: Domain Spec：采样与上报的数据新鲜度、阈值判定、审计记录与告警去重
+  optional:
+    - path: ../.specs/domain/*.md
+      pattern: true
+      min_lines: 30
+      description: additional Domain Specs
+
+design:
+  required:
+    - path: ../DESIGN.md
+      min_lines: 100
+      must_contain:
+        - "## 5. Token 体系"
+        - "## 15. 变更治理与视觉验收"
+      description: design intent SSOT - visual tone, tokens, layout and component specs
+
+index:
+  - path: ../AGENTS.md
+    min_lines: 20
+    must_contain:
+      - "## 文档地图"
+      - "## 关键约束"
+    description: 根 AI 协作入口：项目摘要、文档地图、关键约束与开发命令的单一事实源
+  - path: ../CLAUDE.md
+    min_lines: 20
+    must_contain:
+      - "## 文档地图"
+      - "## 关键约束"
+    description: 根入口的同步副本：项目摘要、文档地图与关键约束，供只识别 CLAUDE.md 的工具使用
+  - path: ../beacon/AGENTS.md
+    min_lines: 20
+    must_contain:
+      - "## 模块路径"
+      - "## 开发命令"
+    description: Beacon Server 目录入口：服务端开发命令、模块边界与配置约定
+  - path: ../beacon/CLAUDE.md
+    min_lines: 20
+    must_contain:
+      - "## 模块路径"
+      - "## 开发命令"
+    description: beacon 入口的同步副本：Beacon Server 的模块边界、开发命令与配置约定
+  - path: ../beacon/web/AGENTS.md
+    min_lines: 20
+    must_contain:
+      - "## 模块路径"
+      - "## 开发命令"
+    description: 控制台前端目录入口：前端开发命令、主题 token 与工作区路由约定
+  - path: ../beacon/web/CLAUDE.md
+    min_lines: 20
+    must_contain:
+      - "## 模块路径"
+      - "## 开发命令"
+    description: beacon/web 入口的同步副本：控制台主题 token 与工作区路由约定
+  - path: ../collia/AGENTS.md
+    min_lines: 20
+    must_contain:
+      - "## 模块路径"
+      - "## 开发命令"
+    description: Collia Agent 目录入口：采集与隧道相关开发命令、模块边界与约束
+  - path: ../collia/CLAUDE.md
+    min_lines: 20
+    must_contain:
+      - "## 模块路径"
+      - "## 开发命令"
+    description: collia 入口的同步副本：Agent 采集、隧道协议与上报周期的约定
+  - path: ../common/AGENTS.md
+    min_lines: 20
+    must_contain:
+      - "## 模块路径"
+      - "## 开发命令"
+    description: common 共享库目录入口：契约与工具包开发命令、依赖方向约定
+  - path: ../common/CLAUDE.md
+    min_lines: 20
+    must_contain:
+      - "## 模块路径"
+      - "## 开发命令"
+    description: common 入口的同步副本：跨端共享契约与工具包的依赖方向约定
+
+entry:
+  required:
+    - path: ../README.md
+      min_lines: 100
+      must_contain:
+        - "## 📚 项目文档"
+        - "## 🚀 快速开始"
+      description: 面向使用者的中文项目说明：功能特性、系统架构、快速开始与文档索引
+    - path: ../README.en.md
+      min_lines: 100
+      must_contain:
+        - "## 📖 Introduction"
+        - "## 🚀 Quick Start"
+      description: 面向使用者的英文项目说明，与中文 README 内容对齐

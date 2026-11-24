@@ -9,14 +9,21 @@ import (
 
 var (
 	ErrHTTPSPublicBaseURLRequired = errors.New("production AgentInstall.PublicBaseURL must use HTTPS")
-	ErrControlTLSRequired         = errors.New("production control channel requires mutual TLS")
-	ErrAgentTLSRequired           = errors.New("production agent certificate provisioning must be enabled")
+	ErrControlSocketRequired      = errors.New("control channel requires Control.UnixSocket (unix socket listen path)")
+	ErrInstallSocketRequired      = errors.New("agent install requires AgentInstall.ControlSocket (host-visible unix socket path)")
 	ErrControlSocketMismatch      = errors.New("control unix socket mode requires both Control.UnixSocket (listen) and AgentInstall.ControlSocket (advertised)")
 )
 
 func validateTransportSecurity(config *Config) error {
-	// 单机 UDS 模式的两个路径必须成对：容器监听路径 + 下发给 Agent 的宿主路径。
-	// 只配一个会导致服务端监听与 Agent 目标不一致，必须快速失败。
+	// 控制通道只支持 Unix Socket（单机部署）：
+	// 服务端监听路径与下发给 Agent 的宿主路径必须成对声明，
+	// 缺失任一都会导致监听与 Agent 目标不一致，必须快速失败。
+	if config.Control.Enable && strings.TrimSpace(config.Control.UnixSocket) == "" {
+		return ErrControlSocketRequired
+	}
+	if config.AgentInstall.Enable && strings.TrimSpace(config.AgentInstall.ControlSocket) == "" {
+		return ErrInstallSocketRequired
+	}
 	hasListenSocket := strings.TrimSpace(config.Control.UnixSocket) != ""
 	hasAdvertisedSocket := strings.TrimSpace(config.AgentInstall.ControlSocket) != ""
 	if hasListenSocket != hasAdvertisedSocket {
@@ -29,15 +36,6 @@ func validateTransportSecurity(config *Config) error {
 		if err := validateHTTPSBaseURL(config.AgentInstall.PublicBaseURL); err != nil {
 			return err
 		}
-	}
-	// 单机 Unix Socket 模式：本机链路免 mTLS，也不下发 Agent 证书；
-	// 多机 TCP 模式仍强制 mTLS 与证书下发（IU009）。
-	socketMode := strings.TrimSpace(config.Control.UnixSocket) != ""
-	if config.Control.Enable && !socketMode && !config.Control.TLS.Enable {
-		return ErrControlTLSRequired
-	}
-	if config.Control.Enable && !socketMode && !config.AgentInstall.TLSEnable {
-		return ErrAgentTLSRequired
 	}
 	return nil
 }

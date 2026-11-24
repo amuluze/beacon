@@ -16,3 +16,13 @@ tasks:
     desc: List available tasks
     cmds:
       - task --list
+
+  doc:check:
+    desc: 校验文档系统完整性（Spec 编号与结构、MANIFEST 双向覆盖、内部链接、入口一致性、健康计数）
+    cmds:
+      - bash scripts/doc-check.sh
+
+  doc:verify:
+    desc: 执行六个Go模块与文档工具的 build、race测试、vet 及门禁回归（保留失败退出码）
+    cmds:
+      - bash scripts/doc-verify.sh

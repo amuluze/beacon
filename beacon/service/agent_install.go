@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -105,7 +104,7 @@ func (a *Router) AgentInstallScript(ctx *fiber.Ctx) error {
 	}
 
 	ctx.Type("sh")
-	return ctx.Status(http.StatusOK).SendString(buildAgentInstallScript(baseURL, node, a.config.Control.TLS.Enable))
+	return ctx.Status(http.StatusOK).SendString(buildAgentInstallScript(baseURL, node))
 }
 
 func (a *Router) AgentInstallPackage(ctx *fiber.Ctx) error {
@@ -142,68 +141,6 @@ func (a *Router) AgentInstallConfig(ctx *fiber.Ctx) error {
 	return ctx.Status(http.StatusOK).SendString(a.buildColliaConfig(node))
 }
 
-func (a *Router) AgentInstallCerts(ctx *fiber.Ctx) error {
-	if err := a.verifyAgentInstallToken(ctx); err != nil {
-		return err
-	}
-
-	node := ctx.Query("node")
-	if node == "" || !isSafeInstallName(node) {
-		return fiber.NewError(http.StatusBadRequest, "invalid node")
-	}
-
-	if a.certManager != nil && a.config.AgentInstall.TLSEnable {
-		certsPath, err := a.certManager.GenerateAgentCertPackage(node)
-		if err != nil {
-			return fiber.NewError(http.StatusInternalServerError, err.Error())
-		}
-		return ctx.Status(http.StatusOK).Download(certsPath, node+"-certs.tar.gz")
-	}
-
-	certsPath, err := safeJoin(a.agentInstallPackageDir(), "certs", node+".tar.gz")
-	if err != nil {
-		return fiber.NewError(http.StatusBadRequest, err.Error())
-	}
-	if _, err := os.Stat(certsPath); err != nil {
-		return fiber.NewError(http.StatusNotFound, "collia cert package not found")
-	}
-	return ctx.Status(http.StatusOK).Download(certsPath, node+"-certs.tar.gz")
-}
-
-// AgentInstallCA exposes only the public control-plane CA certificate. It is
-// intentionally token-free so a fresh host can bootstrap trust before it has
-// the install token. The certificate is safe to publish; the matching private
-// key never leaves the server cert directory.
-func (a *Router) AgentInstallCA(ctx *fiber.Ctx) error {
-	if !a.config.AgentInstall.Enable || !a.config.AgentInstall.TLSEnable || a.certManager == nil {
-		return fiber.ErrNotFound
-	}
-	caPath, err := a.certManager.ControlCAPath()
-	if err != nil {
-		return fiber.NewError(http.StatusNotFound, err.Error())
-	}
-	ctx.Set("Cache-Control", "no-store")
-	// 静态文件中间件会先为未命中的路径写入 404；显式设为 200，避免
-	// SendFile 保留该状态码导致下载成功但响应仍是 404。
-	return ctx.Status(http.StatusOK).SendFile(caPath)
-}
-
-func (a *Router) agentInstallCAFingerprint() string {
-	if a.certManager == nil || !a.config.AgentInstall.TLSEnable {
-		return ""
-	}
-	caPath, err := a.certManager.ControlCAPath()
-	if err != nil {
-		return ""
-	}
-	raw, err := os.ReadFile(caPath)
-	if err != nil {
-		return ""
-	}
-	sum := sha256.Sum256(raw)
-	return hex.EncodeToString(sum[:])
-}
-
 func (a *Router) AgentInstallToken(ctx *fiber.Ctx) error {
 	if !a.config.AgentInstall.Enable {
 		return fiber.ErrNotFound
@@ -228,9 +165,6 @@ func (a *Router) AgentInstallToken(ctx *fiber.Ctx) error {
 		}
 		data["token"] = token
 		data["expires_at"] = expiresAt
-	}
-	if fingerprint := a.agentInstallCAFingerprint(); fingerprint != "" {
-		data["ca_fingerprint"] = fingerprint
 	}
 	return fiberx.Success(ctx, data)
 }
@@ -262,19 +196,6 @@ func (a *Router) verifyAgentInstallToken(ctx *fiber.Ctx) error {
 
 func (a *Router) buildColliaConfig(node string) string {
 	reportURL := ""
-	controlServer := "127.0.0.1:17000"
-	agentTLSEnable := a.config.Control.TLS.Enable
-	controlPort := a.config.AgentInstall.ControlPort
-	if controlPort == 0 {
-		controlPort = 17000
-	}
-	if socket := strings.TrimSpace(a.config.AgentInstall.ControlSocket); socket != "" {
-		// 单机部署：Agent 经宿主侧 Unix Socket 接入，本机链路无需 mTLS。
-		controlServer = "unix://" + socket
-		agentTLSEnable = false
-	} else if a.config.AgentInstall.PublicBaseURL != "" {
-		controlServer = extractHost(a.config.AgentInstall.PublicBaseURL) + ":" + strconv.Itoa(controlPort)
-	}
 	if a.config.AgentInstall.PublicBaseURL != "" {
 		reportURL = a.config.AgentInstall.PublicBaseURL + "/api/v1/host/report"
 	}
@@ -291,15 +212,14 @@ func (a *Router) buildColliaConfig(node string) string {
 		upgradeKeyLine = b.String()
 	}
 
+	// 单机部署：Agent 经宿主侧 Unix Socket 接入（AgentInstall.ControlSocket，
+	// 由 validateTransportSecurity 保证非空），本机链路无需 mTLS。
+	controlServer := "unix://" + a.config.AgentInstall.ControlSocket
 	return fmt.Sprintf(`control:
   server: %s
   agent_id: %s
   join_token: "%s"
-%s  tls:
-    enable: %t
-    cert_dir: %s
-    server_name: beacon/collia
-log:
+%slog:
   output: /data/beacon/logs/collia/collia.log
   level: info
   rotation: 1
@@ -325,7 +245,7 @@ variables:
   host_prefix: /data/beacon
   container_prefix: /
   node: %s
-`, controlServer, node, controlJoinToken(a.config), upgradeKeyLine, agentTLSEnable, a.config.AgentInstall.CertDir, reportURL, a.config.AgentInstall.Token, node, node)
+`, controlServer, node, controlJoinToken(a.config), upgradeKeyLine, reportURL, a.config.AgentInstall.Token, node, node)
 }
 
 func (a *Router) agentInstallPackageDir() string {
@@ -347,15 +267,7 @@ func requestBaseURL(ctx *fiber.Ctx) string {
 	return strings.TrimRight(scheme+"://"+host, "/")
 }
 
-func buildAgentInstallScript(baseURL string, node string, tlsEnable bool) string {
-	certInstall := ""
-	if tlsEnable {
-		certInstall = `
-mkdir -p /etc/collia/certs
-download "$BASE_URL/api/v1/host/install/certs?node=$NODE" "$WORKDIR/certs.tar.gz"
-tar -xzf "$WORKDIR/certs.tar.gz" -C /etc/collia/certs
-`
-	}
+func buildAgentInstallScript(baseURL string, node string) string {
 	return fmt.Sprintf(`#!/bin/sh
 set -eu
 umask 077
@@ -363,14 +275,11 @@ umask 077
 BASE_URL=%s
 NODE=%s
 TOKEN=""
-CA_FILE=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --token=*) TOKEN="${1#*=}" ;;
     --token) shift; TOKEN="${1:-}" ;;
-    --ca-file=*) CA_FILE="${1#*=}" ;;
-    --ca-file) shift; CA_FILE="${1:-}" ;;
     *) echo "unknown argument: $1" >&2; exit 1 ;;
   esac
   shift
@@ -378,11 +287,6 @@ done
 
 if [ -z "$TOKEN" ]; then
   echo "missing --token" >&2
-  exit 1
-fi
-
-if [ -n "$CA_FILE" ] && [ ! -r "$CA_FILE" ]; then
-  echo "CA file is not readable: $CA_FILE" >&2
   exit 1
 fi
 
@@ -401,11 +305,6 @@ trap cleanup EXIT
 download() {
   attempt=1
   while [ "$attempt" -le 3 ]; do
-    # --ca-file 是显式信任锚：先用它验证，避免先以系统信任库发起
-    # 携带安装令牌的请求；自签部署也不会先打印一条误导性的 SSL 错误。
-    if [ -n "$CA_FILE" ] && curl -fsSL --cacert "$CA_FILE" -H "X-Install-Token: $TOKEN" "$1" -o "$2" 2>/dev/null; then
-      return 0
-    fi
     if curl -fsSL -H "X-Install-Token: $TOKEN" "$1" -o "$2" 2>/dev/null; then
       return 0
     fi
@@ -416,8 +315,6 @@ download() {
     attempt=$((attempt + 1))
   done
   echo "下载失败：$1" >&2
-  echo "  若服务端使用自签证书，请通过 --ca-file 指定控制 CA，或先把 CA 导入系统信任库" >&2
-  echo "  （/usr/local/share/ca-certificates/<ca>.crt，然后 update-ca-certificates）" >&2
   exit 1
 }
 
@@ -425,7 +322,6 @@ mkdir -p /etc/collia /data/beacon/collia/storage /data/beacon/logs/collia /usr/s
 
 download "$BASE_URL/api/v1/host/install/package?arch=$ARCH" "$WORKDIR/collia"
 download "$BASE_URL/api/v1/host/install/config?node=$NODE" "$WORKDIR/config.yml"
-%s
 
 install -m 0755 "$WORKDIR/collia" /usr/sbin/collia
 install -m 0600 "$WORKDIR/config.yml" /etc/collia/config.yml
@@ -450,8 +346,8 @@ if ! collia start; then
   exit 1
 fi
 
-echo "collia installed and started, reverse tunnel -> $BASE_URL"
-`, shellQuote(baseURL), shellQuote(node), certInstall)
+echo "collia installed and started, reverse tunnel -> unix socket"
+`, shellQuote(baseURL), shellQuote(node))
 }
 
 func isSafeInstallName(s string) bool {

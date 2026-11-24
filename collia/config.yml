@@ -2,13 +2,10 @@
 # 文件路径: /etc/collia/config.yml
 
 control:
-  server: 127.0.0.1:17000
+  # 单机部署：控制目标必须是本机 Unix Socket（unix:// 前缀）。
+  server: unix:///data/beacon/control/beacon.sock
   agent_id: default
   join_token: ""
-  tls:
-    enable: true
-    cert_dir: /etc/collia/certs
-    server_name: beacon/collia
 
 log:
   output: /data/beacon/logs/collia/collia.log

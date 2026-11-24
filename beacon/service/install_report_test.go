@@ -7,7 +7,6 @@ func TestBuildInstallReportPayloadUsesConfigAndPersistentInstallID(t *testing.T)
 	t.Setenv("BEACON_VERSION", "v1")
 	t.Setenv("BEACON_PUBLIC_BASE_URL", "")
 	t.Setenv("BEACON_HTTP_PORT", "")
-	t.Setenv("BEACON_CONTROL_PORT", "18000")
 	t.Setenv("BEACON_CONTAINER_NAME", "beacon")
 
 	config := &Config{
@@ -16,7 +15,6 @@ func TestBuildInstallReportPayloadUsesConfigAndPersistentInstallID(t *testing.T)
 		},
 		AgentInstall: AgentInstall{
 			PublicBaseURL: "http://127.0.0.1:1443",
-			ControlPort:   17000,
 		},
 		InstallReport: InstallReport{
 			InstallDir: "/data/beacon",
@@ -40,9 +38,6 @@ func TestBuildInstallReportPayloadUsesConfigAndPersistentInstallID(t *testing.T)
 	}
 	if payload.HTTPPort != "8000" {
 		t.Fatalf("http port mismatch: %q", payload.HTTPPort)
-	}
-	if payload.ControlPort != "18000" {
-		t.Fatalf("control port mismatch: %q", payload.ControlPort)
 	}
 
 	nextPayload, err := buildInstallReportPayload(config)

@@ -7,14 +7,14 @@ import (
 )
 
 var (
-	ErrControlTLSRequired        = errors.New("control channel requires mutual TLS")
+	ErrUnixControlTargetRequired = errors.New("control channel target must be a unix:// socket (single-machine deployment)")
 	ErrHTTPSReportTargetRequired = errors.New("authenticated report target must use HTTPS")
 )
 
 func validateTransportSecurity(config *Config) error {
-	// 单机部署经 Unix Socket 接入时本机链路无需 mTLS；TCP 目标必须启用。
-	if config.Control.Server != "" && !isUnixControlTarget(config.Control.Server) && !config.Control.TLS.Enable {
-		return ErrControlTLSRequired
+	// 单机部署：控制通道只允许本机 Unix Socket 目标，不存在跨主机链路。
+	if config.Control.Server != "" && !isUnixControlTarget(config.Control.Server) {
+		return ErrUnixControlTargetRequired
 	}
 	if config.Task.Report.URL != "" && config.Task.Report.Token != "" {
 		parsed, err := url.Parse(config.Task.Report.URL)

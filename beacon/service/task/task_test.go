@@ -383,17 +383,17 @@ func TestEvaluateAlarmWindowStrictRecovery(t *testing.T) {
 	}{
 		{
 			name:    "all samples above threshold fires",
-			samples: []metricSample{sample(-2 * time.Minute, 95), sample(-time.Minute, 94), sample(0, 93)},
+			samples: []metricSample{sample(-2*time.Minute, 95), sample(-time.Minute, 94), sample(0, 93)},
 			want:    alarmWindowFiring,
 		},
 		{
 			name:    "all samples at or below threshold is normal",
-			samples: []metricSample{sample(-2 * time.Minute, 50), sample(-time.Minute, 40), sample(0, 30)},
+			samples: []metricSample{sample(-2*time.Minute, 50), sample(-time.Minute, 40), sample(0, 30)},
 			want:    alarmWindowNormal,
 		},
 		{
 			name:    "mixed window is unknown",
-			samples: []metricSample{sample(-2 * time.Minute, 95), sample(-time.Minute, 50), sample(0, 93)},
+			samples: []metricSample{sample(-2*time.Minute, 95), sample(-time.Minute, 50), sample(0, 93)},
 			want:    alarmWindowUnknown,
 		},
 	}

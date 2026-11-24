@@ -22,13 +22,8 @@ IdleTimeout = 120     # keepalive 空闲超时(秒)，0 或缺省兜底为 120s�
 
 [Control]
 Enable = true          # 启用反向 gRPC tunnel，控制通道由 Agent 主动连接 Server
-Address = ":17000"     # gRPC 控制端口
+UnixSocket = "/data/beacon/control/beacon.sock" # 控制通道监听路径（容器内视角）
 JoinToken = ""          # Agent 反向隧道注册令牌；为空时复用 AgentInstall.Token
-
-[Control.TLS]
-Enable = true
-CertDir = "/etc/beacon/control-certs"  # beacon 启动时若目录缺少 ca.pem/tls.crt/tls.key 则自动生成自签 CA 与服务端证书
-ClientNames = []
 
 [Gorm]
 Debug = false            # 生产环境关闭 SQL 调试日志；启用时仍使用参数化日志
@@ -80,9 +75,7 @@ Token = ""             # 必须通过 BEACON_AGENT_INSTALL_TOKEN 注入
 TokenTTL = 0           # 安装令牌有效期（秒）：0=默认 1800 短时令牌；负值=返回静态令牌（兼容模式）
 PublicBaseURL = ""       # 生产环境必须通过 BEACON_PUBLIC_BASE_URL 注入 HTTPS 地址
 PackageDir = "/app/downloads/collia"
-ControlPort = 17000
-TLSEnable = true
-CertDir = "/etc/collia/certs"
+ControlSocket = "/data/beacon/control/beacon.sock" # 下发给 Agent 的宿主可见 Socket 路径，与 Control.UnixSocket 指向同一 socket
 
 [AgentUpdate]
 Enable = true          # 部署级门禁：Agent 注册后自动比较并升级到镜像内置 Collia 版本；控制台「探针管理」开关可在此基础上关闭自动调度

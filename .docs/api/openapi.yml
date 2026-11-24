@@ -1,0 +1,5241 @@
+openapi: 3.0.3
+info:
+  title: Beacon API
+  description: Beacon Server HTTP API。方法与路径由运行时注册对账；JSON 字段由 Go AST 导出并对账，x-go-validate
+    保留服务端验证规则。204 响应无正文；下载与 WebSocket 单独建模。此契约不代替鉴权与业务行为测试。
+  version: 3.0.11
+  contact:
+    name: Beacon
+servers:
+- url: http://localhost:8000
+  description: Local development server
+tags:
+- name: index
+- name: user
+- name: role
+- name: resource
+- name: agent
+- name: auth
+- name: container
+- name: host
+- name: audit
+- name: mail
+- name: alarm
+- name: dingtalk
+- name: ops
+security:
+- CookieAuth: []
+paths:
+  "/health":
+    get:
+      tags:
+      - ops
+      summary: Liveness probe
+      description: Returns HTTP 200 if the process is running. No authentication required.
+      operationId: liveness
+      security: []
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/HealthResponse"
+  "/ready":
+    get:
+      tags:
+      - ops
+      summary: Readiness probe
+      description: Returns HTTP 200 when all dependencies (DB, reverse-tunnel) are
+        healthy; HTTP 503 when DB ping reports an error.
+      operationId: readiness
+      security: []
+      responses:
+        '503':
+          description: Server is not ready
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/HealthResponse"
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/HealthResponse"
+  "/ws/terminal":
+    get:
+      tags:
+      - ops
+      summary: WebSocket upgrade for terminal channel
+      description: Same-origin upgrade authenticated by the HttpOnly access Cookie
+        (`WebSocketUserAuthMiddleware`，Auth.Enable 时；未启用时存在无 Cookie 认证的回退注册分支); rejects
+        plain HTTP with 426 and cross-origin attempts with 401.
+      operationId: wsTerminal
+      security:
+      - CookieAuth: []
+      parameters:
+      - in: cookie
+        name: beacon_access_token
+        required: true
+        schema:
+          type: string
+      responses:
+        '101':
+          description: Switching protocols
+        '401':
+          description: Cross-origin or unauthenticated
+        '426':
+          description: Upgrade required
+  "/ws/{id}":
+    get:
+      tags:
+      - ops
+      summary: Same-origin WebSocket upgrade for Cookie-authenticated log streaming
+      description: Container log stream keyed by container id; same-origin + HttpOnly
+        access Cookie (`WebSocketUserAuthMiddleware`，Auth.Enable 时；未启用时存在无 Cookie
+        认证的回退注册分支).
+      operationId: wsLogStream
+      security:
+      - CookieAuth: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: cookie
+        name: beacon_access_token
+        required: true
+        schema:
+          type: string
+      responses:
+        '101':
+          description: Switching protocols
+        '401':
+          description: Cross-origin or unauthenticated
+        '426':
+          description: Upgrade required
+  "/api/v1/index/index":
+    get:
+      tags:
+      - index
+      summary: Hello-world sanity endpoint
+      operationId: hello
+      security: []
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: hello world
+          content:
+            text/plain:
+              schema:
+                type: string
+  "/api/v1/auth/csrf":
+    get:
+      tags:
+      - auth
+      summary: Provision the readable pre-authentication CSRF Cookie
+      operationId: csrf
+      security: []
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+  "/api/v1/auth/login":
+    post:
+      tags:
+      - auth
+      summary: User login
+      description: Authenticate with username and password. JWTs are returned only
+        as HttpOnly, SameSite Cookies. Rate-limited to 10 req/min/IP. No session required
+        (skipped by commonAuthSkipperPaths).
+      operationId: login
+      security: []
+      parameters:
+      - in: header
+        name: X-CSRF-Token
+        required: true
+        schema:
+          type: string
+      - in: cookie
+        name: beacon_csrf_token
+        required: true
+        schema:
+          type: string
+      responses:
+        '429':
+          description: Too many requests (rate limited)
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/LoginResult"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/LoginArgs"
+          multipart/form-data:
+            schema:
+              "$ref": "#/components/schemas/LoginArgs"
+          application/x-www-form-urlencoded:
+            schema:
+              "$ref": "#/components/schemas/LoginArgs"
+  "/api/v1/auth/logout":
+    post:
+      tags:
+      - auth
+      summary: User logout
+      operationId: logout
+      parameters:
+      - in: header
+        name: X-CSRF-Token
+        required: true
+        schema:
+          type: string
+      - in: cookie
+        name: beacon_access_token
+        required: true
+        schema:
+          type: string
+      - in: cookie
+        name: beacon_refresh_token
+        required: true
+        schema:
+          type: string
+      - in: cookie
+        name: beacon_csrf_token
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+  "/api/v1/auth/pass_update":
+    post:
+      tags:
+      - auth
+      summary: Update password
+      operationId: passUpdate
+      parameters:
+      - in: header
+        name: X-CSRF-Token
+        required: true
+        schema:
+          type: string
+      - in: cookie
+        name: beacon_access_token
+        required: true
+        schema:
+          type: string
+      - in: cookie
+        name: beacon_refresh_token
+        required: true
+        schema:
+          type: string
+      - in: cookie
+        name: beacon_csrf_token
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/PasswordUpdateArgs"
+  "/api/v1/auth/token_update":
+    post:
+      tags:
+      - auth
+      summary: Rotate access and refresh Cookies
+      description: Uses the HttpOnly refresh Cookie plus X-CSRF-Token. Returns 204
+        and rotates Cookies without exposing JWTs in the body.
+      operationId: tokenUpdate
+      parameters:
+      - in: header
+        name: X-CSRF-Token
+        required: true
+        schema:
+          type: string
+      - in: cookie
+        name: beacon_refresh_token
+        required: true
+        schema:
+          type: string
+      - in: cookie
+        name: beacon_csrf_token
+        required: true
+        schema:
+          type: string
+      responses:
+        '401':
+          description: Refresh Cookie invalid; client clears local user state
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      security:
+      - RefreshCookieAuth: []
+  "/api/v1/auth/user_info":
+    get:
+      tags:
+      - auth
+      summary: Current user info + permissions
+      operationId: userInfo
+      parameters:
+      - in: cookie
+        name: beacon_access_token
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/UserInfo"
+  "/api/v1/agent/list":
+    get:
+      tags:
+      - agent
+      summary: List known Agents
+      description: |
+        Returns the list of Agents known to the Server. The lifecycle status is
+        projected from the current Server process's live reverse-tunnel registry;
+        a persisted status left by an earlier process is not treated as current.
+      operationId: listAgents
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                nullable: true
+                items:
+                  "$ref": "#/components/schemas/ModelAgent"
+  "/api/v1/agent/update_setting":
+    get:
+      tags:
+      - agent
+      summary: 查询 Agent 自动更新设置
+      description: |
+        返回控制台的 Agent 自动更新开关；记录缺失时按产品默认值返回 true（默认开启）。
+        deployment_enabled 表示部署级门禁（AgentUpdate.Enable），为 false 时控制台开关不可用。
+      operationId: getAgentAutoUpdateSetting
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AgentAutoUpdateSetting"
+    post:
+      tags:
+      - agent
+      summary: 更新 Agent 自动更新设置
+      description: |
+        管理员专属资源。开关只影响 Agent 注册后的自动调度；
+        关闭后手动升级仍可用（POST /api/v1/agent/upgrade），也不改变部署级门禁。
+      operationId: updateAgentAutoUpdateSetting
+      responses:
+        '400':
+          description: auto_update is required
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AgentAutoUpdateSetting"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/AgentAutoUpdateSettingArgs"
+  "/api/v1/user/user_query":
+    get:
+      tags:
+      - user
+      summary: 查询用户
+      operationId: userQuery
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/UserQueryReply"
+      parameters:
+      - in: query
+        name: id
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: ids
+        required: false
+        schema:
+          items:
+            type: string
+          nullable: true
+          type: array
+      - in: query
+        name: status
+        required: false
+        schema:
+          type: integer
+      - in: query
+        name: username
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: usernames
+        required: false
+        schema:
+          items:
+            type: string
+          nullable: true
+          type: array
+  "/api/v1/user/user_create":
+    post:
+      tags:
+      - user
+      summary: 创建用户
+      operationId: userCreate
+      responses:
+        '400':
+          description: Invalid input
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UserCreateArgs"
+  "/api/v1/user/user_update":
+    post:
+      tags:
+      - user
+      summary: 更新用户
+      operationId: userUpdate
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UserUpdateArgs"
+  "/api/v1/user/user_delete":
+    post:
+      tags:
+      - user
+      summary: 删除用户
+      operationId: userDelete
+      responses:
+        '400':
+          description: Invalid or empty user targets
+        '404':
+          description: User target not found
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UserDeleteArgs"
+  "/api/v1/role/role_query":
+    get:
+      tags:
+      - role
+      summary: 查询角色
+      operationId: roleQuery
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/RoleQueryReply"
+      parameters:
+      - in: query
+        name: id
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: ids
+        required: false
+        schema:
+          items:
+            type: string
+          nullable: true
+          type: array
+      - in: query
+        name: name
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: names
+        required: false
+        schema:
+          items:
+            type: string
+          nullable: true
+          type: array
+      - in: query
+        name: status
+        required: false
+        schema:
+          type: integer
+  "/api/v1/role/role_create":
+    post:
+      tags:
+      - role
+      summary: 创建角色
+      operationId: roleCreate
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/RoleCreateArgs"
+  "/api/v1/role/role_update":
+    post:
+      tags:
+      - role
+      summary: 更新角色
+      operationId: roleUpdate
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/RoleUpdateArgs"
+  "/api/v1/role/role_delete":
+    post:
+      tags:
+      - role
+      summary: 删除角色
+      operationId: roleDelete
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/RoleDeleteArgs"
+  "/api/v1/resource/resource_query":
+    get:
+      tags:
+      - resource
+      summary: 查询资源
+      operationId: resourceQuery
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ResourceQueryReply"
+      parameters:
+      - in: query
+        name: id
+        required: false
+        schema:
+          type: string
+  "/api/v1/agent/upgrade":
+    post:
+      tags:
+      - agent
+      summary: 升级目标 Agent 的 Collia
+      description: |
+        升级目标 Agent 上运行的 Collia。同一 Agent 不支持并发升级，全局并发受限；
+        升级版本来自 Server 镜像内置版本。升级窗口内该节点的数据短暂中断。
+        管理员专属资源（Casbin 策略仅放行 admin），开始/成功/失败均写系统审计。
+      operationId: agentUpgrade
+      responses:
+        '400':
+          description: Unsupported arch, downgrade blocked, or invalid version
+        '409':
+          description: Upgrade already in progress
+        '503':
+          description: Updater unavailable
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/UpgradeResult"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpgradeArgs"
+  "/api/v1/system/version":
+    get:
+      tags:
+      - system
+      summary: 查询 Beacon 版本与更新状态
+      description: |
+        返回当前 Beacon Server 的构建版本与最近一次更新检查结果。
+        Server 自身不执行升级：update_available 只表示存在更新的 Beacon 版本，
+        是否升级由管理员手动执行升级命令决定。
+      operationId: getSystemVersion
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SystemVersion"
+  "/api/v1/container/version":
+    get:
+      tags:
+      - container
+      summary: 获取 Docker 版本信息
+      operationId: containerVersion
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Docker"
+  "/api/v1/container/containers":
+    get:
+      tags:
+      - container
+      summary: 获取容器列表
+      description: Returns the latest container list for the selected Agent.
+      operationId: containerList
+      parameters:
+      - in: header
+        name: X-Agent-ID
+        schema:
+          type: string
+        required: true
+        description: Target Agent identifier
+      - in: query
+        name: name
+        required: false
+        schema:
+          maxLength: 128
+          type: string
+          x-go-validate: omitempty,max=128
+      - in: query
+        name: network
+        required: false
+        schema:
+          maxLength: 128
+          type: string
+          x-go-validate: omitempty,max=128
+      - in: query
+        name: page
+        required: true
+        schema:
+          minimum: 1
+          not:
+            enum:
+            - 0
+          type: integer
+          x-go-validate: required,gte=1
+      - in: query
+        name: size
+        required: false
+        schema:
+          maximum: 100
+          minimum: 0
+          type: integer
+          x-go-validate: gte=0,lte=100
+      - in: query
+        name: state
+        required: false
+        schema:
+          enum:
+          - running
+          - exited
+          - created
+          - paused
+          - restarting
+          - removing
+          - dead
+          type: string
+          x-go-validate: omitempty,oneof=running exited created paused restarting
+            removing dead
+      responses:
+        '400':
+          description: Missing Agent ID
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ContainerQueryRely"
+  "/api/v1/container/usage":
+    get:
+      tags:
+      - container
+      summary: 获取容器资源使用情况
+      operationId: containerUsage
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      - in: query
+        name: end_time
+        required: false
+        schema:
+          type: integer
+          x-go-query: end_time
+      - in: query
+        name: start_time
+        required: false
+        schema:
+          type: integer
+          x-go-query: start_time
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ContainerUsageReply"
+  "/api/v1/container/container_create":
+    post:
+      tags:
+      - container
+      summary: 创建容器
+      operationId: containerCreate
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        '400':
+          description: Invalid spec
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ContainerCreateReply"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ContainerCreateArgs"
+  "/api/v1/container/container_start":
+    post:
+      tags:
+      - container
+      summary: 启动容器
+      operationId: containerStart
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        '404':
+          description: Not found
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ContainerStartArgs"
+  "/api/v1/container/container_stop":
+    post:
+      tags:
+      - container
+      summary: 停止容器
+      operationId: containerStop
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ContainerStopArgs"
+  "/api/v1/container/container_restart":
+    post:
+      tags:
+      - container
+      summary: 重启容器
+      operationId: containerRestart
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ContainerRestartArgs"
+  "/api/v1/container/container_remove":
+    post:
+      tags:
+      - container
+      summary: 删除容器
+      operationId: containerRemove
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ContainerDeleteArgs"
+  "/api/v1/container/images":
+    get:
+      tags:
+      - container
+      summary: 获取镜像列表
+      operationId: imageList
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      - in: query
+        name: in_use
+        required: false
+        schema:
+          enum:
+          - in_use
+          - unused
+          type: string
+          x-go-query: in_use
+          x-go-validate: omitempty,oneof=in_use unused
+      - in: query
+        name: name
+        required: false
+        schema:
+          maxLength: 256
+          type: string
+          x-go-validate: omitempty,max=256
+      - in: query
+        name: page
+        required: true
+        schema:
+          minimum: 1
+          not:
+            enum:
+            - 0
+          type: integer
+          x-go-validate: required,gte=1
+      - in: query
+        name: size
+        required: false
+        schema:
+          exclusiveMinimum: true
+          maximum: 100
+          minimum: 0
+          type: integer
+          x-go-validate: gt=0,lte=100
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ImageQueryReply"
+  "/api/v1/container/image_remove":
+    post:
+      tags:
+      - container
+      summary: 删除镜像
+      operationId: imageRemove
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ImageDeleteArgs"
+  "/api/v1/container/images_prune":
+    post:
+      tags:
+      - container
+      summary: 清理虚悬镜像
+      operationId: imagesPrune
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+  "/api/v1/container/image_pull":
+    post:
+      tags:
+      - container
+      summary: 拉取镜像
+      operationId: imagePull
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ImagePullArgs"
+  "/api/v1/container/image_import":
+    post:
+      tags:
+      - container
+      summary: 导入镜像
+      operationId: imageImport
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+  "/api/v1/container/network_create":
+    post:
+      tags:
+      - container
+      summary: 创建网络
+      operationId: networkCreate
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/NetworkCreateReply"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/NetworkCreateArgs"
+  "/api/v1/container/network_delete":
+    post:
+      tags:
+      - container
+      summary: 删除网络
+      operationId: networkDelete
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/NetworkDeleteArgs"
+  "/api/v1/container/networks":
+    get:
+      tags:
+      - container
+      summary: 获取网络列表
+      operationId: networkList
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      - in: query
+        name: driver
+        required: false
+        schema:
+          maxLength: 64
+          type: string
+          x-go-validate: omitempty,max=64
+      - in: query
+        name: name
+        required: false
+        schema:
+          maxLength: 128
+          type: string
+          x-go-validate: omitempty,max=128
+      - in: query
+        name: page
+        required: true
+        schema:
+          minimum: 1
+          not:
+            enum:
+            - 0
+          type: integer
+          x-go-validate: required,gte=1
+      - in: query
+        name: size
+        required: false
+        schema:
+          maximum: 100
+          minimum: 0
+          type: integer
+          x-go-validate: gte=0,lte=100
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/NetworkQueryReply"
+  "/api/v1/container/get_docker_registry_mirrors":
+    get:
+      tags:
+      - container
+      summary: 获取 Docker 镜像设置
+      operationId: getDockerRegistryMirrors
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/GetDockerRegistryMirrorsReply"
+  "/api/v1/container/set_docker_registry_mirrors":
+    post:
+      tags:
+      - container
+      summary: 更新 Docker 镜像设置
+      operationId: setDockerRegistryMirrors
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/SetDockerRegistryMirrorsArgs"
+  "/api/v1/container/container_update":
+    post:
+      tags:
+      - container
+      summary: 编辑容器
+      description: 按提交的规格重建目标容器并恢复原有运行态；省略的运行时配置沿用当前值。
+      operationId: containerUpdate
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        '400':
+          description: Invalid spec
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ContainerUpdateReply"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ContainerUpdateArgs"
+  "/api/v1/container/summary":
+    get:
+      tags:
+      - container
+      summary: 获取容器工作区概览
+      description: 返回目标 Agent 的容器、运行中容器、镜像、镜像占用与网络数量。
+      operationId: containerSummary
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ContainerSummaryReply"
+  "/api/v1/host/install":
+    get:
+      tags:
+      - host
+      summary: 获取 Collia 安装脚本
+      description: |
+        返回指定节点的 bash 安装脚本。脚本本身公开（仅受 `AgentInstall.Enable` 门禁），
+        安装 Token 由执行参数 `--token=<token>` 传入；脚本内部下载包、配置与证书的请求
+        再以 `X-Install-Token` 头携带同一 Token。
+      operationId: agentInstallScript
+      security: []
+      parameters:
+      - in: query
+        name: node
+        required: true
+        schema:
+          type: string
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        description: 目标节点标识（字母或数字开头，仅含字母、数字、点、下划线、短横线）
+      responses:
+        '400':
+          description: Missing or invalid node
+        '404':
+          description: Agent installation is disabled
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Downloaded text; Content-Type is resolved from the file extension
+            by Fiber and the host MIME database
+          content:
+            "*/*":
+              schema:
+                type: string
+  "/api/v1/host/install/package":
+    get:
+      tags:
+      - host
+      summary: 下载 Collia 安装包
+      description: Requires `X-Install-Token` (或 `Authorization` Bearer 头).
+      operationId: agentInstallPackage
+      security:
+      - InstallToken: []
+      - BearerAuth: []
+      parameters:
+      - in: query
+        name: arch
+        required: false
+        schema:
+          type: string
+          enum:
+          - amd64
+          - arm64
+          default: amd64
+        description: 目标架构
+      responses:
+        '401':
+          description: Missing install token
+        '403':
+          description: Invalid install token
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Downloaded binary; Content-Type is resolved from the file extension
+            by Fiber and the host MIME database
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+  "/api/v1/host/install/config":
+    get:
+      tags:
+      - host
+      summary: 下载 Collia 配置
+      description: Requires `X-Install-Token` (或 `Authorization` Bearer 头).
+      operationId: agentInstallConfig
+      security:
+      - InstallToken: []
+      - BearerAuth: []
+      parameters:
+      - in: query
+        name: node
+        required: true
+        schema:
+          type: string
+          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        description: 目标节点标识（字母或数字开头，仅含字母、数字、点、下划线、短横线）
+      responses:
+        '401':
+          description: Missing install token
+        '403':
+          description: Invalid install token
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Downloaded text; Content-Type is resolved from the file extension
+            by Fiber and the host MIME database
+          content:
+            "*/*":
+              schema:
+                type: string
+  "/api/v1/host/get_install_token":
+    post:
+      tags:
+      - host
+      summary: 获取 Collia 安装令牌
+      description: Issues a short-lived ephemeral install token (bpit.&lt;exp&gt;.&lt;nonce&gt;.&lt;hmac&gt;,
+        HMAC key derived from the static install token; default TTL 1800s, overridable
+        via AgentInstall.TokenTTL where a negative value falls back to the static
+        token). Admin only, auto-audited, no-store.
+      operationId: agentInstallToken
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/InstallTokenResponse"
+  "/api/v1/host/report":
+    post:
+      tags:
+      - host
+      summary: Agent monitoring report
+      deprecated: true
+      description: |
+        Receives a monitoring data batch from an Agent and persists it atomically.
+        Must include `X-Agent-ID` or `agent_id` in the request. Auth is the
+        `X-Install-Token` request header ONLY (query tokens are never accepted);
+        when the Server has no install token configured the endpoint returns
+        503 and rejects all uploads. Rate-limited to 60 req/min per Agent ID
+        (falling back to client IP when no Agent ID is present).
+
+        Deprecated: the primary report channel is now the control connection's
+        data stream over the Unix-socket control channel (a separate stream on
+        the same connection). This endpoint remains as a compatibility fallback
+        for Agents that cannot open the data stream and will be removed in a
+        later release.
+      operationId: report
+      security:
+      - InstallToken: []
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      - in: query
+        name: agent_id
+        schema:
+          type: string
+      responses:
+        '400':
+          description: Missing Agent ID or malformed batch
+        '401':
+          description: Missing or invalid install token
+        '429':
+          description: Too many requests (rate limited)
+        '503':
+          description: Install token not configured on the Server
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ReportResponse"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ReportMonitorReportArgs"
+  "/api/v1/host/host_info":
+    get:
+      tags:
+      - host
+      summary: Get host information
+      description: Returns the latest host info for the selected Agent.
+      operationId: hostInfo
+      parameters:
+      - in: header
+        name: X-Agent-ID
+        schema:
+          type: string
+        required: true
+        description: Target Agent identifier
+      responses:
+        '400':
+          description: Missing Agent ID
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/HostInfoReply"
+  "/api/v1/host/cpu_info":
+    get:
+      tags:
+      - host
+      summary: 获取 CPU 信息
+      operationId: cpuInfo
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CPUInfoReply"
+  "/api/v1/host/mem_info":
+    get:
+      tags:
+      - host
+      summary: 获取内存信息
+      operationId: memInfo
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MemoryInfoReply"
+  "/api/v1/host/disk_info":
+    get:
+      tags:
+      - host
+      summary: 获取磁盘信息
+      operationId: diskInfo
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/DiskInfoReply"
+  "/api/v1/host/cpu_trending":
+    get:
+      tags:
+      - host
+      summary: 获取 CPU 使用率
+      operationId: cpuUsage
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      - in: query
+        name: end_time
+        required: false
+        schema:
+          type: integer
+          x-go-query: end_time
+      - in: query
+        name: start_time
+        required: false
+        schema:
+          type: integer
+          x-go-query: start_time
+      responses:
+        '400':
+          description: Missing agent_id or invalid time range
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CPUUsageReply"
+  "/api/v1/host/mem_trending":
+    get:
+      tags:
+      - host
+      summary: 获取内存使用率
+      operationId: memUsage
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      - in: query
+        name: end_time
+        required: false
+        schema:
+          type: integer
+          x-go-query: end_time
+      - in: query
+        name: start_time
+        required: false
+        schema:
+          type: integer
+          x-go-query: start_time
+      responses:
+        '400':
+          description: Missing agent_id or invalid time range
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MemoryUsageReply"
+  "/api/v1/host/disk_trending":
+    get:
+      tags:
+      - host
+      summary: 获取磁盘使用率
+      operationId: diskUsage
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      - in: query
+        name: end_time
+        required: false
+        schema:
+          type: integer
+          x-go-query: end_time
+      - in: query
+        name: start_time
+        required: false
+        schema:
+          type: integer
+          x-go-query: start_time
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/DiskUsageReply"
+  "/api/v1/host/net_trending":
+    get:
+      tags:
+      - host
+      summary: 获取网络使用率
+      operationId: netUsage
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      - in: query
+        name: end_time
+        required: false
+        schema:
+          type: integer
+          x-go-query: end_time
+      - in: query
+        name: start_time
+        required: false
+        schema:
+          type: integer
+          x-go-query: start_time
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/NetworkUsageReply"
+  "/api/v1/host/file_search":
+    get:
+      tags:
+      - host
+      summary: 文件搜索
+      operationId: filesSearch
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      - in: query
+        name: path
+        required: true
+        schema:
+          minLength: 1
+          type: string
+          x-go-validate: required
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/FilesSearchReply"
+  "/api/v1/host/file_download":
+    post:
+      tags:
+      - host
+      summary: 文件下载
+      operationId: fileDownload
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Downloaded binary; Content-Type is resolved from the file extension
+            by Fiber and the host MIME database
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/FileDownloadArgs"
+  "/api/v1/host/file_delete":
+    post:
+      tags:
+      - host
+      summary: 删除文件
+      operationId: fileDelete
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/FileDeleteArgs"
+  "/api/v1/host/file_create":
+    post:
+      tags:
+      - host
+      summary: 创建文件
+      operationId: fileCreate
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/FileCreateArgs"
+  "/api/v1/host/folder_create":
+    post:
+      tags:
+      - host
+      summary: 创建文件夹
+      operationId: folderCreate
+      parameters:
+      - "$ref": "#/components/parameters/XAgentID"
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/FolderCreateArgs"
+  "/api/v1/dingtalk/query":
+    get:
+      tags:
+      - dingtalk
+      summary: 查询钉钉告警配置
+      operationId: dingTalkQuery
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/DingTalkSetting"
+  "/api/v1/dingtalk/update":
+    post:
+      tags:
+      - dingtalk
+      summary: 更新钉钉告警配置
+      description: 凭据字段留空表示保留已保存值；加签密钥支持显式清除。
+      operationId: dingTalkUpdate
+      responses:
+        '400':
+          description: Invalid setting, e.g. enabled without webhook
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/DingTalkUpdateArgs"
+  "/api/v1/dingtalk/test":
+    post:
+      tags:
+      - dingtalk
+      summary: 发送钉钉测试消息
+      operationId: dingTalkTest
+      responses:
+        '500':
+          description: Delivery failed
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+  "/api/v1/feishu/query":
+    get:
+      tags:
+      - feishu
+      summary: 查询飞书告警配置
+      operationId: feishuQuery
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/FeishuSetting"
+  "/api/v1/feishu/update":
+    post:
+      tags:
+      - feishu
+      summary: 更新飞书告警配置
+      description: 凭据字段留空表示保留已保存值；签名密钥支持显式清除。
+      operationId: feishuUpdate
+      responses:
+        '400':
+          description: Invalid setting, e.g. enabled without webhook
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/FeishuUpdateArgs"
+  "/api/v1/feishu/test":
+    post:
+      tags:
+      - feishu
+      summary: 发送飞书测试消息
+      operationId: feishuTest
+      responses:
+        '500':
+          description: Delivery failed
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+  "/api/v1/wecom/query":
+    get:
+      tags:
+      - wecom
+      summary: 查询企业微信告警配置
+      operationId: weComQuery
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/WeComSetting"
+  "/api/v1/wecom/update":
+    post:
+      tags:
+      - wecom
+      summary: 更新企业微信告警配置
+      description: Webhook 留空表示保留已保存值。
+      operationId: weComUpdate
+      responses:
+        '400':
+          description: Invalid setting, e.g. enabled without webhook
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/WeComUpdateArgs"
+  "/api/v1/wecom/test":
+    post:
+      tags:
+      - wecom
+      summary: 发送企业微信测试消息
+      operationId: weComTest
+      responses:
+        '500':
+          description: Delivery failed
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+  "/api/v1/audit/query":
+    get:
+      tags:
+      - audit
+      summary: 获取审计日志
+      operationId: auditQuery
+      parameters:
+      - in: query
+        name: agent_id
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: page
+        required: true
+        schema:
+          minimum: 1
+          not:
+            enum:
+            - 0
+          type: integer
+          x-go-validate: required,gte=1
+      - in: query
+        name: size
+        required: true
+        schema:
+          exclusiveMinimum: true
+          maximum: 100
+          minimum: 0
+          not:
+            enum:
+            - 0
+          type: integer
+          x-go-validate: required,gt=0,lte=100
+      - in: query
+        name: type
+        required: false
+        description: 审计来源过滤：system 仅返回系统（Agent）记录，operator 仅返回操作员记录，留空返回两者合并的时间线。
+        schema:
+          maxLength: 64
+          type: string
+          x-go-validate: lte=64
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AuditQueryReply"
+  "/api/v1/mail/mail_create":
+    post:
+      tags:
+      - mail
+      summary: 创建邮件告警配置
+      operationId: mailCreate
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/MailCreateArgs"
+  "/api/v1/mail/mail_update":
+    post:
+      tags:
+      - mail
+      summary: 更新邮件告警配置
+      operationId: mailUpdate
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/MailUpdateArgs"
+  "/api/v1/mail/mail_query":
+    get:
+      tags:
+      - mail
+      summary: 查询邮件告警配置
+      operationId: mailQuery
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Mail"
+  "/api/v1/mail/mail_test":
+    post:
+      tags:
+      - mail
+      summary: 测试邮件告警
+      operationId: mailTest
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/MailTestArgs"
+  "/api/v1/alarm/alarm_update":
+    post:
+      tags:
+      - alarm
+      summary: 更新告警阈值
+      operationId: alarmUpdate
+      responses:
+        '400':
+          description: Invalid threshold spec
+        '404':
+          description: Threshold id and type do not match an active record
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/AlarmThresholdUpdateArgs"
+  "/api/v1/alarm/alarm_query":
+    get:
+      tags:
+      - alarm
+      summary: 查询告警阈值
+      operationId: alarmQuery
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AlarmThresholdQueryReply"
+  "/api/v1/alarm/message_setting":
+    get:
+      tags:
+      - alarm
+      summary: 查询告警消息标题
+      operationId: alarmMessageSettingQuery
+      responses:
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AlarmMessageSetting"
+  "/api/v1/alarm/message_setting_update":
+    post:
+      tags:
+      - alarm
+      summary: 更新告警消息标题
+      operationId: alarmMessageSettingUpdate
+      responses:
+        '400':
+          description: Title is empty, multiline, or longer than 128 characters
+        '404':
+          description: Alarm message setting singleton not found
+        default:
+          description: 'Failure: status text from middleware, err/msg from business
+            handlers, or error from report/rate limiter'
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                oneOf:
+                - "$ref": "#/components/schemas/ErrorResponse"
+                - "$ref": "#/components/schemas/ReportError"
+        '204':
+          description: Success; no response body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/AlarmMessageSettingUpdateArgs"
+components:
+  parameters:
+    XAgentID:
+      in: header
+      name: X-Agent-ID
+      required: false
+      schema:
+        type: string
+      description: |
+        Identifies the target Agent for control-plane endpoints. Required for
+        any host.* or container.* path; the repository layer (see
+        RequireAgentID in beacon/pkg/contextx) rejects the request with
+        HTTP 400 when missing.
+  schemas:
+    AgentItem:
+      properties:
+        agent_id:
+          type: string
+        arch:
+          type: string
+        hostname:
+          type: string
+        last_seen:
+          format: date-time
+          type: string
+        os:
+          type: string
+        status:
+          type: string
+        version:
+          type: string
+      required:
+      - agent_id
+      - hostname
+      - os
+      - arch
+      - version
+      - last_seen
+      - status
+      type: object
+      x-go-source: beacon/service/schema/agent.go:AgentItem
+    AgentQueryReply:
+      properties:
+        data:
+          items:
+            "$ref": "#/components/schemas/AgentItem"
+          nullable: true
+          type: array
+        total:
+          type: integer
+      required:
+      - data
+      - total
+      type: object
+      x-go-source: beacon/service/schema/agent.go:AgentQueryReply
+    AlarmMessageSetting:
+      properties:
+        message_title:
+          type: string
+      required:
+      - message_title
+      type: object
+      x-go-source: beacon/service/schema/alarm.go:AlarmMessageSetting
+    AlarmMessageSettingUpdateArgs:
+      properties:
+        message_title:
+          maxLength: 128
+          minLength: 1
+          type: string
+          x-go-validate: required,lte=128
+      required:
+      - message_title
+      type: object
+      x-go-source: beacon/service/schema/alarm.go:AlarmMessageSettingUpdateArgs
+    AlarmThreshold:
+      properties:
+        duration:
+          type: integer
+        id:
+          type: integer
+        threshold:
+          type: integer
+        type:
+          type: string
+      required:
+      - id
+      - type
+      - duration
+      - threshold
+      type: object
+      x-go-source: beacon/service/schema/alarm.go:AlarmThreshold
+    AlarmThresholdQueryReply:
+      properties:
+        data:
+          items:
+            "$ref": "#/components/schemas/AlarmThreshold"
+          nullable: true
+          type: array
+      required:
+      - data
+      type: object
+      x-go-source: beacon/service/schema/alarm.go:AlarmThresholdQueryReply
+    AlarmThresholdUpdateArgs:
+      properties:
+        duration:
+          minimum: 0
+          type: integer
+          x-go-validate: gte=0
+        id:
+          not:
+            enum:
+            - 0
+          type: integer
+          x-go-validate: required
+        threshold:
+          maximum: 100
+          minimum: 0
+          type: integer
+          x-go-validate: gte=0,lte=100
+        type:
+          enum:
+          - cpu
+          - memory
+          - disk
+          minLength: 1
+          type: string
+          x-go-validate: required,oneof=cpu memory disk
+      required:
+      - id
+      - type
+      type: object
+      x-go-source: beacon/service/schema/alarm.go:AlarmThresholdUpdateArgs
+    Audit:
+      properties:
+        agent_id:
+          type: string
+        created:
+          type: string
+        id:
+          type: integer
+        operate:
+          type: string
+        username:
+          type: string
+      required:
+      - id
+      - username
+      - operate
+      - created
+      type: object
+      x-go-source: beacon/service/schema/audit.go:Audit
+    AuditQueryArgs:
+      properties:
+        agent_id:
+          type: string
+        page:
+          minimum: 1
+          not:
+            enum:
+            - 0
+          type: integer
+          x-go-validate: required,gte=1
+        size:
+          exclusiveMinimum: true
+          maximum: 100
+          minimum: 0
+          not:
+            enum:
+            - 0
+          type: integer
+          x-go-validate: required,gt=0,lte=100
+        type:
+          maxLength: 64
+          type: string
+          x-go-validate: lte=64
+      required:
+      - page
+      - size
+      type: object
+      x-go-source: beacon/service/schema/audit.go:AuditQueryArgs
+    AuditQueryReply:
+      properties:
+        data:
+          items:
+            "$ref": "#/components/schemas/Audit"
+          nullable: true
+          type: array
+        page:
+          type: integer
+        size:
+          type: integer
+        total:
+          type: integer
+      required:
+      - data
+      - total
+      - page
+      - size
+      type: object
+      x-go-source: beacon/service/schema/audit.go:AuditQueryReply
+    CPUArgs:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/host.go:CPUArgs
+    CPUInfoReply:
+      properties:
+        cores:
+          type: integer
+        freshness:
+          "$ref": "#/components/schemas/Freshness"
+        percent:
+          type: number
+        stale:
+          type: boolean
+        timestamp:
+          type: integer
+      required:
+      - percent
+      - cores
+      - timestamp
+      - stale
+      - freshness
+      type: object
+      x-go-source: beacon/service/schema/host.go:CPUInfoReply
+    CPUUsageArgs:
+      properties:
+        EndTime:
+          type: integer
+          x-go-query: end_time
+        StartTime:
+          type: integer
+          x-go-query: start_time
+      type: object
+      x-go-source: beacon/service/schema/host.go:CPUUsageArgs
+    CPUUsageReply:
+      properties:
+        data:
+          items:
+            "$ref": "#/components/schemas/Usage"
+          nullable: true
+          type: array
+      required:
+      - data
+      type: object
+      x-go-source: beacon/service/schema/host.go:CPUUsageReply
+    Container:
+      properties:
+        cpu_percent:
+          type: string
+        id:
+          type: string
+        image:
+          type: string
+        ip:
+          type: string
+        labels:
+          additionalProperties:
+            type: string
+          nullable: true
+          type: object
+        memory_limit:
+          type: string
+        memory_percent:
+          type: string
+        memory_usage:
+          type: string
+        name:
+          type: string
+        ports:
+          type: string
+        state:
+          type: string
+        uptime:
+          type: string
+      required:
+      - id
+      - name
+      - image
+      - ip
+      - ports
+      - state
+      - uptime
+      - cpu_percent
+      - memory_percent
+      - memory_usage
+      - memory_limit
+      - labels
+      type: object
+      x-go-source: beacon/service/schema/container.go:Container
+    ContainerCreateArgs:
+      properties:
+        container_name:
+          maxLength: 128
+          minLength: 1
+          type: string
+          x-go-validate: required,gte=1,lte=128
+        environments:
+          items:
+            type: string
+          maxItems: 64
+          nullable: true
+          type: array
+          x-go-validate: max=64
+        image_name:
+          maxLength: 256
+          minLength: 1
+          type: string
+          x-go-validate: required,gte=1,lte=256
+        labels:
+          additionalProperties:
+            type: string
+          maxProperties: 32
+          nullable: true
+          type: object
+          x-go-validate: max=32
+        network_id:
+          maxLength: 64
+          minLength: 1
+          type: string
+          x-go-validate: omitempty,min=1,max=64
+        network_mode:
+          enum:
+          - bridge
+          - host
+          - none
+          minLength: 1
+          type: string
+          x-go-validate: required,oneof=bridge host none
+        network_name:
+          maxLength: 128
+          type: string
+          x-go-validate: lte=128
+        ports:
+          items:
+            type: string
+          maxItems: 64
+          nullable: true
+          type: array
+          x-go-validate: max=64
+        restart_policy:
+          enum:
+          - 'no'
+          - always
+          - unless-stopped
+          - on-failure
+          type: string
+          x-go-validate: omitempty,oneof=no always unless-stopped on-failure
+        volumes:
+          items:
+            type: string
+          maxItems: 64
+          nullable: true
+          type: array
+          x-go-validate: max=64
+      required:
+      - container_name
+      - image_name
+      - network_mode
+      type: object
+      x-go-source: beacon/service/schema/container.go:ContainerCreateArgs
+    ContainerCreateReply:
+      properties:
+        container_id:
+          type: string
+      required:
+      - container_id
+      type: object
+      x-go-source: beacon/service/schema/container.go:ContainerCreateReply
+    ContainerDeleteArgs:
+      properties:
+        container_id:
+          minLength: 1
+          type: string
+          x-go-validate: required
+      required:
+      - container_id
+      type: object
+      x-go-source: beacon/service/schema/container.go:ContainerDeleteArgs
+    ContainerQueryArgs:
+      properties:
+        name:
+          maxLength: 128
+          type: string
+          x-go-validate: omitempty,max=128
+        network:
+          maxLength: 128
+          type: string
+          x-go-validate: omitempty,max=128
+        page:
+          minimum: 1
+          not:
+            enum:
+            - 0
+          type: integer
+          x-go-validate: required,gte=1
+        size:
+          maximum: 100
+          minimum: 0
+          type: integer
+          x-go-validate: gte=0,lte=100
+        state:
+          enum:
+          - running
+          - exited
+          - created
+          - paused
+          - restarting
+          - removing
+          - dead
+          type: string
+          x-go-validate: omitempty,oneof=running exited created paused restarting
+            removing dead
+      required:
+      - page
+      type: object
+      x-go-source: beacon/service/schema/container.go:ContainerQueryArgs
+    ContainerQueryRely:
+      properties:
+        data:
+          items:
+            "$ref": "#/components/schemas/Container"
+          nullable: true
+          type: array
+        freshness:
+          "$ref": "#/components/schemas/Freshness"
+        page:
+          type: integer
+        size:
+          type: integer
+        total:
+          type: integer
+      required:
+      - data
+      - total
+      - page
+      - size
+      - freshness
+      type: object
+      x-go-source: beacon/service/schema/container.go:ContainerQueryRely
+    ContainerRestartArgs:
+      properties:
+        container_id:
+          minLength: 1
+          type: string
+          x-go-validate: required
+      required:
+      - container_id
+      type: object
+      x-go-source: beacon/service/schema/container.go:ContainerRestartArgs
+    ContainerRestartReply:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/container.go:ContainerRestartReply
+    ContainerStartArgs:
+      properties:
+        container_id:
+          minLength: 1
+          type: string
+          x-go-validate: required
+      required:
+      - container_id
+      type: object
+      x-go-source: beacon/service/schema/container.go:ContainerStartArgs
+    ContainerStartReply:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/container.go:ContainerStartReply
+    ContainerStopArgs:
+      properties:
+        container_id:
+          minLength: 1
+          type: string
+          x-go-validate: required
+      required:
+      - container_id
+      type: object
+      x-go-source: beacon/service/schema/container.go:ContainerStopArgs
+    ContainerStopReply:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/container.go:ContainerStopReply
+    ContainerSummaryArgs:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/container.go:ContainerSummaryArgs
+    ContainerSummaryReply:
+      properties:
+        containers:
+          type: integer
+        containers_running:
+          type: integer
+        image_bytes:
+          type: integer
+        images:
+          type: integer
+        networks:
+          type: integer
+      required:
+      - containers
+      - containers_running
+      - images
+      - image_bytes
+      - networks
+      type: object
+      x-go-source: beacon/service/schema/container.go:ContainerSummaryReply
+    ContainerUpdateArgs:
+      properties:
+        container_id:
+          maxLength: 64
+          minLength: 6
+          type: string
+          x-go-validate: required,gte=6,lte=64
+        container_name:
+          maxLength: 128
+          type: string
+          x-go-validate: lte=128
+        environments:
+          items:
+            type: string
+          maxItems: 64
+          nullable: true
+          type: array
+          x-go-validate: max=64
+        image_name:
+          maxLength: 256
+          type: string
+          x-go-validate: lte=256
+        labels:
+          additionalProperties:
+            type: string
+          maxProperties: 32
+          nullable: true
+          type: object
+          x-go-validate: max=32
+        network_name:
+          maxLength: 128
+          type: string
+          x-go-validate: lte=128
+        ports:
+          items:
+            type: string
+          maxItems: 64
+          nullable: true
+          type: array
+          x-go-validate: max=64
+        restart_policy:
+          enum:
+          - 'no'
+          - always
+          - unless-stopped
+          - on-failure
+          type: string
+          x-go-validate: omitempty,oneof=no always unless-stopped on-failure
+        volumes:
+          items:
+            type: string
+          maxItems: 64
+          nullable: true
+          type: array
+          x-go-validate: max=64
+      required:
+      - container_id
+      type: object
+      x-go-source: beacon/service/schema/container.go:ContainerUpdateArgs
+    ContainerUpdateReply:
+      properties:
+        container_id:
+          type: string
+      required:
+      - container_id
+      type: object
+      x-go-source: beacon/service/schema/container.go:ContainerUpdateReply
+    ContainerUsageArgs:
+      properties:
+        EndTime:
+          type: integer
+          x-go-query: end_time
+        StartTime:
+          type: integer
+          x-go-query: start_time
+      type: object
+      x-go-source: beacon/service/schema/container.go:ContainerUsageArgs
+    ContainerUsageReply:
+      properties:
+        cpu_usage:
+          additionalProperties:
+            items:
+              "$ref": "#/components/schemas/Usage"
+            nullable: true
+            type: array
+          nullable: true
+          type: object
+        freshness:
+          "$ref": "#/components/schemas/Freshness"
+        mem_percent:
+          additionalProperties:
+            items:
+              "$ref": "#/components/schemas/Usage"
+            nullable: true
+            type: array
+          nullable: true
+          type: object
+        mem_usage:
+          additionalProperties:
+            items:
+              "$ref": "#/components/schemas/Usage"
+            nullable: true
+            type: array
+          nullable: true
+          type: object
+        names:
+          items:
+            type: string
+          nullable: true
+          type: array
+      required:
+      - names
+      - cpu_usage
+      - mem_usage
+      - mem_percent
+      - freshness
+      type: object
+      x-go-source: beacon/service/schema/container.go:ContainerUsageReply
+    DingTalkSetting:
+      properties:
+        at_all:
+          type: boolean
+        enabled:
+          type: boolean
+        id:
+          type: integer
+        secret_configured:
+          type: boolean
+        webhook_configured:
+          type: boolean
+        webhook_masked:
+          type: string
+      required:
+      - id
+      - enabled
+      - webhook_masked
+      - webhook_configured
+      - secret_configured
+      - at_all
+      type: object
+      x-go-source: beacon/service/schema/dingtalk.go:DingTalkSetting
+    DingTalkUpdateArgs:
+      properties:
+        at_all:
+          type: boolean
+        clear_secret:
+          type: boolean
+        enabled:
+          type: boolean
+        secret:
+          maxLength: 255
+          type: string
+          x-go-validate: omitempty,lte=255
+        webhook:
+          maxLength: 2048
+          type: string
+          x-go-validate: omitempty,lte=2048
+      type: object
+      x-go-source: beacon/service/schema/dingtalk.go:DingTalkUpdateArgs
+    FeishuSetting:
+      properties:
+        enabled:
+          type: boolean
+        id:
+          type: integer
+        secret_configured:
+          type: boolean
+        webhook_configured:
+          type: boolean
+        webhook_masked:
+          type: string
+      required:
+      - id
+      - enabled
+      - webhook_masked
+      - webhook_configured
+      - secret_configured
+      type: object
+      x-go-source: beacon/service/schema/feishu.go:FeishuSetting
+    FeishuUpdateArgs:
+      properties:
+        clear_secret:
+          type: boolean
+        enabled:
+          type: boolean
+        secret:
+          maxLength: 255
+          type: string
+          x-go-validate: omitempty,lte=255
+        webhook:
+          maxLength: 2048
+          type: string
+          x-go-validate: omitempty,lte=2048
+      type: object
+      x-go-source: beacon/service/schema/feishu.go:FeishuUpdateArgs
+    DiskArgs:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/host.go:DiskArgs
+    DiskIO:
+      properties:
+        io_read:
+          type: number
+        io_write:
+          type: number
+        timestamp:
+          type: integer
+      required:
+      - timestamp
+      - io_read
+      - io_write
+      type: object
+      x-go-source: beacon/service/schema/host.go:DiskIO
+    DiskInfo:
+      properties:
+        device:
+          type: string
+        percent:
+          type: number
+        stale:
+          type: boolean
+        timestamp:
+          type: integer
+        total:
+          type: number
+        used:
+          type: number
+      required:
+      - device
+      - percent
+      - total
+      - used
+      - timestamp
+      - stale
+      type: object
+      x-go-source: beacon/service/schema/host.go:DiskInfo
+    DiskInfoReply:
+      properties:
+        freshness:
+          "$ref": "#/components/schemas/Freshness"
+        info:
+          items:
+            "$ref": "#/components/schemas/DiskInfo"
+          nullable: true
+          type: array
+      required:
+      - info
+      - freshness
+      type: object
+      x-go-source: beacon/service/schema/host.go:DiskInfoReply
+    DiskUsage:
+      properties:
+        data:
+          items:
+            "$ref": "#/components/schemas/DiskIO"
+          nullable: true
+          type: array
+        device:
+          type: string
+      required:
+      - device
+      - data
+      type: object
+      x-go-source: beacon/service/schema/host.go:DiskUsage
+    DiskUsageArgs:
+      properties:
+        EndTime:
+          type: integer
+          x-go-query: end_time
+        StartTime:
+          type: integer
+          x-go-query: start_time
+      type: object
+      x-go-source: beacon/service/schema/host.go:DiskUsageArgs
+    DiskUsageReply:
+      properties:
+        usage:
+          items:
+            "$ref": "#/components/schemas/DiskUsage"
+          nullable: true
+          type: array
+      required:
+      - usage
+      type: object
+      x-go-source: beacon/service/schema/host.go:DiskUsageReply
+    Docker:
+      properties:
+        Timestamp:
+          format: date-time
+          type: string
+        api_version:
+          type: string
+        arch:
+          type: string
+        docker_version:
+          type: string
+        freshness:
+          "$ref": "#/components/schemas/Freshness"
+        git_commit:
+          type: string
+        go_version:
+          type: string
+        min_api_version:
+          type: string
+        os:
+          type: string
+      required:
+      - Timestamp
+      - docker_version
+      - api_version
+      - min_api_version
+      - git_commit
+      - go_version
+      - os
+      - arch
+      - freshness
+      type: object
+      x-go-source: beacon/service/schema/container.go:Docker
+    FileCreateArgs:
+      properties:
+        file_name:
+          minLength: 1
+          type: string
+          x-go-validate: required
+        path:
+          minLength: 1
+          type: string
+          x-go-validate: required
+      required:
+      - path
+      - file_name
+      type: object
+      x-go-source: beacon/service/schema/host.go:FileCreateArgs
+    FileCreateReply:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/host.go:FileCreateReply
+    FileDeleteArgs:
+      properties:
+        filepath:
+          minLength: 1
+          type: string
+          x-go-validate: required
+      required:
+      - filepath
+      type: object
+      x-go-source: beacon/service/schema/host.go:FileDeleteArgs
+    FileDeleteReply:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/host.go:FileDeleteReply
+    FileDownloadArgs:
+      properties:
+        filepath:
+          minLength: 1
+          type: string
+          x-go-validate: required
+      required:
+      - filepath
+      type: object
+      x-go-source: beacon/service/schema/host.go:FileDownloadArgs
+    FileDownloadReply:
+      properties:
+        file_name:
+          type: string
+        filepath:
+          type: string
+      required:
+      - filepath
+      - file_name
+      type: object
+      x-go-source: beacon/service/schema/host.go:FileDownloadReply
+    FileInfo:
+      properties:
+        is_dir:
+          type: boolean
+        mod_time:
+          type: integer
+        mode:
+          type: string
+        name:
+          type: string
+        size:
+          type: integer
+      required:
+      - name
+      - size
+      - mode
+      - mod_time
+      - is_dir
+      type: object
+      x-go-source: beacon/service/schema/host.go:FileInfo
+    FilesSearchArgs:
+      properties:
+        path:
+          minLength: 1
+          type: string
+          x-go-validate: required
+      required:
+      - path
+      type: object
+      x-go-source: beacon/service/schema/host.go:FilesSearchArgs
+    FilesSearchReply:
+      properties:
+        files:
+          items:
+            "$ref": "#/components/schemas/FileInfo"
+          nullable: true
+          type: array
+      required:
+      - files
+      type: object
+      x-go-source: beacon/service/schema/host.go:FilesSearchReply
+    FolderCreateArgs:
+      properties:
+        folder_name:
+          minLength: 1
+          type: string
+          x-go-validate: required
+        path:
+          minLength: 1
+          type: string
+          x-go-validate: required
+      required:
+      - path
+      - folder_name
+      type: object
+      x-go-source: beacon/service/schema/host.go:FolderCreateArgs
+    FolderCreateReply:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/host.go:FolderCreateReply
+    Freshness:
+      properties:
+        age_seconds:
+          type: integer
+        collected_at:
+          type: integer
+        degraded:
+          type: boolean
+        stale:
+          type: boolean
+      required:
+      - collected_at
+      - age_seconds
+      - stale
+      - degraded
+      type: object
+      x-go-source: beacon/service/schema/freshness.go:Freshness
+    GetDockerRegistryMirrorsArgs:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/container.go:GetDockerRegistryMirrorsArgs
+    GetDockerRegistryMirrorsReply:
+      properties:
+        registry_mirrors:
+          items:
+            type: string
+          nullable: true
+          type: array
+      required:
+      - registry_mirrors
+      type: object
+      x-go-source: beacon/service/schema/container.go:GetDockerRegistryMirrorsReply
+    HostArgs:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/host.go:HostArgs
+    HostInfoReply:
+      properties:
+        freshness:
+          "$ref": "#/components/schemas/Freshness"
+        hostname:
+          type: string
+        kernel_arch:
+          type: string
+        kernel_version:
+          type: string
+        os:
+          type: string
+        platform:
+          type: string
+        platform_version:
+          type: string
+        timestamp:
+          type: integer
+        uptime:
+          type: string
+      required:
+      - timestamp
+      - uptime
+      - hostname
+      - os
+      - platform
+      - platform_version
+      - kernel_version
+      - kernel_arch
+      - freshness
+      type: object
+      x-go-source: beacon/service/schema/host.go:HostInfoReply
+    Image:
+      properties:
+        created:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        number:
+          type: integer
+        size:
+          type: string
+        tag:
+          type: string
+      required:
+      - id
+      - name
+      - tag
+      - created
+      - size
+      - number
+      type: object
+      x-go-source: beacon/service/schema/container.go:Image
+    ImageCountArgs:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/container.go:ImageCountArgs
+    ImageCountReply:
+      properties:
+        count:
+          type: integer
+      required:
+      - count
+      type: object
+      x-go-source: beacon/service/schema/container.go:ImageCountReply
+    ImageDeleteArgs:
+      properties:
+        image_id:
+          minLength: 1
+          type: string
+          x-go-validate: required
+      required:
+      - image_id
+      type: object
+      x-go-source: beacon/service/schema/container.go:ImageDeleteArgs
+    ImageDeleteReply:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/container.go:ImageDeleteReply
+    ImageImportArgs:
+      properties:
+        file_name:
+          type: string
+      type: object
+      x-go-source: beacon/service/schema/container.go:ImageImportArgs
+    ImageImportReply:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/container.go:ImageImportReply
+    ImagePullArgs:
+      properties:
+        image_name:
+          maxLength: 256
+          minLength: 1
+          type: string
+          x-go-validate: required,gte=1,lte=256
+      required:
+      - image_name
+      type: object
+      x-go-source: beacon/service/schema/container.go:ImagePullArgs
+    ImagePullReply:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/container.go:ImagePullReply
+    ImageQueryArgs:
+      properties:
+        in_use:
+          enum:
+          - in_use
+          - unused
+          type: string
+          x-go-query: in_use
+          x-go-validate: omitempty,oneof=in_use unused
+        name:
+          maxLength: 256
+          type: string
+          x-go-validate: omitempty,max=256
+        page:
+          minimum: 1
+          not:
+            enum:
+            - 0
+          type: integer
+          x-go-validate: required,gte=1
+        size:
+          exclusiveMinimum: true
+          maximum: 100
+          minimum: 0
+          type: integer
+          x-go-validate: gt=0,lte=100
+      required:
+      - page
+      type: object
+      x-go-source: beacon/service/schema/container.go:ImageQueryArgs
+    ImageQueryReply:
+      properties:
+        data:
+          items:
+            "$ref": "#/components/schemas/Image"
+          nullable: true
+          type: array
+        freshness:
+          "$ref": "#/components/schemas/Freshness"
+        page:
+          type: integer
+        size:
+          type: integer
+        total:
+          type: integer
+      required:
+      - data
+      - total
+      - page
+      - size
+      - freshness
+      type: object
+      x-go-source: beacon/service/schema/container.go:ImageQueryReply
+    ImageTagArgs:
+      properties:
+        new_tag:
+          type: string
+        old_tag:
+          type: string
+      type: object
+      x-go-source: beacon/service/schema/container.go:ImageTagArgs
+    LoginArgs:
+      properties:
+        password:
+          description: 用户密码
+          maxLength: 128
+          minLength: 1
+          type: string
+          x-go-validate: required,gte=1,lte=128
+        username:
+          description: 用户名
+          maxLength: 64
+          minLength: 1
+          type: string
+          x-go-validate: required,alphanum,gte=1,lte=64
+      required:
+      - username
+      - password
+      type: object
+      x-go-source: beacon/service/schema/auth.go:LoginArgs
+    LoginResult:
+      properties:
+        must_change_password:
+          description: 是否必须修改密码
+          type: boolean
+      required:
+      - must_change_password
+      type: object
+      x-go-source: beacon/service/schema/auth.go:LoginResult
+    Mail:
+      properties:
+        id:
+          type: integer
+        port:
+          type: integer
+        receiver:
+          type: string
+        sender:
+          type: string
+        server:
+          type: string
+      required:
+      - id
+      - server
+      - port
+      - sender
+      - receiver
+      type: object
+      x-go-source: beacon/service/schema/mail.go:Mail
+    MailCreateArgs:
+      properties:
+        password:
+          maxLength: 128
+          minLength: 1
+          type: string
+          x-go-validate: required,gte=1,lte=128
+        port:
+          maximum: 65535
+          minimum: 1
+          not:
+            enum:
+            - 0
+          type: integer
+          x-go-validate: required,gte=1,lte=65535
+        receiver:
+          format: email
+          maxLength: 256
+          type: string
+          x-go-validate: omitempty,email,lte=256
+        sender:
+          format: email
+          maxLength: 256
+          minLength: 1
+          type: string
+          x-go-validate: required,email,lte=256
+        server:
+          maxLength: 256
+          minLength: 1
+          type: string
+          x-go-validate: required,gte=1,lte=256
+      required:
+      - server
+      - port
+      - sender
+      - password
+      type: object
+      x-go-source: beacon/service/schema/mail.go:MailCreateArgs
+    MailTestArgs:
+      properties:
+        receiver:
+          minLength: 1
+          type: string
+          x-go-validate: required
+      required:
+      - receiver
+      type: object
+      x-go-source: beacon/service/schema/mail.go:MailTestArgs
+    MailUpdateArgs:
+      properties:
+        id:
+          not:
+            enum:
+            - 0
+          type: integer
+          x-go-validate: required
+        password:
+          maxLength: 128
+          type: string
+          x-go-validate: lte=128
+        port:
+          maximum: 65535
+          minimum: 1
+          type: integer
+          x-go-validate: omitempty,gte=1,lte=65535
+        receiver:
+          format: email
+          maxLength: 256
+          type: string
+          x-go-validate: omitempty,email,lte=256
+        sender:
+          format: email
+          maxLength: 256
+          type: string
+          x-go-validate: omitempty,email,lte=256
+        server:
+          maxLength: 256
+          type: string
+          x-go-validate: lte=256
+      required:
+      - id
+      type: object
+      x-go-source: beacon/service/schema/mail.go:MailUpdateArgs
+    MemoryArgs:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/host.go:MemoryArgs
+    MemoryInfoReply:
+      properties:
+        freshness:
+          "$ref": "#/components/schemas/Freshness"
+        percent:
+          type: number
+        stale:
+          type: boolean
+        timestamp:
+          type: integer
+        total:
+          type: number
+        used:
+          type: number
+      required:
+      - percent
+      - total
+      - used
+      - timestamp
+      - stale
+      - freshness
+      type: object
+      x-go-source: beacon/service/schema/host.go:MemoryInfoReply
+    MemoryUsageArgs:
+      properties:
+        EndTime:
+          type: integer
+          x-go-query: end_time
+        StartTime:
+          type: integer
+          x-go-query: start_time
+      type: object
+      x-go-source: beacon/service/schema/host.go:MemoryUsageArgs
+    MemoryUsageReply:
+      properties:
+        data:
+          items:
+            "$ref": "#/components/schemas/Usage"
+          nullable: true
+          type: array
+      required:
+      - data
+      type: object
+      x-go-source: beacon/service/schema/host.go:MemoryUsageReply
+    NetIO:
+      properties:
+        bytes_recv:
+          type: number
+        bytes_sent:
+          type: number
+        timestamp:
+          type: integer
+      required:
+      - timestamp
+      - bytes_sent
+      - bytes_recv
+      type: object
+      x-go-source: beacon/service/schema/host.go:NetIO
+    NetUsage:
+      properties:
+        data:
+          items:
+            "$ref": "#/components/schemas/NetIO"
+          nullable: true
+          type: array
+        ethernet:
+          type: string
+      required:
+      - ethernet
+      - data
+      type: object
+      x-go-source: beacon/service/schema/host.go:NetUsage
+    Network:
+      properties:
+        created:
+          type: string
+        driver:
+          type: string
+        gateway:
+          type: string
+        id:
+          type: string
+        labels:
+          additionalProperties:
+            type: string
+          nullable: true
+          type: object
+        name:
+          type: string
+        subnet:
+          type: string
+      required:
+      - id
+      - name
+      - driver
+      - created
+      - subnet
+      - gateway
+      - labels
+      type: object
+      x-go-source: beacon/service/schema/container.go:Network
+    NetworkCountArgs:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/container.go:NetworkCountArgs
+    NetworkCountReply:
+      properties:
+        count:
+          type: integer
+      required:
+      - count
+      type: object
+      x-go-source: beacon/service/schema/container.go:NetworkCountReply
+    NetworkCreateArgs:
+      properties:
+        driver:
+          enum:
+          - bridge
+          - host
+          - overlay
+          - macvlan
+          - none
+          minLength: 1
+          type: string
+          x-go-validate: required,oneof=bridge host overlay macvlan none
+        gateway:
+          maxLength: 64
+          minLength: 1
+          type: string
+          x-go-validate: required,gte=1,lte=64
+        labels:
+          additionalProperties:
+            type: string
+          maxProperties: 32
+          nullable: true
+          type: object
+          x-go-validate: max=32
+        name:
+          maxLength: 128
+          minLength: 1
+          type: string
+          x-go-validate: required,gte=1,lte=128
+        subnet:
+          maxLength: 64
+          minLength: 1
+          type: string
+          x-go-validate: required,gte=1,lte=64
+      required:
+      - name
+      - driver
+      - subnet
+      - gateway
+      type: object
+      x-go-source: beacon/service/schema/container.go:NetworkCreateArgs
+    NetworkCreateReply:
+      properties:
+        network_id:
+          type: string
+      required:
+      - network_id
+      type: object
+      x-go-source: beacon/service/schema/container.go:NetworkCreateReply
+    NetworkDeleteArgs:
+      properties:
+        network_id:
+          minLength: 1
+          type: string
+          x-go-validate: required
+      required:
+      - network_id
+      type: object
+      x-go-source: beacon/service/schema/container.go:NetworkDeleteArgs
+    NetworkDeleteReply:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/container.go:NetworkDeleteReply
+    NetworkQueryArgs:
+      properties:
+        driver:
+          maxLength: 64
+          type: string
+          x-go-validate: omitempty,max=64
+        name:
+          maxLength: 128
+          type: string
+          x-go-validate: omitempty,max=128
+        page:
+          minimum: 1
+          not:
+            enum:
+            - 0
+          type: integer
+          x-go-validate: required,gte=1
+        size:
+          maximum: 100
+          minimum: 0
+          type: integer
+          x-go-validate: gte=0,lte=100
+      required:
+      - page
+      type: object
+      x-go-source: beacon/service/schema/container.go:NetworkQueryArgs
+    NetworkQueryReply:
+      properties:
+        data:
+          items:
+            "$ref": "#/components/schemas/Network"
+          nullable: true
+          type: array
+        freshness:
+          "$ref": "#/components/schemas/Freshness"
+        page:
+          type: integer
+        size:
+          type: integer
+        total:
+          type: integer
+      required:
+      - data
+      - total
+      - page
+      - size
+      - freshness
+      type: object
+      x-go-source: beacon/service/schema/container.go:NetworkQueryReply
+    NetworkUsageArgs:
+      properties:
+        EndTime:
+          type: integer
+          x-go-query: end_time
+        StartTime:
+          type: integer
+          x-go-query: start_time
+      type: object
+      x-go-source: beacon/service/schema/host.go:NetworkUsageArgs
+    NetworkUsageReply:
+      properties:
+        usage:
+          items:
+            "$ref": "#/components/schemas/NetUsage"
+          nullable: true
+          type: array
+      required:
+      - usage
+      type: object
+      x-go-source: beacon/service/schema/host.go:NetworkUsageReply
+    Pagination:
+      properties:
+        page:
+          type: integer
+        size:
+          type: integer
+        total:
+          type: integer
+      required:
+      - total
+      - size
+      - page
+      type: object
+      x-go-source: beacon/service/schema/schema.go:Pagination
+    PasswordUpdateArgs:
+      properties:
+        new_password:
+          description: 新密码至少12字符，且Unicode小写、大写、数字、其他字符至少三类；必须与旧密码不同
+          maxLength: 128
+          minLength: 12
+          type: string
+          x-go-validate: required,gte=12,lte=128
+        old_password:
+          description: 旧密码
+          maxLength: 128
+          minLength: 1
+          type: string
+          x-go-validate: required,gte=1,lte=128
+        username:
+          description: 用户名
+          maxLength: 64
+          minLength: 1
+          type: string
+          x-go-validate: required,gte=1,lte=64
+      required:
+      - username
+      - old_password
+      - new_password
+      type: object
+      x-go-source: beacon/service/schema/auth.go:PasswordUpdateArgs
+    ReportCPUReport:
+      properties:
+        cpu_count:
+          type: integer
+        cpu_percent:
+          type: number
+        timestamp:
+          format: date-time
+          type: string
+      required:
+      - timestamp
+      - cpu_percent
+      - cpu_count
+      type: object
+      x-go-source: common/rpc/schema/report.go:CPUReport
+    ReportContainerReport:
+      properties:
+        container_id:
+          type: string
+        cpu_percent:
+          type: number
+        image:
+          type: string
+        ip:
+          type: string
+        labels:
+          type: string
+        mem_limit:
+          type: number
+        mem_percent:
+          type: number
+        mem_usage:
+          type: number
+        name:
+          type: string
+        network:
+          type: string
+        ports:
+          type: string
+        state:
+          type: string
+        timestamp:
+          format: date-time
+          type: string
+        uptime:
+          type: string
+      required:
+      - timestamp
+      - container_id
+      - name
+      - image
+      - network
+      - ip
+      - ports
+      - state
+      - uptime
+      - cpu_percent
+      - mem_percent
+      - mem_usage
+      - mem_limit
+      - labels
+      type: object
+      x-go-source: common/rpc/schema/report.go:ContainerReport
+    ReportDiskReport:
+      properties:
+        device:
+          type: string
+        disk_percent:
+          type: number
+        disk_read:
+          type: number
+        disk_total:
+          type: number
+        disk_used:
+          type: number
+        disk_write:
+          type: number
+        timestamp:
+          format: date-time
+          type: string
+      required:
+      - timestamp
+      - device
+      - disk_percent
+      - disk_total
+      - disk_used
+      - disk_read
+      - disk_write
+      type: object
+      x-go-source: common/rpc/schema/report.go:DiskReport
+    ReportDockerReport:
+      properties:
+        api_version:
+          type: string
+        arch:
+          type: string
+        docker_version:
+          type: string
+        git_commit:
+          type: string
+        go_version:
+          type: string
+        min_api_version:
+          type: string
+        os:
+          type: string
+        timestamp:
+          format: date-time
+          type: string
+      required:
+      - timestamp
+      - docker_version
+      - api_version
+      - min_api_version
+      - git_commit
+      - go_version
+      - os
+      - arch
+      type: object
+      x-go-source: common/rpc/schema/report.go:DockerReport
+    ReportHostReport:
+      properties:
+        hostname:
+          type: string
+        kernel_arch:
+          type: string
+        kernel_version:
+          type: string
+        os:
+          type: string
+        platform:
+          type: string
+        platform_version:
+          type: string
+        timestamp:
+          format: date-time
+          type: string
+        uptime:
+          type: string
+      required:
+      - timestamp
+      - uptime
+      - hostname
+      - os
+      - platform
+      - platform_version
+      - kernel_arch
+      - kernel_version
+      type: object
+      x-go-source: common/rpc/schema/report.go:HostReport
+    ReportImageReport:
+      properties:
+        created:
+          type: string
+        image_id:
+          type: string
+        name:
+          type: string
+        number:
+          type: integer
+        size:
+          type: string
+        tag:
+          type: string
+        timestamp:
+          format: date-time
+          type: string
+      required:
+      - timestamp
+      - image_id
+      - name
+      - tag
+      - created
+      - size
+      - number
+      type: object
+      x-go-source: common/rpc/schema/report.go:ImageReport
+    ReportMemoryReport:
+      properties:
+        mem_percent:
+          type: number
+        mem_total:
+          type: number
+        mem_used:
+          type: number
+        timestamp:
+          format: date-time
+          type: string
+      required:
+      - timestamp
+      - mem_percent
+      - mem_total
+      - mem_used
+      type: object
+      x-go-source: common/rpc/schema/report.go:MemoryReport
+    ReportMonitorReportArgs:
+      properties:
+        agent_id:
+          description: 必填目标Agent标识，仅允许ASCII字母、数字、点、下划线和连字符，最多128字符
+          maxLength: 128
+          minLength: 1
+          pattern: "^[a-zA-Z0-9._-]+$"
+          type: string
+          x-go-validate: required,min=1,max=128
+        containers:
+          items:
+            "$ref": "#/components/schemas/ReportContainerReport"
+          nullable: true
+          type: array
+        cpu:
+          "$ref": "#/components/schemas/ReportCPUReport"
+        disks:
+          items:
+            "$ref": "#/components/schemas/ReportDiskReport"
+          nullable: true
+          type: array
+        docker:
+          "$ref": "#/components/schemas/ReportDockerReport"
+        host:
+          "$ref": "#/components/schemas/ReportHostReport"
+        images:
+          items:
+            "$ref": "#/components/schemas/ReportImageReport"
+          nullable: true
+          type: array
+        memory:
+          "$ref": "#/components/schemas/ReportMemoryReport"
+        nets:
+          items:
+            "$ref": "#/components/schemas/ReportNetReport"
+          nullable: true
+          type: array
+        networks:
+          items:
+            "$ref": "#/components/schemas/ReportNetworkReport"
+          nullable: true
+          type: array
+      required:
+      - agent_id
+      type: object
+      x-go-source: common/rpc/schema/report.go:MonitorReportArgs
+    ReportMonitorReportReply:
+      properties: {}
+      type: object
+      x-go-source: common/rpc/schema/report.go:MonitorReportReply
+    ReportNetReport:
+      properties:
+        ethernet:
+          type: string
+        net_recv:
+          type: number
+        net_send:
+          type: number
+        timestamp:
+          format: date-time
+          type: string
+      required:
+      - timestamp
+      - ethernet
+      - net_recv
+      - net_send
+      type: object
+      x-go-source: common/rpc/schema/report.go:NetReport
+    ReportNetworkReport:
+      properties:
+        created:
+          type: string
+        driver:
+          type: string
+        gateway:
+          type: string
+        internal:
+          type: boolean
+        labels:
+          type: string
+        name:
+          type: string
+        network_id:
+          type: string
+        scope:
+          type: string
+        subnet:
+          type: string
+        timestamp:
+          format: date-time
+          type: string
+      required:
+      - timestamp
+      - network_id
+      - name
+      - driver
+      - scope
+      - created
+      - internal
+      - subnet
+      - gateway
+      - labels
+      type: object
+      x-go-source: common/rpc/schema/report.go:NetworkReport
+    Resource:
+      properties:
+        id:
+          type: string
+        method:
+          type: string
+        name:
+          type: string
+        path:
+          type: string
+        status:
+          type: integer
+      required:
+      - id
+      - name
+      - path
+      - method
+      - status
+      type: object
+      x-go-source: beacon/service/schema/account.go:Resource
+    ResourceQueryArgs:
+      properties:
+        id:
+          type: string
+      type: object
+      x-go-source: beacon/service/schema/account.go:ResourceQueryArgs
+    ResourceQueryReply:
+      properties:
+        data:
+          items:
+            "$ref": "#/components/schemas/Resource"
+          nullable: true
+          type: array
+        total:
+          type: integer
+      required:
+      - data
+      - total
+      type: object
+      x-go-source: beacon/service/schema/account.go:ResourceQueryReply
+    Role:
+      properties:
+        created_at:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        remark:
+          type: string
+        resources:
+          items:
+            "$ref": "#/components/schemas/Resource"
+          nullable: true
+          type: array
+        status:
+          type: integer
+      required:
+      - id
+      - name
+      - remark
+      - status
+      - resources
+      - created_at
+      type: object
+      x-go-source: beacon/service/schema/account.go:Role
+    RoleCreateArgs:
+      properties:
+        name:
+          maxLength: 64
+          minLength: 1
+          type: string
+          x-go-validate: required,gte=1,lte=64
+        remark:
+          maxLength: 256
+          type: string
+          x-go-validate: lte=256
+        resource_ids:
+          items:
+            type: string
+          maxItems: 64
+          nullable: true
+          type: array
+          x-go-validate: max=64
+        status:
+          description: 状态：1启用，2停用
+          enum:
+          - 1
+          - 2
+          not:
+            enum:
+            - 0
+          type: integer
+          x-go-validate: required,oneof=1 2
+      required:
+      - name
+      - status
+      type: object
+      x-go-source: beacon/service/schema/account.go:RoleCreateArgs
+    RoleDeleteArgs:
+      properties:
+        ids:
+          items:
+            type: string
+          maxItems: 32
+          nullable: true
+          type: array
+          x-go-validate: max=32
+      type: object
+      x-go-source: beacon/service/schema/account.go:RoleDeleteArgs
+    RoleQueryArgs:
+      properties:
+        id:
+          type: string
+        ids:
+          items:
+            type: string
+          nullable: true
+          type: array
+        name:
+          type: string
+        names:
+          items:
+            type: string
+          nullable: true
+          type: array
+        status:
+          type: integer
+      type: object
+      x-go-source: beacon/service/schema/account.go:RoleQueryArgs
+    RoleQueryReply:
+      properties:
+        data:
+          items:
+            "$ref": "#/components/schemas/Role"
+          nullable: true
+          type: array
+        total:
+          type: integer
+      required:
+      - data
+      - total
+      type: object
+      x-go-source: beacon/service/schema/account.go:RoleQueryReply
+    RoleUpdateArgs:
+      properties:
+        id:
+          maxLength: 36
+          minLength: 36
+          type: string
+          x-go-validate: required,len=36
+        name:
+          maxLength: 64
+          type: string
+          x-go-validate: lte=64
+        remark:
+          maxLength: 256
+          type: string
+          x-go-validate: lte=256
+        resource_ids:
+          items:
+            type: string
+          maxItems: 64
+          nullable: true
+          type: array
+          x-go-validate: max=64
+        status:
+          description: 状态：1启用，2停用；0或省略表示不修改
+          enum:
+          - 0
+          - 1
+          - 2
+          type: integer
+          x-go-validate: omitempty,oneof=0 1 2
+      required:
+      - id
+      type: object
+      x-go-source: beacon/service/schema/account.go:RoleUpdateArgs
+    SetDockerRegistryMirrorsArgs:
+      properties:
+        registry_mirrors:
+          items:
+            type: string
+          maxItems: 8
+          type: array
+          x-go-validate: required,max=8
+      required:
+      - registry_mirrors
+      type: object
+      x-go-source: beacon/service/schema/container.go:SetDockerRegistryMirrorsArgs
+    SetDockerRegistryMirrorsReply:
+      properties: {}
+      type: object
+      x-go-source: beacon/service/schema/container.go:SetDockerRegistryMirrorsReply
+    Usage:
+      properties:
+        timestamp:
+          type: integer
+        value:
+          type: number
+      required:
+      - timestamp
+      - value
+      type: object
+      x-go-source: beacon/service/schema/host.go:Usage
+    User:
+      properties:
+        created_at:
+          type: string
+        id:
+          type: string
+        is_admin:
+          type: integer
+        remark:
+          type: string
+        roles:
+          items:
+            "$ref": "#/components/schemas/Role"
+          nullable: true
+          type: array
+        status:
+          type: integer
+        username:
+          type: string
+      required:
+      - id
+      - username
+      - remark
+      - is_admin
+      - status
+      - roles
+      - created_at
+      type: object
+      x-go-source: beacon/service/schema/account.go:User
+    UserCreateArgs:
+      properties:
+        password:
+          description: 至少12字符，且Unicode小写、大写、数字、其他字符至少三类
+          maxLength: 128
+          minLength: 12
+          type: string
+          x-go-validate: required,gte=12,lte=128
+        remark:
+          maxLength: 256
+          type: string
+          x-go-validate: lte=256
+        role_ids:
+          items:
+            type: string
+          maxItems: 32
+          minItems: 1
+          type: array
+          x-go-validate: required,min=1,max=32
+        status:
+          description: 状态：1启用，2停用
+          enum:
+          - 1
+          - 2
+          not:
+            enum:
+            - 0
+          type: integer
+          x-go-validate: required,oneof=1 2
+        username:
+          maxLength: 64
+          minLength: 1
+          type: string
+          x-go-validate: required,alphanum,gte=1,lte=64
+      required:
+      - username
+      - password
+      - status
+      - role_ids
+      type: object
+      x-go-source: beacon/service/schema/account.go:UserCreateArgs
+    UserDeleteArgs:
+      properties:
+        ids:
+          items:
+            format: uuid
+            minLength: 1
+            type: string
+          maxItems: 32
+          minItems: 1
+          type: array
+          x-go-validate: required,min=1,max=32,dive,required,uuid
+      required:
+      - ids
+      type: object
+      x-go-source: beacon/service/schema/account.go:UserDeleteArgs
+    UserInfo:
+      properties:
+        id:
+          description: 用户 id
+          type: string
+        is_admin:
+          description: 是否是管理员
+          type: integer
+        must_change_password:
+          description: 是否必须修改密码
+          type: boolean
+        no_auth:
+          description: 当前会话是否为匿名只读会话
+          type: boolean
+        read_only:
+          description: 当前会话是否只读；匿名免登录会话固定为 true，登录会话遵循部署只读配置
+          type: boolean
+        status:
+          description: 状态
+          type: integer
+        username:
+          description: 用户名
+          type: string
+      required:
+      - id
+      - username
+      - status
+      - is_admin
+      - must_change_password
+      - read_only
+      - no_auth
+      type: object
+      x-go-source: beacon/service/schema/auth.go:UserInfo
+    UserQueryArgs:
+      properties:
+        id:
+          type: string
+        ids:
+          items:
+            type: string
+          nullable: true
+          type: array
+        status:
+          type: integer
+        username:
+          type: string
+        usernames:
+          items:
+            type: string
+          nullable: true
+          type: array
+      type: object
+      x-go-source: beacon/service/schema/account.go:UserQueryArgs
+    UserQueryReply:
+      properties:
+        data:
+          items:
+            "$ref": "#/components/schemas/User"
+          nullable: true
+          type: array
+        total:
+          type: integer
+      required:
+      - data
+      - total
+      type: object
+      x-go-source: beacon/service/schema/account.go:UserQueryReply
+    UserUpdateArgs:
+      properties:
+        id:
+          maxLength: 36
+          minLength: 36
+          type: string
+          x-go-validate: required,len=36
+        remark:
+          maxLength: 256
+          type: string
+          x-go-validate: lte=256
+        role_ids:
+          items:
+            type: string
+          maxItems: 32
+          nullable: true
+          type: array
+          x-go-validate: max=32
+        status:
+          description: 状态：1启用，2停用；0或省略表示不修改
+          enum:
+          - 0
+          - 1
+          - 2
+          type: integer
+          x-go-validate: omitempty,oneof=0 1 2
+        username:
+          maxLength: 64
+          type: string
+          x-go-validate: omitempty,alphanum,lte=64
+      required:
+      - id
+      type: object
+      x-go-source: beacon/service/schema/account.go:UserUpdateArgs
+    WeComSetting:
+      properties:
+        at_all:
+          type: boolean
+        enabled:
+          type: boolean
+        id:
+          type: integer
+        webhook_configured:
+          type: boolean
+        webhook_masked:
+          type: string
+      required:
+      - id
+      - enabled
+      - webhook_masked
+      - webhook_configured
+      - at_all
+      type: object
+      x-go-source: beacon/service/schema/wecom.go:WeComSetting
+    WeComUpdateArgs:
+      properties:
+        at_all:
+          type: boolean
+        enabled:
+          type: boolean
+        webhook:
+          maxLength: 2048
+          type: string
+          x-go-validate: omitempty,lte=2048
+      type: object
+      x-go-source: beacon/service/schema/wecom.go:WeComUpdateArgs
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        uptime:
+          type: number
+    ModelAgent:
+      allOf:
+      - "$ref": "#/components/schemas/GORMModel"
+      properties:
+        agent_id:
+          type: string
+        arch:
+          type: string
+        hostname:
+          type: string
+        last_seen:
+          format: date-time
+          type: string
+        os:
+          type: string
+        status:
+          type: string
+        version:
+          type: string
+      required:
+      - agent_id
+      - hostname
+      - os
+      - arch
+      - version
+      - last_seen
+      - status
+      type: object
+      x-go-source: beacon/service/model/agent.go:Agent
+    AgentAutoUpdateSetting:
+      properties:
+        auto_update:
+          type: boolean
+        deployment_enabled:
+          type: boolean
+      required:
+      - auto_update
+      - deployment_enabled
+      type: object
+      x-go-source: beacon/service/schema/agent.go:AgentAutoUpdateSetting
+    AgentAutoUpdateSettingArgs:
+      properties:
+        auto_update:
+          allOf:
+          - type: boolean
+          x-go-validate: required
+      required:
+      - auto_update
+      type: object
+      x-go-source: beacon/service/schema/agent.go:AgentAutoUpdateSettingArgs
+    SystemVersion:
+      properties:
+        checked_at:
+          type: string
+        latest_version:
+          type: string
+        release_notes:
+          type: string
+        update_available:
+          type: boolean
+        version:
+          type: string
+      required:
+      - version
+      - update_available
+      type: object
+      x-go-source: beacon/service/schema/system.go:SystemVersion
+    UpgradeArgs:
+      properties:
+        agent_id:
+          type: string
+      required:
+      - agent_id
+      type: object
+      x-go-source: beacon/service/agent/agent.go:upgradeArgs
+    UpgradeResult:
+      properties:
+        agent_id:
+          type: string
+        arch:
+          type: string
+        current_version:
+          type: string
+        message:
+          type: string
+        target_version:
+          type: string
+        triggered:
+          type: boolean
+      required:
+      - agent_id
+      - current_version
+      - target_version
+      - triggered
+      - message
+      type: object
+      x-go-source: beacon/service/agent/updater.go:UpdateResult
+    InstallTokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: 短时安装令牌（bpit.<exp>.<nonce>.<hmac>）；TokenTTL 为负值时返回静态令牌
+        expires_at:
+          type: integer
+          description: 短时令牌过期时间（Unix 秒）；静态令牌兼容模式下省略
+    ReportResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+    ErrorResponse:
+      properties:
+        err:
+          type: string
+        msg:
+          type: string
+      required:
+      - err
+      - msg
+      type: object
+      x-go-source: beacon/pkg/fiberx/fiberx.go:FailedResponse
+    ReportError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
+    GORMModel:
+      type: object
+      description: Reviewed embedded gorm.Model wire fields (gorm.io/gorm v1.25.12);
+        review when upgrading GORM.
+      properties:
+        ID:
+          type: integer
+        CreatedAt:
+          type: string
+          format: date-time
+        UpdatedAt:
+          type: string
+          format: date-time
+        DeletedAt:
+          type: string
+          format: date-time
+          nullable: true
+  securitySchemes:
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: beacon_access_token
+      description: |
+        浏览器会话鉴权：登录写入的 HttpOnly、SameSite=Strict access Cookie，
+        由 UserAuthMiddleware 校验；状态变更请求另有 CSRF 双提交
+        （X-CSRF-Token header + beacon_csrf_token Cookie）。绝大多数 /api/v1
+        路由使用该方案（本文件根级 security 默认）。
+    InstallToken:
+      type: apiKey
+      in: header
+      name: X-Install-Token
+      description: |
+        Agent 安装/上报共享 Token：部署期静态持久配置值（无 TTL 语义，见
+        release-install IR008/IR014）。用于 POST /api/v1/host/report 与
+        GET /api/v1/host/install/* 下载端点（后者亦可改用 Bearer）。
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        仅作为 GET /api/v1/host/install/* 下载端点除 X-Install-Token 外的
+        备选凭据；浏览器 API 不使用 Bearer JWT（会话由 CookieAuth 承载）。
+    RefreshCookieAuth:
+      type: apiKey
+      in: cookie
+      name: beacon_refresh_token
+      description: 刷新会话使用 Refresh Cookie；不要求 Access Cookie，仍须 CSRF Cookie 与请求头双提交校验。

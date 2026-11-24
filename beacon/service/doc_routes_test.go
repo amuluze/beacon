@@ -16,8 +16,8 @@ import (
 	healthAPI "beacon/service/health/api"
 	hostAPI "beacon/service/host/api"
 	mailAPI "beacon/service/mail/api"
-	wecomAPI "beacon/service/wecom/api"
 	"beacon/service/terminal"
+	wecomAPI "beacon/service/wecom/api"
 	"github.com/gofiber/fiber/v2"
 )
 

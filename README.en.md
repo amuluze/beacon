@@ -38,11 +38,11 @@
 
 ## 📖 Introduction
 
-**Beacon** is a Server-Agent platform for host monitoring and Docker container management. It is designed for individual developers and small teams that need one place to observe and operate multiple servers.
+**Beacon** is a Server-Agent platform for host monitoring and Docker container management, designed for individual developers and small teams. It is **single-machine only**: Beacon Server and the Collia Agent run on the same host, and the control channel rides on a local Unix Socket.
 
 - **Beacon Server** provides the Web UI, HTTP API, authentication, authorization, auditing, monitoring storage, and task orchestration.
-- **Collia Agent** collects host and Docker metrics, reports monitoring batches over HTTP, and opens a reverse gRPC tunnel for Server-initiated control calls.
-- Query and control requests must explicitly select an Agent, preventing implicit fallback or cross-node reads.
+- **Collia Agent** collects host and Docker metrics, pushes monitoring batches to the Server over a reverse gRPC tunnel on the local Unix Socket, and serves Server-initiated control calls.
+- Query and control requests must explicitly select an Agent, preventing implicit fallback.
 
 Website: [beacon.amuluze.com](https://beacon.amuluze.com) · Repository: [github.com/amuluze/beacon](https://github.com/amuluze/beacon)
 
@@ -72,7 +72,7 @@ Website: [beacon.amuluze.com](https://beacon.amuluze.com) · Repository: [github
 
 - Agent version reporting and online status tracking.
 - Collia amd64/arm64 packages are distributed by the Beacon image.
-- Remote update, self-update, uninstall, and reverse-tunnel control flows.
+- Automatic update, manual upgrade, uninstall, and reverse-tunnel control flows.
 
 ## 🏗️ Architecture
 
@@ -80,16 +80,16 @@ Website: [beacon.amuluze.com](https://beacon.amuluze.com) · Repository: [github
 flowchart LR
     User["Web UI / API Client"] -->|"HTTP / WebSocket<br/>X-Agent-ID or agent_id"| Beacon["Beacon Server"]
     Beacon --> DB[("Server monitoring DB")]
-    Collia["Collia Agent"] -->|"HTTP monitoring report"| Beacon
-    Collia -->|"Reverse gRPC tunnel"| Beacon
+    Collia["Collia Agent"] -->|"HTTP report (deprecated fallback)"| Beacon
+    Collia <-->|"Reverse gRPC tunnel over Unix Socket"| Beacon
     Beacon -->|"Control call by Agent ID"| Collia
     Collia --> Runtime["Host OS / Docker Engine"]
 ```
 
-Beacon keeps three paths distinct:
+Beacon keeps three paths distinct (single-machine deployment; the control and report channels both ride the local Unix Socket):
 
 1. **Monitoring queries** read the selected Agent's data from the Server-side monitoring database.
-2. **Monitoring reports** are atomically persisted in batches sent by Collia over HTTP.
+2. **Monitoring reports** are atomically persisted in batches sent by Collia over the data stream of the control connection; the HTTP report endpoint remains as a deprecated compatibility fallback.
 3. **Control calls** target an Agent through the reverse gRPC tunnel opened by Collia.
 
 See [`.docs/modules/beacon.md`](./.docs/modules/beacon.md) for the current Server module facts.
@@ -104,7 +104,7 @@ bash -c "$(curl -fsSL https://beacon.amuluze.com/release/latest/manager.sh)" -- 
 
 Production mode accepts HTTPS only. First provide a trusted reverse proxy that forwards this HTTPS origin to Beacon's Web port. The installer then configures the ports and generates authentication, data-encryption, and bootstrap-administrator credentials. `BEACON_DATA_ENCRYPTION_KEY` is stored in the mode-`0600` `.env` file and must be retained permanently.
 
-The installer defaults to **single-node mode** (the Agent control channel uses a Unix Socket and does not publish port 17000). Multi-node mode requires an explicit `BEACON_CONTROL_MODE=tcp` (a future paid-edition capability).
+The installer supports **single-node mode only** (the Agent control channel uses a Unix Socket and does not publish port 17000).
 
 Images are published to both the Aliyun registry and Docker Hub (amd64: `registry.cn-hangzhou.aliyuncs.com/amuluze/beacon`, `docker.io/amuluze/beacon`; arm64 ships under the separate name `amuluze/beacon-arm`). The installer pulls from Aliyun by default and automatically falls back to Docker Hub when the primary source is unreachable.
 
@@ -145,7 +145,7 @@ task beacon:dev
 # Or build and run the image (production secrets are injected via environment
 # variables, same contract as the online installer above)
 docker build -f beacon/Dockerfile -t beacon:latest .
-docker run -d --name beacon -p 8000:8000 -p 17000:17000 beacon:latest
+docker run -d --name beacon -p 8000:8000 beacon:latest
 
 # Verify
 curl http://127.0.0.1:8000/health
@@ -161,15 +161,14 @@ docker exec -it beacon ./beacon reset-admin -c /app/configs/config.toml
 
 Use `--password '<new-password>'` or `--password-stdin` to supply one explicitly. The command enforces the password policy, stores a bcrypt hash, writes a system audit entry, and refuses to run when the `admin` account is missing.
 
-After Beacon starts, install Collia on a target host (replace the address, node number, and token with real values):
+After Beacon starts, install Collia on this host (replace the address, node number, and token with real values):
 
 ```bash
 curl -fsSL 'https://<beacon-host>/api/v1/host/install?node=1' | sudo bash -s -- --token=<install-token>
 ```
 
 - `node` is the agent identity: it starts with a letter or digit and may contain letters, digits, dots, underscores and hyphens. Reinstalling on the same host overwrites the config and registers under the new identity.
-- The install token comes from the "Install Agent" dialog in the console (or the admin-only `POST /api/v1/host/get_install_token`). The script also sends it when downloading the package, config and certificates.
-- The console-generated install command downloads the control CA, verifies it by its `SHA-256` fingerprint, and passes it to the installer via `--ca-file`; the target host does not need to touch its system trust store. Multi-node installs can reuse the same token and fingerprint with a distinct `node` per host — suitable for loops or Ansible.
+- The install token comes from the "Install Agent" dialog in the console (or the admin-only `POST /api/v1/host/get_install_token`). The script also sends it when downloading the package and config.
 - Agent auto-update is enabled by default: agents upgrade to the version bundled in the Server image on reconnect. Disable it under Settings → Probes, where a per-row manual upgrade is also available.
 - Uninstall with `sudo collia remove`: it stops the service first, then removes the systemd unit, binary, config, local data and logs; any residual `collia daemon` process not tracked by systemd is terminated as well.
 
@@ -177,7 +176,7 @@ curl -fsSL 'https://<beacon-host>/api/v1/host/install?node=1' | sudo bash -s -- 
 
 Installation reporting is disabled by default and sends nothing without explicit opt-in. Beacon sends one installation report only after an administrator sets `Enable = true` under `[InstallReport]` in `beacon/configs/config.toml`. The report is sent to the configured `URL`, which defaults to `https://beacon.amuluze.com/api/v1/install/report`.
 
-The payload contains only `install_id`, `image`, `version`, `public_base_url`, `install_dir`, `http_port`, `control_port`, `container_name`, and `hostname`. `install_id` is a random identifier persisted locally. The request does not contain administrator accounts, passwords, authentication tokens, DingTalk Webhooks, SMTP passwords, or monitoring data.
+The payload contains only `install_id`, `image`, `version`, `public_base_url`, `install_dir`, `http_port`, `container_name`, and `hostname`. `install_id` is a random identifier persisted locally. The request does not contain administrator accounts, passwords, authentication tokens, DingTalk Webhooks, SMTP passwords, or monitoring data.
 
 ## 🛠️ Tech Stack
 
@@ -202,7 +201,10 @@ beacon/
 │   └── web/                # Vue 3 admin UI
 ├── collia/                 # Agent collection, host/Docker ops, tunnel client
 ├── common/                 # Shared schemas, database, and tunnel transport
-├── .docs/                  # Current implementation docs (module facts)
+├── scripts/                # Documentation gate scripts and the Go field-shape exporter
+├── .docs/                  # Current implementation docs (modules, architecture, deployment, API)
+├── .specs/domain/          # Domain Specs: durable behaviour constraints
+├── DESIGN.md               # Design intent SSOT
 └── Taskfile.yml            # Workspace command entrypoint
 ```
 
@@ -210,7 +212,15 @@ beacon/
 
 | Document | Contents |
 |---|---|
-| [Beacon module doc](./.docs/modules/beacon.md) | Current Server module implementation facts |
+| [AGENTS.md](./AGENTS.md) | AI collaboration entry: project summary, document map, constraints, and commands |
+| [DESIGN.md](./DESIGN.md) | Design intent: visual tone, token system, layout and component specs, state models |
+| [Architecture](./.docs/architecture.md) | Module boundaries, dependency direction, and the three runtime paths |
+| [Data flow](./.docs/concepts/data-flow.md) | Request lifecycle, data ownership boundaries, and atomic report writes |
+| [Deployment guide](./.docs/deployment.md) | Environment requirements, build commands, configuration semantics, and release checks |
+| [API routes](./.docs/api/routes.md) | Server HTTP route index: method, path, name, and handler |
+| [OpenAPI contract](./.docs/api/openapi.yml) | Machine-readable contract of the Server HTTP API |
+| [Module docs](./.docs/modules/beacon.md) | Current implementation facts for Server, Agent, shared library, and console |
+| [Documentation system](./.docs/doc-system.md) | Document ownership, gate boundaries, and evidence maintenance rules |
 | Website (docs and release notes) | [beacon.amuluze.com](https://beacon.amuluze.com) |
 
 ## 🧑‍💻 Development and Contributing
@@ -226,6 +236,8 @@ cd beacon && go test ./...
 cd collia && go test ./...
 cd common && go test ./...
 cd beacon/web && pnpm test:run && pnpm ts && pnpm build
+
+task doc:check
 ```
 
 Issues and pull requests are welcome:

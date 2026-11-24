@@ -18,8 +18,8 @@
 
 - 模块路径：`beacon`
 - Go 版本：`1.25.0`
-- Go 源码文件：159（非测试 `.go`，不含 `web/`）
-- Go 测试文件：74
+- Go 源码文件：158（非测试 `.go`，不含 `web/`）
+- Go 测试文件：73
 - 包名：`account`, `agent`, `alarm`, `api`, `audit`, `auth`, `authcookie`, `client`, `container`, `contextx`, `dingtalk`, `errors`, `feishu`, `fiberx`, `hash`, `health`, `host`, `jwtauth`, `mail`, `main`, `middleware`, `model`, `report`, `repository`, `rpc`, `schema`, `secret`, `service`, `task`, `terminal`, `testutil`, `title`, `utils`, `uuid`, `validatex`, `wecom`, `web`
 - 推断角色：HTTP/API service module: Web/API 接入、路由注册、请求校验和服务协调
 
@@ -74,44 +74,40 @@
 
 ## 配置与入口信号
 
-- 配置：`BASE_URL` at `beacon/service/agent_install.go:355`
+- 配置：`BASE_URL` at `beacon/service/agent_install.go:275`
 - 配置：`BEACON_AGENT_INSTALL_TOKEN` at `beacon/service/auth.go:146`
-- 配置：`BEACON_AGENT_INSTALL_TOKEN` at `beacon/service/config.go:74` 与 `:108`
+- 配置：`BEACON_AGENT_INSTALL_TOKEN` at `beacon/service/config.go:72` 与 `:105`
 - 配置：`BEACON_AUTH_SIGNING_KEY` at `beacon/service/auth.go:83`
 - 配置：`BEACON_AUTH_SIGNING_KEY` at `beacon/service/config.go:69` 与 `:106`
 - 配置：`BEACON_BOOTSTRAP_ADMIN_PASSWORD` at `beacon/service/prepare.go`
 - 配置：`BEACON_DATA_ENCRYPTION_KEY` at `beacon/service/data_encryption.go`
-- 配置：`BEACON_CONTAINER_NAME` at `beacon/service/install_report.go:97`
+- 配置：`BEACON_CONTAINER_NAME` at `beacon/service/install_report.go:95`
 - 配置：`BEACON_CONTROL_JOIN_TOKEN` at `beacon/service/auth.go:121`
-- 配置：`BEACON_CONTROL_JOIN_TOKEN` at `beacon/service/config.go:70` 与 `:111`
+- 配置：`BEACON_CONTROL_JOIN_TOKEN` at `beacon/service/config.go:70` 与 `:108`
 - 配置：`BEACON_APP_ENV` at `beacon/service/config.go:65`
 - 配置：`BEACON_DB_NAME` at `beacon/service/config.go:68`
-- 配置：`BEACON_CONTROL_ADDRESS` at `beacon/service/config.go:71`
-- 配置：`BEACON_CONTROL_SOCKET` at `beacon/service/config.go:72`
-- 配置：`BEACON_CONTROL_TLS_ENABLE` at `beacon/service/config.go:73`
-- 配置：`BEACON_AGENT_INSTALL_TOKEN_TTL` at `beacon/service/config.go:75`
-- 配置：`BEACON_AGENT_INSTALL_CONTROL_SOCKET` at `beacon/service/config.go:77`
-- 配置：`BEACON_AGENT_INSTALL_TLS_ENABLE` at `beacon/service/config.go:78`
-- 配置：`BEACON_AGENT_UPDATE_ENABLE` at `beacon/service/config.go:80`
-- 配置：`BEACON_COLLIA_VERSION`（AgentUpdate 目标版本） at `beacon/service/config.go:81`
-- 配置：`BEACON_AGENT_UPDATE_PUBLIC_KEY` at `beacon/service/config.go:82`
-- 配置：`BEACON_AGENT_UPDATE_TIMEOUT` at `beacon/service/config.go:83`
-- 配置：`BEACON_AGENT_UPDATE_MAX_CONCURRENT` at `beacon/service/config.go:84`
-- 配置：`BEACON_AGENT_UPDATE_RETRY_INTERVAL` at `beacon/service/config.go:85`
-- 配置：`BEACON_UPDATE_ENABLE` at `beacon/service/config.go:86`
-- 配置：`BEACON_UPDATE_URL` at `beacon/service/config.go:87`
-- 配置：`BEACON_UPDATE_CHECK_INTERVAL` at `beacon/service/config.go:88`
-- 配置：`BEACON_RETENTION_DAYS` at `beacon/service/config.go:89`
-- 配置：`BEACON_RETENTION_AUDIT_DAYS` at `beacon/service/config.go:90`
+- 配置：`BEACON_CONTROL_SOCKET` at `beacon/service/config.go:71`
+- 配置：`BEACON_AGENT_INSTALL_TOKEN_TTL` at `beacon/service/config.go:73`
+- 配置：`BEACON_AGENT_INSTALL_CONTROL_SOCKET` at `beacon/service/config.go:75`
+- 配置：`BEACON_AGENT_UPDATE_ENABLE` at `beacon/service/config.go:76`
+- 配置：`BEACON_COLLIA_VERSION`（AgentUpdate 目标版本） at `beacon/service/config.go:77`
+- 配置：`BEACON_AGENT_UPDATE_PUBLIC_KEY` at `beacon/service/config.go:78`
+- 配置：`BEACON_AGENT_UPDATE_TIMEOUT` at `beacon/service/config.go:79`
+- 配置：`BEACON_AGENT_UPDATE_MAX_CONCURRENT` at `beacon/service/config.go:80`
+- 配置：`BEACON_AGENT_UPDATE_RETRY_INTERVAL` at `beacon/service/config.go:81`
+- 配置：`BEACON_UPDATE_ENABLE` at `beacon/service/config.go:82`
+- 配置：`BEACON_UPDATE_URL` at `beacon/service/config.go:83`
+- 配置：`BEACON_UPDATE_CHECK_INTERVAL` at `beacon/service/config.go:84`
+- 配置：`BEACON_RETENTION_DAYS` at `beacon/service/config.go:85`
+- 配置：`BEACON_RETENTION_AUDIT_DAYS` at `beacon/service/config.go:86`
 - 配置：`BEACON_READ_ONLY` at `beacon/service/config.go:66`
 - 配置：`BEACON_NO_AUTH` at `beacon/service/config.go:67`
-- 配置：`BEACON_CONTROL_PORT` at `beacon/service/install_report.go:96`
-- 配置：`BEACON_HTTP_PORT` at `beacon/service/install_report.go:95`
-- 配置：`BEACON_IMAGE` at `beacon/service/install_report.go:91`
-- 配置：`BEACON_PUBLIC_BASE_URL` at `beacon/service/install_report.go:93`
-- 配置：`BEACON_VERSION` at `beacon/service/install_report.go:92`
+- 配置：`BEACON_HTTP_PORT` at `beacon/service/install_report.go:94`
+- 配置：`BEACON_IMAGE` at `beacon/service/install_report.go:90`
+- 配置：`BEACON_PUBLIC_BASE_URL` at `beacon/service/install_report.go:92`
+- 配置：`BEACON_VERSION` at `beacon/service/install_report.go:91`
 - 配置：`CORS`（`Enable=false` 时不挂载跨域中间件，同源部署默认关闭） at `beacon/service/app.go:48`
-- 配置：`CORS` at `beacon/service/config.go:255`
+- 配置：`CORS` at `beacon/service/config.go:240`
 - 配置：`BEACON_CORS_ENABLE` / `BEACON_CORS_ALLOW_ORIGINS`（逗号分隔白名单）at `beacon/service/config.go`
 - 配置：`Config` in `beacon/service/config.go`
 - 配置：`Option` in `beacon/pkg/auth/jwtauth/options.go`
@@ -120,7 +116,7 @@
 - 入口：`app.Get("/ready", a.healthProbe.Readiness)` at `beacon/service/router.go:88`
 - 就绪探针真实接线：`NewHealthProbe(caller, db)` 注入数据库 ping 与 tunnel 计数（`beacon/service/rpc.go`），数据库失联时 `/ready` 返回 503。
 - 安装令牌默认签发短时令牌：`bpit.<exp>.<nonce>.<hmac>`，HMAC 密钥派生自静态安装令牌（轮换即吊销批次），`AgentInstall.TokenTTL`（0=默认 1800 秒，负值回退静态）；安装期端点接受短时或静态令牌且比较走常量时间，上报端点只接受静态令牌（`beacon/service/agent_install.go`、`beacon/service/report/report.go`）。
-- 单机 Unix Socket 模式：`Control.UnixSocket`（env `BEACON_CONTROL_SOCKET`，容器内监听路径）与 `AgentInstall.ControlSocket`（env `BEACON_AGENT_INSTALL_CONTROL_SOCKET`，下发给 Agent 的宿主路径）配合 `controlListenAddress` 在 UDS 上监听；UDS 时豁免生产 TLS 强制，`buildColliaConfig` 下发 `server: unix://…` 且 `tls.enable: false`（`beacon/service/rpc.go`、`beacon/service/agent_install.go`）。
+- 单机 Unix Socket 模式：控制通道只在 `Control.UnixSocket`（env `BEACON_CONTROL_SOCKET`，进程内监听路径）上监听，`AgentInstall.ControlSocket`（env `BEACON_AGENT_INSTALL_CONTROL_SOCKET`）是下发给 Agent 的宿主可见路径，两者由 `validateTransportSecurity` 保证成对声明且非空；`buildColliaConfig` 下发 `server: unix://…`，本机链路不启用 mTLS（`beacon/service/transport_security.go`、`beacon/service/rpc.go`、`beacon/service/agent_install.go`）。
 - 升级签名透传：`Updater` 读取 `<PackageDir>/<arch>/collia.sig` 侧车文件并随 `UpgradeAgentArgs.Signature` 下发；`AgentUpdate.PublicKey` 经安装 config 的 `control.upgrade_public_key` 写入 Agent 固定（`beacon/service/agent/updater.go`、`beacon/service/agent_install.go`）。`PublicKey` 支持逗号/空白分隔的多把公钥：单钥写单行字段，多钥写 `upgrade_public_keys` 列表（轮换重叠窗口），升级 RPC 永不下发公钥。
 - `beacon reset-admin` 子命令（`beacon/cmd/beacon/main.go` + `beacon/service/reset_admin.go`）：默认生成满足策略的临时密码并强制首登改密；`--password`/`--password-stdin` 可显式指定；bcrypt 入库并写 `system` 审计（Object=admin ID）；admin 缺失时拒绝重建（IR024）。
 - 入口：`app.Get("/ws/terminal", webSocketAuth, websocket.New(a.terminalHandler.Handle))` at `beacon/service/router.go:229`
@@ -165,8 +161,7 @@
 - 告警消息标题以 `s_alarm_message_setting` 单例持久化，缺失时初始化为 `Beacon 主机告警` 且重复启动不覆盖用户值；实际邮件 Subject、邮件测试 Subject、实际钉钉首行和钉钉测试首行共享该标题。标题按单次通知只读取一次，缺失或非法存量值安全回退默认标题，审计正文不拼接标题。
 - SMTP 密码、钉钉/飞书 Webhook 与签名密钥、企微 Webhook 使用 `BEACON_DATA_ENCRYPTION_KEY` 对应的 AES-256-GCM 密钥加密存储；启动时事务统一迁移四渠道历史明文，读取时兼容并回写遗留值。该密钥缺失或非法时拒绝启动。
 - 浏览器 JWT 仅写入 HttpOnly、SameSite=Strict Cookie，CSRF Cookie 可读并要求 `X-CSRF-Token` 双提交；登录响应只返回 `must_change_password`。新库由 `BEACON_BOOTSTRAP_ADMIN_PASSWORD` 创建唯一管理员并强制改密，历史公开默认密码也被迁移到强制改密状态。
-- 生产环境拒绝非 HTTPS Web 请求并要求 Agent 控制通道双向 TLS；WebSocket 仅使用同源 access Cookie，不接受 Authorization 或 query token。
-- 控制通道 CA 与服务端证书运行于 `/etc/beacon/control-certs`；官方发布 Compose 通过 `BEACON_CONTROL_CERT_DIR` 持久化该目录，避免容器升级静默轮换 CA。
+- 生产环境拒绝非 HTTPS Web 请求；控制通道仅经本机 Unix Socket（无 mTLS、无证书目录），WebSocket 仅使用同源 access Cookie，不接受 Authorization 或 query token。
 - Beacon 发布镜像在隔离 Node 阶段生成干净 Web 产物，再以静态、路径裁剪和符号裁剪参数构建 Server；Alpine 运行时仍通过 Nginx + Supervisor 暴露 80 端口，并同时携带 amd64/arm64 Collia 安装包。
 - `/api/v1/host/report` 只接受 `X-Install-Token`。Server Token 未配置返回 503，缺失/错误请求头返回 401，query token 不参与认证。
 - Host HTTP API 不注册 DNS、系统时间、时区、主机重启或关机设置端点；主机监控查询、文件操作与 Docker 控制能力保持独立。

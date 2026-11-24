@@ -5,8 +5,8 @@
 package repository
 
 import (
-	alarmtitle "beacon/service/alarm/title"
 	"beacon/pkg/secret"
+	alarmtitle "beacon/service/alarm/title"
 	"beacon/service/model"
 	"beacon/service/schema"
 	"common/database"

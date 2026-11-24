@@ -2,7 +2,7 @@
 // Description: collia 安装/启动前的环境与磁盘预检。
 //
 // 探测真实块设备与网卡（取代 config.yml 里硬编码的 vda2/eth0），
-// 校验关键目录可写性与控制端口可达性，并能把探测结果合并回写 config。
+// 校验关键目录可写性与控制通道可达性，并能把探测结果合并回写 config。
 package service
 
 import (
@@ -167,10 +167,19 @@ func dirWritable(dir string) error {
 	return nil
 }
 
-// serverReachable 对控制端口做一次 TCP 探测；不可达只产生警告，不阻断启动。
+// serverReachable 对控制通道目标做一次拨号探测；不可达只产生警告，不阻断启动。
 func serverReachable(server string, timeout time.Duration) bool {
 	if server == "" {
 		return false
+	}
+	if isUnixControlTarget(server) {
+		path := strings.TrimPrefix(strings.TrimSpace(server), "unix://")
+		conn, err := net.DialTimeout("unix", path, timeout)
+		if err != nil {
+			return false
+		}
+		_ = conn.Close()
+		return true
 	}
 	conn, err := net.DialTimeout("tcp", server, timeout)
 	if err != nil {
@@ -197,11 +206,11 @@ func Preflight(cfg *Config, sysRoot string) *PreflightReport {
 		}
 	}
 
-	// 控制端口可达性（仅警告）
+	// 控制通道可达性（仅警告）
 	if cfg.Control.Server != "" {
 		if !serverReachable(cfg.Control.Server, defaultDialTimeout) {
 			report.Warnings = append(report.Warnings,
-				fmt.Sprintf("控制端口 %s 暂不可达，将在后台重试连接", cfg.Control.Server))
+				fmt.Sprintf("控制通道 %s 暂不可达，将在后台重试连接", cfg.Control.Server))
 		}
 	}
 

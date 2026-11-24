@@ -88,13 +88,15 @@ func TestTunnelOverUnixSocket(t *testing.T) {
 	}
 }
 
-// TestAgentDialTargetKeepsTCPTargets 验证非 unix 目标不被改写、不注入拨号器。
-func TestAgentDialTargetKeepsTCPTargets(t *testing.T) {
-	target, opts := agentDialTarget("beacon.example.com:17000")
-	if target != "beacon.example.com:17000" || opts != nil {
-		t.Fatalf("tcp target changed: %q opts=%v", target, opts)
+// TestAgentDialTarget 验证 unix 目标被改写并注入拨号器，非 unix 目标直接报错。
+func TestAgentDialTarget(t *testing.T) {
+	if _, _, err := agentDialTarget("beacon.example.com:17000"); err == nil {
+		t.Fatal("tcp target must be rejected in single-machine mode")
 	}
-	target, opts = agentDialTarget("unix:///run/beacon.sock")
+	target, opts, err := agentDialTarget("unix:///run/beacon.sock")
+	if err != nil {
+		t.Fatalf("unix target rejected: %v", err)
+	}
 	if target != "passthrough:///collia-unix" || len(opts) == 0 {
 		t.Fatalf("unix target not adapted: %q", target)
 	}

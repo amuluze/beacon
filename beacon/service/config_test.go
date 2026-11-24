@@ -83,16 +83,14 @@ func TestNewConfigRejectsInsecureProductionTransport(t *testing.T) {
 [App]
 Env = "production"
 
-[AgentInstall]
-Enable = true
-PublicBaseURL = "http://beacon.example.com"
-TLSEnable = true
-
 [Control]
 Enable = true
+UnixSocket = "/app/data/control/collia.sock"
 
-[Control.TLS]
+[AgentInstall]
 Enable = true
+ControlSocket = "/data/beacon/data/control/collia.sock"
+PublicBaseURL = "http://beacon.example.com"
 `
 	_, err := NewConfig(writeConfig(t, toml))
 	if !errors.Is(err, ErrHTTPSPublicBaseURLRequired) {
@@ -105,11 +103,15 @@ func TestNewConfig_EnvOverridesJoinToken(t *testing.T) {
 	const toml = `
 [Control]
 Enable = true
-Address = "0.0.0.0:8081"
+UnixSocket = "/app/data/control/collia.sock"
 JoinToken = "from-file"
-`
-	t.Setenv("BEACON_CONTROL_JOINTOKEN", "from-env")
 
+[AgentInstall]
+Enable = true
+ControlSocket = "/data/beacon/data/control/collia.sock"
+`
+
+	t.Setenv("BEACON_CONTROL_JOINTOKEN", "from-env")
 	cfg, err := NewConfig(writeConfig(t, toml))
 	if err != nil {
 		t.Fatalf("NewConfig: %v", err)
@@ -133,7 +135,7 @@ SSLMode = ""
 
 [Control]
 Enable = true
-Address = "0.0.0.0:8081"
+UnixSocket = "from-file/control.sock"
 JoinToken = ""
 
 [AgentInstall]
@@ -141,9 +143,7 @@ Enable = true
 Token = "change-me"
 PublicBaseURL = ""
 PackageDir = "/app/downloads/collia"
-ControlPort = 18080
-TLSEnable = true
-CertDir = "/etc/collia/certs"
+ControlSocket = "from-file/control.sock"
 
 [AgentUpdate]
 Enable = false
@@ -153,9 +153,9 @@ MaxConcurrent = 1
 RetryInterval = 60
 `
 	t.Setenv("BEACON_DB_NAME", "/data/beacon-prod")
-	t.Setenv("BEACON_CONTROL_ADDRESS", ":17000")
+	t.Setenv("BEACON_CONTROL_SOCKET", "/app/data/control/collia.sock")
 	t.Setenv("BEACON_PUBLIC_BASE_URL", "https://beacon.example.com")
-	t.Setenv("BEACON_CONTROL_PORT", "17000")
+	t.Setenv("BEACON_AGENT_INSTALL_CONTROL_SOCKET", "/data/beacon/data/control/collia.sock")
 	t.Setenv("BEACON_AGENT_UPDATE_ENABLE", "true")
 	t.Setenv("BEACON_COLLIA_VERSION", "v3.0.6")
 	t.Setenv("BEACON_AGENT_UPDATE_TIMEOUT", "300")
@@ -169,14 +169,14 @@ RetryInterval = 60
 	if cfg.DB.DBName != "/data/beacon-prod" {
 		t.Fatalf("expected DB.DBName overridden by env, got %q", cfg.DB.DBName)
 	}
-	if cfg.Control.Address != ":17000" {
-		t.Fatalf("expected Control.Address overridden by env, got %q", cfg.Control.Address)
+	if cfg.Control.UnixSocket != "/app/data/control/collia.sock" {
+		t.Fatalf("expected Control.UnixSocket overridden by env, got %q", cfg.Control.UnixSocket)
 	}
 	if cfg.AgentInstall.PublicBaseURL != "https://beacon.example.com" {
 		t.Fatalf("expected AgentInstall.PublicBaseURL overridden by env, got %q", cfg.AgentInstall.PublicBaseURL)
 	}
-	if cfg.AgentInstall.ControlPort != 17000 {
-		t.Fatalf("expected AgentInstall.ControlPort overridden by env, got %d", cfg.AgentInstall.ControlPort)
+	if cfg.AgentInstall.ControlSocket != "/data/beacon/data/control/collia.sock" {
+		t.Fatalf("expected AgentInstall.ControlSocket overridden by env, got %q", cfg.AgentInstall.ControlSocket)
 	}
 	if !cfg.AgentUpdate.Enable || cfg.AgentUpdate.TargetVersion != "v3.0.6" {
 		t.Fatalf("expected AgentUpdate target enabled at v3.0.6, got %#v", cfg.AgentUpdate)
@@ -479,26 +479,21 @@ func TestNewDBPostgresTLSIntegration(t *testing.T) {
 }
 
 // TestNewConfig_ControlUnixSocketEnv 验证单机模式的环境变量覆盖：
-// 监听路径、下发路径与两个 TLS 开关均可由 BEACON_* 注入。
+// 监听路径与下发路径均可由 BEACON_* 注入。
 func TestNewConfig_ControlUnixSocketEnv(t *testing.T) {
 	const toml = `
 [Control]
 Enable = true
-Address = ":17000"
+UnixSocket = "from-file/control.sock"
 JoinToken = "join-token-value"
-
-[Control.TLS]
-Enable = true
 
 [AgentInstall]
 Enable = true
 Token = "install-token"
-TLSEnable = true
+ControlSocket = "from-file/control.sock"
 `
 	t.Setenv("BEACON_CONTROL_SOCKET", "/app/data/control/collia.sock")
 	t.Setenv("BEACON_AGENT_INSTALL_CONTROL_SOCKET", "/data/beacon/data/control/collia.sock")
-	t.Setenv("BEACON_CONTROL_TLS_ENABLE", "false")
-	t.Setenv("BEACON_AGENT_INSTALL_TLS_ENABLE", "false")
 
 	cfg, err := NewConfig(writeConfig(t, toml))
 	if err != nil {
@@ -510,31 +505,28 @@ TLSEnable = true
 	if cfg.AgentInstall.ControlSocket != "/data/beacon/data/control/collia.sock" {
 		t.Fatalf("AgentInstall.ControlSocket = %q", cfg.AgentInstall.ControlSocket)
 	}
-	if cfg.Control.TLS.Enable || cfg.AgentInstall.TLSEnable {
-		t.Fatalf("TLS env overrides not applied: control=%v agent=%v", cfg.Control.TLS.Enable, cfg.AgentInstall.TLSEnable)
-	}
 }
 
-// TestValidateTransportSecurityAllowsUnixSocketInProduction 验证单机模式
-// 生产环境可用 UDS 替代 mTLS；切回 TCP 后仍强制 TLS 与 Agent 证书。
-func TestValidateTransportSecurityAllowsUnixSocketInProduction(t *testing.T) {
+// TestValidateTransportSecurityRequiresUnixSocketInProduction 验证单机模式
+// 在生产环境要求成对声明监听与下发 Socket，缺失即拒绝启动。
+func TestValidateTransportSecurityRequiresUnixSocketInProduction(t *testing.T) {
 	config := &Config{
 		App:          App{Env: productionEnv},
-		Control:      Control{Enable: true, UnixSocket: "/app/data/control/collia.sock", TLS: ControlTLS{Enable: false}},
-		AgentInstall: AgentInstall{Enable: true, PublicBaseURL: "https://beacon.example.com", ControlSocket: "/data/beacon/data/control/collia.sock", TLSEnable: false},
+		Control:      Control{Enable: true, UnixSocket: "/app/data/control/collia.sock"},
+		AgentInstall: AgentInstall{Enable: true, PublicBaseURL: "https://beacon.example.com", ControlSocket: "/data/beacon/data/control/collia.sock"},
 	}
 	if err := validateTransportSecurity(config); err != nil {
-		t.Fatalf("unix socket mode must be allowed in production: %v", err)
+		t.Fatalf("paired unix socket config must be allowed in production: %v", err)
 	}
 
 	config.Control.UnixSocket = ""
-	config.AgentInstall.ControlSocket = ""
-	if err := validateTransportSecurity(config); !errors.Is(err, ErrControlTLSRequired) {
-		t.Fatalf("tcp mode must still require control TLS, got %v", err)
+	if err := validateTransportSecurity(config); !errors.Is(err, ErrControlSocketRequired) {
+		t.Fatalf("missing listen socket error = %v, want ErrControlSocketRequired", err)
 	}
-	config.Control.TLS.Enable = true
-	if err := validateTransportSecurity(config); !errors.Is(err, ErrAgentTLSRequired) {
-		t.Fatalf("tcp mode must still require agent certificates, got %v", err)
+	config.Control.UnixSocket = "/app/data/control/collia.sock"
+	config.AgentInstall.ControlSocket = ""
+	if err := validateTransportSecurity(config); !errors.Is(err, ErrInstallSocketRequired) {
+		t.Fatalf("missing advertised socket error = %v, want ErrInstallSocketRequired", err)
 	}
 }
 

@@ -5,7 +5,6 @@ package tunnel
 import (
 	"context"
 	"crypto/subtle"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -21,7 +20,6 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 )
 
@@ -93,7 +91,6 @@ type ServerTunnel struct {
 	lifecycle      AgentLifecycle
 	joinToken      string
 	allowAnonymous bool
-	tlsConfig      *tls.Config
 	dataHandler    DataHandler
 }
 
@@ -156,19 +153,15 @@ func (s *ServerTunnel) SetAllowAnonymous(allow bool) {
 	s.allowAnonymous = allow
 }
 
-// SetTLSConfig configures optional TLS credentials for the gRPC server.
-func (s *ServerTunnel) SetTLSConfig(cfg *tls.Config) {
-	s.tlsConfig = cfg
-}
-
 // SetAgentLifecycle registers lifecycle callbacks for agent connect/disconnect.
 func (s *ServerTunnel) SetAgentLifecycle(l AgentLifecycle) {
 	s.lifecycle = l
 }
 
-// Start starts the gRPC server on the given address. Addresses with the
-// unix:// prefix are served over a Unix domain socket with owner-only
-// permissions, which lets single-host deployments avoid publishing a TCP port.
+// Start starts the gRPC server on the Unix socket path given by addr
+// (unix:// prefix). The socket dir is owner-only (0700) and the socket file
+// is 0600, so only the same host's root user can connect — there is no
+// published TCP control port.
 func (s *ServerTunnel) Start(addr string) error {
 	lis, unixPath, err := listenControl(addr)
 	if err != nil {
@@ -177,19 +170,15 @@ func (s *ServerTunnel) Start(addr string) error {
 	s.listener = lis
 	s.unixSocketPath = unixPath
 
-	var opts []grpc.ServerOption
-	if s.tlsConfig != nil {
-		opts = append(opts, grpc.Creds(credentials.NewTLS(s.tlsConfig)))
-	}
 	// keepalive：MaxConnectionIdle/MaxConnectionAge 兜底回收僵尸与超龄 agent 连接，
-	// 避免半开 TCP 长期占用 server 侧读写缓冲。agent 端已有重连循环，周期性重连无副作用。
-	opts = append(opts, grpc.KeepaliveParams(keepalive.ServerParameters{
+	// 避免半开连接长期占用 server 侧读写缓冲。agent 端已有重连循环，周期性重连无副作用。
+	opts := []grpc.ServerOption{grpc.KeepaliveParams(keepalive.ServerParameters{
 		MaxConnectionIdle:     5 * time.Minute,
 		MaxConnectionAge:      30 * time.Minute,
 		MaxConnectionAgeGrace: time.Minute,
 		Time:                  30 * time.Second,
 		Timeout:               10 * time.Second,
-	}))
+	})}
 	s.grpcServer = grpc.NewServer(opts...)
 	RegisterReverseTunnelServer(s.grpcServer, s)
 	slog.Info("server tunnel: listening", "addr", addr)
@@ -205,13 +194,12 @@ func unixSocketPath(addr string) string {
 	return strings.TrimPrefix(addr, prefix)
 }
 
-// listenControl 在 TCP 地址或 Unix Socket 路径上监听。Unix 模式下创建
-// owner-only 目录与 socket（0700/0600）并清理上次进程残留的 socket 文件。
+// listenControl 在 Unix Socket 路径上监听（单机部署唯一承载方式）。
+// 创建 owner-only 目录与 socket（0700/0600）并清理上次进程残留的 socket 文件。
 func listenControl(addr string) (net.Listener, string, error) {
 	path := unixSocketPath(addr)
 	if path == "" {
-		lis, err := net.Listen("tcp", addr)
-		return lis, "", err
+		return nil, "", fmt.Errorf("control channel target must be unix://<path>, got %q", addr)
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return nil, "", fmt.Errorf("create unix socket dir: %w", err)

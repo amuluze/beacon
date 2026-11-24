@@ -22,10 +22,10 @@ import (
 )
 
 const (
-	feishuWebhookHost  = "open.feishu.cn"
-	feishuWebhookPath  = "/open-apis/bot/v2/hook"
-	maxResponseBytes   = 64 * 1024
-	minHookIDLength    = 8
+	feishuWebhookHost    = "open.feishu.cn"
+	feishuWebhookPath    = "/open-apis/bot/v2/hook"
+	maxResponseBytes     = 64 * 1024
+	minHookIDLength      = 8
 	maskedCredentialTail = 4
 )
 

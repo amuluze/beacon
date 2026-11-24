@@ -92,7 +92,7 @@ COPY beacon/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 COPY beacon/scripts/docker-entrypoint.sh /usr/local/bin/beacon-entrypoint
 RUN chmod 0755 /usr/local/bin/beacon-entrypoint
 
-EXPOSE 80 17000
+EXPOSE 80
 
 # 入口脚本校验关键密钥后 exec CMD；保留 CMD 便于覆盖默认进程。
 ENTRYPOINT ["/usr/local/bin/beacon-entrypoint"]

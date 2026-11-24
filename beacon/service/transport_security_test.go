@@ -8,11 +8,11 @@ import (
 func TestValidateTransportSecurityProduction(t *testing.T) {
 	secure := &Config{
 		App:     App{Env: productionEnv},
-		Control: Control{Enable: true, TLS: ControlTLS{Enable: true}},
+		Control: Control{Enable: true, UnixSocket: "/app/data/control/collia.sock"},
 		AgentInstall: AgentInstall{
 			Enable:        true,
 			PublicBaseURL: "https://beacon.example.com",
-			TLSEnable:     true,
+			ControlSocket: "/data/beacon/data/control/collia.sock",
 		},
 	}
 	if err := validateTransportSecurity(secure); err != nil {
@@ -26,8 +26,8 @@ func TestValidateTransportSecurityProduction(t *testing.T) {
 	}{
 		{name: "missing public URL", mutate: func(c *Config) { c.AgentInstall.PublicBaseURL = "" }, want: ErrHTTPSPublicBaseURLRequired},
 		{name: "HTTP public URL", mutate: func(c *Config) { c.AgentInstall.PublicBaseURL = "http://beacon.example.com" }, want: ErrHTTPSPublicBaseURLRequired},
-		{name: "control TLS disabled", mutate: func(c *Config) { c.Control.TLS.Enable = false }, want: ErrControlTLSRequired},
-		{name: "agent TLS disabled", mutate: func(c *Config) { c.AgentInstall.TLSEnable = false }, want: ErrAgentTLSRequired},
+		{name: "missing listen socket", mutate: func(c *Config) { c.Control.UnixSocket = "" }, want: ErrControlSocketRequired},
+		{name: "missing advertised socket", mutate: func(c *Config) { c.AgentInstall.ControlSocket = "" }, want: ErrInstallSocketRequired},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

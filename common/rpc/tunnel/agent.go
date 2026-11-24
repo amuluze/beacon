@@ -5,7 +5,6 @@ package tunnel
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,7 +15,6 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 )
@@ -43,7 +41,6 @@ type AgentTunnel struct {
 	client     ReverseTunnelClient
 	stream     grpc.BidiStreamingClient[Frame, Frame]
 	dataStream grpc.BidiStreamingClient[Frame, Frame]
-	tlsConfig  *tls.Config
 
 	mu          sync.Mutex
 	sendMu      sync.Mutex
@@ -171,11 +168,6 @@ func (a *AgentTunnel) openDataStream(ctx context.Context, client ReverseTunnelCl
 	return nil
 }
 
-// SetTLSConfig configures optional TLS credentials for the gRPC client.
-func (a *AgentTunnel) SetTLSConfig(cfg *tls.Config) {
-	a.tlsConfig = cfg
-}
-
 // SetHandler registers the RPC handler for incoming requests.
 func (a *AgentTunnel) SetHandler(h Handler) {
 	a.mu.Lock()
@@ -183,18 +175,18 @@ func (a *AgentTunnel) SetHandler(h Handler) {
 	a.handler = h
 }
 
-// agentDialTarget 把 unix:// 目标转换为 passthrough 目标并注入 Unix 拨号器；
-// 非 Unix 目标原样返回且不注入拨号器，保持既有 TCP 行为。
-func agentDialTarget(serverAddr string) (string, []grpc.DialOption) {
+// agentDialTarget 把 unix:// 目标转换为 passthrough 目标并注入 Unix 拨号器。
+// 单机部署只允许 Unix Socket 目标，非 unix:// 目标直接报错。
+func agentDialTarget(serverAddr string) (string, []grpc.DialOption, error) {
 	path := unixSocketPath(serverAddr)
 	if path == "" {
-		return serverAddr, nil
+		return "", nil, fmt.Errorf("agent control target must be unix://<path>, got %q", serverAddr)
 	}
 	dialer := func(ctx context.Context, _ string) (net.Conn, error) {
 		var d net.Dialer
 		return d.DialContext(ctx, "unix", path)
 	}
-	return "passthrough:///collia-unix", []grpc.DialOption{grpc.WithContextDialer(dialer)}
+	return "passthrough:///collia-unix", []grpc.DialOption{grpc.WithContextDialer(dialer)}, nil
 }
 
 // Start connects to the Server and starts processing frames.
@@ -215,11 +207,12 @@ func (a *AgentTunnel) Start(ctx context.Context) error {
 		}
 
 		slog.Info("agent tunnel: connecting to server", "addr", a.serverAddr, "agent_id", a.agentID)
-		transportCreds := insecure.NewCredentials()
-		if a.tlsConfig != nil {
-			transportCreds = credentials.NewTLS(a.tlsConfig)
+		target, dialOpts, err := agentDialTarget(a.serverAddr)
+		if err != nil {
+			// 目标非法属于配置错误，重连不会自愈，直接终止。
+			return err
 		}
-		target, dialOpts := agentDialTarget(a.serverAddr)
+		transportCreds := insecure.NewCredentials()
 		opts := []grpc.DialOption{
 			grpc.WithTransportCredentials(transportCreds),
 			grpc.WithKeepaliveParams(keepalive.ClientParameters{

@@ -37,11 +37,11 @@
 
 ## 📖 项目简介
 
-**Beacon** 是一个采用 Server-Agent 架构的主机监控与 Docker 容器管理平台，面向需要统一观察、管理多台服务器的个人开发者与小型团队。
+**Beacon** 是一个采用 Server-Agent 架构的主机监控与 Docker 容器管理平台，面向需要观察、管理自己服务器的个人开发者与小型团队，**仅支持单机部署**：Beacon Server 与 Collia Agent 运行在同一台主机，控制通道经本机 Unix Socket 承载。
 
 - **Beacon Server** 提供 Web UI、HTTP API、认证授权、审计、监控数据存储与任务编排。
-- **Collia Agent** 采集主机和 Docker 指标，通过 HTTP 上报监控批次，并主动建立反向 gRPC tunnel 接收 Server 控制调用。
-- 查询与控制请求必须显式指定 Agent，避免默认节点回退或跨节点读取。
+- **Collia Agent** 采集主机和 Docker 指标，经本机 Unix Socket 上的反向 gRPC tunnel 向 Server 推送监控批次并接收控制调用。
+- 查询与控制请求必须显式指定 Agent，避免默认节点回退。
 
 官网：[beacon.amuluze.com](https://beacon.amuluze.com) · 仓库：[github.com/amuluze/beacon](https://github.com/amuluze/beacon)
 
@@ -71,7 +71,7 @@
 
 - Agent 版本上报与在线状态跟踪。
 - Collia amd64/arm64 安装包由 Beacon 镜像统一提供。
-- 支持远程更新、自更新、卸载和反向 tunnel 控制。
+- 支持自动更新、手动升级、卸载和反向 tunnel 控制。
 
 ## 🏗️ 系统架构
 
@@ -79,16 +79,16 @@
 flowchart LR
     User["Web UI / API Client"] -->|"HTTP / WebSocket<br/>X-Agent-ID or agent_id"| Beacon["Beacon Server"]
     Beacon --> DB[("Server monitoring DB")]
-    Collia["Collia Agent"] -->|"HTTP monitoring report"| Beacon
-    Collia -->|"Reverse gRPC tunnel"| Beacon
+    Collia["Collia Agent"] -->|"HTTP report (deprecated fallback)"| Beacon
+    Collia <-->|"Reverse gRPC tunnel over Unix Socket"| Beacon
     Beacon -->|"Control call by Agent ID"| Collia
     Collia --> Runtime["Host OS / Docker Engine"]
 ```
 
-Beacon 将三条路径明确分离：
+Beacon 将三条路径明确分离（单机部署，控制与上报通道均为本机 Unix Socket）：
 
 1. **监控查询**：Web 请求从 Server 本地监控表读取指定 Agent 的数据。
-2. **监控上报**：Collia 通过 HTTP report 接口按批次原子写入 Server。
+2. **监控上报**：Collia 在控制连接的数据流上按批次原子写入 Server，HTTP report 接口为已弃用的兼容回落。
 3. **控制调用**：Beacon 通过 Collia 主动建立的反向 gRPC tunnel 调用目标 Agent。
 
 更完整的模块实现事实见 [`.docs/modules/beacon.md`](./.docs/modules/beacon.md)。
@@ -101,9 +101,9 @@ Beacon 将三条路径明确分离：
 bash -c "$(curl -fsSL https://beacon.amuluze.com/release/latest/manager.sh)" -- install BEACON_PUBLIC_BASE_URL=https://beacon.example.com
 ```
 
-生产模式只接受 HTTPS。请先准备将该 HTTPS 地址转发到 Beacon Web 端口的可信反向代理；安装脚本会引导配置 Web 端口、Agent 控制端口，并生成认证、数据加密和首次管理员凭据。`BEACON_DATA_ENCRYPTION_KEY` 会保存在权限为 `0600` 的 `.env` 中且必须永久保留。
+生产模式只接受 HTTPS。请先准备将该 HTTPS 地址转发到 Beacon Web 端口的可信反向代理；安装脚本会引导配置 Web 端口与控制 Socket 路径，并生成认证、数据加密和首次管理员凭据。`BEACON_DATA_ENCRYPTION_KEY` 会保存在权限为 `0600` 的 `.env` 中且必须永久保留。
 
-安装器默认选择**单机模式**（Agent 控制通道经 Unix Socket，不发布 17000 端口）；多机模式需显式指定 `BEACON_CONTROL_MODE=tcp`（后续付费版能力）。
+安装器默认且仅支持**单机模式**（Agent 控制通道经 Unix Socket，不发布 17000 端口）。
 
 镜像同时发布在阿里云仓库与 Docker Hub（amd64：`registry.cn-hangzhou.aliyuncs.com/amuluze/beacon`、`docker.io/amuluze/beacon`；arm64 为独立镜像名 `amuluze/beacon-arm`）；安装器默认从阿里云拉取，主源不可达时自动回退 Docker Hub。
 
@@ -142,7 +142,7 @@ task beacon:dev
 
 # 或构建镜像运行（生产密钥经环境变量注入，契约同在线安装一节）
 docker build -f beacon/Dockerfile -t beacon:latest .
-docker run -d --name beacon -p 8000:8000 -p 17000:17000 beacon:latest
+docker run -d --name beacon -p 8000:8000 beacon:latest
 
 # 验证服务
 curl http://127.0.0.1:8000/health
@@ -156,16 +156,14 @@ docker exec -it beacon ./beacon reset-admin -c /app/configs/config.toml
 
 也可用 `--password '<新密码>'` 或 `--password-stdin` 显式指定；命令校验密码策略、写入 bcrypt 哈希并记录系统审计，`admin` 不存在时拒绝执行。
 
-Beacon 启动后，可从目标主机安装 Collia Agent（将地址、节点编号和 Token 替换为实际值）：
+Beacon 启动后，在本机安装 Collia Agent（将地址、节点编号和 Token 替换为实际值）：
 
 ```bash
 curl -fsSL 'https://<beacon-host>/api/v1/host/install?node=1' | sudo bash -s -- --token=<install-token>
 ```
 
 - `node` 是 Agent 标识：字母或数字开头，仅含字母、数字、点、下划线、短横线；同一主机重复安装会以新标识覆盖配置并注册。
-- 安装 Token 由管理面板「安装 Agent」对话框获取（或管理员调用 `POST /api/v1/host/get_install_token`）；脚本内部下载安装包、配置与证书的请求同样携带该 Token。
-- 管理面板生成的安装命令会先下载控制 CA、用 `SHA-256` 指纹校验，再通过 `--ca-file` 传给安装脚本；目标主机不需要修改系统信任库。多机安装可复用同一 Token 与指纹，只需为每台主机设置不同的 `node`，适合循环脚本或 Ansible 批量执行。
-- 手工执行安装命令时若未提供 CA 文件，脚本仍使用系统信任库；自签 Web 证书场景可按原方式将 Server 宿主机 `$BEACON_CONTROL_CERT_DIR`（默认 `/data/beacon/control-certs`）下的 `ca.pem` 导入目标机信任库。
+- 安装 Token 由管理面板「安装 Agent」对话框获取（或管理员调用 `POST /api/v1/host/get_install_token`）；脚本内部下载安装包与配置的请求同样携带该 Token。
 - 安装后默认开启 Agent 自动更新：Agent 重连时按 Server 镜像内置版本自动升级；可在「设置 → 探针管理」关闭自动更新，或在该页行内手动升级。
 - 卸载：`sudo collia remove`（先停止服务，再清理二进制、配置、本地数据、日志与系统服务注册；未被 systemd 跟踪的残留 daemon 进程也会被终止）。
 
@@ -173,7 +171,7 @@ curl -fsSL 'https://<beacon-host>/api/v1/host/install?node=1' | sudo bash -s -- 
 
 安装统计默认关闭，不会在未授权的情况下发送。只有管理员在 `beacon/configs/config.toml` 的 `[InstallReport]` 中显式设置 `Enable = true` 后，Beacon 才会向配置的 `URL`（默认 `https://beacon.amuluze.com/api/v1/install/report`）发送一次安装信息。
 
-发送字段仅包括：`install_id`、`image`、`version`、`public_base_url`、`install_dir`、`http_port`、`control_port`、`container_name`、`hostname`。其中 `install_id` 是本地持久化的随机安装标识；该请求不包含管理员账号、密码、认证令牌、钉钉 Webhook、SMTP 密码或监控数据。
+发送字段仅包括：`install_id`、`image`、`version`、`public_base_url`、`install_dir`、`http_port`、`container_name`、`hostname`。其中 `install_id` 是本地持久化的随机安装标识；该请求不包含管理员账号、密码、认证令牌、钉钉 Webhook、SMTP 密码或监控数据。
 
 ## 🛠️ 技术栈
 
@@ -198,7 +196,10 @@ beacon/
 │   └── web/                # Vue 3 管理端
 ├── collia/                 # Agent 采集、Docker/主机操作与 tunnel 客户端
 ├── common/                 # 共享 schema、数据库与 reverse tunnel transport
-├── .docs/                  # 当前实现文档（模块事实）
+├── scripts/                # 文档门禁脚本与 Go 字段形状导出器
+├── .docs/                  # 当前实现文档（模块事实、架构、部署、API）
+├── .specs/domain/          # Domain Specs：长期行为约束
+├── DESIGN.md               # 设计意图 SSOT
 └── Taskfile.yml            # 工作区开发命令入口
 ```
 
@@ -206,7 +207,15 @@ beacon/
 
 | 文档 | 内容 |
 |---|---|
-| [Beacon 模块文档](./.docs/modules/beacon.md) | Server 模块当前实现事实 |
+| [AGENTS.md](./AGENTS.md) | AI 协作入口：项目摘要、文档地图、关键约束与开发命令 |
+| [DESIGN.md](./DESIGN.md) | 设计意图：视觉基调、Token 体系、布局与组件规范、状态模型 |
+| [系统架构](./.docs/architecture.md) | 模块边界、依赖方向与三条运行链路 |
+| [数据流](./.docs/concepts/data-flow.md) | 请求生命周期、数据归属边界与上报批次的原子写入路径 |
+| [部署指南](./.docs/deployment.md) | 环境要求、构建命令、配置项语义与发布前校验清单 |
+| [API 路由](./.docs/api/routes.md) | Server HTTP 路由索引：方法、路径、中文名与处理函数 |
+| [OpenAPI 契约](./.docs/api/openapi.yml) | Server HTTP API 的机器可读契约 |
+| [模块文档](./.docs/modules/beacon.md) | Server、Agent、共享库与控制台的当前实现事实 |
+| [文档系统](./.docs/doc-system.md) | 文档所有权、门禁边界与证据维护规则 |
 | 官网（文档与版本说明） | [beacon.amuluze.com](https://beacon.amuluze.com) |
 
 ## 🧑‍💻 开发与贡献
@@ -222,6 +231,8 @@ cd beacon && go test ./...
 cd collia && go test ./...
 cd common && go test ./...
 cd beacon/web && pnpm test:run && pnpm ts && pnpm build
+
+task doc:check
 ```
 
 欢迎提交 Issue 和 Pull Request：

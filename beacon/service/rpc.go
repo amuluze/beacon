@@ -15,7 +15,6 @@ import (
 	healthapi "beacon/service/health/api"
 	"common/database"
 	tunnelpkg "common/rpc/tunnel"
-	transporttls "common/transport/tlsconfig"
 )
 
 // globalTunnel guards the singleton tunnel instance.
@@ -24,7 +23,7 @@ var globalTunnel *tunnelpkg.ServerTunnel
 
 // NewRPCClient creates the tunnel-based RPC client.
 // Server listens for reverse connections from Agents.
-func NewRPCClient(config *Config, agentService *agent.Service, certManager *CertManager, db *database.DB) (rpc.Caller, error) {
+func NewRPCClient(config *Config, agentService *agent.Service, db *database.DB) (rpc.Caller, error) {
 	if !config.Control.Enable {
 		globalTunnel = nil
 		if agentService != nil {
@@ -34,9 +33,6 @@ func NewRPCClient(config *Config, agentService *agent.Service, certManager *Cert
 		slog.Info("reverse tunnel server disabled")
 		return rpc.NewDisabledClient(), nil
 	}
-	if strings.EqualFold(config.App.Env, productionEnv) && !config.Control.TLS.Enable && config.Control.UnixSocket == "" {
-		return nil, ErrControlTLSRequired
-	}
 
 	joinToken, err := resolveControlToken(controlJoinToken(config), config.App.Env)
 	if err != nil {
@@ -45,26 +41,12 @@ func NewRPCClient(config *Config, agentService *agent.Service, certManager *Cert
 
 	slog.Info("reverse tunnel server prepared", "addr", controlListenAddress(config))
 
-	if config.Control.TLS.Enable {
-		if err := certManager.EnsureControlCerts(); err != nil {
-			return nil, fmt.Errorf("ensure control certs: %w", err)
-		}
-	}
-
 	tun := tunnelpkg.NewServerTunnel()
 	tun.SetJoinToken(joinToken)
 	if joinToken == "" {
 		// 非生产且未配置 join token 时显式允许匿名注册以保留本地开发便利；
 		// 生产模式 resolveControlToken 已拒绝空 token，不会走到这里。
 		tun.SetAllowAnonymous(true)
-	}
-	if config.Control.TLS.Enable {
-		tlsCfg, err := transporttls.ServerConfig(config.Control.TLS.CertDir, config.Control.TLS.ClientNames)
-		if err != nil {
-			return nil, err
-		}
-		tun.SetTLSConfig(tlsCfg)
-		slog.Info("reverse tunnel tls enabled", "cert_dir", config.Control.TLS.CertDir)
 	}
 	client := rpc.NewTunnelClient(tun)
 	updater, err := agent.NewUpdater(agent.UpdateConfig{
@@ -102,16 +84,10 @@ func ServerTunnelFromHolder() *tunnelpkg.ServerTunnel {
 	return globalTunnel
 }
 
-// controlListenAddress 返回控制通道监听目标：Unix Socket 模式优先，
-// 否则回退 TCP 地址（空配置默认 17000）。
+// controlListenAddress 返回控制通道监听目标：仅 Unix Socket（单机部署），
+// 由 validateTransportSecurity 保证非空。
 func controlListenAddress(config *Config) string {
-	if socket := strings.TrimSpace(config.Control.UnixSocket); socket != "" {
-		return "unix://" + socket
-	}
-	if addr := config.Control.Address; addr != "" {
-		return addr
-	}
-	return ":17000"
+	return "unix://" + strings.TrimSpace(config.Control.UnixSocket)
 }
 
 // dbPinger 适配 *database.DB 到健康探针的 DBPinger 接口。

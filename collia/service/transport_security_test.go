@@ -7,17 +7,18 @@ import (
 
 func TestValidateTransportSecurity(t *testing.T) {
 	secure := &Config{
-		Control: Control{Server: "beacon.example.com:17000", TLS: TLS{Enable: true}},
+		Control: Control{Server: "unix:///data/beacon/control/beacon.sock"},
 		Task:    Task{Report: Report{URL: "https://beacon.example.com/api/v1/host/report", Token: "secret"}},
 	}
 	if err := validateTransportSecurity(secure); err != nil {
 		t.Fatalf("secure config rejected: %v", err)
 	}
 
-	insecureControl := *secure
-	insecureControl.Control.TLS.Enable = false
-	if err := validateTransportSecurity(&insecureControl); !errors.Is(err, ErrControlTLSRequired) {
-		t.Fatalf("control error = %v, want ErrControlTLSRequired", err)
+	// 单机部署：非 unix:// 的控制目标一律拒绝，不存在跨主机链路。
+	tcpControl := *secure
+	tcpControl.Control.Server = "beacon.example.com:17000"
+	if err := validateTransportSecurity(&tcpControl); !errors.Is(err, ErrUnixControlTargetRequired) {
+		t.Fatalf("control error = %v, want ErrUnixControlTargetRequired", err)
 	}
 
 	insecureReport := *secure
@@ -26,11 +27,9 @@ func TestValidateTransportSecurity(t *testing.T) {
 		t.Fatalf("report error = %v, want ErrHTTPSReportTargetRequired", err)
 	}
 
-	// 单机 Unix Socket 目标：本机链路无需 mTLS。
-	unixControl := *secure
-	unixControl.Control.Server = "unix:///data/beacon/data/control/collia.sock"
-	unixControl.Control.TLS.Enable = false
-	if err := validateTransportSecurity(&unixControl); err != nil {
-		t.Fatalf("unix control must not require TLS: %v", err)
+	emptyControl := *secure
+	emptyControl.Control.Server = ""
+	if err := validateTransportSecurity(&emptyControl); err != nil {
+		t.Fatalf("empty control target must pass (tunnel disabled): %v", err)
 	}
 }

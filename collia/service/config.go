@@ -91,14 +91,6 @@ type Control struct {
 	UpgradePublicKey string `yaml:"upgrade_public_key" mapstructure:"upgrade_public_key"`
 	// UpgradePublicKeys 是轮换重叠窗口使用的公钥集合；与单键字段同时存在时取并集。
 	UpgradePublicKeys []string `yaml:"upgrade_public_keys" mapstructure:"upgrade_public_keys"`
-	TLS               TLS      `yaml:"tls" mapstructure:"tls"`
-}
-
-type TLS struct {
-	Enable      bool     `yaml:"enable" mapstructure:"enable"`
-	CertDir     string   `yaml:"cert_dir" mapstructure:"cert_dir"`
-	ServerName  string   `yaml:"server_name" mapstructure:"server_name"`
-	ClientNames []string `yaml:"client_names" mapstructure:"client_names"`
 }
 
 type Disk struct {

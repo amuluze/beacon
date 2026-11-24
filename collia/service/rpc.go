@@ -11,7 +11,6 @@ import (
 	"runtime"
 
 	rpctunnel "common/rpc/tunnel"
-	transporttls "common/transport/tlsconfig"
 
 	"collia/service/rpc"
 
@@ -55,18 +54,7 @@ func NewRPCServer(config *Config, version Version) (*Server, error) {
 	tunnel := rpctunnel.NewAgentTunnel(config.Control.Server, agentID)
 	tunnel.SetJoinToken(config.Control.JoinToken)
 	tunnel.SetMetadata(version.String(), runtime.GOOS, runtime.GOARCH)
-	if config.Control.TLS.Enable && !isUnixControlTarget(config.Control.Server) {
-		serverName := config.Control.TLS.ServerName
-		if serverName == "" {
-			serverName = "beacon/collia"
-		}
-		tlsCfg, err := transporttls.ClientConfig(config.Control.TLS.CertDir, serverName)
-		if err != nil {
-			return nil, err
-		}
-		tunnel.SetTLSConfig(tlsCfg)
-		slog.Info("reverse tunnel tls enabled", "cert_dir", config.Control.TLS.CertDir, "server_name", serverName)
-	} else if isUnixControlTarget(config.Control.Server) {
+	if isUnixControlTarget(config.Control.Server) {
 		slog.Info("reverse tunnel over unix socket", "socket", config.Control.Server)
 	}
 	tunnel.SetHandler(buildRPCDispatcher(s))
