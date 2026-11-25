@@ -141,9 +141,9 @@
 - 入口：`g.Get("/query", a.feishuAPI.Query).Name("查询飞书告警配置")` at `beacon/service/router.go:380`
 - 入口：`g.Post("/update", a.feishuAPI.Update).Name("更新飞书告警配置")` at `beacon/service/router.go:381`
 - 入口：`g.Post("/test", a.feishuAPI.Test).Name("测试飞书告警")` at `beacon/service/router.go:382`
-- 入口：`g.Get("/query", a.weComAPI.Query).Name("查询企业微信告警配置")` at `beacon/service/router.go:390`
-- 入口：`g.Post("/update", a.weComAPI.Update).Name("更新企业微信告警配置")` at `beacon/service/router.go:391`
-- 入口：`g.Post("/test", a.weComAPI.Test).Name("测试企业微信告警")` at `beacon/service/router.go:392`
+- 入口：`g.Get("/query", a.wecomAPI.Query).Name("查询企业微信告警配置")` at `beacon/service/router.go:384`
+- 入口：`g.Post("/update", a.wecomAPI.Update).Name("更新企业微信告警配置")` at `beacon/service/router.go:385`
+- 入口：`g.Post("/test", a.wecomAPI.Test).Name("测试企业微信告警")` at `beacon/service/router.go:386`
 
 ## 数据模型与状态
 

@@ -19,7 +19,7 @@
 |-----------|---------------|
 | `.docs/` | implementation documentation |
 | `.specs/` | SDD 规格目录：`domain/` 存长期领域约束，`tasks/` 存过程产物（不随仓库分发） |
-| `scripts/` | 文档门禁与校验脚本：Ruby 校验器（证据台账、OpenAPI 契约、门禁自测）与 Go 字段形状导出器 `scripts/doc-schema` |
+| `scripts/` | 文档门禁与校验脚本：Ruby 校验器（证据台账、OpenAPI 契约、门禁自测）、Python 模块信号检查器与 Go 字段形状导出器 `scripts/doc-schema` |
 | `beacon/` | Beacon Server：HTTP/API service module — Web/API 接入、路由注册、请求校验和服务协调 |
 | `collia/` | Collia Agent：monitoring agent module — 主机与 Docker 指标采集、反向 gRPC tunnel 服务端、周期上报 |
 | `common/` | shared contract library — 跨 Server/Agent 复用的 schema、数据库封装、RPC 参数/返回值、tunnel 协议 |
@@ -384,7 +384,7 @@
 ## SDD Doc Health
 
 - Health status: determined by `task doc:check` for the current checkout
-- Checked targets: 31（`.docs` 14 + Domain Spec 4 + 设计意图 1 + AI 入口与索引 10 + 项目入口说明 2）
+- Checked targets: 34（`.docs` 14 + Domain Spec 4 + 设计意图 1 + AI 入口与索引 10 + 项目入口说明 5）
 - Domain specs audited: 4
 - Domain constraint IDs: 86（account IA 7 + RA 4、agent IU 9 + RU 13、container IC 7 + RC 2、monitoring I 31 + R 13）
 - Task Domain refs: 0
@@ -422,6 +422,9 @@
   - `common/CLAUDE.md`
   - `README.md`
   - `README.en.md`
+  - `collia/README.md`
+  - `common/docker/README.md`
+  - `beacon/web/README.md`
 
 ## 文档门禁的能力边界
 

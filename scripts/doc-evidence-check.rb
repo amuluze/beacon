@@ -13,6 +13,17 @@ inventory = text[/<!-- test-inventory:start -->\n(.*?)<!-- test-inventory:end --
 listed = inventory.to_s.scan(/^- `([^`]+)`$/).flatten
 errors << 'Test inventory must list every test path exactly once' unless listed.sort == actual_tests && listed.uniq == listed
 ids = Dir.glob('.specs/domain/*.md').flat_map { |f| File.read(f).scan(/^\| ([A-Z]{1,3}\d{3}) \|/).flatten }
+# Persistent implementation documents must not refer to constraints that only
+# existed in discarded task notes. Cryptographic names such as SHA256 are not IDs.
+persistent_docs = Dir.glob('.docs/**/*.md') + %w[
+  AGENTS.md README.md README.en.md
+  beacon/AGENTS.md beacon/web/AGENTS.md collia/AGENTS.md common/AGENTS.md
+].select { |f| File.file?(f) }
+non_constraint_tokens = %w[SHA256]
+persistent_docs.each do |file|
+  refs = File.read(file).scan(/\b[A-Z]{1,3}\d{3}\b/).uniq - non_constraint_tokens
+  refs.each { |ref| errors << "Unknown Domain reference #{file}: #{ref}" unless ids.include?(ref) }
+end
 section = text[/^### Evidence Backlink Table\n(.*?)(?=^## |^### |\z)/m, 1].to_s
 rows = section.lines.select { |line| line.match?(/^\| [A-Z]{1,3}\d{3} \|/) }
 seen = []

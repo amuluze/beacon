@@ -114,7 +114,6 @@
 - 管理控制台不再注册 Web Terminal 路由、顶层导航或主机监控跳转入口；底层 Terminal 组件及 Server `/ws/terminal` 通道仍保留，但不会由当前页面树挂载。
 - 探针管理页在工具栏为管理员提供「自动更新」开关：读取 `GET /api/v1/agent/update_setting`（记录缺失时后端返回 `auto_update=true`），切换即保存 `POST /api/v1/agent/update_setting`，失败回滚并保留成功提示；`deployment_enabled=false` 时开关置灰并提示部署配置已关闭自动调度，非管理员不渲染该开关。
 - 顶栏的 circle-arrow-up 按钮表达的是 Beacon 服务端自身的版本更新（`beacon/web/src/layout/navbar/BeaconVersion.vue`）：启动时读取只读端点 `GET /api/v1/system/version`（后端 `beacon/service/system/api/system.go`，返回 `BuildVersion` 与最近一次更新检查状态），无新版本时按钮置灰不可点，检测到新版本时高亮为「有新版本」，点击弹层只读展示当前版本 / 最新版本与手动升级说明；Beacon 不会自升级，是否升级由管理员在服务器上手动执行升级命令决定。Collia 升级入口原在顶栏，现迁入设置工作区「探针管理」Tab 的行内操作列。
-- 管理控制台在顶栏为管理员提供 Collia 人工升级入口：入口只在 `is_admin` 为真时渲染，作用于当前选中的 Agent，未选择 Agent 时禁用。升级弹层展示目标节点、当前版本与镜像内置目标版本，提交后调用 `POST /api/v1/agent/upgrade` 并提示版本变化，失败时保留弹窗并由全局响应拦截器给出错误。
 - Vite 生产构建会先清空 `dist`，避免历史哈希资源被 `go:embed` 写入 Beacon；Docker 镜像在隔离 Node 阶段构建前端，并通过 `.dockerignore` 拒绝本机 `dist` 进入构建上下文。
 
 ## 使用注意事项

@@ -2,11 +2,11 @@
 
 ## 范围
 
-本文档汇总 `beacon` Server HTTP 服务在源码中静态注册的全部路由信号，包含路径、HTTP 方法、处理器、用途描述与保护策略。完整契约仍以 handler、schema、测试与人工接口文档为准。
+本文档汇总 `beacon` Server HTTP 服务在源码中静态注册的全部路由信号，包含路径、HTTP 方法、处理器、用途描述与保护策略。机器可读契约以 `.docs/api/openapi.yml` 为准，运行时行为仍以 handler、schema 与测试证据为准。
 
 总览：
 
-- `beacon` Server：79 条业务路由（`/api/v1/*`）+ `/health`、`/ready` 探针 + 2 个 WebSocket 端点（`/ws/terminal`、`/ws/:id`）
+- `beacon` Server：77 条业务路由（`/api/v1/*`）+ `/health`、`/ready` 探针 + 2 个 WebSocket 端点（`/ws/terminal`、`/ws/:id`）
 
 ## 探针与中间件
 
@@ -169,9 +169,9 @@
 
 | 方法 | 路径 | 处理器 | 保护 | 用途 |
 |------|------|--------|------|------|
-| GET | `/api/v1/wecom/query` | `weComAPI.Query` | JWT + Casbin（管理员专属资源） | 查询企业微信告警启用状态、凭据掩码和配置状态 |
-| POST | `/api/v1/wecom/update` | `weComAPI.Update` | JWT + Casbin（管理员专属资源） | 更新官方群机器人 Webhook 和提醒范围 |
-| POST | `/api/v1/wecom/test` | `weComAPI.Test` | JWT + Casbin（管理员专属资源） | 使用已保存配置发送企业微信测试消息 |
+| GET | `/api/v1/wecom/query` | `wecomAPI.Query` | JWT + Casbin（管理员专属资源） | 查询企业微信告警启用状态、凭据掩码和配置状态 |
+| POST | `/api/v1/wecom/update` | `wecomAPI.Update` | JWT + Casbin（管理员专属资源） | 更新官方群机器人 Webhook 和提醒范围 |
+| POST | `/api/v1/wecom/test` | `wecomAPI.Test` | JWT + Casbin（管理员专属资源） | 使用已保存配置发送企业微信测试消息 |
 
 ### 告警阈值与消息标题
 
@@ -185,6 +185,6 @@
 ## 维护约束
 
 - 新增或修改路由时，同步检查请求参数、响应 schema、权限和错误语义。
-- 该文件不替代 OpenAPI/接口契约；当 API contract 需要稳定对外发布时，应补充专门契约文档或测试。
+- 该文件是 OpenAPI 的人类可读索引，不替代 `.docs/api/openapi.yml`；新增或变更 API 时必须同步维护两者及对应契约测试。
 - 容器与主机控制类路由必须携带 Agent-ID（`X-Agent-ID` header 或 `agent_id` query），由全局中间件注入到 `contextx`，下游必须显式校验。这两个入口构成稳定协议表面：第三方客户端以任一形式提交均须被接受，移除任一入口属于破坏性变更。
 - 路由新增、删除或修改方法时，同步更新本文件与 OpenAPI，并运行 `task doc:check`；仅当调用边界变化时更新架构文档。

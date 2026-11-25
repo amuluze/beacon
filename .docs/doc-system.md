@@ -13,11 +13,11 @@
 运行 task doc:check，退出码为当前检出状态的结果；文档不保存未经执行即可宣称的 pass。
 必需依赖：Python 3、Ruby/Psych、Go 和 Task；缺失依赖不得视为验证成功。
 Ruby 脚本固定 UTF-8 编码并以 `RUBYOPT=-EUTF-8` 调用，结果不依赖调用方的 locale。
-门禁自测（`scripts/doc-check-test.rb`）随每次 `task doc:check` 执行，证明门禁能拒绝坏输入。
+门禁自测（`scripts/doc-check-test.rb`）随每次 `task doc:check` 执行，覆盖证据台账、OpenAPI 契约和独立模块信号检查的坏输入拒绝；MANIFEST、链接和健康计数由每次门禁自身执行验证。
 `scripts/doc-schema` 是独立 Go module：字段形状导出与OpenAPI标准校验器纳入 `task doc:verify` 的 build/test/vet。
 OpenAPI通过固定版本 `github.com/getkin/kin-openapi v0.133.0` 校验标准结构，并额外检查根级和operation级security方案引用；禁止外部引用加载。依赖记录在工具模块的go.mod/go.sum，首次运行需要下载依赖，不要求额外安装Python/Node验证库。
 `.docs/MANIFEST.yml` 用完整 YAML 解析，required 为必需集合，optional 对已存在的匹配文件执行规则。
-路由从 `beacon/service/router.go` 的 Fiber 注册结果导出，与 `.docs/api/openapi.yml` 对账 HTTP 方法和路径；不发送业务请求，自动 HEAD 不重复计数。
+路由从 `beacon/service/router.go` 的 Fiber 注册结果导出，与 `.docs/api/openapi.yml` 对账 HTTP 方法和路径；`.docs/api/routes.md` 的人类可读索引同时核对 method/path、业务路由计数与标准 handler 标识。不发送业务请求，自动 HEAD 不重复计数。
 路由测试不证明鉴权和业务语义正确。另由 `scripts/doc-contract-check.rb` 检查全部operation的成功响应建模、204无正文、引用有效性、handler请求类型与Go字段模型；不把字段对账视为真实HTTP响应验收。
 普通JSON接口的响应引用沿handler返回变量绑定service方法的返回类型；无法解析的返回形式必须失败。成功状态集合精确对账，204接口不得额外声明200。升级、上报、安装下载、探针和WebSocket采用显式人工维护的绑定表，不能把这些绑定视为已完成运行时响应验证。升级请求与结果、Agent自有字段和统一错误响应也参与Go字段对账；已删除的派生类型不得保留陈旧组件。GORMModel的第三方嵌入字段、HealthResponse等inline map响应仍需人工审查与运行时测试。
 Query参数使用Go的query标签，分别核对名称、字段形状、边界和必填状态；不从JSON字段名推断Query别名。空schema不得作为响应模型通过门禁。
@@ -28,10 +28,10 @@ Token 校验只检查名称和数量，不证明视觉一致。
 源码库存按Git可见且磁盘实际存在的文件统计；已删除但尚未暂存的跟踪文件不计入库存，不包含本地生成文件。
 源码库存同时对账模块文档声明的 Go 源码/测试文件数、前端源码文件数与运行时依赖清单；数字必须与仓库实际一致。
 部署配置清单必须覆盖仓库中全部运行时配置文件，且登记项必须真实存在。
-模块文档的「接口与符号信号」与「配置与入口信号」不得重复承载同一批对象，也不得把测试文件当作入口信号。
+模块文档的「接口与符号信号」与「配置与入口信号」不得重复承载同一批对象，也不得把 `_test.go`、`.test.ts` 或 `.spec.ts` 测试文件当作入口信号；顶级 Common 文档不得把独立子模块信号计入自身。
 Domain Spec 必须声明非占位符的反推来源与最后更新时间；跨 Spec 引用必须双向对称。
 Domain Spec 编号全局唯一，不得被另一份 Spec 重复占用；跨 Spec 编号引用必须指向已定义约束。
-文档之间的相对链接必须解析到仓库中真实存在的文件；文件链接存在不代表标题锚点有效。
+文档之间的相对链接必须解析到仓库中真实存在的文件；文件链接存在不代表标题锚点有效。持久 `.docs` 与 AI 入口中的 Domain 编号必须指向现有约束；`DESIGN.md` 等使用独立编号体系的文档不并入 Domain 引用扫描。AI 入口“关键目录”声明的仓库路径必须真实存在。
 入口文件一致性单独核对：根 `AGENTS.md` 与 `CLAUDE.md` 逐字一致，各模块 `AGENTS.md` 与 `CLAUDE.md` 成对存在且内容一致，CLAUDE 不得出现未纳管的独立条目。
 
 ## 证据与维护
@@ -46,4 +46,4 @@ PostgreSQL数据库专项测试以BEACON_TEST_POSTGRES_PORT等测试环境变量
 模块命令的本次执行快照与原因详见 `.docs/project-analysis.md`；新增命令须补齐对应记录。
 新增统计须有自动对账或明确历史快照范围，避免人工复制计数。
 Go、前端及Ruby具名测试可回挂约束证据。
-变更后运行门禁；任务和计划属于过程材料，完成后清理。
+变更后运行门禁；任务和计划属于过程材料，完成后清理。GitHub Actions 的 `Documentation and frontend` workflow 在 PR 上分别执行 `task doc:verify` 与前端 `ts`/`test:run`/`build`；Docker 与 PostgreSQL 专项不在默认必跑集合内。

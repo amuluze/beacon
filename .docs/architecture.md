@@ -29,7 +29,7 @@ Agent 列表中的 `online/offline` 只描述第 3 条控制链路：Server 启�
 
 | 层级 | 技术与版本 |
 |------|-----------|
-| 后端语言 | Go 1.25（各模块 `go.mod` 声明） |
+| 后端语言 | Go workspace 1.25（`common/timex` 的 go.mod 声明 1.21.4，其余工作区模块声明 1.25） |
 | Web 框架 | gofiber/fiber/v2 v2.52.5 |
 | WebSocket | gofiber/contrib/websocket v1.3.2 |
 | ORM | gorm.io/gorm v1.25.12 + glebarez/sqlite v1.11.0 |
@@ -84,11 +84,11 @@ Agent 列表中的 `online/offline` 只描述第 3 条控制链路：Server 启�
 | `collia/` | Collia Agent：monitoring agent module — 主机与 Docker 指标采集、反向 tunnel 服务端、周期上报 |
 | `common/` | shared contract library — 跨 Server/Agent 复用的 schema、数据库封装、RPC 参数/返回值、tunnel 协议 |
 
-## 调用关系
+## 入口与导出信号
 
 - `beacon`（Server）：导出符号信号 `func AllowPathPrefixSkipper (beacon/service/middleware/skip.go)`, `func BcryptHash (beacon/pkg/utils/hash/hash.go)`, `func BcryptVerify (beacon/pkg/utils/hash/hash.go)`；入口信号 `api := app.Group("/api")` at `beacon/service/router.go:81`、`app.Get("/health", a.healthProbe.Liveness)` at `beacon/service/router.go:87`、`app.Get("/ready", a.healthProbe.Readiness)` at `beacon/service/router.go:88`、钉钉配置路由 `registerDingTalkRoutes` at `beacon/service/router.go:371`；包含配置与外部通知边界。
 - `collia`（Agent）：导出符号信号 `func BuildInjector (collia/service/wire.go)`, `func BuildInjector (collia/service/wire_gen.go)`, `func CleanupBackup (collia/service/rpc/lifecycle.go)`, `func CopyFile (collia/pkg/utils/file.go)`, `func DefaultRestartFn (collia/service/rpc/lifecycle.go)`；包含配置边界。Agent 通过 `collia/service/rpc.go` 与 `collia/service/task.go` 暴露采集与控制 RPC。
-- `common`：导出符号信号 `func ComputeFreshness (common/rpc/schema/freshness.go)`, `func CurrentDate (common/timex/timex.go)`, `func CurrentTime (common/timex/timex.go)`；包含配置边界。
+- `common`：导出符号信号 `func ComputeFreshness (common/rpc/schema/freshness.go)`；包含数据库与 tunnel 配置边界。独立子模块的符号不并入本模块。
 - `common/docker`（独立 go module `github.com/amuluze/docker`）：导出符号信号 `func NewManager (common/docker/manager.go)`, `interface IManager (common/docker/manager.go)`, `struct ContainerSummary (common/docker/container.go)`, `struct ImageSummary (common/docker/image.go)`, `struct Manager (common/docker/manager.go)`；包含配置边界。
 - `common/logger`（独立 go module `github.com/amuluze/amutool/logger`）：导出符号信号 `func Debug (common/logger/default.go)`, `func DebugFields (common/logger/default.go)`, `func Debugf (common/logger/default.go)`, `func Default (common/logger/default.go)`, `func Error (common/logger/default.go)`；包含配置边界。
 - `common/timex`（独立 go module `github.com/amuluze/amutool/timex`）：导出符号信号 `func CurrentDate (common/timex/timex.go)`, `func CurrentTime (common/timex/timex.go)`, `func CurrentTimestamp (common/timex/timex.go)`, `func Int64ToTime (common/timex/timex.go)`, `func NewTicker (common/timex/ticker.go)`。

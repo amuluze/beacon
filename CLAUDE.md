@@ -37,11 +37,14 @@
 | [.specs/domain/monitoring-platform.md](.specs/domain/monitoring-platform.md) | 采样上报的数据新鲜度、阈值判定、审计记录与告警去重的长期约束 |
 | [README.md](README.md) | 面向使用者的中文项目说明：功能特性、系统架构、快速开始与文档索引 |
 | [README.en.md](README.en.md) | 面向使用者的英文项目说明，与中文 README 内容对齐 |
+| [collia/README.md](collia/README.md) | Agent 用户入口：安装、服务生命周期、文件位置与升级语义 |
+| [common/docker/README.md](common/docker/README.md) | Docker 共享库用户入口：真实运行时集成测试与资源清理 |
+| [beacon/web/README.md](beacon/web/README.md) | 控制台用户入口：依赖安装、构建与开发命令 |
 
 ## 文档健康
 
 - 状态：以当前提交执行 `task doc:check` 的退出码为准
-- 检查目标：31（`.docs` 14 + Domain Spec 4 + 设计意图 1 + AI 入口与索引 10 + 项目入口说明 2）
+- 检查目标：34（`.docs` 14 + Domain Spec 4 + 设计意图 1 + AI 入口与索引 10 + 项目入口说明 5）
 - Domain Spec：4 份，编号约束 86 条（各 Spec 前缀唯一）
 - 建议：行为变更后同步维护相关文档；检查目标与章节要求以 `.docs/MANIFEST.yml` 为准。
 
@@ -51,7 +54,7 @@
 |-----------|---------------|
 | `.docs/` | implementation documentation |
 | `.specs/` | SDD 规格目录：`domain/` 存长期领域约束，`tasks/` 存过程产物（不随仓库分发） |
-| `scripts/` | 文档门禁与校验脚本：Ruby 校验器（证据台账、OpenAPI 契约、门禁自测）与 Go 字段形状导出器 `scripts/doc-schema` |
+| `scripts/` | 文档门禁与校验脚本：Ruby 校验器（证据台账、OpenAPI 契约、门禁自测）、Python 模块信号检查器与 Go 字段形状导出器 `scripts/doc-schema` |
 | `beacon/` | Beacon Server：HTTP/API service module — Web/API 接入、路由注册、请求校验和服务协调 |
 | `collia/` | Collia Agent：monitoring agent module — 主机与 Docker 指标采集、反向 gRPC tunnel 服务端、周期上报 |
 | `common/` | shared contract library — 跨 Server/Agent 复用的 schema、数据库封装、RPC 参数/返回值、tunnel 协议 |

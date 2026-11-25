@@ -15,7 +15,7 @@ class DocumentationGateTest < Minitest::Test
 
   def setup
     @dir = Dir.mktmpdir('beacon-doc-gate-')
-    paths = %w[scripts/doc-evidence-check.rb scripts/doc-commands.rb scripts/doc-contract-check.rb scripts/doc-schema/main.go scripts/doc-schema/main_test.go scripts/doc-schema/go.mod scripts/doc-schema/go.sum scripts/doc-schema/cmd/openapi-check/main.go .docs/project-analysis.md .docs/api/openapi.yml beacon/service/router.go beacon/service/agent/agent.go beacon/service/agent/updater.go beacon/service/model/agent.go beacon/pkg/fiberx/fiberx.go beacon/web/package.json]
+    paths = %w[scripts/doc-evidence-check.rb scripts/doc-commands.rb scripts/doc-contract-check.rb scripts/doc-signal-check.py scripts/doc-schema/main.go scripts/doc-schema/main_test.go scripts/doc-schema/go.mod scripts/doc-schema/go.sum scripts/doc-schema/cmd/openapi-check/main.go .docs/project-analysis.md .docs/api/openapi.yml .docs/api/routes.md .docs/architecture.md beacon/service/router.go beacon/service/agent/agent.go beacon/service/agent/updater.go beacon/service/model/agent.go beacon/pkg/fiberx/fiberx.go beacon/web/package.json]
     paths += Dir.glob(File.join(ROOT, '.docs/modules/*.md')).map { |p| p.delete_prefix(ROOT + '/') }
     paths += Dir.glob(File.join(ROOT, '.specs/domain/*.md')).map { |p| p.delete_prefix(ROOT + '/') }
     paths += Dir.glob(File.join(ROOT, 'beacon/service/schema/*.go')).map { |p| p.delete_prefix(ROOT + '/') }
@@ -235,6 +235,44 @@ class DocumentationGateTest < Minitest::Test
       File.write(File.join(@dir, '.docs/api/openapi.yml'), YAML.dump(doc))
       assert_includes reject!('ruby', 'scripts/doc-contract-check.rb'), 'Refresh'
     end
+  end
+
+  def test_rejects_route_index_count_drift
+    change('.docs/api/routes.md') { |s| s.sub('77 条业务路由', '79 条业务路由') }
+    assert_includes reject!('ruby', 'scripts/doc-contract-check.rb'), 'Route index count mismatch'
+  end
+
+  def test_rejects_route_index_path_drift
+    change('.docs/api/routes.md') { |s| s.lines.reject { |line| line.include?('`/api/v1/host/cpu_info`') }.join }
+    assert_includes reject!('ruby', 'scripts/doc-contract-check.rb'), 'Route index missing'
+  end
+
+  def test_rejects_route_index_handler_drift
+    change('.docs/api/routes.md') { |s| s.sub('`wecomAPI.Query`', '`wrongAPI.Query`') }
+    assert_includes reject!('ruby', 'scripts/doc-contract-check.rb'), 'Route handler mismatch'
+  end
+
+  def test_rejects_unknown_persistent_domain_reference
+    change('.docs/modules/beacon.md') { |s| s.sub('（IA007）', '（IR999）') }
+    assert_includes reject!('ruby', 'scripts/doc-evidence-check.rb'), 'Unknown Domain reference'
+  end
+
+  def test_signal_checker_baseline
+    run!('python3', 'scripts/doc-signal-check.py')
+  end
+
+  def test_rejects_go_test_signal
+    change('.docs/modules/common.md') do |s|
+      s.sub('- `interface AgentLifecycle', "- `func Fake (common/rpc/tunnel/server_test.go)`\n- `interface AgentLifecycle")
+    end
+    assert_includes reject!('python3', 'scripts/doc-signal-check.py'), 'Test file in entry signal'
+  end
+
+  def test_rejects_common_child_module_signal
+    change('.docs/modules/common.md') do |s|
+      s.sub('- 配置：`Option` in `common/database/options.go`', "- 配置：`Option` in `common/database/options.go`\n- 配置：`Option` in `common/logger/config.go`")
+    end
+    assert_includes reject!('python3', 'scripts/doc-signal-check.py'), 'Child module signal'
   end
 
   def test_business_contract_samples

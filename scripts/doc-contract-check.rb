@@ -15,6 +15,25 @@ if ARGV.include?("--update-go-schemas")
   expected.each { |name, shape| schemas[name] = shape }
 end
 errors = []
+# Keep the human-readable route index on the same method/path surface as OpenAPI.
+# The runtime route export in doc-check.sh remains the authority for OpenAPI itself.
+routes_text = File.read('.docs/api/routes.md')
+route_handlers = {}
+routes_text.scan(/^\| (GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) \| `([^`]+)` \| ([^|]+) \|/) do |verb, route_path, handler|
+  normalized = route_path.gsub(/:([A-Za-z_]\w*)/) { "{#{Regexp.last_match(1)}}" }
+  route_handlers[[verb.downcase, normalized]] = handler.strip.delete_prefix('`').delete_suffix('`')
+end
+document_routes = doc.fetch('paths').flat_map do |route_path, item|
+  item.keys.select { |method| %w[get post put patch delete options head].include?(method) }.map { |method| [method, route_path] }
+end
+(document_routes - route_handlers.keys).each { |method, route_path| errors << "Route index missing #{method.upcase} #{route_path}" }
+(route_handlers.keys - document_routes).each { |method, route_path| errors << "Route index extra #{method.upcase} #{route_path}" }
+business_count = route_handlers.keys.count { |_, route_path| route_path.start_with?('/api/v1/') }
+declared_count = routes_text[/`beacon` Server：(\d+) 条业务路由/, 1]
+errors << "Route index count mismatch: declared #{declared_count.inspect}, actual #{business_count}" unless declared_count&.to_i == business_count
+architecture = File.read('.docs/architecture.md')
+architecture_count = architecture[/业务路由：(\d+) 条/, 1]
+errors << "Architecture route count mismatch: declared #{architecture_count.inspect}, actual #{business_count}" unless architecture_count&.to_i == business_count
 # Refresh uses a refresh cookie even when the access session has expired.
 refresh = doc.fetch('paths').fetch('/api/v1/auth/token_update').fetch('post')
 errors << 'Refresh security mismatch' unless refresh['security'] == [{'RefreshCookieAuth'=>[]}]
@@ -120,6 +139,11 @@ doc['paths'].each do |path, item|
         registration = router.match(/g(?:User|Role|Resource)?\.#{method.capitalize}\("\/#{Regexp.escape(endpoint)}", a\.#{api}\.(\w+)\)/)
         if registration
           function = registration[1]
+          indexed_handler = route_handlers[[method, path]]
+          expected_handler = "#{api}.#{function}"
+          if indexed_handler != expected_handler
+            errors << "Route handler mismatch #{method.upcase} #{path}: #{indexed_handler.inspect} != #{expected_handler.inspect}"
+          end
           source = handler_sources.fetch(mod) { "beacon/service/#{mod}/api/#{mod}.go" }
           text = File.read(source)
           body = text[/^func \([^\n]+\) #{Regexp.escape(function)}\([^\n]+\{\n(.*?)(?=^func |\z)/m, 1]

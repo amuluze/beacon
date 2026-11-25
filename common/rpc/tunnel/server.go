@@ -277,8 +277,8 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 		return err
 	}
 
-	// Data streams share the connection (and therefore the node certificate
-	// identity) with the control stream, but must not register the agent in
+	// Data streams share the Unix Socket connection and authenticated Agent
+	// identity with the control stream, but must not register the agent in
 	// the online registry: that would shadow the control session and emit
 	// spurious connect/disconnect lifecycle events.
 	if regPayload.Role == RoleData {
@@ -368,9 +368,9 @@ func (s *ServerTunnel) Tunnel(stream grpc.BidiStreamingServer[Frame, Frame]) err
 }
 
 // serveDataStream consumes a data stream: the Agent pushes payloads and the
-// Server hands them to the data handler. The stream is authenticated by the
-// registration handshake (join token plus the connection-level client
-// certificate) and never touches the agent online registry.
+// Server hands them to the data handler. The stream is authenticated by its
+// registration handshake (JoinToken and explicit Agent identity) and never
+// touches the agent online registry.
 //
 // A rejected payload only drops that payload: the stream stays open and the
 // agent may continue pushing.

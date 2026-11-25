@@ -102,7 +102,7 @@ See [`.docs/modules/beacon.md`](./.docs/modules/beacon.md) for the current Serve
 bash -c "$(curl -fsSL https://beacon.amuluze.com/release/latest/manager.sh)" -- install BEACON_PUBLIC_BASE_URL=https://beacon.example.com
 ```
 
-Production mode accepts HTTPS only. First provide a trusted reverse proxy that forwards this HTTPS origin to Beacon's Web port. The installer then configures the ports and generates authentication, data-encryption, and bootstrap-administrator credentials. `BEACON_DATA_ENCRYPTION_KEY` is stored in the mode-`0600` `.env` file and must be retained permanently.
+Production mode accepts HTTPS only. First provide a trusted reverse proxy that forwards this HTTPS origin to Beacon's Web port. The installer then configures the Web port and control Socket path, and generates authentication, data-encryption, and bootstrap-administrator credentials. `BEACON_DATA_ENCRYPTION_KEY` is stored in the mode-`0600` `.env` file and must be retained permanently.
 
 The installer supports **single-node mode only** (the Agent control channel uses a Unix Socket and does not publish port 17000).
 
@@ -185,8 +185,8 @@ The payload contains only `install_id`, `image`, `version`, `public_base_url`, `
 | Web frontend | Vue 3, TypeScript, Vite, Element Plus, Pinia, ECharts |
 | Server | Go 1.25, Fiber, GORM, WebSocket |
 | Agent | Go, gopsutil, Docker Engine API |
-| Control channel | Agent-initiated reverse gRPC tunnel |
-| Monitoring channel | HTTP batch reporting and Server-side persistence |
+| Control channel | Agent-initiated reverse gRPC tunnel over the local Unix Socket |
+| Monitoring channel | Batch reporting over the control-connection data stream (with HTTP compatibility fallback) and Server-side persistence |
 | Storage | SQLite, with other databases available through GORM |
 | Deployment | Docker, Docker Compose |
 

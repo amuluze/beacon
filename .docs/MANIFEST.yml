@@ -233,3 +233,19 @@ entry:
         - "## 📖 Introduction"
         - "## 🚀 Quick Start"
       description: 面向使用者的英文项目说明，与中文 README 内容对齐
+    - path: ../collia/README.md
+      min_lines: 20
+      must_contain:
+        - "# collia"
+        - "collia install"
+      description: Collia Agent 用户入口：安装、服务生命周期、文件位置与升级语义
+    - path: ../common/docker/README.md
+      min_lines: 10
+      must_contain:
+        - "## 集成测试"
+      description: common/docker 用户入口：真实 Docker 集成测试环境、资源清理与镜像变量
+    - path: ../beacon/web/README.md
+      min_lines: 5
+      must_contain:
+        - "## build"
+      description: Beacon Web 用户入口：前端依赖安装、构建与开发命令

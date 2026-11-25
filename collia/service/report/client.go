@@ -28,9 +28,9 @@ type Client struct {
 }
 
 // NewClient creates an HTTP push client. When tlsConfig is non-nil it is
-// applied to the underlying transport (e.g. a custom RootCAs loaded from the
-// local CA plus a ServerName matching the control-plane certificate), so the
-// report target can use HTTPS against a self-signed internal CA.
+// applied to the underlying transport. Beacon supplies a configuration that
+// verifies the report URL against the system trust store; the Unix Socket
+// control channel does not provide certificates or trust roots.
 func NewClient(url, token string, tlsConfig *tls.Config) *Client {
 	httpClient := &http.Client{Timeout: 30 * time.Second}
 	if tlsConfig != nil {
