@@ -6,7 +6,7 @@
 
 - 主机与容器指标采集：CPU、内存、磁盘、网络使用率与趋势（基于 `shirou/gopsutil/v3`）。
 - 本机 Docker 操作执行：依赖 `common/docker`（`github.com/amuluze/docker`），由 Server 通过反向 gRPC tunnel 调用。
-- 反向 gRPC tunnel 客户端：启动后主动连接 Beacon Server，建立 TLS 隧道，让 Server 按 `agent_id` 反向调用本机资源。
+- 反向 gRPC tunnel 客户端：启动后主动连接 Beacon Server 在本机 Unix Socket 上监听的控制通道，让 Server 按 `agent_id` 反向调用本机资源。
 - 监控数据上报：优先经控制连接的数据流推送批次；HTTP `POST /api/v1/host/report` 保留为兼容回退（`task.report.url`）。
 - 本地配置与服务注册：通过 `takama/daemon` 注册 systemd/init 服务，支持 `install/start/stop/status/remove` 子命令。重复执行 `install` 时若单元文件已存在，保留现有注册并按幂等成功返回（输出中性提示，不再打印 `[FAILED]`）；`remove` 先停止服务再注销单元，并在删除单元后执行 `systemctl daemon-reload`；对未被 systemd 跟踪的残留 `collia daemon` 进程，按 `/proc` 扫描做 SIGTERM→SIGKILL 兜底清理（避免旧版本卸载后以已删除二进制继续运行）。
 
@@ -14,7 +14,7 @@
 
 - 业务持久化：监控数据写入 Server；Agent 不维护本地业务库（历史 `s_container/s_image/s_network` 本地表与本地 SQLite 装配已移除，容器以 Docker 运行时为唯一事实源，见 IC007）。
 - 用户鉴权与 RBAC：所有鉴权由 `beacon` Server 统一处理。
-- 跨节点协调：每个 collia 独立运行，仅与配置中 `control.server` 指定的 Server 通信。
+- 跨 Agent 协调：每个 collia 独立运行，仅与配置中 `control.server` 指定的 Server 通信。
 
 - 相关源码包：`collia/cmd`、`collia/pkg/psutil`、`collia/pkg/utils`、`collia/service`、`collia/service/rpc`、`collia/service/task`、`collia/service/report`。
 

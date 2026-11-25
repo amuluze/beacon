@@ -240,6 +240,7 @@
 | IA004 | `beacon/service/auth/api/auth_test.go::TestLoginSetsHttpOnlyCookiesWithoutReturningTokens`；`beacon/service/auth/api/auth_test.go::TestRefreshWithoutAccessCookieStillRequiresCSRF`；`beacon/service/middleware/auth_test.go::TestCSRFMiddlewareProtectsCookieAuthenticatedMutations` | Cookie 属性、无正文Token、无Access Cookie刷新及双提交拒绝 | 部分覆盖 | 所有入口和浏览器存储需专项审计 |
 | IA005 | `beacon/service/prepare_test.go::TestInitAccountCreatesOnlyMandatoryChangeAdministrator`；`beacon/service/prepare_test.go::TestInitAccountMarksHistoricalDefaultForMandatoryChange` | 只创建管理员、强制改密及旧默认密码迁移 | 部分覆盖 | 完整升级安装链路待验收 |
 | IA006 | `beacon/service/prepare_test.go::TestInitAccountRejectsWeakBootstrapPassword`；`beacon/pkg/auth/password_test.go::TestValidatePassword`；`beacon/service/schema/account_test.go::TestPasswordUpdateArgsRejectsShortNewPassword` | 弱bootstrap密码、密码字符类别及更新长度边界 | 部分覆盖 | 完整密码更新HTTP回归与Unicode类别边界需专项验证 |
+| IA007 | `beacon/service/reset_admin_test.go::TestResetAdminPasswordGeneratesTemporaryPassword`；`beacon/service/reset_admin_test.go::TestResetAdminPasswordExplicitPassword`；`beacon/service/reset_admin_test.go::TestResetAdminPasswordRejectsWeakPassword`；`beacon/service/reset_admin_test.go::TestResetAdminPasswordMissingAdmin` | 临时/显式密码、bcrypt、强制改密、系统审计、弱密码不改原凭据与管理员缺失拒绝 | 部分覆盖 | 真实 CLI 在服务运行期间的数据库锁竞争与写失败场景需集成验收 |
 | RA001 | `beacon/web/src/views/account/user/components/DeleteUser.test.ts::submits the selected ids and refreshes only after deletion succeeds` | 传递选中ID且仅成功后刷新 | 部分覆盖 | 权限范围需API集成验证 |
 | RA002 | `beacon/service/account/service/account_test.go::TestAccountService_UserDeleteRejectsMissingTarget`；`beacon/service/schema/account_test.go::TestUserDeleteArgsRequiresExplicitUUIDTargets` | 无效输入与缺失目标拒绝 | 部分覆盖 | 持久化失败错误码需补集成场景 |
 | RA003 | `beacon/web/src/views/account/user/components/DeleteUser.test.ts::submits the selected ids and refreshes only after deletion succeeds` | 确认目标与请求ID一致 | 部分覆盖 | 多选及取消并发需端到端验证 |
@@ -295,15 +296,15 @@
 | I018 | `beacon/web/src/views/monitor/container/index.test.ts::keeps high-cardinality legends scrollable without duplicating them inside charts` | 高基数图例滚动、内部图例关闭及系列保留 | 部分覆盖 | 真实浏览器长名称提示及小屏布局需视觉验收 |
 | I019 | `beacon/service/report/handler_test.go::TestHandleReport_RejectsInvalidToken` | 错误Token拒绝 | 部分覆盖 | 恒定时间原语审查及时间差实验未覆盖 |
 | I020 | `collia/service/report/client_test.go::TestPushRejectsTokenOverHTTPBeforeNetwork` | HTTP目标发送前拒绝 | 部分覆盖 | userinfo地址需独立用例 |
-| I021 | `collia/service/report_tls_test.go::TestBuildReportTLSConfigUsesSystemTrustOnly`；`collia/service/report_tls_test.go::TestReportClientRejectsUntrustedSelfSignedCert` | 上报 TLS 只信系统信任库且拒绝不受信自签证书 | 部分覆盖 | 真实受信 Web 证书下的端到端上报需部署验收 |
+| I021 | `collia/service/report_tls_test.go::TestBuildReportTLSConfigUsesSystemTrustOnly`；`collia/service/report_tls_test.go::TestReportClientRejectsUntrustedSelfSignedCert` | 上报 TLS 使用系统信任库、不跳过校验且拒绝不受信自签证书 | 部分覆盖 | 受信私有 CA 导入系统信任库后的端到端上报需部署验收 |
 | I022 | `beacon/service/health/api/health_test.go::TestLiveness_Always200`；`beacon/service/health/api/health_test.go::TestReadiness_DBError_Returns503`；`beacon/service/health/api/health_test.go::TestReadiness_DBSuccess_TunnelQueried` | 存活独立于DB、就绪反映DB | 部分覆盖 | 数据库故障恢复时序需集成验证 |
 | I023 | `beacon/service/middleware/ratelimit_test.go::TestGlobalRateLimitMiddleware_SkipsStaticAndAuth` | 全局限流跳过登录类端点（登录限流由 router 内联承担） | 部分覆盖 | 登录超限与上报按 Agent 限流需独立集成测试 |
 | I024 | `common/rpc/tunnel/server_test.go::TestServerTunnel_StreamCall_CtxCancelReleasesStream`；`beacon/service/terminal/bridge_test.go::TestBridgeWriteTimeoutDefaultsToGuard` | 流取消释放及写超时兜底 | 部分覆盖 | 半开TCP、超龄与空闲回收需负载实验 |
 | I025 | `beacon/service/app_test.go::TestFiberTimeoutsRespectConfig`；`beacon/service/app_test.go::TestFiberBodyLimitReduced` | 连接超时与请求体上限配置 | 部分覆盖 | 真实慢速请求及超限请求需网络测试 |
 | I026 | `beacon/service/audit/repository/audit_test.go::TestAuditQueryFiltersByAgentID`；`beacon/service/task/task_test.go::TestCPUAlarmRecoversAfterMetricDrops` | 审计按 Agent 筛选；告警系统审计携带 AgentID 与粒度键 Object | 部分覆盖 | 启停删除审计的对象及 Agent 内容需端到端验证 |
 | I027 | `beacon/service/task/cleanup_test.go::TestCleanupDeletesExpiredAudit`；`beacon/service/task/cleanup_test.go::TestCleanupUsesSeparateRetentionForAuditAndTimeSeries` | 审计按独立保留期清理 | 部分覆盖 | 定时任务调度需部署验收 |
-| I028 | `collia/service/report_tls_test.go::TestBuildReportTLSConfigUsesSystemTrustOnly` | 上报客户端 TLS 配置无控制通道耦合 | 部分覆盖 | 受信 CA 签发证书的联调环境需专项验收 |
-| I029 | `common/rpc/tunnel/data_stream_test.go::TestServerTunnel_DataStream_DoesNotRegisterAgent` | 数据流不注册在线表、不触发生命周期回调 | 部分覆盖 | 真实 Agent 与 Server 同连接双流的端到端联测待执行 |
+| I028 | `collia/service/report_tls_test.go::TestBuildReportTLSConfigUsesSystemTrustOnly` | 空控制配置下上报 TLS 使用系统信任库，无控制证书或 ServerName 耦合 | 部分覆盖 | 真实安装配置中的控制面与 Web TLS 解耦需持续代码审查 |
+| I029 | `common/rpc/tunnel/data_stream_test.go::TestServerTunnel_DataStream_DoesNotRegisterAgent`；`common/rpc/tunnel/data_stream_test.go::TestServerTunnel_DataStream_RejectsBadToken`；`common/rpc/tunnel/data_stream_test.go::TestServerTunnel_DataRegistrationPayloadCarriesRole` | 数据流角色注册、JoinToken 拒绝、不写在线表且不触发生命周期回调 | 部分覆盖 | 真实 Agent 与 Server 同连接双流的端到端联测待执行 |
 | I030 | `beacon/service/tunnel_report_test.go::TestTunnelReportHandler_StoresBatch`；`beacon/service/tunnel_report_test.go::TestTunnelReportHandler_RejectsAgentIDMismatch` | 隧道批次入库与身份不一致拒绝 | 部分覆盖 | 真实隧道上的批次投递待部署环境验收 |
 | I031 | `collia/service/report_channel_test.go::TestPushReport_UsesTunnelDataStream`；`collia/service/report_channel_test.go::TestPushReport_FallsBackToHTTPWhenDataStreamUnavailable`；`collia/service/report_channel_test.go::TestPushReport_FallsBackToHTTPWhenTunnelPushFails`；`collia/service/report_channel_test.go::TestPushReport_DropsBatchWhenNoChannelAvailable` | 隧道优先、失败回落、丢弃不排队 | 部分覆盖 | 断线期间的真实数据缺口与恢复待部署观察 |
 | R001 | `beacon/pkg/fiberx/fiberx_test.go::TestServiceError_Mapping` | 缺目标、离线、超时映射不同HTTP错误 | 部分覆盖 | 真实API权限不足需集成测试 |
@@ -385,7 +386,7 @@
 - Health status: determined by `task doc:check` for the current checkout
 - Checked targets: 31（`.docs` 14 + Domain Spec 4 + 设计意图 1 + AI 入口与索引 10 + 项目入口说明 2）
 - Domain specs audited: 4
-- Domain constraint IDs: 85（account IA 6 + RA 4、agent IU 9 + RU 13、container IC 7 + RC 2、monitoring I 31 + R 13）
+- Domain constraint IDs: 86（account IA 7 + RA 4、agent IU 9 + RU 13、container IC 7 + RC 2、monitoring I 31 + R 13）
 - Task Domain refs: 0
 - Orphan CLAUDE entries: 0
 

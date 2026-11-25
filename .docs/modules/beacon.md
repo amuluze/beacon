@@ -118,7 +118,7 @@
 - 安装令牌默认签发短时令牌：`bpit.<exp>.<nonce>.<hmac>`，HMAC 密钥派生自静态安装令牌（轮换即吊销批次），`AgentInstall.TokenTTL`（0=默认 1800 秒，负值回退静态）；安装期端点接受短时或静态令牌且比较走常量时间，上报端点只接受静态令牌（`beacon/service/agent_install.go`、`beacon/service/report/report.go`）。
 - 单机 Unix Socket 模式：控制通道只在 `Control.UnixSocket`（env `BEACON_CONTROL_SOCKET`，进程内监听路径）上监听，`AgentInstall.ControlSocket`（env `BEACON_AGENT_INSTALL_CONTROL_SOCKET`）是下发给 Agent 的宿主可见路径，两者由 `validateTransportSecurity` 保证成对声明且非空；`buildColliaConfig` 下发 `server: unix://…`，本机链路不启用 mTLS（`beacon/service/transport_security.go`、`beacon/service/rpc.go`、`beacon/service/agent_install.go`）。
 - 升级签名透传：`Updater` 读取 `<PackageDir>/<arch>/collia.sig` 侧车文件并随 `UpgradeAgentArgs.Signature` 下发；`AgentUpdate.PublicKey` 经安装 config 的 `control.upgrade_public_key` 写入 Agent 固定（`beacon/service/agent/updater.go`、`beacon/service/agent_install.go`）。`PublicKey` 支持逗号/空白分隔的多把公钥：单钥写单行字段，多钥写 `upgrade_public_keys` 列表（轮换重叠窗口），升级 RPC 永不下发公钥。
-- `beacon reset-admin` 子命令（`beacon/cmd/beacon/main.go` + `beacon/service/reset_admin.go`）：默认生成满足策略的临时密码并强制首登改密；`--password`/`--password-stdin` 可显式指定；bcrypt 入库并写 `system` 审计（Object=admin ID）；admin 缺失时拒绝重建（IR024）。
+- `beacon reset-admin` 子命令（`beacon/cmd/beacon/main.go` + `beacon/service/reset_admin.go`）：默认生成满足策略的临时密码并强制首登改密；`--password`/`--password-stdin` 可显式指定；bcrypt 入库并写 `system` 审计（Object=admin ID）；admin 缺失时拒绝重建（IA007）。
 - 入口：`app.Get("/ws/terminal", webSocketAuth, websocket.New(a.terminalHandler.Handle))` at `beacon/service/router.go:229`
 - 入口：`app.Get("/ws/:id", webSocketAuth, websocket.New(a.loggerHandler.Handler))` at `beacon/service/router.go:231`
 - 入口：`app.Use("/", filesystem.New(filesystem.Config{` at `beacon/service/app.go:71`

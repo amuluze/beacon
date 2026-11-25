@@ -42,7 +42,7 @@
 
 - 状态：以当前提交执行 `task doc:check` 的退出码为准
 - 检查目标：31（`.docs` 14 + Domain Spec 4 + 设计意图 1 + AI 入口与索引 10 + 项目入口说明 2）
-- Domain Spec：4 份，编号约束 85 条（各 Spec 前缀唯一）
+- Domain Spec：4 份，编号约束 86 条（各 Spec 前缀唯一）
 - 建议：行为变更后同步维护相关文档；检查目标与章节要求以 `.docs/MANIFEST.yml` 为准。
 
 ## 关键目录

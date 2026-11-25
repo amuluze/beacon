@@ -1,7 +1,7 @@
 # 账户管理（Account Administration）
 
 > 状态: stable
-> 最后更新: 2026-11-02
+> 最后更新: 2026-11-25
 > 反推来源: account API, authorization policy and Beacon Web account settings
 
 ## 设计意图
@@ -20,6 +20,7 @@
 | IA004 | 浏览器会话 Token 只能通过 HttpOnly、SameSite Cookie 传递，不得出现在响应体、localStorage、sessionStorage 或 WebSocket query；所有状态变更请求必须通过可读 CSRF Cookie 与请求头双提交校验。 | 用登录/刷新/登出、CSRF 中间件、前端 API client 和 WebSocket 鉴权测试验证。 |
 | IA005 | 新数据库只能使用部署期提供的强密码创建唯一 bootstrap 管理员，并要求首次登录后修改；禁止创建公开默认密码或额外默认普通用户。历史默认密码账户升级后也必须进入强制改密状态。 | 用空/弱 bootstrap 密码、新库创建和历史密码迁移测试验证。 |
 | IA006 | 新密码至少 12 个字符，并包含小写字母、大写字母、数字、符号中的至少三类。 | 用 bootstrap 与密码更新校验测试覆盖长度和字符类别。 |
+| IA007 | 管理员密码重置必须复用新密码策略与 bcrypt 存储；默认生成满足策略的临时密码并强制下次登录修改，重置成功必须写入可定位目标管理员的系统审计。管理员账户不存在时必须拒绝执行，禁止静默重建账户；弱密码或写入失败不得改变原凭据。 | 用 reset-admin service 测试覆盖临时密码、显式密码、弱密码和管理员缺失，断言 bcrypt 哈希、强制改密、系统审计及拒绝路径不修改原凭据。 |
 
 ### 规则（允许 / 禁止）
 
