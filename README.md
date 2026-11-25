@@ -180,8 +180,8 @@ curl -fsSL 'https://<beacon-host>/api/v1/host/install?node=1' | sudo bash -s -- 
 | Web 前端 | Vue 3、TypeScript、Vite、Element Plus、Pinia、ECharts |
 | Server | Go 1.25、Fiber、GORM、WebSocket |
 | Agent | Go、gopsutil、Docker Engine API |
-| 控制通道 | Agent 主动连接的反向 gRPC tunnel |
-| 监控通道 | HTTP 批次上报与 Server 本地持久化 |
+| 控制通道 | Agent 主动连接的本机 Unix Socket 反向 gRPC tunnel |
+| 监控通道 | 控制连接数据流批次上报（HTTP 兼容回落）与 Server 本地持久化 |
 | 数据存储 | SQLite，支持通过 GORM 扩展其他数据库 |
 | 部署 | Docker、Docker Compose |
 

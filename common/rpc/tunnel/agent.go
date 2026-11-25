@@ -88,8 +88,8 @@ func (a *AgentTunnel) registrationPayload() RegistrationPayload {
 }
 
 // dataRegistrationPayload builds the registration payload for the data stream.
-// The data stream shares the connection (and thus the client certificate
-// identity) with the control stream but is registered with the data role so
+// The data stream shares the authenticated Agent identity and Unix Socket
+// connection with the control stream but is registered with the data role so
 // the Server does not register a second online session for this agent.
 func (a *AgentTunnel) dataRegistrationPayload() RegistrationPayload {
 	payload := a.registrationPayload()
@@ -131,8 +131,8 @@ func (a *AgentTunnel) PushData(method string, payload []byte) error {
 
 // openDataStream opens the push-only stream on the already established
 // connection. The Server multiplexes both streams over the same HTTP/2
-// connection, so the node certificate identity is shared and control calls
-// are not blocked by monitoring payloads.
+// connection, so they share the Unix Socket transport and explicitly
+// registered Agent identity while control calls remain independent.
 func (a *AgentTunnel) openDataStream(ctx context.Context, client ReverseTunnelClient) error {
 	stream, err := client.Tunnel(ctx)
 	if err != nil {

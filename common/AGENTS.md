@@ -31,9 +31,8 @@
 | `common/logger/` | 独立 Go module `github.com/amuluze/amutool/logger`：zap 日志抽象、文件轮转与 slog 桥接 |
 | `common/rpc/` | RPC client/server 封装 |
 | `common/timex/` | 独立 Go module `github.com/amuluze/amutool/timex`：时间格式化与 Ticker 抽象 |
-| `common/transport/` | 控制通道 TLS 配置与证书生成，供反向隧道双向校验使用 |
 | `common/rpc/schema/` | Go package `schema`，源码 8，测试 1 |
-| `common/rpc/tunnel/` | Go package `tunnel`，源码 4，测试 2（`agent_test.go`、`server_test.go`） |
+| `common/rpc/tunnel/` | Go package `tunnel`，源码 4，测试 4（`agent_test.go`、`data_stream_test.go`、`server_test.go`、`unix_socket_test.go`） |
 
 ## 依赖
 

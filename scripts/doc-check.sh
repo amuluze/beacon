@@ -78,7 +78,7 @@ else:
     ok("无悬空登记")
 
 actual = set()
-for pat in ('.docs/**/*.md', '.docs/**/*.yml', '.specs/domain/*.md'):
+for pat in ('.docs/**/*.md', '.docs/**/*.yml', '.docs/**/*.yaml', '.specs/domain/*.md'):
     for f in glob.glob(pat, recursive=True):
         if os.path.isfile(f) and f != MANIFEST:
             actual.add(f)
@@ -289,6 +289,25 @@ if missing_entry:
     bad(f"模块入口缺失 {len(missing_entry)} 处"); [info(x) for x in missing_entry]
 else:
     ok("全部模块均有 AI 入口")
+
+entry_path_issues = []
+for entry in sorted(p for p in registered if os.path.basename(p) == 'AGENTS.md'):
+    if not os.path.isfile(entry):
+        continue
+    body = open(entry, encoding='utf-8').read()
+    section = re.search(r'^## 关键目录\n(.*?)(?=^## |\Z)', body, re.M | re.S)
+    if not section:
+        continue
+    for line in section.group(1).splitlines():
+        match = re.match(r'^\| `([^`]+)` \|', line)
+        if match and not os.path.exists(match.group(1)):
+            entry_path_issues.append(f"{entry} 登记了不存在的路径：{match.group(1)}")
+if entry_path_issues:
+    bad(f"AI 入口关键目录路径失效 {len(entry_path_issues)} 处")
+    for issue in entry_path_issues:
+        info(issue)
+else:
+    ok("AI 入口关键目录中的仓库路径全部存在")
 
 # ── 10. 健康计数一致性 ───────────────────────────────────────────────────
 print("\n[10] 健康计数一致性")
@@ -557,33 +576,13 @@ else:
     ok("deployment.md 配置清单中的文件均真实存在")
 
 print("\n[16] 模块文档信号节")
-def section_lines(body, name):
-    mm = re.search(r'^## ' + re.escape(name) + r'\n(.*?)(?=^## |\Z)', body, re.M | re.S)
-    return [l for l in mm[1].split('\n') if l.startswith('- ')] if mm else []
-signal_issues = []
-for doc in sorted(glob.glob('.docs/modules/*.md')):
-    body = open(doc, encoding='utf-8').read()
-    sig, cfg = section_lines(body, '接口与符号信号'), section_lines(body, '配置与入口信号')
-    def keys(items):
-        out = set()
-        for l in items:
-            mm = re.search(r'`([^`]+)`', l)
-            if mm:
-                out.add(mm.group(1))
-        return out
-    ks, kc = keys(sig), keys(cfg)
-    if ks and kc and len(ks & kc) / max(len(ks), len(kc)) > 0.5:
-        signal_issues.append(f"{doc}「接口与符号信号」与「配置与入口信号」重复承载 {len(ks & kc)} 个相同对象")
-    for l in sig + cfg:
-        mm = re.search(r'`([^`]+)`', l)
-        if mm and mm.group(1).endswith(('.test.ts', '.spec.ts', '.test.go')):
-            signal_issues.append(f"{doc} 把测试文件当作入口信号：{mm.group(1)}")
-if signal_issues:
-    bad(f"模块文档信号节问题 {len(signal_issues)} 处")
-    for x in signal_issues:
-        info(x)
+result = subprocess.run(['python3', 'scripts/doc-signal-check.py'], capture_output=True, text=True)
+if result.returncode:
+    bad("模块文档信号节存在测试文件、重复承载或子模块归属问题")
+    info(result.stdout + result.stderr)
 else:
-    ok("模块文档信号节无重复承载，且不含测试文件")
+    ok("模块文档信号节无重复承载、测试文件或独立子模块污染")
+    info(result.stdout.strip())
 
 print("\n[17] Domain Spec 元数据与关系图")
 PLACEHOLDERS = {'local workspace facts', 'n/a', 'tbd', 'todo', 'unknown', '-', 'none'}

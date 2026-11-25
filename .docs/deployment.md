@@ -154,6 +154,7 @@ Beacon 仅支持单机部署：Beacon 与 Collia 同机运行，控制通道走�
 - 确认构建、测试和质量门禁命令在目标环境可重复执行。
 - `task doc:check` 检查文档、完整测试库存、约束证据台账和OpenAPI字段模型；历史验收失败不等于文档结构失败。
 - `task doc:verify` 实际执行六个工作区 Go 模块与 `scripts/doc-schema` 工具模块的build、race测试、vet及门禁回归测试，任一失败返回非零；前端、镜像发布和安装端到端验收仍须按模块分别执行。
+- GitHub Actions 的 `Documentation and frontend` workflow 在 PR 上分别执行文档/Go 验证与前端类型检查、测试和构建；Docker 与 PostgreSQL 专项仍需显式环境或本地任务。
 - 比较镜像体积时必须在同一平台和同一 Docker 引擎上使用 `docker image inspect .Size`；同时检查两个 Collia 的版本、目标架构与静态链接属性。
 
 ## Taskfile Commands

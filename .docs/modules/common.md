@@ -64,15 +64,9 @@
 
 ## 配置与入口信号
 
-- 配置：`Config` in `common/logger/config.go`
-- 配置：`IPAM` at `common/docker/network.go:49`
-- 配置：`IPAM` at `common/docker/network.go:91`
-- 配置：`IPAM` at `common/docker/network.go:133`
 - 配置：`Option` in `common/database/options.go`
-- 配置：`Option` in `common/logger/config.go`
 - 配置：`QueryOption` in `common/database/queryoption.go`
 - 配置：`ServerOption` in `common/rpc/tunnel/server.go`
-- 配置：`SubNetworkConfig` in `common/docker/network.go`
 
 ## 数据模型与状态
 
@@ -87,7 +81,6 @@
 - `struct UnimplementedReverseTunnelServer (common/rpc/tunnel/tunnel_grpc.pb.go)`
 - `type ReverseTunnel_TunnelServer (common/rpc/tunnel/tunnel_grpc.pb.go)`
 - `type ServerOption (common/rpc/tunnel/server.go)`
-- `struct Config (common/logger/config.go)`
 - 另有其他导出模型/接口符号未展开；完整清单以源码为准。
 
 - PostgreSQL 连接选项支持 `WithSSLMode`：空值沿用disable；DSN中的连接参数使用libpq转义，包含空格、引号或反斜线的值不会被解释为额外选项。
