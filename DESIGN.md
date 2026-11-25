@@ -48,7 +48,7 @@ Beacon 是 **Server-Agent 架构**的主机与 Docker 容器监控平台，由 S
 | Group | 页 | 覆盖的界面 |
 |-------|----|-----------|
 | 监控 | `Group · 监控` → `Monitor`、`Monitor · 空状态`、`Monitor · 数据过期` | 主机 4 图 + 容器 2 图的趋势工作区；无 Agent 引导；上报中断的过期态 |
-| 容器 | `Group · 容器` → `Container Center`、`Container · 无 Agent 空态` | 容器 / 镜像 / 网络三 Tab 工作区；未接入 Agent 的分段空态 |
+| 容器 | `Group · 容器` → `Container Center`、`Container · 无 Agent 空态` | 容器 / 镜像 / 网络三 Tab 工作区；未接入 Agent 时三个 Tab 共用一个空态卡片 |
 | 设置 | `Group · 设置` → `Settings Page`、`Settings · 探针管理`、`Settings · 用户管理`、`Settings · 角色管理`、`Settings · 接口管理`、`Settings · 审计日志` | 告警阈值与通道、Docker 镜像仓库、已安装探针清单、账户与角色、接口清单、审计日志 |
 | 认证与异常态 | `Group · 认证与异常态` → `Login`、`Change Password`、`404` | 登录、强制改密、兜底错误页 |
 | 弹层 | `Group · 弹层 · Modal / Drawer` → 18 个弹层页 | 安装/升级 Agent、容器增删改、镜像拉取/导入/清理、网络新建、镜像仓库、告警邮箱/阈值/标题、用户增改、改密、新建角色 |
@@ -225,6 +225,12 @@ Beacon 是 **Server-Agent 架构**的主机与 Docker 容器监控平台，由 S
 
 内容区左右内边距 `$spacing-lg`（24），区块间距 `$spacing-lg`。页面结构固定为「标题区 → 工具区 → 主体区 → 分页/尾部」。
 
+### 6.5 只读模式提示条
+
+部署处于只读模式（`read_only`，含匿名只读会话）时，顶栏之下、内容区之上插入一条常驻提示条：`accent-warning-soft` 底 + 1px `accent-warning` 下边线，内边距 6/24，居中排布，12px 锁图标 + `font-size-xs` `accent-warning` 文案「当前部署为只读模式：可浏览页面内容，所有修改操作已被禁用。」（`common.readOnlyBanner`）。
+
+提示条不改变导航与状态栏，也不隐藏页面：只读态下页面结构完整，写操作按钮由实现置灰。稿中 `Monitor` 页是该全局条的落点样本；实现落点为 `beacon/web/src/layout/index.vue`。
+
 ---
 
 ## 7. 监控工作区
@@ -373,10 +379,10 @@ Tab 切换不整页刷新，标题区、eyebrow 与右侧 mono 标签（`Alerts 
 
 | 页 | 列 | 备注 |
 |----|----|------|
-| 探针管理 | Agent 名称 / 状态 / 版本 / 操作 | 名称列主行为 Agent 名称、次行为 mono 的 `os/arch`；状态用 `BeaconStatusTagSuccess`（在线）/ `BeaconStatusTagDanger`（离线）；版本列为 mono 版本号，落后于最新版本时加「可升级」软標签（`accent-primary-soft` 底 + `accent-primary` 文字），与最新一致时标「最新」；操作列为 `circle-arrow-up` + 「升级」，仅管理员可见且离线时置灰；工具条左侧为名称搜索与状态分段筛选（全部 / 在线 / 离线带计数），右侧为「共 N 个探针，M 个在线」与刷新 |
+| 探针管理 | Agent 名称 / 状态 / 版本 / 操作 | 名称列主行为 Agent 名称、次行为 mono 的 `os/arch`；状态用 `BeaconStatusTagSuccess`（在线）/ `BeaconStatusTagDanger`（离线）；版本列为 mono 版本号，落后于最新版本时加「可升级」软標签（`accent-primary-soft` 底 + `accent-primary` 文字），与最新一致时标「最新」；操作列为 `circle-arrow-up` + 「升级」，仅管理员可见且离线时置灰；工具条左侧为名称搜索与状态分段筛选（全部 / 在线 / 离线带计数），右侧为「自动更新」开关（仅管理员可见，部署级门禁关闭时置灰并给出原因）、「共 N 个探针，M 个在线」与刷新 |
 | 用户管理 | 用户名 / 角色 / 状态 / 创建时间 / 操作 | 状态用 `BeaconStatusTagSuccess/Danger/Neutral`；分页「共 5 条 / 10 条/页」 |
 | 角色管理 | 角色名 / 权限 / 状态 / 创建时间 | 权限列以**资源树**呈现（分组名 + 接口名），三类角色统一为同一形态；角色分 `viewer` / `operator` / `admin`；区段页头右侧「新建角色」主按钮（`plus` 图标）打开 `Create Role Modal`，弹层内定义角色名与备注、按接口分组勾选可授权接口（带「已选 N / M」、「全选」「清空」）、状态默认启用 |
-| 接口管理 | 接口名称 / URL / 请求方式 / 状态 | URL 用 mono；请求方式用 tag（GET / POST） |
+| 接口管理 | 接口名称 / URL / 请求方式 / 状态 | URL 用 mono；请求方式用 tag（GET / POST）；清单一次性加载，不提供分页 |
 | 审计日志 | ID / 用户 / Agent / 操作 / 操作时间 | 记录用户与 Agent 的关键操作，保留 90 天；「共 128 条」 |
 
 ---
