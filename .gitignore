@@ -41,7 +41,4 @@ beacon/data/
 # 文档门禁工具的本地构建产物
 /scripts/doc-schema/schema
 /scripts/doc-schema/openapi-check
-
-# 设计稿与 Dev Container 定义属于私有开发侧资产，不随本仓库分发
-.pen/
 .devcontainer/
