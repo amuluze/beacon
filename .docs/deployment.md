@@ -135,7 +135,7 @@ Beacon 仅支持单机部署：Beacon 与 Collia 同机运行，控制通道走�
 - 版本号遵循语义化版本：正式版 `vX.Y.Z`，测试版 `vX.Y.Z-beta.N`（N 从 1 递增）。
 - 节奏：先发 `vX.Y.Z-beta.N`，功能稳定后发布同核正式版 `vX.Y.Z`。测试版必须基于下一个尚未发布的正式版本号——同核正式版已存在时，`beta.N` 会被判定为降级而拒绝升级。
 - `beacon/VERSION` 与 `collia/VERSION` 同步推进，镜像 tag 取自 `beacon/VERSION`，`BEACON_COLLIA_VERSION` 取自 `collia/VERSION`。
-- 测试版发布同样要求本仓打 tag 并创建 Release，且 Release 标记为 pre-release；正式版标记为 Latest。版本提示通道只接受正式版，写入测试版会被拒绝，正式版实例不会被提示升级到测试版。
+- 开发维护以私有开发仓 `amuluze/beacon-pro` 为准；本仓 GitHub Release 由发布流程同步创建，版本号与 Release 说明同 `beacon-pro` 对齐。测试版标记为 pre-release，正式版标记为 Latest；版本提示通道只接受正式版，写入测试版会被拒绝，正式版实例不会被提示升级到测试版。
 - 升级语义：显式传入的 KEY=VAL 与环境变量覆盖优先生效，不被既有部署环境的旧值吞掉；升级前自动备份部署配置（`*.bak.<时间戳>`），健康检查未通过自动回滚并清理备份，中途失败保留备份供手动恢复；显式指定低于当前的版本被降级守卫拒绝。
 
 ## Agent 安装与自更新

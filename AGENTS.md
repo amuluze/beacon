@@ -83,7 +83,7 @@ cd beacon/web && pnpm run ts
 - 新功能或复杂 Bug 先建立 `.specs/tasks/<task-id>.md` 与 `.plans/<task-id>.md`；两者是过程产物，不随仓库分发，任务收口后整体清理。
 - Domain Spec 是最高约束来源，Plan 只描述实施路径。
 - 状态追踪由 `task doc:check` 的健康计数与本文档「文档健康」小节承担，不设单独的状态文件。
-- 版本发布只要求本仓：打版本 tag 并创建 GitHub Release（测试版标记 pre-release）。发布节奏：正式版 `vX.Y.Z`，测试版 `vX.Y.Z-beta.N`；先发测试版，验证稳定后发布同核正式版。产品镜像同时推送阿里云与 Docker Hub。
+- 开发维护以私有开发仓 `amuluze/beacon-pro` 为准；本仓作为开源发布仓，GitHub Release 由发布流程同步创建（测试版标记 pre-release，正式版标记 Latest），Release 说明与 `beacon-pro` 同版本对齐。发布节奏：正式版 `vX.Y.Z`，测试版 `vX.Y.Z-beta.N`；先发测试版，验证稳定后发布同核正式版。产品镜像同时推送阿里云与 Docker Hub。
 - 文档变更后运行 `task doc:check`，校验 Spec 编号唯一性与结构、MANIFEST 双向覆盖、内部链接、入口文件一致性与健康计数。
 
 ## 技术栈
