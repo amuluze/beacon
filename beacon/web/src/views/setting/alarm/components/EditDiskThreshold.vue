@@ -89,10 +89,4 @@ async function submit() {
   align-items: center;
   width: 100%;
 }
-
-@media (max-width: 520px) {
-  .threshold-row {
-    grid-template-columns: 1fr;
-  }
-}
 </style>

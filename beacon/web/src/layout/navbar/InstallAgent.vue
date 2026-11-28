@@ -48,15 +48,4 @@ function openInstall() {
     white-space: nowrap;
   }
 }
-
-@media (max-width: 720px) {
-  .am-install-trigger {
-    padding: 0;
-    width: 32px;
-
-    &__label {
-      display: none;
-    }
-  }
-}
 </style>

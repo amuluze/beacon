@@ -31,6 +31,7 @@
   --am-radius-sm: 6px;
   --am-radius-md: 8px;
   --am-radius-lg: 10px;
+  --am-radius-pill: 999px;
   --am-spacing-xs: 4px;
   --am-spacing-sm: 8px;
   --am-spacing-md: 16px;
@@ -178,8 +179,10 @@ button {
 }
 
 /* el-dialog */
-// 壳体规格见 DESIGN.md §11.1：surface-elevated 底、border-subtle + radius-md、header 16/24、body 24、footer 16/24。
-.el-dialog {
+// 壳体规格见 DESIGN.md §11.1：surface-elevated 底、border-subtle + radius-md、header 24、body 24、footer 24。
+// Element Plus 的组件样式可能晚于本文件注入，同特异性的 `.el-dialog` 规则会被反压；
+// 用 `.el-overlay` 前缀提高优先级，保证 padding / radius / 背景 / 阴影按设计稿生效。
+.el-overlay .el-dialog {
   padding: 0;
   background: var(--am-surface-elevated);
   border: 1px solid var(--am-border-subtle);
@@ -191,9 +194,15 @@ button {
     align-items: center;
     justify-content: space-between;
     gap: var(--am-spacing-md);
-    padding: 16px 24px;
+    padding: 24px;
     margin: 0;
     border-bottom: 1px solid var(--am-border-subtle);
+
+    // Element 在可关闭弹层上追加 .show-close + 32px 右内边距；
+    // 本实现的关闭按钮是 static 布局，右内边距与其他方向一致即可。
+    &.show-close {
+      padding-right: 24px;
+    }
 
     .el-dialog__title {
       font-size: var(--am-font-md);
@@ -226,7 +235,7 @@ button {
   }
 
   .el-dialog__footer {
-    padding: 16px 24px;
+    padding: 24px;
     border-top: 1px solid var(--am-border-subtle);
   }
 }
@@ -331,6 +340,42 @@ button {
   min-height: 180px;
 }
 
+/* §12.3 Loading：表格保留表头与布局尺寸，用行骨架替代 spinner。 */
+.el-table .el-loading-mask {
+  top: 44px;
+  background: var(--am-surface-card);
+}
+
+.el-table .el-loading-mask .el-loading-spinner {
+  display: none;
+}
+
+.el-table .el-loading-mask::after {
+  content: '';
+  position: absolute;
+  inset: 20px 24px;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--am-surface-secondary) 0,
+    var(--am-surface-secondary) 12px,
+    transparent 12px,
+    transparent 40px
+  );
+  border-radius: var(--am-radius-sm);
+  animation: am-skeleton-pulse 1.25s ease-in-out infinite;
+}
+
+@keyframes am-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
 .el-form-item__label {
   color: var(--am-foreground-secondary);
   font-size: var(--am-font-sm);
@@ -339,9 +384,42 @@ button {
 .el-input__wrapper,
 .el-select__wrapper,
 .el-textarea__inner {
-  background: var(--am-surface-primary);
+  background: var(--am-surface-inset);
   border-radius: var(--am-radius-sm);
-  box-shadow: 0 0 0 1px var(--am-border-subtle) inset;
+  box-shadow: 0 0 0 1px var(--am-border-primary) inset;
+}
+
+.el-input__wrapper,
+.el-select__wrapper {
+  min-height: 36px;
+}
+
+.el-input--small .el-input__wrapper,
+.el-select--small .el-select__wrapper {
+  min-height: 32px;
+}
+
+.am-probe-toolbar .el-button {
+  height: 32px;
+}
+
+.el-textarea__inner {
+  min-height: 80px;
+  padding: 10px 12px;
+}
+
+/* 工作区工具条保持 32px 可点高度；表单字段统一 36px。 */
+.am-table-operator .el-input__wrapper,
+.am-table-operator .el-select__wrapper {
+  min-height: 32px;
+}
+
+.am-table-operator .el-button {
+  height: 32px;
+}
+
+.am-navbar .el-select__wrapper {
+  min-height: 32px;
 }
 
 .el-input__wrapper:hover,
@@ -391,7 +469,32 @@ button {
 }
 
 .el-tag {
-  border-radius: var(--am-radius-sm);
+  border-radius: var(--am-radius-xs);
+}
+
+/* Element Plus 的按组件 CSS 会晚于入口样式加载，因此直接声明并用 !important 锁定 token 色。 */
+.el-tag.el-tag--success {
+  color: var(--am-accent-success) !important;
+  background: var(--am-accent-success-soft) !important;
+  border-color: color-mix(in srgb, var(--am-accent-success) 26%, transparent) !important;
+}
+
+.el-tag.el-tag--warning {
+  color: var(--am-accent-warning) !important;
+  background: var(--am-accent-warning-soft) !important;
+  border-color: color-mix(in srgb, var(--am-accent-warning) 26%, transparent) !important;
+}
+
+.el-tag.el-tag--danger {
+  color: var(--am-accent-danger) !important;
+  background: var(--am-accent-danger-soft) !important;
+  border-color: color-mix(in srgb, var(--am-accent-danger) 26%, transparent) !important;
+}
+
+.el-tag.is-plain.el-tag--warning {
+  color: var(--am-accent-warning);
+  background: var(--am-accent-warning-soft);
+  border-color: color-mix(in srgb, var(--am-accent-warning) 26%, transparent);
 }
 
 .el-pagination {
@@ -428,7 +531,7 @@ button {
   color: var(--am-foreground-secondary);
   background: var(--am-surface-card);
   border: 1px solid var(--am-border-primary);
-  border-radius: var(--am-radius-sm);
+  border-radius: var(--am-radius-pill);
   cursor: pointer;
   transition:
     color 0.2s ease,
@@ -622,8 +725,9 @@ button {
 .am-chart-card-title-group {
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: var(--am-spacing-xs);
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--am-spacing-xs) var(--am-spacing-sm);
 }
 
 .am-chart-card-title-row {
@@ -642,9 +746,9 @@ button {
 
 .am-chart-card-percent {
   overflow: hidden;
-  font-family: 'Geist Mono', 'SFMono-Regular', Consolas, monospace;
+  font-family: var(--am-font-mono), 'SFMono-Regular', Consolas, monospace;
   font-size: var(--am-font-sm);
-  font-weight: 500;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -660,54 +764,4 @@ button {
   background: var(--am-surface-inset);
   border: 1px solid var(--am-border-subtle);
   border-radius: var(--am-radius-sm);
-}
-
-@media (max-width: 1100px) {
-  .am-chart-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 900px) {
-  .am-container {
-    padding: var(--am-spacing-md);
-  }
-
-  .am-table-operator {
-    align-items: stretch;
-  }
-
-  .am-table-operator,
-  .am-table-operator__left {
-    flex-direction: column;
-  }
-
-  .am-table-operator .el-button,
-  .am-table-operator__left .el-button {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .am-pagination {
-    justify-content: flex-start;
-    overflow-x: auto;
-  }
-
-  .am-section {
-    padding: var(--am-spacing-md);
-  }
-
-  .am-section-header {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .am-section-title-group .el-select,
-  .am-density-group .el-select {
-    width: 100% !important;
-  }
-
-  .am-chart-card {
-    padding: var(--am-spacing-md);
-  }
 }

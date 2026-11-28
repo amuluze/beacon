@@ -26,7 +26,8 @@ body {
   height: 100%;
   margin: 0;
   font-family:
-    'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+    var(--am-font-sans), 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    '微软雅黑', Arial, sans-serif;
   font-size: var(--am-font-md, 14px);
   line-height: inherit;
   color: var(--am-foreground-primary, #1f2329);
@@ -34,7 +35,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizelegibility;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 a {
@@ -72,9 +74,9 @@ a:hover {
   cursor: pointer;
 }
 
-a:focus,
-a:active,
-div:focus {
+a:focus:not(:focus-visible),
+a:active:not(:focus-visible),
+div:focus:not(:focus-visible) {
   outline: none;
 }
 

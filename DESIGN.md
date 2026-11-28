@@ -83,7 +83,7 @@ Beacon 是 **Server-Agent 架构**的主机与 Docker 容器监控平台，由 S
 
 实现侧切换品牌色时必须同步 `beacon/web/src/config/theme.ts`（明暗两档，含 Element Plus 的 `--el-color-primary-light-3/5/7/8/9` 与 `--el-color-primary-dark-2` 派生色）与 `beacon/web/src/styles/element.scss` 的 `:root` 默认值；只改 `--el-color-primary` 会让 hover 与浅底仍停留在旧色。
 
-### 5.1 控制台 token（48 个，取值来自控制台设计稿 `.pen/beacon.ax`；该稿维护在本仓库之外，不随本仓库分发）
+### 5.1 控制台 token（49 个，取值来自控制台设计稿 `.pen/beacon.ax`；该稿维护在本仓库之外，不随本仓库分发）
 
 命名规则：`<族>-<语义>`，族为 `surface / foreground / border / accent / chart / font / spacing / radius / brand / overlay`。
 
@@ -155,6 +155,7 @@ Beacon 是 **Server-Agent 架构**的主机与 Docker 容器监控平台，由 S
 | `radius-sm` | 6px | 输入框、按钮 |
 | `radius-md` | 8px | 卡片、弹层壳体 |
 | `radius-lg` | 10px | 登录卡、预览卡 |
+| `radius-pill` | 999px | 顶栏语言 / 主题图标按钮 |
 
 ### 5.2 语义使用规则
 
@@ -188,8 +189,8 @@ Beacon 是 **Server-Agent 架构**的主机与 Docker 容器监控平台，由 S
 | 3 | Agent 选择器 | 220×32，`surface-inset` + `border-primary` + `radius-sm`；左 server 图标 + hostname + chevron-down |
 | 4 | Beacon 版本提示 | circle-arrow-up 图标常驻；无新版本时置灰不可点，检测到新版本时用 `accent-primary-soft` 底 + `accent-primary` 图标与文字「有新版本」，点击弹层只读展示当前版本 / 最新版本与手动升级说明 |
 | 5 | 安装 Agent | primary 按钮（`accent-primary`），download 图标 |
-| 6 | 语言切换 | 32×32 图标按钮（languages） |
-| 7 | 主题切换 | 32×32 图标按钮（moon） |
+| 6 | 语言切换 | 32×32 圆形图标按钮（languages，`radius-pill`） |
+| 7 | 主题切换 | 32×32 圆形图标按钮（moon / sunny，`radius-pill`） |
 | 8 | 账户 | 30×30 主色圆形头像 + 用户名 |
 
 顶栏底色 `surface-elevated`，仅底部 1px `border-subtle`，左右内边距 24（`$spacing-lg`）。

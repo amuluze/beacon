@@ -19,7 +19,7 @@
 
 - 前端包：`beacon/web/package.json`
 - package name：`beacon-web`
-- 前端源码文件：172（`src` 下 `.vue` + `.ts`，含 46 个测试；非测试 126）
+- 前端源码文件：173（`src` 下 `.vue` + `.ts`，含 46 个测试；非测试 127）
 - scripts：`build`, `dev`, `lint`, `lint:fix`, `preview`, `test`, `test:coverage`, `test:run`, `ts`
 - 前端信号：19 个
 - 推断角色：frontend experience module: Vue/Vite 页面、路由、API client、Pinia 状态管理和用户交互
@@ -108,7 +108,7 @@
 - CPU 指标值按稿成文「当前 X% · N 核」：核数由 collia 用 `cpu.Counts` 采集并随批次上报（`cpu_count`），Beacon 落库 `m_cpu.cpu_count`，`GET /api/v1/host/cpu_info` 以 `cores` 返回；缺失时只渲染「当前 X%」。
 - 容器工作区三个 Tab 的表头与工具栏文案以 `.pen/beacon.ax` `Container Center` 为准：容器列 容器名称 / 镜像 / CPU / 内存 / 容器 IP / 端口 / 状态 / 启动时间 / 操作，镜像列 镜像名称 / 容器数量 / Tag / 创建时间 / 镜像大小 / 操作，网络列 网络名称 / 驱动 / 子网 / 网关 / 创建时间 / 操作；筛选的 «全部» 必须用显式值（`all` → 请求时不传该参数），空字符串会被 Element 回落成「请选择」。三个 Tab 的筛选（容器：状态 + 网络；镜像：使用中；网络：驱动）全部在服务端生效、与 `total` 同条件；网络筛选项取当前 Agent 的网络清单，镜像「使用中」数量由上报批次按容器镜像引用计算。
 - 监控上下文条（`components/Agent/MonitorContextBar.vue`）按 `stale` prop 切换状态表达：正常为成功色点 +「实时」，过期改为 `accent-warning` 点 +「数据过期」；主机分组传 CPU/内存/磁盘任一的 `freshness.stale`，容器分组传容器用量的 `freshness.stale`。
-- 弹层头部统一由 `components/DialogHeader/index.vue` 承担（28×28 `accent-primary-soft` 图标块 + 14/600 标题），通过 `#header` 插槽挂载，关闭按钮沿用 Element Plus 的 header 关闭入口；三处稿面无图标块的弹层（安装 Agent、删除确认、修改密码）只保留默认标题。弹层壳体（`surface-elevated` 底、`border-subtle` 描边、Modal `radius-md` + `0 8px 24px #00000066`、Drawer 左缘贴屏无阴影、头部 16/24、底部上下边框）由 `styles/element.scss` 的 `.el-dialog` / `.el-drawer` 规则单点定义，共享确认弹窗可经 `ConfirmDialog` / `useConfirmCommand` 的 `badge` 参数追加图标块（清理虚悬镜像用）。
+- 弹层头部统一由 `components/DialogHeader/index.vue` 承担（28×28 `accent-primary-soft` 图标块 + 14/600 标题），通过 `#header` 插槽挂载，关闭按钮沿用 Element Plus 的 header 关闭入口；三处稿面无图标块的弹层（安装 Agent、删除确认、修改密码）只保留默认标题。弹层壳体（`surface-elevated` 底、`border-subtle` 描边、Modal `radius-md` + `0 8px 24px #00000066`、Drawer 左缘贴屏无阴影、头部 16/24、底部上下边框）由 `styles/element.scss` 的 `.el-overlay .el-dialog` / `.el-drawer` 规则单点定义，共享确认弹窗可经 `ConfirmDialog` / `useConfirmCommand` 的 `badge` 参数追加图标块（清理虚悬镜像用）。**Element Plus 样式只允许从 `main.ts` 的全量 `element-plus/dist/index.css` 统一加载**（`vite.config.ts` 的 `ElementPlusResolver` 统一 `importStyle: false`）：组件按需懒加载样式会在路由 chunk 里晚于应用覆盖样式注入，反压弹层 padding / 圆角、抽屉与输入框底色等同特异性规则；`.el-overlay .el-dialog` 前缀则保证壳体规格不被 Element 默认值反压。
 - 用户列表以 `ids: string[]` typed props 打开删除确认组件；删除成功才关闭弹窗并刷新列表，请求失败时保留目标与输入状态。告警设置统一使用 `memory` 类型，内存与磁盘编辑组件提交规范类型并仅在成功后关闭、刷新。
 - 告警设置页加载并展示全局告警消息标题，通过独立 `EditAlarmMessageTitle` 组件提交裁剪后的单行 1–128 字符标题；成功后关闭并刷新，失败时保留弹窗与本地输入。
 - 管理控制台不再注册 Web Terminal 路由、顶层导航或主机监控跳转入口；底层 Terminal 组件及 Server `/ws/terminal` 通道仍保留，但不会由当前页面树挂载。

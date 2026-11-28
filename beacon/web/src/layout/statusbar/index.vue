@@ -160,14 +160,4 @@ watch(selectedAgentID, () => {
   }
 }
 
-@media (max-width: 980px) {
-  @include b(statusbar) {
-    justify-content: flex-start;
-    padding: 0 var(--am-spacing-md);
-
-    @include e(group) {
-      flex: 0 0 auto;
-    }
-  }
-}
 </style>

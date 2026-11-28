@@ -4,8 +4,8 @@
  *
  * The caller configures a title/confirm-message/i18n prefix and an async
  * confirm action. Calling `open(id?)` mounts the dialog and the confirm
- * button invokes the action; on success/failure (with .finally) the
- * dialog auto-closes.
+ * button invokes the action. Success closes the dialog; failure keeps it
+ * open while `onResolved` refreshes the caller's data to reflect partial work.
  *
  * Usage:
  *   const confirmDelete = useConfirmCommand({
@@ -19,7 +19,7 @@
  */
 import ConfirmDialog from '@/components/ConfirmDialog/index.vue'
 import { createVNode, getCurrentInstance, render } from 'vue'
-import type { Component } from 'vue'
+import type { Component, VNode } from 'vue'
 
 export interface ConfirmCommandOptions {
     title?: string
@@ -32,32 +32,41 @@ export interface ConfirmCommandOptions {
     // Optional width override; defaults to the 480 rung of DESIGN.md §11.1.
     width?: string
     action: (id?: string) => Promise<unknown> | unknown
-    // Optional progress callback. Triggered after action resolves.
+    // Optional refresh callback, triggered after the action settles (success or failure).
     onResolved?: () => void
 }
 
 interface LastInstance {
-    vnode: ReturnType<typeof createVNode>
+    vnode: VNode
     container: HTMLElement
 }
 
 let lastInstance: LastInstance | null = null
 
-function ensureContainer(): HTMLElement {
-    let el = document.getElementById('__confirm_dialog_host__')
-    if (!el) {
-        el = document.createElement('div')
-        el.id = '__confirm_dialog_host__'
-        document.body.appendChild(el)
-    }
-    return el
+function cleanup(instance: LastInstance | null) {
+    if (!instance)
+        return
+    render(null, instance.container)
+    instance.container.remove()
+    if (lastInstance === instance)
+        lastInstance = null
 }
 
 export function useConfirmCommand(options: ConfirmCommandOptions) {
     const appContext = getCurrentInstance()?.appContext ?? null
 
     return function open(id?: string) {
-        const container = ensureContainer()
+        cleanup(lastInstance)
+
+        const container = document.createElement('div')
+        document.body.appendChild(container)
+        let closed = false
+        const closeCurrent = () => {
+            if (closed)
+                return
+            closed = true
+            cleanup({ vnode, container })
+        }
 
         const vnode = createVNode(ConfirmDialog, {
             'visible': true,
@@ -68,31 +77,23 @@ export function useConfirmCommand(options: ConfirmCommandOptions) {
             'i18nPrefix': options.i18nPrefix || 'common',
             'confirmation': true,
             'width': options.width ?? '480px',
+            'confirmAction': () => options.action(id),
             id,
             'onUpdate:visible': (visible: boolean) => {
                 if (!visible)
-                    cleanup()
+                    closeCurrent()
             },
-            'onConfirm': async () => {
-                try {
-                    await options.action(id)
-                }
-                finally {
-                    options.onResolved?.()
-                    cleanup()
-                }
+            'onResolved': () => {
+                options.onResolved?.()
+                closeCurrent()
+            },
+            'onFailed': () => {
+                options.onResolved?.()
             },
         })
         vnode.appContext = appContext
 
-        render(vnode, container)
         lastInstance = { vnode, container }
-    }
-}
-
-function cleanup() {
-    if (lastInstance) {
-        render(null, lastInstance.container)
-        lastInstance = null
+        render(vnode, container)
     }
 }

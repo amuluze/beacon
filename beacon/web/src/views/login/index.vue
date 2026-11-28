@@ -348,6 +348,7 @@ function changeLanguage(lang: string) {
   }
 
   :deep(.el-input__wrapper) {
+    min-height: 22px;
     padding: 0;
     background: transparent;
     box-shadow: none !important;

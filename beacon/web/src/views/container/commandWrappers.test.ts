@@ -55,8 +55,10 @@ describe('container command wrappers', () => {
 
     it('provides localized network deletion copy', () => {
         expect(zh.network.deleteNetwork).toBe('删除网络')
-        expect(zh.network.confirmDelete).toBe('确认要删除网络吗？')
+        expect(zh.network.confirmDelete).toContain('删除操作经反向隧道下发到目标节点执行')
+        expect(zh.network.confirmDelete).toContain('删除后网络配置无法恢复')
         expect(en.network.deleteNetwork).toBe('Delete Network')
-        expect(en.network.confirmDelete).toBe('Confirm Delete?')
+        expect(en.network.confirmDelete).toContain('through the reverse tunnel')
+        expect(en.network.confirmDelete).toContain('cannot be recovered')
     })
 })

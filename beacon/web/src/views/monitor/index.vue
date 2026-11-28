@@ -45,7 +45,8 @@ import HostMonitor from './host/index.vue'
 }
 
 .workspace__eyebrow,
-.workspace__title {
+.workspace__title,
+.workspace__description {
   margin: 0;
 }
 
@@ -100,14 +101,4 @@ import HostMonitor from './host/index.vue'
   box-shadow: var(--am-shadow-subtle);
 }
 
-@media (max-width: 900px) {
-  .workspace {
-    padding: var(--am-spacing-md);
-  }
-
-  .workspace__header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-}
 </style>

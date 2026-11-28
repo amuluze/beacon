@@ -3,15 +3,17 @@ import App from './App.vue'
 
 import { setupStore } from '@/store/setup'
 
-import '@/styles/index.scss'
+import '@/styles/reset.scss'
 import 'virtual:svg-icons-register'
 
 import 'virtual:uno.css'
 
-// element+ 默认主题
+// element+ 默认主题必须先于应用覆盖样式加载，否则应用对 .el-input/.el-tag 等
+// 同特异性规则会被 Element Plus 的样式表反压。
 import 'element-plus/dist/index.css'
 // element+ 内置黑暗主题
 import 'element-plus/theme-chalk/dark/css-vars.css'
+import '@/styles/element.scss'
 
 import router from './router'
 

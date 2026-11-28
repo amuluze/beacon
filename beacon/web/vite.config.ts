@@ -46,7 +46,11 @@ export default defineConfig({
             },
             resolvers: [
                 // 自动导入 Element Plus 相关函数，如：ElMessage(带样式)
-                ElementPlusResolver(),
+                // importStyle: false —— 全量 element-plus/dist/index.css 已在 main.ts 中
+                // 先于应用覆盖样式加载；若这里再按组件懒加载样式，Element 的规则会在
+                // 路由 chunk 里后注入，反压 styles/element.scss 的壳体定制
+                // （弹层 padding / 圆角、抽屉底色、输入框内衬等）。
+                ElementPlusResolver({ importStyle: false }),
                 IconsResolver({
                     enabledCollections: ['ep', 'lucide'],
                 }),
@@ -56,8 +60,9 @@ export default defineConfig({
         }),
         Components({
             resolvers: [
-                // 自动导入 Element Plus 组件
-                ElementPlusResolver(),
+                // 自动导入 Element Plus 组件（样式由 main.ts 的全量 CSS 统一提供，
+                // 见 AutoImport 里 importStyle 的说明）
+                ElementPlusResolver({ importStyle: false }),
                 // 自动导入图标组件
                 IconsResolver({
                     // @iconify-json/ep 是 Element Plus 的图标库

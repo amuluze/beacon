@@ -181,37 +181,4 @@ function goRoute(item: RouteRecordRaw): void {
   }
 }
 
-@media (max-width: 900px) {
-  @include b(navbar) {
-    padding: 0 var(--am-spacing-md);
-
-    @include e(brand) {
-      min-width: auto;
-      flex: 0 0 auto;
-    }
-
-    @include e(brand-text) {
-      display: none;
-    }
-
-    @include e(menu) {
-      justify-content: flex-start;
-    }
-
-    @include e(right) {
-      min-width: auto;
-      flex: 0 0 auto;
-    }
-  }
-}
-
-@media (max-width: 560px) {
-  @include b(navbar) {
-    gap: var(--am-spacing-sm);
-
-    @include e(menu-item) {
-      padding-inline: var(--am-spacing-sm);
-    }
-  }
-}
 </style>

@@ -53,7 +53,7 @@ describe('application layout Agent readiness gate', () => {
         const wrapper = mountLayout()
 
         expect(wrapper.find('[data-testid="navbar"]').exists()).toBe(true)
-        expect(wrapper.find('[role="status"]').text()).toContain('agent.loadingWorkspace')
+        expect(wrapper.find('[role="status"]').attributes('aria-label')).toContain('agent.loadingWorkspace')
         expect(wrapper.find('[data-testid="content"]').exists()).toBe(false)
         expect(wrapper.find('[data-testid="status-bar"]').exists()).toBe(false)
 

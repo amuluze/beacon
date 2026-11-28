@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useAgentSelection } from '@/hooks/useAgentSelection'
 import { useI18n } from 'vue-i18n'
+import IconServer from '~icons/lucide/server'
 
 // 顶栏使用 220px 宽，工作区分组内的上下文条使用紧凑宽度。
 const props = withDefaults(defineProps<{ width?: string }>(), {
@@ -21,6 +22,9 @@ const { t } = useI18n()
         :no-data-text="t('agent.noData')"
         filterable
     >
+        <template #prefix>
+            <IconServer class="am-agent-select__prefix" aria-hidden="true" />
+        </template>
         <el-option
             v-for="item in agentList"
             :key="item.agent_id"
@@ -32,3 +36,11 @@ const { t } = useI18n()
         </el-option>
     </el-select>
 </template>
+
+<style scoped>
+.am-agent-select__prefix {
+  width: 14px;
+  height: 14px;
+  color: var(--am-foreground-muted);
+}
+</style>

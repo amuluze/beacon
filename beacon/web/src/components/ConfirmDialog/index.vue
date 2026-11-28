@@ -34,6 +34,9 @@ const props = withDefaults(defineProps<{
   confirmation?: boolean
   // Width override for the dialog (defaults to the 480 ladder rung from DESIGN §11.1).
   width?: string
+  // Imperative callers may hand the async action to the dialog so it can own
+  // the loading state and keep the dialog open when the action rejects.
+  confirmAction?: () => Promise<unknown> | unknown
 }>(), {
   confirmation: false,
   width: '480px',
@@ -44,6 +47,8 @@ const emits = defineEmits<{
   (e: 'update:visible', visible: boolean): void
   (e: 'close'): void
   (e: 'confirm'): void
+  (e: 'resolved'): void
+  (e: 'failed'): void
 }>()
 
 const dialogVisible = computed<boolean>({
@@ -59,8 +64,26 @@ const dialogVisible = computed<boolean>({
 })
 
 const loading = ref(false)
-function onConfirm() {
-  emits('confirm')
+async function onConfirm() {
+  if (loading.value)
+    return
+  if (!props.confirmAction) {
+    emits('confirm')
+    return
+  }
+
+  loading.value = true
+  try {
+    await props.confirmAction()
+    emits('resolved')
+  }
+  catch {
+    // 失败时保留弹窗与本地输入；错误提示由全局请求拦截器统一给出。
+    emits('failed')
+  }
+  finally {
+    loading.value = false
+  }
 }
 
 const { t } = useI18n()

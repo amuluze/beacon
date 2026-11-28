@@ -33,9 +33,13 @@ onBeforeMount(async () => {
             <Content />
             <StatusBar />
         </template>
-        <div v-else class="am-layout__loading" role="status" aria-live="polite">
-            <span class="am-layout__loading-mark" aria-hidden="true" />
-            <span>{{ $t('agent.loadingWorkspace') }}</span>
+        <div v-else class="am-layout__loading" role="status" aria-live="polite" :aria-label="$t('agent.loadingWorkspace')">
+            <span class="am-layout__loading-line am-layout__loading-line--eyebrow" aria-hidden="true" />
+            <span class="am-layout__loading-line am-layout__loading-line--title" aria-hidden="true" />
+            <span class="am-layout__loading-line am-layout__loading-line--copy" aria-hidden="true" />
+            <div class="am-layout__loading-grid" aria-hidden="true">
+                <span v-for="index in 4" :key="index" class="am-layout__loading-card" />
+            </div>
         </div>
     </section>
 </template>
@@ -45,6 +49,7 @@ onBeforeMount(async () => {
   display: flex;
   flex-direction: column;
   width: 100%;
+  min-width: 1280px;
   height: 100%;
   color: var(--am-foreground-primary);
   background-color: var(--am-surface-primary);
@@ -53,11 +58,52 @@ onBeforeMount(async () => {
   @include e(loading) {
     flex: 1;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--am-spacing-sm);
-    color: var(--am-foreground-muted);
-    font-size: var(--am-font-sm);
+    flex-direction: column;
+    gap: var(--am-spacing-md);
+    padding: var(--am-spacing-xl) var(--am-spacing-lg);
+    overflow: hidden;
+  }
+
+  @include e(loading-line) {
+    display: block;
+    border-radius: var(--am-radius-sm);
+    background: var(--am-surface-secondary);
+    animation: am-skeleton-pulse 1.25s ease-in-out infinite;
+
+    &--eyebrow {
+      width: 76px;
+      height: 11px;
+    }
+
+    &--title {
+      width: 190px;
+      height: 32px;
+    }
+
+    &--copy {
+      width: min(560px, 70%);
+      height: 14px;
+    }
+  }
+
+  @include e(loading-grid) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--am-spacing-lg);
+    margin-top: var(--am-spacing-sm);
+  }
+
+  @include e(loading-card) {
+    height: 260px;
+    border: 1px solid var(--am-border-subtle);
+    border-radius: var(--am-radius-md);
+    background:
+      linear-gradient(var(--am-surface-secondary), var(--am-surface-secondary)) 24px 24px / 35% 14px no-repeat,
+      linear-gradient(var(--am-surface-secondary), var(--am-surface-secondary)) 24px 56px / 55% 28px no-repeat,
+      linear-gradient(var(--am-surface-secondary), var(--am-surface-secondary)) 24px 110px / calc(100% - 48px) 140px
+        no-repeat,
+      var(--am-surface-card);
+    animation: am-skeleton-pulse 1.25s ease-in-out infinite;
   }
 
   @include e(readonly) {
@@ -71,19 +117,5 @@ onBeforeMount(async () => {
     text-align: center;
   }
 
-  @include e(loading-mark) {
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--am-border-primary);
-    border-top-color: var(--am-accent-primary);
-    border-radius: 50%;
-    animation: workspace-loading 0.8s linear infinite;
-  }
-}
-
-@keyframes workspace-loading {
-  to {
-    transform: rotate(360deg);
-  }
 }
 </style>

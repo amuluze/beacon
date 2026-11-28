@@ -286,6 +286,10 @@
         "light": "#F1ECFE",
         "dark": "#2B2140"
       }
+    },
+    "radius-pill": {
+      "$type": "number",
+      "$value": "999px"
     }
   },
   "components": {},
@@ -867,7 +871,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "x00471",
@@ -888,7 +892,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "x00469",
@@ -6544,7 +6548,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "x02320",
@@ -6565,7 +6569,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "x02318",
@@ -7137,7 +7141,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "nb1023",
@@ -7158,7 +7162,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "nb1021",
@@ -9369,7 +9373,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "x01265",
@@ -9390,7 +9394,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "x01263",
@@ -16619,7 +16623,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "nbx2023",
@@ -16640,7 +16644,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "nbx2021",
@@ -17700,7 +17704,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "x00846",
@@ -17721,7 +17725,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "x00844",
@@ -20453,7 +20457,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "p10_x00846",
@@ -20474,7 +20478,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "p10_x00844",
@@ -22247,7 +22251,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "pb_x00846",
@@ -22268,7 +22272,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "pb_x00844",
@@ -23819,7 +23823,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "p11_x00846",
@@ -23840,7 +23844,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "p11_x00844",
@@ -25732,7 +25736,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "p12_x00846",
@@ -25753,7 +25757,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "p12_x00844",
@@ -27439,7 +27443,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "pa_x00846",
@@ -27460,7 +27464,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "pa_x00844",
@@ -38351,7 +38355,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "nbx2174",
@@ -38372,7 +38376,7 @@
                   "fill": "$surface-card",
                   "stroke": "$border-primary",
                   "strokeWidth": 1,
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-pill",
                   "children": [
                     {
                       "id": "nbx2172",
@@ -38974,7 +38978,7 @@
                           "fill": "$surface-inset",
                           "justifyContent": "center",
                           "alignItems": "center",
-                          "cornerRadius": "$radius-sm",
+                          "cornerRadius": "$radius-pill",
                           "stroke": "$border-primary",
                           "strokeWidth": 1
                         },

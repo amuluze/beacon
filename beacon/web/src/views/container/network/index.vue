@@ -115,8 +115,12 @@ const batchDelete = useConfirmCommand({
   params: batchParams,
   i18nPrefix: 'network',
   action: async () => {
-    await removeSelected(selectedIDs.value)
-    tableRef.value?.clearSelection()
+    try {
+      await removeSelected(selectedIDs.value)
+    }
+    finally {
+      tableRef.value?.clearSelection()
+    }
   },
   onResolved: () => {
     refreshAfterAgentReport()

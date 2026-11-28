@@ -459,6 +459,7 @@ function openRoleCreate() {
 }
 
 :deep(.settings-card__hint) {
+  margin: 0;
   padding-top: 10px;
   color: var(--am-foreground-muted);
   font-size: var(--am-font-xs);
@@ -614,24 +615,4 @@ function openRoleCreate() {
   gap: 5px;
 }
 
-@media (max-width: 900px) {
-  .workspace {
-    padding: var(--am-spacing-md);
-  }
-
-  .workspace__header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .workspace__section-header {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: var(--am-spacing-xs);
-  }
-
-  .workspace__section-note {
-    white-space: normal;
-  }
-}
 </style>

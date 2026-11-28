@@ -123,8 +123,13 @@ function createBatchCommand(title: string, message: string, run: (containerID: s
     params: batchParams,
     i18nPrefix: 'container',
     action: async () => {
-      await runBatch(selectedIDs.value, run)
-      tableRef.value?.clearSelection()
+      try {
+        await runBatch(selectedIDs.value, run)
+      }
+      finally {
+        // 部分失败时服务端已有删除/状态变更，清空选择并由 onResolved 刷新列表。
+        tableRef.value?.clearSelection()
+      }
     },
     onResolved: () => {
       void search()

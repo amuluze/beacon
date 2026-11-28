@@ -342,9 +342,4 @@ function refreshWorkspace() {
   background: transparent;
 }
 
-@media (max-width: 900px) {
-  .container-workspace {
-    padding: var(--am-spacing-md);
-  }
-}
 </style>

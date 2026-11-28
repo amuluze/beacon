@@ -7,7 +7,7 @@
  *  - Provide minimal i18n stubs by mocking `vue-i18n` so titles and labels
  *    resolve to their key (sufficient for behavior coverage).
  */
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
@@ -125,5 +125,32 @@ describe('confirmDialog', () => {
         inst.confirm()
         await nextTick()
         expect(wrapper.emitted('confirm')).toBeTruthy()
+    })
+
+    it('keeps the dialog open when an async confirm action fails', async () => {
+        const action = vi.fn().mockRejectedValue(new Error('delete failed'))
+        const wrapper = mount(ConfirmDialog, {
+            props: {
+                visible: true,
+                title: 'common.action',
+                confirmation: true,
+                confirmAction: action,
+            },
+            global: {
+                stubs: {
+                    'el-dialog': { template: '<div><slot /></div>', props: ['title', 'modelValue', 'width', 'draggable'] },
+                    'el-button': { template: '<button></button>' },
+                },
+                mocks: { $t: (k: string) => k },
+            },
+        })
+        await nextTick()
+
+        wrapper.vm.confirm()
+        await flushPromises()
+
+        expect(action).toHaveBeenCalledOnce()
+        expect(wrapper.emitted('resolved')).toBeUndefined()
+        expect(wrapper.emitted('update:visible')).toBeUndefined()
     })
 })

@@ -92,8 +92,12 @@ const batchDelete = useConfirmCommand({
   params: batchParams,
   i18nPrefix: 'image',
   action: async () => {
-    await removeSelected(selectedIDs.value)
-    tableRef.value?.clearSelection()
+    try {
+      await removeSelected(selectedIDs.value)
+    }
+    finally {
+      tableRef.value?.clearSelection()
+    }
   },
   onResolved: () => {
     void search()
